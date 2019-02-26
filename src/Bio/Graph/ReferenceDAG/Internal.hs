@@ -25,6 +25,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedSums                #-}
 
+
 module Bio.Graph.ReferenceDAG.Internal where
 
 import Debug.Trace
@@ -62,7 +63,7 @@ import qualified Data.List.NonEmpty            as NE
 import           Data.List.Utility             (isSingleton)
 import           Data.Monoid                   hiding ((<>))
 import           Data.MonoTraversable
-import           Data.Semigroup
+import           Data.Semigroup                hiding (First(..))
 import           Data.Semigroup.Foldable
 import           Data.Set                      (Set)
 import qualified Data.Set                      as S
@@ -1382,6 +1383,45 @@ leafIndices dag = foldMapWithKey leafTest $ dag ^. _references
         else  mempty
 
 -- |
+-- A function that recursively builds  a generating function
+-- to be consumed as reference data. The function returned uses open recursion
+-- (for memoization purposes), in the form of a 'DVector'.
+dVectorPostorderWithContext
+  :: forall a d e n
+   . (  ChildContext (a , Int, IndexData e n) --  Child values and index information
+     -> ParentContext Int                     --  Parent indices
+     -> (Int, IndexData e n)                  --  Current index information
+     -> a                                     --  Index data
+     )
+  -> ReferenceDAG d e n -> DVector a
+dVectorPostorderWithContext indexFn dag = DVector f
+  where
+    refs        = dag ^. _references
+    leafInds    = leafIndices dag
+
+ -- A generate function with open recursion
+    f :: (Int -> a) -> Int -> a
+    f recurseFn ind =
+      let parentContext = getParentContext refs ind in
+        if ind `IS.member` leafInds
+            -- inductive case updating leaves
+          then indexFn NoChildren (getParentContext refs ind) (ind, refs ! ind)
+          else
+            case getChildContext refs ind of
+              NoChildren
+                -> error "Non-leaf node without children!"
+           -- Recursively apply the function
+              OneChild childInd
+                -> indexFn (OneChild (g childInd)) parentContext (ind, refs ! ind)
+              TwoChildren childInd1 childInd2
+                -> indexFn
+                     (TwoChildren (g childInd1) (g childInd2))
+                     parentContext
+                     (ind, refs ! ind)
+      where
+        g :: Int -> (a, Int, IndexData e n)
+        g n = (recurseFn n, n, refs ! n)
+-- |
 -- A function that recursively builds (in a postorder fashion) a generating function
 -- to be consumed as reference data. The function returned uses open recursion
 -- (for memoization purposes), in the form of a 'DVector'.
@@ -1424,7 +1464,7 @@ dVectorPostorder indexFn dag = DVector f
 -- (for memoization purposes), in the form of a 'DVector'.
 dVectorPreorder
   :: forall a d e n
-   . (  ParentContext a      --  Parent values
+   . (  ParentContext a      --  Parent data
      -> (Int, IndexData e n) --  Current index information
      -> a                    --  Index data
      )
@@ -1452,7 +1492,79 @@ dVectorPreorder indexFn dag = DVector f
                    (TwoParents (recurseFn parInd1) (recurseFn parInd2))
                    (ind, refs ! ind)
 
+-- |
+-- A function that recursively builds (in a preorder fashion) a generating function
+-- to be consumed as reference data. The function returned uses open recursion
+-- (for memoization purposes), in the form of a 'DVector'.
+dVectorPreorderWithContext
+  :: forall a d e n
+   . (  ParentContext (a, Int, IndexData e n)  -- Parent data with their index information
+     -> ChildContext Int                       -- Child indicies 
+     -> (Int, IndexData e n)                   -- Current index information
+     -> a                                      -- Index data
+     )
+  -> ReferenceDAG d e n -> DVector a
+dVectorPreorderWithContext indexFn dag = DVector f
+  where
+    refs        = dag ^. _references
+    rootInds    = rootRefs dag
 
+ -- A generate function with open recursion
+    f :: (Int -> a) -> Int -> a
+    f recurseFn ind =
+      let childContext = getChildContext refs ind in
+        if ind `elem` rootInds
+            -- base case updating roots
+          then indexFn NoParent childContext (ind, refs ! ind)
+          else
+              -- apply openly recursive argument
+            case getParentContext refs ind of
+              NoParent
+                -> error "Non-root node without parents!"
+              OneParent parInd                           
+                -> indexFn
+                     (OneParent (g parInd)) childContext (ind, refs ! ind)
+              TwoParents parInd1 parInd2
+                -> indexFn (TwoParents (g parInd1) (g parInd2)) childContext (ind, refs ! ind)
+
+      where
+        g :: Int -> (a, Int, IndexData e n)
+        g n = (recurseFn n, n, refs ! n)
+
+
+
+data NetworkContext = NetworkContext
+  { netNode    :: Int
+  , netParent1 :: Int
+  , netParent2 :: Int
+  }
+  deriving (Eq, Ord, Show)
+
+-- |
+-- This computes, in a nodal context, the set of ancestral
+-- Network contexts from the parent edge sets and current node data.
+ancestralNetworkContextContextFn
+  :: ParentContext (Set NetworkContext, Int, IndexData e n)  -- ^ Parent ancestral network contexts
+  -> ChildContext Int
+  -> (Int, IndexData e n)                                    -- ^ Current node data
+  -> Set NetworkContext                                     -- ^ Current ancestral network contexts
+ancestralNetworkContextContextFn parentNetContexts _ (currInd, nodeDatum) =
+    case parentNetContexts of
+      NoParent                              -> mempty
+      OneParent (ancestralNetContext, _, _) -> ancestralNetContext
+      TwoParents (ancestralNetContext1, parInd1, _) (ancestralNetContext2, parInd2, _) ->
+        let
+          currNetContext = NetworkContext
+                          { netNode    = currInd
+                          , netParent1 = parInd1
+                          , netParent2 = parInd2
+                          }
+        in
+               S.singleton currNetContext
+            <> ancestralNetContext1
+            <> ancestralNetContext2          
+            
+      
 -- |
 -- This computes, in a nodal context, the set of ancestral
 -- edges from the parent edge sets and current node data.
@@ -1471,7 +1583,20 @@ ancestralEdgeSetContextFn ancestralEdgeSets (currInd, nodeDatum) =
     parRefs        = nodeDatum ^. _parentRefs
     currentEdgeSet = makeParentEdgeSet currInd parRefs
 
+-- |
+-- This computes, in a nodal context, the set of ancestral
+-- nodes from the parent edge sets and current node data.
+ancestralNodeSetContextFn
+  :: ParentContext IntSet  -- ^ Parent ancestral nodes
+  -> (Int, IndexData e n)      -- ^ Current node data
+  -> IntSet                  -- ^ Current ancestral nodes
+ancestralNodeSetContextFn ancestralNodes (currInd, nodeDatum) =
+    case ancestralNodes of
+      NoParent              -> mempty
+      OneParent parentAncestralNodes -> (IS.singleton currInd) <> parentAncestralNodes
 
+      TwoParents ancestralEdgeSet1 ancestralEdgeSet2
+        -> IS.singleton currInd <> ancestralEdgeSet1 <> ancestralEdgeSet2
 
 
 -- |
@@ -1480,36 +1605,18 @@ ancestralEdgeSetContextFn ancestralEdgeSets (currInd, nodeDatum) =
 -- It does this via a 'traversal with state' which keeps track of whether a child
 -- node has only a single child and so is a descendant network node.
 descendantNetworkNodesContextFn
-  ::  ChildContext (IntSet, Maybe Int) -- ^ Child descendent network node set and maybe node
-  -> (Int, IndexData e n)              -- ^ Current node data
-  -> (IntSet, Maybe Int)               -- ^ Current descendant network node sets and maybe node
+  :: ChildContext IntSet  -- ^ Child descendent network node set
+  -> (Int, IndexData e n) -- ^ Current node data
+  ->  IntSet              -- ^ Current descendant network node sets
 descendantNetworkNodesContextFn descendantNetworkNodes (currInd, _) =
-  case descendantNetworkNodes of
-    NoChildren                              -> (mempty, Nothing)
+    case descendantNetworkNodes of
+    NoChildren                              -> mempty
  -- If a node has a single child then it is a network node and so is added
  -- to the set of nodes to be included in the parent descendant sets.
-    OneChild (networkNodes, optNode)
-      -> case optNode of
-          Nothing -> (networkNodes, Just currInd)
-       -- This case should never happen as it corresponds to a
-       -- current network node with descendant network node.
-          Just n  -> (IS.singleton n <> networkNodes, Just currInd)
-    TwoChildren
-      (networkNodes1, optNode1)  (networkNodes2, optNode2)
-      -> case (optNode1, optNode2) of
-           (Nothing , Nothing)
-             -> (networkNodes1 <> networkNodes2, Nothing)
-           (Just n1 , Nothing)
-             -> (IS.singleton n1 <> networkNodes1 <> networkNodes2, Nothing)
-           (Nothing , Just n2)
-             -> (IS.singleton n2 <> networkNodes1 <> networkNodes2, Nothing)
-           (Just n1 , Just n2)
-             -> (     IS.singleton n1
-                   <> IS.singleton n2
-                   <> networkNodes1
-                   <> networkNodes2
-                , Nothing
-                )
+    OneChild descNetworkNodes               ->     IS.singleton currInd
+                                                <> descNetworkNodes
+    TwoChildren networkNodes1 networkNodes2 -> networkNodes1 <> networkNodes2
+
 
 -- |
 -- This computes, in a nodal context, the set of descendent
@@ -1517,37 +1624,28 @@ descendantNetworkNodesContextFn descendantNetworkNodes (currInd, _) =
 -- It does this via a 'traversal with state' which keeps track of whether a child
 -- node has only a single child and so is a descendant network node.
 descendantNetworkEdgesContextFn
-  ::  ChildContext (Set (Int, Int), Maybe Int) -- ^ Child descendent network edge set and maybe node
-  -> (Int, IndexData e n)                      -- ^ Current node data
-  -> (Set (Int, Int), Maybe Int)                       -- ^ Current descendant network edge sets and maybe node
-descendantNetworkEdgesContextFn descendantNetworkNodes (currInd, _) =
-  case descendantNetworkNodes of
-    NoChildren                              -> (mempty, Nothing)
+  ::  ChildContext (Set (Int, Int), Int, IndexData e n) -- ^ Child descendent network edge set and indexInfo
+  -> ParentContext Int
+  -> (Int, IndexData e n)                               -- ^ Current node data
+  -> Set (Int, Int)                                    -- ^ Current descendant network edge sets
+descendantNetworkEdgesContextFn descendantNetworkNodes parentContext (currInd, _) =
+   case descendantNetworkNodes of
+    NoChildren                  -> mempty
  -- If a node has a single child then it is a network node and so is added
- -- to the set of nodes to be included in the parent descendant sets.
-    OneChild (networkNodes, optNode)
-      -> case optNode of
-          Nothing -> (networkNodes, Just currInd)
-       -- This case should never happen as it corresponds to a
-       -- current network node with descendant network node.
-          Just n  -> error "This graph contains a network node as a child of a network node."
-                  --(S.singleton (currInd, n) <> networkNodes, Just currInd)
-    TwoChildren
-      (networkNodes1, optNode1)  (networkNodes2, optNode2)
-      -> case (optNode1, optNode2) of
-           (Nothing , Nothing)
-             -> (networkNodes1 <> networkNodes2, Nothing)
-           (Just n1 , Nothing)
-             -> (S.singleton (currInd, n1) <> networkNodes1 <> networkNodes2, Nothing)
-           (Nothing , Just n2)
-             -> (S.singleton (currInd, n2) <> networkNodes1 <> networkNodes2, Nothing)
-           (Just n1 , Just n2)
-             -> (     S.singleton (currInd, n1)
-                   <> S.singleton (currInd, n2)
-                   <> networkNodes1
-                   <> networkNodes2
-                , Nothing
-                )
+ -- to the set of network nodes.
+    OneChild (networkNodes, _, _)  ->
+      case parentContext of
+        TwoParents parInd1 parInd2 ->
+              S.singleton (parInd1, currInd)
+          <>  S.singleton (parInd2, currInd)
+          <> networkNodes
+       -- This case should never happen as it violates the network invariants
+        _  ->
+          error "This graph contains a node with out-degree 1 and in-degree other than 2"
+    TwoChildren (networkNodes1, _, _) (networkNodes2, _, _)
+      -> networkNodes1 <> networkNodes2
+
+               
 
 -- |
 -- This computes, in a nodal context, the set of ancestral
@@ -1579,41 +1677,52 @@ ancestralRootIncidentNodesContextFn ancestralRootNodes (currInd, nodeDatum) =
 tabulateNetworkInformation
   :: ReferenceDAG d e n
   -> Vector
-        ( EdgeSet (Int, Int)    -- Ancestral Edge set
-        , (IntSet, Maybe Int)   -- Pair of Descendant Network Node Information and
-                                -- potential network node index
-        , (IntSet, Bool)        -- Ancestral root incident nodes and root node bool
+        ( EdgeSet (Int, Int)  -- Ancestral Edge Set
+        , IntSet              -- Descendant Network Nodes
+        , IntSet              -- Ancestral Node Set
+        , Set NetworkContext  -- Ancestral Network Contexts
         )
 tabulateNetworkInformation dag =
   let
-    dVectorAncestralEdge         = dVectorPreorder  ancestralEdgeSetContextFn       dag
-    dVectorDescendantNet         = dVectorPostorder descendantNetworkNodesContextFn dag
-    dVectorAncestralRootIncident = dVectorPreorder  ancestralRootIncidentNodesContextFn dag
+    dVectorAncestralEdge    = dVectorPreorder  ancestralEdgeSetContextFn       dag
+    dVectorDescendantNet    = dVectorPostorder descendantNetworkNodesContextFn dag
+    dVectorAncestralNodes   = dVectorPreorder  ancestralNodeSetContextFn       dag    
+    dVectorAncestralNetCtxt = dVectorPreorderWithContext ancestralNetworkContextContextFn dag
+
 
     dVectorNetInfo
-      = DV.zip3
+      = DV.zip4
           dVectorAncestralEdge
           dVectorDescendantNet
-          dVectorAncestralRootIncident
+          dVectorAncestralNodes
+          dVectorAncestralNetCtxt          
   in
     generateMemo lengthRefs dVectorNetInfo
   where
     lengthRefs = length $ dag ^. _references
 
 
+data RootStatus = IncludeRoot | ExcludeRoot
 
 -- |
 -- Find all candgidate network edges in a DAG.
-candidateNetworkEdges :: ReferenceDAG d e n -> Set ((Int, Int), (Int,Int))
-candidateNetworkEdges dag = S.fromList candidateEdgesList
+candidateNetworkEdges'
+  :: RootStatus     -- ^ Whether we include nodes adjacent to the root
+  -> ReferenceDAG d e n
+  -> Set ((Int, Int), (Int,Int))
+candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
   where
     completeEdges      = toList $ getEdges dag
     rootIndices        = IS.fromList . toList . rootRefs $ dag
+    leafInds           = leafIndices dag
     networkNodes       = gatherDescendantNetworkNodes rootIndices networkInformation
+    networkContexts    = gatherAncestralNetworkContexts leafInds networkInformation
+--    (networkParents, networkNodes) = S.fromList . unzip . S.toList $ networkEdges
 
   -- This vector contains all the information needed for the various edge
  -- compatibility criteria.
     networkInformation = tabulateNetworkInformation dag
+    
 
 
  -- Gets all pairs of distinct edges from the edge set that can be
@@ -1622,131 +1731,212 @@ candidateNetworkEdges dag = S.fromList candidateEdgesList
     candidateEdgesList =
         do
        -- collect distinct edge pairs.
-          (e1 : es)       <- tails completeEdges
+          (e1@(src1,tgt1) : es)       <- tails completeEdges
           e2@(src2, tgt2) <- es
-          guard (symmetricCompatibility e1 e2)
-
-          let  e1e2Bool = not (hasIncidentNetworkNode e2) && posetalCompatibility e1 e2
-          let  e2e1Bool = not (hasIncidentNetworkNode e1) && posetalCompatibility e2 e1
+          guard $ symmetricTest e1 e2
+          let
+            e1e2Bool = not (hasIncidentNetworkNode e2) && posetalTest e1 e2
+            e2e1Bool = not (hasIncidentNetworkNode e1) && posetalTest e2 e1
           case (e1e2Bool, e2e1Bool) of
-            (True, True)   -> pure (e1,e2) <|> pure (e2,e1)
-            (True, False)  -> pure (e1, e2)
-            (False, True)  -> pure (e2, e1)
-            (False, False) -> Alt.empty
+                (True, True)   -> pure (e1,e2) <|> pure (e2,e1)
+                (True, False)  -> pure (e1, e2)
+                (False, True)  -> pure (e2, e1)
+                (False, False) -> Alt.empty
 
- -- Checks historical compatability in a symmetrical fashion.
-    symmetricCompatibility :: (Int, Int) -> (Int, Int) -> Bool
-    symmetricCompatibility e1@(src1, tgt1) e2@(src2, tgt2) =
-      let
-     -- Ancestral/descendant network information:
-        e1AncestralEdges = proj3_1 $ networkInformation ! tgt1
-        e2AncestralEdges = proj3_1 $ networkInformation ! tgt2
-
-        e1NoRootSource
-          = not $ src1 `IS.member` rootIndices
-        e2NoRootSource
-          = not $ src2 `IS.member` rootIndices
-      in
-          -- First check if the two edges are from the same parent to short circuit
-          -- faster in this case.
-             src1 /= src2
-          -- or if either edge is ancestral to the other.
-          && (e1AncestralEdges `disjoint` e2AncestralEdges)
-          && e1NoRootSource && e2NoRootSource
-
- -- This checks posetal/historical compability for inserting an edge from
- -- e1 to e2.
-    posetalCompatibility :: (Int, Int) -> (Int, Int) -> Bool
-    posetalCompatibility e1@(src1, tgt1) e2@(src2, tgt2) =
- -- We check historical compatibility by checking if the
- -- descendant network node of tgt1 is "historically compatible" to the descendant
- -- network nodes of src2. This is because these are the historical
- -- coniditons the new nodes will inherit:
- --                o  ── src1     ┌─────────────────────────────────────────────────┐
- --               /             ┌─│ New parent network node of newTgt has the same  │
- --              /              │ │ descendant network events as tgt1.              │
- --             o  ── newSrc ───┘ └─────────────────────────────────────────────────┘
- --            /  \______________________
- --           /                          \
- --          o ── tgt1                    \
- --                                     [...]
- --                                         \              ┌───────── o ── src2
- --                                          \____________ │ __      /
- --    ┌────────────────────────────────────────────┐      │   \    /
- --    │  src2 is the other new parent network node │      │    \  /
- --    │  of newTgt and so must be potentially      │──────┘      o  ── newTgt
- --    │  historically coincident with newSrc.      │            /
- --    └────────────────────────────────────────────┘           /
- --                                                            o  ── tgt2
- --   ┌─────────────────────────────────────┐
- --   │ Potentially historically coincident │
- --   └─────────────────────────────────────┘
- --   This  means that any descendant network node of src2 cannot be a descendant
- --   network node to a non-root node ancestral to src1 as this would lead to
- --   non-transitivty in the implied oredering. Similarly we cannot have that a
- --   descendant network node of tgt1 (which has the same  descendant nodes as
- --   newSrc other than newTgt) equal to a descendant network node of a non-root
- --   node ancestral to src2.
-      let
-     -- Ancestral/descendant network information:
-        e1AncestralRootIncidentNodes
-          = (fst . proj3_3 $ networkInformation ! tgt1)
-        e2AncestralRootIncidentNodes
-          = (fst . proj3_3 $ networkInformation ! tgt2)
-
-        e1SrcAncestralNetworkNodes
-          = gatherDescendantNetworkNodes e1AncestralRootIncidentNodes networkInformation
-        e2SrcAncestralNetworkNodes
-          = gatherDescendantNetworkNodes e2AncestralRootIncidentNodes networkInformation
-
-        e1TgtDescendantNetworkNodes
-          = fst . proj3_2 $ networkInformation ! tgt1
-        e2SrcDescendantNetworkNodes
-          = fst . proj3_2 $ networkInformation ! src2
-
-     -- Boolean tests:
-      {-- See TODO below
-        e1HasRootSource
-          = src1 `IS.member` rootIndices
-        e2HasRootSource
-          = src2 `IS.member` rootIndices --}
-        e1AncestralTest
-          = e2SrcDescendantNetworkNodes `IS.disjoint` e1SrcAncestralNetworkNodes
-        e2AncestralTest
-          = e1TgtDescendantNetworkNodes `IS.disjoint` e2SrcAncestralNetworkNodes
-      in
-      -- This is the correct version if we allow root node as edge source
+      where
+     -- Checks historical compatability in a symmetrical fashion.                    
+        symmetricTest :: (Int, Int) -> (Int, Int) -> Bool
+        symmetricTest e1@(src1,tgt1) e2@(src2, tgt2) =
+     -- Network Info
+            let
+              e1AncestralEdges, e2AncestralEdges :: EdgeSet (Int, Int)  
+              e1AncestralEdges  = proj4_1 $ networkInformation ! tgt1  
+              e2AncestralEdges  = proj4_1 $ networkInformation ! tgt2
+  
+              e1TgtAncestralNodes, e2TgtAncestralNodes :: IntSet
+              e1TgtAncestralNodes = proj4_3 $ networkInformation ! tgt1
+              e2TgtAncestralNodes = proj4_3 $ networkInformation ! tgt2
+              
+        -- Boolean tests
+    --          e1NetworkEdgeTest, e2NetworkEdgeTest :: Bool
+    --          e1NetworkEdgeTest = networkDescendantTest src1 e2TgtAncestralNodes
       --
-      -- TODO: Revisit this network edge constraint.
-      -- We will re-evaluate how to add network edges incident to the root after
-      -- some of the core data structures related to the topology and character
-      -- matrix
-      {-
-        case (e1HasRootSource, e2HasRootSource) of
-          (True , True ) -> False
-          (True , False) -> e2AncestralTest
-          (False, True ) -> e1AncestralTest
-          (False, False) -> e1AncestralTest && e2AncestralTest
-      -}
-        e1AncestralTest && e2AncestralTest
+            in    
+                -- First check if the two edges are from the same parent to short circuit
+              -- faster in this case.
+                  src1 /= src2
+              -- or if either edge is ancestral to the other.
+              && (singletonEdgeSet e1 `disjoint` e2AncestralEdges)
+              && (singletonEdgeSet e2 `disjoint` e1AncestralEdges)
+              -- finally check if either node fails the network edge test.
+            --  && e1NetworkEdgeTest
+            --  && e2NetworkEdgeTest
+          
+
+   
+--            e1NetworkEdgeTest =
+--                 (\x -> trace (unlines
+--                   ["e1 : " <> show e1
+--                   ,"e2 : " <> show e2
+--                  -- , "otherNetPar: " <> show otherNetworkParent e1
+--                   , "e2TgtAnc : " <> show e2TgtAncestralNodes
+--                   , "netNodes: " <> show networkNodes
+--                   , "netContexts: " <> show networkContexts
+--                   , "othernetPare1: " <> (show $ getOtherNetworkParent src1 networkContexts)
+--                   , "othernetPare2: " <> (show $ getOtherNetworkParent src2 networkContexts)                       , "x :" <> show x
+--                   ]) x) $
+--                   networkDescendantTest src1
+
+        
+        -- We check historical compatibility by checking if the
+        -- descendant network node of tgt1 is "historically compatible" to the descendant
+        -- network nodes of src2. This is because these are the historical
+        -- coniditons the new nodes will inherit:
+        --                o  ── src1     ┌─────────────────────────────────────────────────┐
+        --               /             ┌─│ New parent network node of newTgt has the same  │
+        --              /              │ │ descendant network events as tgt1.              │
+        --             o  ── newSrc ───┘ └─────────────────────────────────────────────────┘
+        --            /  \______________________
+        --           /                          \
+        --          o ── tgt1                    \
+        --                                     [...]
+        --                                         \              ┌───────── o ── src2
+        --                                          \____________ │ __      /
+        --    ┌────────────────────────────────────────────┐      │   \    /
+        --    │  src2 is the other new parent network node │      │    \  /
+        --    │  of newTgt and so must be potentially      │──────┘      o  ── newTgt
+        --    │  historically coincident with newSrc.      │            /
+        --    └────────────────────────────────────────────┘           /
+        --                                                            o  ── tgt2
+        --   ┌─────────────────────────────────────┐
+        --   │ Potentially historically coincident │
+        --   └─────────────────────────────────────┘
+        --   This  means that any descendant network node of src2 cannot also be a descendant
+        --   network node to a non-root node ancestral to src1 as this would lead to
+        --   non-transitivty in the implied oredering. Similarly we cannot have that a
+        --   descendant network node of tgt1 (which has the same  descendant nodes as
+        --   newSrc other than newTgt) equal to a descendant network node of a non-root
+        --   node ancestral to src2.
+        posetalTest :: (Int, Int) -> (Int, Int) -> Bool
+        posetalTest e1@(src1, tgt1) e2@(src2, tgt2) = 
+          let
+         -- Network Information
+         
+            e1SrcAncestralNodes, e2SrcAncestralNodes :: IntSet
+            e1SrcAncestralNodes = proj4_3 $ networkInformation ! src1
+            e2SrcAncestralNodes = proj4_3 $ networkInformation ! src2
+            e1TgtAncestralNodes = proj4_3 $ networkInformation ! tgt1
+            e2TgtAncestralNodes = proj4_3 $ networkInformation ! tgt2
+            
+            e1SrcAncestralNetworkNodes, e2SrcAncestralNetworkNodes :: IntSet
+            e1SrcAncestralNetworkNodes = e1SrcAncestralNodes `IS.intersection` networkNodes
+            e2SrcAncestralNetworkNodes = e2SrcAncestralNodes `IS.intersection` networkNodes
+
+            e1TgtDescendantNetworkNodes = proj4_2 $ networkInformation ! tgt1
+            e2SrcDescendantNetworkNodes = proj4_2 $ networkInformation ! src2
+
+            
+
+         -- Tests
+            e1HasRootSource, e2HasRootSource :: Bool
+            e1HasRootSource = src1 `IS.member` rootIndices
+            e2HasRootSource = src2 `IS.member` rootIndices
+ 
+            e1AncestralTest, e2AncestralTest :: Bool
+            e1AncestralTest
+              = e2SrcDescendantNetworkNodes `IS.disjoint` e1SrcAncestralNetworkNodes
+            e2AncestralTest
+              = e1TgtDescendantNetworkNodes `IS.disjoint` e2SrcAncestralNetworkNodes
+
+            
+            networkParentSource2Test :: Int -> IntSet -> Bool
+            networkParentSource2Test src1 e2TgtAncNodes = 
+              case getOtherNetworkParentFromNode src1 networkContexts of
+                Just netPar -> netPar `IS.notMember` e2TgtAncNodes
+                Nothing     -> True
+
+            networkEdgeSource1Test :: (Int, Int) -> IntSet -> Bool
+            networkEdgeSource1Test e e2TgtAncNodes = 
+              case getOtherNetworkParentFromEdge e networkContexts of
+                Just netPar -> netPar `IS.notMember` e2TgtAncNodes
+                Nothing     -> True
+
+         -- TODO: better name and document  -- networkParentSource2Test?
+         -- checks if src2 is already a network parent node with a node ancestral to newSrc
+            e2NetworkEdgeTest = networkParentSource2Test src2 e1TgtAncestralNodes
+
+         -- TODO: same   --networkEdgeSource1Test
+         -- checks if (src1, tgt1) is a network edge which is in a context which is ancestral
+         -- to src2
+            e1NetworkEdgeTest = networkEdgeSource1Test e1 e2TgtAncestralNodes
+
+          in
+       -- TODO: Revisit whether root adjacent edges.
+       -- We will re-evaluate how to add network edges incident to the root after
+       -- some of the core data sttructures have changed.
+            case rootStatus of
+              ExcludeRoot ->     not e1HasRootSource
+                              && not e2HasRootSource
+                              && e1AncestralTest
+                              && e2AncestralTest
+                              && e1NetworkEdgeTest
+                              && e2NetworkEdgeTest
+              IncludeRoot ->
+                case (e1HasRootSource, e2HasRootSource) of
+                  (True , True ) -> False
+                  (True , False) -> e2AncestralTest
+                  (False, True ) -> e1AncestralTest
+                  (False, False) -> e1AncestralTest
+                                    && e2AncestralTest
+                
 
 
-    hasIncidentNetworkNode :: (Int, Int) -> Bool
-    hasIncidentNetworkNode e@(src,tgt) =
-         tgt `IS.member` networkNodes
-      || src `IS.member` networkNodes
+     -- helper functions
+        hasIncidentNetworkNode :: (Int, Int) -> Bool
+        hasIncidentNetworkNode e@(src,tgt) =
+             tgt `IS.member` networkNodes
+          || src `IS.member` networkNodes
 
+        getOtherNetworkParentFromNode :: Int -> Set NetworkContext -> Maybe Int
+        getOtherNetworkParentFromNode src = getFirst . foldMap getNetPar
+          where
+            getNetPar :: NetworkContext -> First Int
+            getNetPar (NetworkContext networkNode netPar1 netPar2)
+              | src == netPar1  = pure netPar2
+              | src == netPar2  = pure netPar1
+              | otherwise       = mempty
+
+        getOtherNetworkParentFromEdge :: (Int, Int) -> Set NetworkContext -> Maybe Int
+        getOtherNetworkParentFromEdge (src, tgt) = getFirst . foldMap getNetPar
+          where
+            getNetPar :: NetworkContext -> First Int
+            getNetPar (NetworkContext networkNode netPar1 netPar2)
+              | src == netPar1 && tgt == networkNode  = pure netPar2
+              | src == netPar2 && tgt == networkNode  = pure netPar1
+              | otherwise       = mempty
+
+
+candidateNetworkEdges = candidateNetworkEdges' ExcludeRoot
 
 
 
 -- |
 -- Helper function to get all descendent network nodes from an `IntSet` of nodes.
 gatherDescendantNetworkNodes
-  :: IntSet                     -- ^ Node set
-  -> Vector (a, (IntSet, b), c) -- ^ Vector tuple with network node indices
-  -> IntSet                     -- ^ All descendant network nodes
+  :: IntSet                    -- ^ Node set
+  -> Vector (a, IntSet, c, d)  -- ^ Vector tuple with network node indices
+  -> IntSet                    -- ^ All descendant network nodes
 gatherDescendantNetworkNodes inds vect
-  = ofoldMap (\ind -> fst . proj3_2 $ vect ! ind) inds
+  = ofoldMap (\ind -> proj4_2 $ vect ! ind) inds
+
+-- |
+-- Helper function to get all descendent network contexts from an `IntSet` of nodes.
+gatherAncestralNetworkContexts
+  :: IntSet                                -- ^ Node set
+  -> Vector (a, b, c, Set NetworkContext)  -- ^ Vector tuple with network node indices
+  -> Set NetworkContext                    -- ^ All descendant network nodes
+gatherAncestralNetworkContexts inds vect
+  = ofoldMap (\ind -> proj4_4 $ vect ! ind) inds
 
 
 
@@ -1754,9 +1944,23 @@ gatherDescendantNetworkNodes inds vect
 -- Gets all edges from a `ReferenceDAG` which are incident to a network
 -- node.
 getNetworkEdges :: ReferenceDAG d e n -> Set (Int, Int)
-getNetworkEdges dag = foldMap fst descendantNetworkEdges
+getNetworkEdges dag = fold descendantNetworkEdges
   where
     descendantNetworkEdges = generateMemo numberOfNodes dVectorDescendantNet
-    dVectorDescendantNet   = dVectorPostorder descendantNetworkEdgesContextFn dag
+    dVectorDescendantNet   = dVectorPostorderWithContext descendantNetworkEdgesContextFn dag
     numberOfNodes          = length $ dag ^. _references
 
+
+
+
+
+
+
+getChildContext :: forall e n . Vector (IndexData e n) -> Int -> ChildContext Int
+{-# INLINE getChildContext #-}
+getChildContext refs ind = otoChildContext . IM.keysSet $ (refs ! ind) ^. _childRefs
+
+
+getParentContext :: forall e n . Vector (IndexData e n) -> Int -> ParentContext Int
+{-# INLINE getParentContext #-}
+getParentContext refs ind = otoParentContext $ (refs ! ind) ^. _parentRefs
