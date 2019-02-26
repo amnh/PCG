@@ -1,4 +1,4 @@
-{-# LANGUAGE OveeloadedLists     #-}
+{-# LANGUAGE OverloadedLists     #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase          #-}
@@ -93,7 +93,6 @@ makeBranchedNetworkWithInfo' fnn n0 n1 = (ReferenceDAG{..}, networkInfoN0, netwo
     rootIndex1     = NE.head (n1  ^. _rootRefs)
     rootIndex1'    = NE.head (n1' ^. _rootRefs) 
 
-
     references0  = n0  ^. _references
     references1  = n1  ^. _references
     references1' = n1' ^. _references
@@ -144,14 +143,14 @@ makeBranchedNetwork = makeBranchedNetwork' (<>)
 -- |
 -- This function takes valid networks n0, n1 and n2 and forms the network:
 --
--- >                    r
--- >                ┌───┴───┐
--- >                │       │
--- >                │       │
--- >               n2       x
--- >                    ┌───┴───┐
--- >                    │       │
--- >                    │       │
+-- >                    r         
+-- >                ┌───┴───┐     
+-- >                │       │     
+-- >                │       │     
+-- >               n2       x     
+-- >                    ┌───┴───┐ 
+-- >                    │       │ 
+-- >                    │       │ 
 -- >                   n0       n1
 -- |
 makeDoublyBranchedNetwork'
@@ -345,7 +344,7 @@ generateBinaryTreeWithInfo = do
 generateBinaryTree ::  (Monoid d, Monoid n, Show n)
   => Gen (ReferenceDAG d () n)
 generateBinaryTree = do
-  depth <- choose (1, 10)
+  depth <- choose (1, 2)
   pure $ (makeBinaryTree depth)
 
 
@@ -353,13 +352,13 @@ generateBinaryTree = do
 generateNetwork :: forall d n . (Monoid d, Monoid n, Show n) => Gen (ReferenceDAG d () n)
 generateNetwork  = do
   (binTree :: ReferenceDAG d () n)  <- generateBinaryTree
-  (refDAG, _) <- iterateUntilM stoppingCondition addNetworkEdge (binTree, True)
+  (refDAG, _) <- iterateUntilM stoppingCondition addNetworkEdge (binTree, False)
   pure refDAG
     where
       stoppingCondition :: (ReferenceDAG d () n, Bool) -> Bool
       stoppingCondition = \case
-        (_, False)   -> False
-        (rdag, True) -> not . null $ candidateNetworkEdges rdag
+        (_,    False) -> True
+        (rdag, True ) -> null $ candidateNetworkEdges rdag
 
       addNetworkEdge :: (ReferenceDAG d () n, Bool) -> Gen ((ReferenceDAG d () n), Bool)
       addNetworkEdge (dag, _) = do
@@ -372,14 +371,14 @@ generateNetwork  = do
               ind <- choose (0, length networkEdges - 1)
               let (sourceEdge, targetEdge) = networkEdges ! ind
               let newRefDAG = connectEdge dag combine (<>) sourceEdge targetEdge
-              pure (newRefDAG, True)
+              pure (newRefDAG, False)
         where
           combine n1 n2 n3 = n1 <> n2 <> n3
        
           
 
 generateBranchedNetwork
-  :: (Monoid d, Monoid n, Show n)
+  :: forall d n . (Monoid d, Monoid n, Show n)
   => Gen
       ( ReferenceDAG d () n -- ^ Branched network
       , NetworkInformation  -- ^ Candidate network information of n0
@@ -389,6 +388,7 @@ generateBranchedNetwork =
   do
     n0 <- generateNetwork
     n1 <- generateNetwork
+--    pure $ (n1, getNetworkInformation n1, getNetworkInformation n1)
     pure $ makeBranchedNetworkWithInfo n0 n1
 
 generateBranchedNetworkWithNetworkEvent
@@ -495,7 +495,7 @@ singletonRefDAG nodeDec = ReferenceDAG{..}
 getNetworkInformation :: ReferenceDAG d e n -> NetworkInformation
 getNetworkInformation dag = NetworkInformation{..}
   where
-    _candidateNetworkEdges = candidateNetworkEdges dag
+    _candidateNetworkEdges = candidateNetworkEdges' IncludeRoot dag
     _networkAdjacentEdges  = getNetworkEdges       dag
     _edgeSet               = getUnderlyingEdgeSet . referenceEdgeSet $ dag
     

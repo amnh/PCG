@@ -22,6 +22,8 @@ import qualified Data.Set as S (toList, fromList)
 import Test.QuickCheck (forAll, Property, (===))
 import Control.Applicative ((<|>))
 
+import Debug.Trace
+
 
 
 candidateNetworkProperties :: TestTree
@@ -29,18 +31,27 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
     [ QC.testProperty
         ( unlines $
           [ "Given valid networks n0 and n1, the candidateNetworkEdges of a branched binary"
-          , "      tree:"
-          , renderBranchedNetwork
+          , "      network:"
+          ,  renderBranchedNetwork
           , "      are equal to the candidate network edges of n0 plus the candidate network"
           , "      edges of n1 plus those edges from a non-network adjacent edge in n0 or n1 to"
           , "      a non-network edge in n1 or n0 (respectively)."
           ]
         )
         branchedNetworkProperty
+--    , QC.testProperty
+--        ( unlines $
+--          [ "Given valid networks n0, n1 and n2 (with roots r0, r1 and r2), the "
+--            "      candidateNetworkEdges of a doubly branched binary network:"
+--          ,  renderDoublyBranchedNetwork
+--          , "      should not contain edges from (r,x), (x,r1) to any edge in n0 or n1."
+--          ]
+--        )
+--        doublyBranchedNetworkProperty
     ]
   where
     branchedNetworkProperty :: Property
-    branchedNetworkProperty = forAll generateBinaryTreeWithInfo correctBranchedCandidateEdges
+    branchedNetworkProperty = forAll generateBranchedNetwork correctBranchedCandidateEdges
     
     correctBranchedCandidateEdges
       :: ( ReferenceDAG () () ()
@@ -66,7 +77,22 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
             n1Edge <- S.toList n1NonNetworkEdges
             pure (n0Edge, n1Edge) <|> pure (n1Edge, n0Edge)
  
-        
+
+    doublyBranchedNetworkProperty :: Property
+    doublyBranchedNetworkProperty =
+        forAll generateDoublyBranchedNetwork noAncestorEdges
+      where
+        noAncestorEdges
+          :: ( ReferenceDAG () () ()
+             , NetworkInformation
+             , NetworkInformation
+             , NetworkInformation
+             )
+          -> Property
+        noAncestorEdges arg = error "TODO"
+         
+         
+         
 
 
 renderBranchedNetwork :: String
@@ -76,4 +102,19 @@ renderBranchedNetwork = unlines
     ,"                             │       │ "
     ,"                             │       │ "
     ,"                            n0       n1"
+    ]
+
+
+
+renderDoublyBranchedNetwork :: String
+renderDoublyBranchedNetwork = unlines
+    ["                                 r         "
+    ,"                             ┌───┴───┐     "
+    ,"                             │       │     "
+    ,"                             │       │     "
+    ,"                            n2       x     "
+    ,"                                 ┌───┴───┐ "
+    ,"                                 │       │ "
+    ,"                                 │       │ "
+    ,"                                n0       n1"
     ]
