@@ -17,12 +17,14 @@
 module Data.Vector.Utility
   ( DVector(..)
   , generateMemo
+  , zip2
   , zip3
+  , zip4
   ) where
 
 import Data.Tuple.Utility
-import Data.Vector        as V hiding (zip3)
-import Prelude            hiding (zip3)
+import Data.Vector        as V hiding (zip3, zip4)
+import Prelude            hiding (zip3, zip4)
 
 
 -- |
@@ -54,6 +56,23 @@ generateMemo range dVector = memoizedVect
 
 
 -- |
+-- Helper function to zip together two openly recursive vectors.
+zip2 :: DVector a -> DVector b -> DVector (a, b)
+zip2 dVectorA dVectorB =
+  let
+    genFnA = getDVector dVectorA
+    genFnB = getDVector dVectorB
+  in
+    DVector $ \recurseFn ind ->
+      let
+        recurseFnA = fst. recurseFn
+        recurseFnB = snd . recurseFn
+        aVal       = genFnA recurseFnA ind
+        bVal       = genFnB recurseFnB ind
+      in
+        (aVal, bVal)
+
+-- |
 -- Helper function to zip together three openly recursive vectors.
 zip3 :: DVector a -> DVector b -> DVector c -> DVector (a, b, c)
 zip3 dVectorA dVectorB dVectorC =
@@ -72,3 +91,27 @@ zip3 dVectorA dVectorB dVectorC =
         cVal       = genFnC recurseFnC ind
       in
         (aVal, bVal, cVal)
+
+
+-- |
+-- Helper function to zip together three openly recursive vectors.
+zip4 :: DVector a -> DVector b -> DVector c -> DVector d ->  DVector (a, b, c, d)
+zip4 dVectorA dVectorB dVectorC dVectorD =
+  let
+    genFnA = getDVector dVectorA
+    genFnB = getDVector dVectorB
+    genFnC = getDVector dVectorC
+    genFnD = getDVector dVectorD    
+  in
+    DVector $ \recurseFn ind ->
+      let
+        recurseFnA = proj4_1 . recurseFn
+        recurseFnB = proj4_2 . recurseFn
+        recurseFnC = proj4_3 . recurseFn
+        recurseFnD = proj4_4 . recurseFn
+        aVal       = genFnA recurseFnA ind
+        bVal       = genFnB recurseFnB ind
+        cVal       = genFnC recurseFnC ind
+        dVal       = genFnD recurseFnD ind
+      in
+        (aVal, bVal, cVal, dVal)
