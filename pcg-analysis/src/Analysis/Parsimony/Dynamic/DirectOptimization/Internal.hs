@@ -121,7 +121,7 @@ initializeLeaf
      , SimpleDynamicExtensionPostorderDecoration r c
      )
   => d
-  -> r -- DynamicDecorationDirectOptimizationPostorderResult c
+  -> r
 initializeLeaf =
     extendDynamicToPostorder
       <$> id
@@ -162,8 +162,7 @@ directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
      , Bound (Element c) ~ Word
      , Ranged (Element c)
-     , Show (Element c)     
---     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     , Show (Element c)
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
@@ -215,8 +214,7 @@ updateFromParent
   :: ( DirectOptimizationPostorderDecoration d c
      , Bound (Element c) ~ Word
      , Ranged (Element c)
-     , Show (Element c)     
---     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
+     , Show (Element c)
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
@@ -255,7 +253,6 @@ tripleComparison
      , Ranged (Element c)
      , Bound (Element c) ~ Word
      , Show (Element c)
---     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Element c)
@@ -281,7 +278,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
     childLeftAligned  = childDecoration ^. leftAlignment
     childRightAligned = childDecoration ^. rightAlignment
     single            = lexicallyDisambiguate $ filterGaps almostSingle
-    
+
     (_, ungapped, gapped)  = threeWayMean costStructure extendedParentFinal  extendedLeftCharacter1 extendedRightCharacter1
     (_, almostSingle, _)   = threeWayMean costStructure extendedParentSingle extendedLeftCharacter2 extendedRightCharacter2
 
@@ -404,7 +401,7 @@ insertNewGaps insertionIndicies character = constructDynamic . appendGaps . fold
     gap = getGapElement $ character `indexStream` 0
     appendGaps (x:|xs) = x :| (xs <> trailingGaps)
     trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
---    f :: Int -> a -> NonEmpty a
+
     f i e =
       case i `lookup` insertionIndicies of
         Nothing -> pure e
@@ -438,10 +435,10 @@ threeWayMean sigma char1 char2 char3 =
               in  case NE.filter (/= gap) meanStates of
                     []   -> error $ unlines
                                   [ "The zipped sequence was length zero after filtering gaps!"
-                                  , "Zipped: " <> show (meanStates)
+                                  , "Zipped: " <> show meanStates
                                   , "1st :   " <> show a
                                   , "2nd :   " <> show b
-                                  , "3rd :   " <> show c                                  
+                                  , "3rd :   " <> show c
                                   ]
                     y:ys -> ( unsafeToFinite   $ sum' costValues
                             , constructDynamic $ y:|ys

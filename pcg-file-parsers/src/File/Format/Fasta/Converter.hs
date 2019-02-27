@@ -63,9 +63,9 @@ processedChars seqType = fmap processElement
     replaceSymbol :: String -> String
     replaceSymbol =
         case seqType of
-          AminoAcid -> replace 'U' 'C'
-          DNA       -> replace 'n' '?'
-          RNA       -> replace 'n' '?'
+          AminoAcid -> replace 'U' 'C' . replace '.' '-'
+          DNA       -> replace 'n' '?' . replace '.' '-'
+          RNA       -> replace 'n' '?' . replace '.' '-'
 
     replace :: (Functor f, Eq b) => b -> b -> f b -> f b
     replace a b = fmap $ \x -> if a == x then b else x
@@ -120,84 +120,4 @@ seqCharMapping seqType = V.fromList . fmap (f seqType . pure . pure)
                      AminoAcid -> iupacToAminoAcid
                      DNA       -> iupacToDna
                      RNA       -> iupacToRna
-          in (bm .!.)
-
-    (.!.) :: BM.Bimap (NonEmpty String) (NonEmpty String) -> NonEmpty String -> NonEmpty String
-    (.!.) bm i =
-        case BM.lookup i bm of
-          Nothing -> error $ "Could not find key: " <> show i
-          Just v  -> v
-
-
-{-
--- |
--- Substitutions for converting to a DNA sequence based on IUPAC codes.
-iupacAminoAcidSubstitutions :: Map Char (NonEmpty String)
-iupacAminoAcidSubstitutions = fmap pure . NE.fromList <$> M.fromList
-    [ ('A', "A")
-    , ('B', "DN")
-    , ('C', "C")
-    , ('D', "D")
-    , ('E', "E")
-    , ('F', "F")
-    , ('G', "G")
-    , ('H', "H")
-    , ('I', "I")
-    , ('K', "K")
-    , ('L', "L")
-    , ('M', "M")
-    , ('N', "N")
-    , ('P', "P")
-    , ('Q', "Q")
-    , ('R', "R")
-    , ('S', "S")
-    , ('T', "T")
-    , ('U', "C")
-    , ('V', "V")
-    , ('W', "W")
-    , ('X', "ACDEFGHIKLMNPQRSTVWY")
-    , ('Y', "Y")
-    , ('Z', "EQ")
-    , ('-', "-")
-    , ('.', "-")
-    , ('#', "#")
-    , ('?', "ACDEFGHIKLMNPQRSTVWY-")
-    ]
-
-
--- |
--- Substitutions for converting to a DNA sequence based on IUPAC codes.
-iupacNucleotideSubstitutions :: Map Char (NonEmpty String)
-iupacNucleotideSubstitutions = fmap pure . NE.fromList <$> M.fromList
-    [ ('A', "A")
-    , ('C', "C")
-    , ('G', "G")
-    , ('T', "T")
-    , ('R', "AG")
-    , ('Y', "CT")
-    , ('S', "CG")
-    , ('W', "AT")
-    , ('K', "GT")
-    , ('M', "AC")
-    , ('B', "CGT")
-    , ('D', "AGT")
-    , ('H', "ACT")
-    , ('V', "ACG")
-    , ('N', "ACGT")
-    , ('-', "-")
-    , ('.', "-")
-    , ('?', "ACGT-")
-    , ('#', "#")
-    ]
-
-
--- |
--- Substitutions for converting to an RNA sequence based on IUPAC codes.
-iupacRNASubstitutions :: Map Char (NonEmpty String)
-iupacRNASubstitutions = insert 'U' (pure "U") . delete 'T' $ f <$> iupacNucleotideSubstitutions
-  where
-    f :: NonEmpty String -> NonEmpty String
-    f = NE.fromList . foldr g []
-    g "T" xs = "U":xs
-    g   x xs =   x:xs
--}
+          in (bm BM.!)
