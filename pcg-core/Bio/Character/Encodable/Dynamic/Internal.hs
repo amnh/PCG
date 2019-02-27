@@ -47,20 +47,20 @@ import           Data.BitVector.LittleEndian
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Key
-import           Data.List.NonEmpty                           (NonEmpty (..))
+import           Data.List.NonEmpty                    (NonEmpty (..))
 import qualified Data.List.NonEmpty                    as NE
-import           Data.List.Utility                            (invariantTransformation, occurances)
-import           Data.Maybe                                   (fromJust)
+import           Data.List.Utility                     (invariantTransformation, occurances)
+import           Data.Maybe                            (fromJust)
 import           Data.MonoTraversable
 import           Data.Range
-import           Data.String                                  (fromString)
-import           Data.Vector                                  (Vector)
+import           Data.String                           (fromString)
+import           Data.Vector                           (Vector)
 import           FFI.Character.Exportable.Class
 import           GHC.Generics
 import           Test.QuickCheck
-import           Test.QuickCheck.Arbitrary.Instances          ()
+import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
-import           TextShow                                     (TextShow (showb))
+import           TextShow                              (TextShow (showb))
 
 
 -- |
