@@ -68,6 +68,7 @@ data  OutputTarget
 -- Defines the writing mode for how files should be written to disk.
 data  FileWriteMethod
     = Append
+    | Move
     | Overwrite
     deriving (Eq, Show)
 
@@ -94,12 +95,13 @@ outputTarget = choiceFrom [ stdout, toFile ] `withDefault` OutputToStdout
     stdout = value "stdout" $> OutputToStdout
     toFile = choiceFrom
         [ argList $ OutputToFile <$> text <*> fileWriteMethod
-        ,           OutputToFile <$> text <*> pure Append
+        ,           OutputToFile <$> text <*> pure Move
         ]
 
 
 fileWriteMethod :: Ap SyntacticArgument FileWriteMethod
 fileWriteMethod = choiceFrom
     [ value "overwrite" $> Overwrite
+    , value "move"      $> Move
     , value "append"    $> Append
-    ] `withDefault` Append
+    ] `withDefault` Move

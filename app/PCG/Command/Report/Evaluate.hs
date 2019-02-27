@@ -8,48 +8,101 @@ module PCG.Command.Report.Evaluate
 
 
 import           Bio.Graph
+import           Control.Monad               (when)
 import           Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy        as BS
+import           Data.Char
 import           Data.Compact                (getCompact)
 import           Data.Foldable               (traverse_)
-import           Data.List.NonEmpty
+import           Data.Functor                (($>))
+import           Data.List                   (isPrefixOf)
+import           Data.List.NonEmpty          (NonEmpty (..))
 import           Data.Render.Utility         (writeFileT)
 import           Data.String                 (IsString (fromString))
 import qualified Data.Text.Lazy              as Lazy
 import           PCG.Command.Report
 import           PCG.Command.Report.GraphViz
 import           PCG.Command.Report.Metadata
+import           System.Directory
+import           System.FilePath.Posix
 import           System.IO                   (IOMode (AppendMode, WriteMode))
 import           Text.XML
 import           TextShow                    (TextShow (showtl), printT)
 
 
+data  FileContent
+    = T Lazy.Text
+    | B BS.ByteString
+
+
+data FileStreamContext
+   = ErrorCase    String
+   | SingleStream FileContent
+   | MultiStream  (NonEmpty (FilePath, FileContent))
+
+
+printFileContent :: FileContent -> IO ()
+printFileContent (T s) = printT s
+printFileContent (B s) = BS.putStr s
+
+
+writeFileContent :: FilePath -> FileContent -> IO ()
+writeFileContent f (T s) = writeFileT WriteMode f s
+writeFileContent f (B s) = BS.writeFile f s
+
+appendFileContent :: FilePath -> FileContent -> IO ()
+appendFileContent f (T s) = writeFileT AppendMode f s
+appendFileContent f (B s) = BS.appendFile f s
+
 
 evaluate :: ReportCommand -> GraphState -> SearchState
-evaluate (ReportCommand format target) stateValue = do
-    _ <- case generateOutput stateValue format of
+evaluate (ReportCommand format target) stateValue = reportStreams $> stateValue
+  where
+    reportStreams =
+      case generateOutput stateValue format of
            ErrorCase    errMsg  -> fail errMsg
-           MultiStream  streams ->
-             traverse_
-               (\(filepath, content) -> liftIO $ writeFileT WriteMode filepath content)
-               streams
+           MultiStream  streams -> traverse_ (liftIO . uncurry writeFileContent) streams
            SingleStream output  ->
-             let op = case target of
-                        OutputToStdout   -> printT
+             liftIO $ case target of
+                        OutputToStdout   -> printFileContent output
                         OutputToFile f w ->
                           case w of
-                            Append    -> writeFileT AppendMode f
-                            Overwrite -> writeFileT WriteMode  f
-             in  liftIO (op output)
-           SingleByteStream  output ->
-             let op = case target of
-                        OutputToStdout   -> BS.putStr
-                        OutputToFile f w ->
-                          case w of
-                            Append    ->  BS.appendFile f
-                            Overwrite ->  BS.writeFile  f
-             in  liftIO (op output)
-    pure stateValue
+                            Append    -> appendFileContent f output
+                            Overwrite ->  writeFileContent f output
+                            Move      -> safelyMoveFile f *> writeFileContent f output
+
+
+-- |
+-- Checks to see if the supplied 'FilePath' exists.
+--
+-- If it does, it moves the existing file path, so that the supplied file path
+-- can be written to without overwriting data.
+--
+-- The exisiting file path is renamed, adding a numeric suffix to the end. The
+-- function will try to rename the existing file path by adding the suffix ".0",
+-- however if that filepath also exists, it will add ".1", ".2", ".3", ",.4", etc.
+-- The suffix added will be one greater than the highest existing numeric suffix.
+safelyMoveFile :: FilePath -> IO ()
+safelyMoveFile fp = do
+    exists <- doesFileExist fp
+    when exists $ do
+        allFiles <- getCurrentDirectory >>= getDirectoryContents
+        let prefixed = getFilePathPrefixes     allFiles
+        let numbers  = getNumericSuffixes      prefixed
+        let lastNum  = getLargestNumericSuffix numbers
+        let nextNum  = lastNum + 1 :: Word
+        let newName  = fp <> "." <> show nextNum
+        renameFile fp newName
+  where
+    getFilePathPrefixes = fmap (drop (length fp)) . filter (fp `isPrefixOf`)
+
+    getNumericSuffixes  = fmap tail . filter hasDotThenNumberSuffix . fmap takeExtension
+      where
+        hasDotThenNumberSuffix ('.':x:xs) = all isNumber $ x:xs
+        hasDotThenNumberSuffix _          = False
+
+    getLargestNumericSuffix    []  = -1
+    getLargestNumericSuffix (x:xs) = maximum . fmap read $ x:|xs
 
 
 -- TODO: Redo reporting
@@ -72,16 +125,17 @@ generateOutput
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data     {} -> SingleStream $ either showtl showtl g
-    XML      {} -> SingleStream $ either showtl (fromString . ppTopElement . toXML) g
-    DotFile  {} -> SingleStream $ generateDotFile g'
+    Data     {} -> SingleStream . T $ either showtl showtl g
+    XML      {} -> SingleStream . T $ either showtl (fromString . ppTopElement . toXML) g
+    DotFile  {} -> SingleStream . T $ generateDotFile g'
     Metadata {} -> either
                      (const $ ErrorCase "No metadata in topological solution")
-                     (SingleByteStream . outputMetadata)
+                     (SingleStream . B . outputMetadata)
                      g
     _           -> ErrorCase "Unrecognized 'report' command"
   where
     g = getCompact g'
+
 
 --generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
 --generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
@@ -144,12 +198,3 @@ showWithTotalEdgeCost x = unlines
     , show x
     ]
 --}
-
-type FileContent = Lazy.Text
-
-
-data FileStreamContext
-   = ErrorCase    String
-   | SingleStream FileContent
-   | SingleByteStream BS.ByteString
-   | MultiStream  (NonEmpty (FilePath,FileContent))
