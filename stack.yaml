@@ -25,6 +25,6 @@ local-bin-path: bin
 
 require-stack-version: ">=1.7.1"
 
-resolver: lts-13.8
+resolver: lts-13.9
 
 dump-logs: all
