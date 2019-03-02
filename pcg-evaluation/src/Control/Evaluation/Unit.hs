@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- |
 -- Module      :  Control.Evaluation.Unit
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -11,125 +11,161 @@
 -- The core monoidal state of an 'Evaluation' monad.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 module Control.Evaluation.Unit where
 
-import           Control.Applicative
 import           Control.DeepSeq
-import           Control.Monad       (MonadPlus (..))
-import           Control.Monad.Fail  (MonadFail)
-import qualified Control.Monad.Fail  as F
+import           Control.Monad.Fail        (MonadFail)
+import qualified Control.Monad.Fail        as F
+import           Control.Monad.Fix         (MonadFix)
+import           Control.Monad.Zip         (MonadZip (..))
+import           Data.Data
+import           Data.Functor.Alt          (Alt (..))
+import           Data.Functor.Apply        (Apply (..))
+import           Data.Functor.Bind         (Bind (..))
+import           Data.Functor.Classes      (Eq1, Ord1 (..), Show1)
+import           Data.List.NonEmpty        (NonEmpty (..))
 import           GHC.Generics
 import           Test.QuickCheck
+import           Test.QuickCheck.Instances ()
 
 
 -- |
 -- The internal state of the computation. A short-circuiting evaluation unit
 -- which returns a value, and error, or indicated that no work was done
-data EvalUnit a
-   = NoOp
-   | Error String
-   | Value a
-   deriving (Eq, Generic, Show)
+newtype EvalUnit a = EU { runEvalUnit :: Either (NonEmpty Char) a }
+   deriving ( Applicative
+            , Apply
+            , Data
+            , Eq
+            , Eq1
+            , Foldable
+            , Functor
+            , Generic
+            , Generic1
+            , MonadFix
+            , NFData
+            , Semigroup
+            , Show
+            , Show1
+            , Traversable
+            )
 
 
--- | (✔)
-instance Alternative EvalUnit where
+instance Alt EvalUnit where
 
-    empty = mempty
+    {-# INLINEABLE (<!>) #-}
 
-    Value x <|> _    = Value x
-    e       <|> NoOp = e
-    _       <|> e    = e
-
-
--- | (✔)
-instance Applicative EvalUnit where
-
-    pure = Value
-
-    NoOp    <*> _      = NoOp
-    Error x <*> _      = Error x
-    Value f <*> x      = f <$> x
-
-    Error x  *>  _     = Error x
-    _        *>  e     = e
-
-    _       <* Error x = Error x
-    e       <* _       = e
-
-    liftA2 op lhs rhs =
-      case lhs of
-        NoOp    -> NoOp
-        Error e -> Error e
-        Value x ->
-            case rhs of
-              NoOp    -> NoOp
-              Error e -> Error e
-              Value y -> Value $ x `op` y
+    lhs <!> rhs =
+        case runEvalUnit lhs of
+          Right _ -> lhs
+          _       -> rhs
 
 
--- | (✔)
 instance Arbitrary a => Arbitrary (EvalUnit a) where
 
-    arbitrary = oneof [pure mempty, pure $ fail "Error Description", pure <$> arbitrary]
+    {-# INLINE arbitrary #-}
+
+    arbitrary = liftArbitrary arbitrary
 
 
--- | (✔)
-instance Functor EvalUnit where
+instance Arbitrary1 EvalUnit where
 
-    _ `fmap` NoOp    = NoOp
-    _ `fmap` Error x = Error x
-    f `fmap` Value x = Value $ f x
+    {-# INLINE liftArbitrary #-}
+
+    liftArbitrary g = do
+        n <- choose (0, 9) :: Gen Word -- 1/10 chance of 'error' value
+        case n of
+          0 -> pure $ fail "Error Description"
+          _ -> pure <$> g
 
 
--- | (✔)
-instance NFData a => NFData (EvalUnit a)
+instance CoArbitrary a => CoArbitrary (EvalUnit a) where
+
+    {-# INLINE coarbitrary #-}
+
+    coarbitrary = genericCoarbitrary
 
 
--- | (✔)
+instance Bind EvalUnit where
+
+    {-# INLINEABLE (>>-)  #-}
+    {-# INLINE   join  #-}
+
+    e >>- f =
+        case runEvalUnit e of
+          Left  l -> EU . Left $ l
+          Right v -> f v
+
+    join e =
+        case runEvalUnit e of
+          Left  l -> EU . Left $ l
+          Right v -> v
+
+
 instance Monad EvalUnit where
 
-    fail   = F.fail
+    {-# INLINEABLE (>>=)  #-}
+    {-# INLINE     (>>)   #-}
+    {-# INLINE     return #-}
+    {-# INLINE     fail   #-}
+
+    (>>=)  = (>>-)
+
+    (>>)   = (*>)
 
     return = pure
 
-    NoOp    >>= _ = NoOp
-    Error x >>= _ = Error x
-    Value x >>= f = f x
+    fail   = F.fail
 
 
--- | (✔)
 instance MonadFail EvalUnit where
 
-    fail = Error
+    {-# INLINE fail #-}
+
+    fail = EU . Left .
+        \case
+           []   -> 'U':|"nspecified error."
+           x:xs ->   x:|xs
 
 
--- | (✔)
-instance MonadPlus EvalUnit where
+instance MonadZip EvalUnit where
 
-    mzero = mempty
+    {-# INLINEABLE mzip     #-}
+    {-# INLINEABLE munzip   #-}
+    {-# INLINE     mzipWith #-}
 
-    mplus = (<>)
+    mzip     = liftF2 (,)
 
+    mzipWith = liftF2
 
--- | (✔)
-instance Monoid (EvalUnit a) where
-
-    mempty  = NoOp
-
-    mappend = (<>)
-
---    mconcat = foldl' (<>) mempty
+    munzip x =
+        case runEvalUnit x of
+          Left  s     -> (EU $ Left s, EU $ Left s)
+          Right (a,b) -> (pure a, pure b)
 
 
--- | (✔)
-instance Semigroup (EvalUnit a) where
+instance Ord a => Ord (EvalUnit a) where
 
-    NoOp    <> e    = e
-    e       <> NoOp = e
-    Error x <> _    = Error x
-    Value _ <> e    = e
+    {-# INLINE compare #-}
 
---    sconcat (x:|xs) = foldl' (<>) x xs
+    compare  = liftCompare compare
+
+
+instance Ord1 EvalUnit where
+
+    {-# INLINE liftCompare #-}
+
+    liftCompare cmp lhs rhs =
+        case (runEvalUnit lhs, runEvalUnit rhs) of
+          (Left  x, Left  y) -> x `compare` y
+          (Left  _, Right _) -> GT
+          (Right _, Left  _) -> LT
+          (Right x, Right y) -> x `cmp` y

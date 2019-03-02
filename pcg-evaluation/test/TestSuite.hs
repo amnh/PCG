@@ -1,7 +1,6 @@
 module Main where
 
-import qualified Evaluation.Test              as Evaluation
-import qualified Monad.Logger.Test            as Logger
+import qualified Control.Evaluation.Test      as Evaluation
 import           Test.Tasty
 import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 
@@ -16,5 +15,4 @@ main =
 testSuite :: TestTree
 testSuite = testGroup "Evaluation Tests"
     [ Evaluation.testSuite
-    , Logger.testSuite
     ]

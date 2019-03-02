@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase       #-}
 
 module PCG.Computation.Internal
   ( evaluate
@@ -37,27 +38,35 @@ collapseReadCommands p@(x:|xs) =
 
 
 evaluate :: Computation -> SearchState
-evaluate (Computation xs) = foldl' f mempty xs
+evaluate (Computation (x:|xs)) =
+    case x of
+      READ c -> foldl' f (Read.evaluate c) xs
+      LOAD c -> foldl' f (Load.evaluate c) xs
+      _      -> fail "There was no input data specified to start the computation; expecting a LOAD or READ command."
   where
     f :: SearchState -> Command -> SearchState
-    f v c = case c of
-              BUILD  x -> v >>= Build.evaluate  x
-              ECHO   x -> v >>= Echo.evaluate   x
-              LOAD   x -> v >>= Load.evaluate   x
-              READ   x -> v *>  Read.evaluate   x
-              REPORT x -> v >>= Report.evaluate x
-              SAVE   x -> v >>= Save.evaluate   x
+    f s = \case
+             BUILD  c -> s >>=  Build.evaluate c
+             ECHO   c -> s >>=   Echo.evaluate c
+             LOAD   c -> s *>    Load.evaluate c
+             READ   c -> s *>    Read.evaluate c
+             REPORT c -> s >>= Report.evaluate c
+             SAVE   c -> s >>=   Save.evaluate c
 
 
 renderSearchState :: Evaluation a -> (ExitCode, String)
-renderSearchState = evaluation def err val
+renderSearchState eval = (unlines renderedNotifications <>) <$> evaluation err val eval
   where
+    renderedNotifications = f <$> notifications eval
+      where
+        f :: Notification -> String
+        f (Information s) = "[-] " <> toList s
+        f (Warning     s) = "[!] " <> toList s
+
     trimR = reverse . dropWhile isSpace . reverse
 
-    def        = (ExitFailure 3, "[❓] No computation speciified...?")
     err errMsg = (ExitFailure 5, "[✘] Error: "<> trimR errMsg       )
     val _      = (ExitSuccess  , "[✔] Computation complete!"        )
-
 
 
 getGlobalSettings :: IO GlobalSettings

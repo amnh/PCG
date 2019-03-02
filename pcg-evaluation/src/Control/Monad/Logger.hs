@@ -20,7 +20,8 @@ module Control.Monad.Logger
   ) where
 
 
-import Control.Monad.Fail
+import           Control.Monad.Fail (MonadFail)
+import qualified Control.Monad.Fail as F
 
 {- |
 
@@ -31,21 +32,18 @@ import Control.Monad.Fail
 
   Failure nullification:
 
- > fail x >> info y === fail x
- > fail x >> warn y === fail x
+ > fail x <?> y === fail x
+ > fail x <@> y === fail x
 
   Assocativity:
 
- > info x >> (info y >> info z) === (info x >> info y) >> info z
- > warn x >> (warn y >> warn z) === (warn x >> warn y) >> warn z
+ > let a = v <?> x in a <?> y <?> z === let a = v <?> x <?> y in a <?> z
+ > let a = v <@> x in a <@> y <@> z === let a = v <@> x <@> y in a <@> z
 
 -}
 class MonadFail m => Logger m a where
 
-    info, warn   :: String -> m a
+    (<?>), (<@>), (<☓>) :: m a -> String -> m a
 
-    (<?>), (<!>) :: m a -> String -> m a
+    (<☓>) x s = x *> F.fail s
 
-    (<?>) x s = x >> info s
-
-    (<!>) x s = x >> warn s

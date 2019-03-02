@@ -15,7 +15,7 @@
 module Control.Evaluation
   ( EvaluationT()
   , Evaluation()
-  , Notification()
+  , Notification(..)
   , evalEither
   , evalIO
   , evaluation
@@ -29,6 +29,7 @@ module Control.Evaluation
 import Control.Evaluation.Internal
 import Control.Evaluation.Trans
 import Control.Evaluation.Unit
+import Data.Foldable
 
 
 -- |
@@ -44,14 +45,14 @@ evalEither (Left  e) = fail $ show e
 evalEither (Right x) = pure x
 
 
+-- |
+-- Elimination function for the 'Evaluation' type.
 evaluation
-  :: b             -- ^ Default value when no computation has been performed
-  -> (String -> b) -- ^ How to consume the error message when an error has occured
+  :: (String -> b) -- ^ How to consume the error message when an error has occured
   -> (a -> b)      -- ^ How to transform the stored value
   -> Evaluation a
   -> b
-evaluation def err val x =
-  case evaluationResult x of
-    NoOp    -> def
-    Error s -> err s
-    Value v -> val v
+evaluation err val (Evaluation _ x) =
+    case runEvalUnit x of
+      Left  s -> err $ toList s
+      Right v -> val v

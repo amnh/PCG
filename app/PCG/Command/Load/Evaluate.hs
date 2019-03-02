@@ -9,9 +9,9 @@ import Data.Compact.Serialize (unsafeReadCompact)
 import PCG.Command.Load
 
 
-evaluate :: LoadCommand -> a -> SearchState
-evaluate (LoadCommand filePath) _ = do
-  (optGraphState :: Either String GraphState) <- liftIO $ unsafeReadCompact filePath
-  case optGraphState of
-    Left  err        ->  fail $ "Failed to read savefile with error: \n" <> err
-    Right graphState ->  pure graphState :: SearchState
+evaluate :: LoadCommand -> SearchState
+evaluate (LoadCommand filePath) = do
+    (optGraphState :: Either String GraphState) <- liftIO $ unsafeReadCompact filePath
+    case optGraphState of
+      Left  err        ->  fail $ "Failed to read savefile with error: \n" <> err
+      Right graphState ->  pure graphState :: SearchState

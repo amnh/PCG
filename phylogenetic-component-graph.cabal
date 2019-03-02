@@ -67,7 +67,8 @@ common dependencies
     pointed                  >= 5.0       && < 6.0,
     pretty-tree              >= 0.1       && < 0.2,
     process                  >= 1.6       && < 2.0,
-    QuickCheck               >= 2.12      && < 2.13,
+    QuickCheck               >= 2.12      && < 3.0,
+    quickcheck-instances     >= 0.3.17    && < 1.0,
     random                   >= 1.0       && < 2.0,
     random-shuffle           >= 0.0.4     && < 0.1,
     safe                     >= 0.3.17    && < 0.4,
@@ -362,6 +363,7 @@ library pcg-analysis
     Analysis.Parsimony.Additive
     Analysis.Parsimony.Dynamic.DirectOptimization
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
     Analysis.Parsimony.Dynamic.SequentialAlign
     Analysis.Parsimony.Fitch
     Analysis.Parsimony.Sankoff
@@ -373,7 +375,7 @@ library pcg-analysis
   other-modules:
     Analysis.Parsimony.Additive.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Internal
-    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+--    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
     Analysis.Parsimony.Fitch.Internal
     Analysis.Parsimony.Sankoff.Internal
@@ -1151,7 +1153,6 @@ test-suite pcg-evaluation-test-suite
 
   other-modules:
     Evaluation.Test
-    Monad.Logger.Test
 
     
 test-suite pcg-tcm-test-suite

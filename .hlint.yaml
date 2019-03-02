@@ -70,12 +70,17 @@
           }
 - ignore: { name: Use >=>
           , within:
-            [ Evaluation.Test
+            [ Control.Evaluation.Test
+            ]
+          }
+- ignore: { name: Use =<<
+          , within:
+            [ Control.Evaluation.Test
             ]
           }
 - ignore: { name: "Functor law"
           , within:
-            [ Evaluation.Test
+            [ Control.Evaluation.Test
             ]
           }
 
@@ -92,7 +97,10 @@
 
 # Ignore strict sum in modules defining Foldable instance
 - ignore: { name: Strict sum
-          , within: Data.MutualExclusionSet.Internal
+          , within:
+              [ Data.MutualExclusionSet.Internal
+              , Control.Evaluation.Test
+              ]
           }
 
 # Ignore . re-write suggestion in PCG.Command.Unification.Master
@@ -108,4 +116,9 @@
 # Ignore const rename suggestion
 - ignore: { name: Use const
           , within: Bio.Metadata.Discrete.Class
+          }
+
+# Ignore const rename suggestion
+- ignore: { name: Use /=
+          , within: Control.Evaluation.Test
           }
