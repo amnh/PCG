@@ -1152,7 +1152,7 @@ test-suite pcg-evaluation-test-suite
     pcg-evaluation,
 
   other-modules:
-    Evaluation.Test
+    Control.Evaluation.Test
 
     
 test-suite pcg-tcm-test-suite

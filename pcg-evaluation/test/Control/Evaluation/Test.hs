@@ -270,7 +270,7 @@ monadTransLaws
      , Show (t m W)
      )
   => TestTree
-monadTransLaws = testGroup "MonadTranse Laws"
+monadTransLaws = testGroup "MonadTrans Laws"
     [ testLaw liftedPure "Lifted Pure"
         "lift . pure === pure"
     , testLaw bindComposition "Bind Composition"

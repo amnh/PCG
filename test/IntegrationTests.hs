@@ -6,7 +6,7 @@ module Main
 import           Test.Tasty
 import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 import qualified TestSuite.GoldenTests        as Golden (testSuite)
-import qualified TestSuite.ScriptTests        as Script (testSuite)
+import qualified TestSuite.ScriptTests        as Script
 
 
 main :: IO ()
@@ -17,5 +17,11 @@ main
 
 
 testSuite :: IO TestTree
-testSuite = testGroup "Integration Test Suite" . (\x -> [Script.testSuite, x])
+testSuite = testGroup "Integration Test Suite" . (\x -> scriptTests <> [x])
           <$> Golden.testSuite
+  where
+    scriptTests =
+      [ Script.failureTestSuite
+      , Script.commandTestSuite
+      , Script.costTestSuite
+      ]
