@@ -10,6 +10,7 @@ import           Bio.TCM.Memoized
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                                    as BM
+import           Data.List.NonEmpty                            (NonEmpty)
 import qualified Data.List.NonEmpty                            as NE
 import           Data.Maybe
 import           System.Environment                            (getArgs)
@@ -45,7 +46,15 @@ parseArgs args =
                [arg2] -> RenderComparison char1 (readSequence arg2)
                _      -> TooManyParameters
   where
-    readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
+    readSequence = encodeStream alphabet . fmap ((iupacToDna .!.) . pure . pure) . NE.fromList
+
+    (.!.) :: BM.Bimap (NonEmpty String) (NonEmpty String)
+          -> NonEmpty String
+          -> NonEmpty String
+    (.!.) bm k =
+        case BM.lookup k bm of
+          Nothing -> error $ "Bimap left key not found: " <> show k
+          Just  v -> v
 
 
 performCounterExampleSearch :: Maybe DynamicCharacter -> IO ()
