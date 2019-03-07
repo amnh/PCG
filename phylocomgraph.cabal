@@ -943,7 +943,8 @@ test-suite unit-tests
     Bio.Graph.LeafSet
     Bio.Graph.ReferenceDAG.Internal
     Bio.Graph.ReferenceDAG.Test
-    Bio.Graph.ReferenceDAG.Test.Network
+    Bio.Graph.ReferenceDAG.Test.NetworkPropertyTests
+    Bio.Graph.ReferenceDAG.Test.NetworkUnitTests
     Control.Evaluation.Internal
     Control.Evaluation.Test
     Control.Evaluation.Unit
