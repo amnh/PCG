@@ -20,15 +20,18 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
   ) where
 
 
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+{-
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
+-}
 import           Bio.Character.Encodable
+import           Bio.TCM.Dense
+import           Bio.TCM.Memoized
 import           Data.List.NonEmpty                                                     (NonEmpty (..))
 import           Data.MonoTraversable
-import           Data.TCM.Dense
-import           Data.TCM.Memoized
 import           Test.Custom.NucleotideSequence
 import           Test.Tasty
 import           Test.Tasty.QuickCheck

@@ -6,7 +6,6 @@ module File.Format.Newick.Test
   ( testSuite
   ) where
 
-import Data.Either.Combinators     (rightToMaybe)
 import Data.Void
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
@@ -108,6 +107,9 @@ newickLeaf' = testGroup "newickLeafDefinition'" [invariant]
         labelValue = rightToMaybe $ parse (newickLabelDefinition <* eof :: Parsec Void String String) "" str
         validLeaf  = parserSatisfies newickLeafDefinition target (== NewickNode [] labelValue (Just num))
         target     = str <> ":" <> show num
+
+        rightToMaybe (Left  _) = Nothing
+        rightToMaybe (Right x) = Just x
 
 
 descendantList' :: TestTree

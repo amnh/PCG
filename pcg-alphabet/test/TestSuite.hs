@@ -1,6 +1,6 @@
 module Main where
 
-import Alphabet.Test
+import Data.Alphabet.Test
 import Test.Tasty
 import Test.Tasty.Ingredients.Rerun (rerunningTests)
 

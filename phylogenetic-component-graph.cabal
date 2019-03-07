@@ -987,14 +987,10 @@ test-suite unit-tests
     Bio.Graph.ReferenceDAG.Internal
     Bio.Graph.ReferenceDAG.Test
     Data.EdgeSet
-    Data.Range
     TestSuite.ExecutableTests
     TestSuite.LibraryTests
 
 -- This should not be necessary
-    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
-    Data.TCM.Dense.FFI
-    Data.TCM.Memoized.FFI
     Test.Custom.NucleotideSequence
     Bio.Graph.Node.Context
 
