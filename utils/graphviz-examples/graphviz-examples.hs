@@ -68,93 +68,335 @@ baseNetwork =
     (nodes, edges)
   where
     nodes :: [Node]
-    nodes = existingN <$> ["root", "a", "b" , "c", "d", "e", "f", "g", "h", "i", "j"]
+    nodes = existingN <$> ["root", "a", "b" , "c", "d", "e", "f"
+                          , "g", "h", "i", "j", "k", "l", "m", "n"
+                          , "o", "p", "q", "r"
+                          ]
     
     edges :: [Edge]
     edges = existingE <$>
               [ ("root", "a"), ("root", "b")
               , ("a", "c"), ("a" ,"d"), ("b", "d"), ("b", "e")
               , ("d", "f"), ("e", "g"), ("e", "h")
-              ,  ("g", "i"), ("g", "j")
+              , ("f", "i"), ("f", "j")
+              , ("g", "k"), ("g", "l")
+              , ("h", "m"), ("h", "n")
+              , ("m", "o"), ("n", "o"), ("m", "p"), ("n", "q")
+              , ("o", "r")
               ]
                
 
 
-ancestralNetwork :: Network
-ancestralNetwork = 
+e2AncestralEdgeNetwork :: Network
+e2AncestralEdgeNetwork = 
     (nodes, edges)
   where
     nodes :: [Node]
     nodes = fold
-            [ existingN   <$>  ["root", "a", "c", "d", "f", "h", "j"]
+            [ existingN   <$>  ["root", "a", "c", "d", "f" , "h", "j"
+                               , "l", "m", "n" , "o", "p", "q", "r"
+                               ]
             , newN        <$> ["newSrc", "newTgt"]
-            , contextualN <$> ["src1", "src2", "tgt1", "tgt2"]
+            , contextualN <$> ["b (src1)", "g (src2)", "e (tgt1)", "k (tgt2)"]
             ]
     
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
-                  [ ("root", "a"), ("root", "src1")
-                  , ("a", "c"), ("a" ,"d"), ("src1", "d")
-                  , ("d", "f"), ("tgt1", "src2"), ("tgt1", "h")
-                  , ("src2", "j")
+                  [ ("root", "a"), ("root", "b (src1)")
+                  , ("a", "c"), ("a" ,"d"), ("b (src1)", "d")
+                  , ("d", "f"), ("e (tgt1)", "g (src2)"), ("e (tgt1)", "h")
+                  , ("f", "i"), ("f", "j")
+                  , ("g (src2)", "l")
+                  , ("h", "m"), ("h", "n")
+                  , ("m", "o"), ("n", "o"), ("m", "p"), ("n", "q")
+                  , ("o", "r")
                   ]
             , candidateE <$> [("newSrc", "newTgt")]
-            , newE       <$> [ ("src1"  , "newSrc")
-                             , ("newSrc", "tgt1"  )
-                             , ("src2"  , "newTgt")
-                             , ("newTgt", "tgt2"  )
+            , newE       <$> [ ("b (src1)"  , "newSrc")
+                             , ("newSrc", "e (tgt1)"  )
+                             , ("g (src2)"  , "newTgt")
+                             , ("newTgt", "k (tgt2)"  )
                              ]
             ]
 
-networkAncestralNetwork :: Network
-networkAncestralNetwork = 
+e1HasE2SrcAncestralNodeNetwork :: Network
+e1HasE2SrcAncestralNodeNetwork = 
     (nodes, edges)
   where
     nodes :: [Node]
     nodes = fold
-            [ existingN   <$>  ["root", "a", "c", "d", "f", "h", "j"]
+            [ existingN   <$>  ["root", "a", "c", "d", "f", "i", "j"
+                               , "l", "n" , "o", "p", "q", "r"
+                               ]
             , newN        <$> ["newSrc", "newTgt"]
-            , contextualN <$> ["src1", "src2", "tgt1", "tgt2"]
+            , contextualN <$> ["h (src1)", "e (src2)", "m (tgt1)", "g (tgt2)"]
             ]
     
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
-                  [ ("root", "a"), ("root", "src1")
-                  , ("a", "c"), ("a" ,"d"), ("src1", "d")
-                  , ("d", "f"), ("tgt1", "src2"), ("tgt1", "h")
-                  , ("src2", "j")
+                  [ ("root", "a"), ("root", "b")
+                  , ("a", "c"), ("a" ,"d"), ("b", "d"), ("b", "e (src2)")
+                  , ("d", "f"), ("e (src2)", "h (src1)")
+                  , ("f", "i"), ("f", "j")
+                  , ("g (tgt2)", "k"), ("g (tgt2)", "l")
+                  , ("h (src1)", "n")
+                  , ("m (tgt1)", "o"), ("n", "o"), ("m (tgt1)", "p"), ("n", "q")
+                  , ("o", "r")
                   ]
             , candidateE <$> [("newSrc", "newTgt")]
-            , newE       <$> [ ("src1"  , "newSrc")
-                             , ("newSrc", "tgt1"  )
-                             , ("src2"  , "newTgt")
-                             , ("newTgt", "tgt2"  )
+            , newE       <$> [ ("h (src1)"  , "newSrc")
+                             , ("newSrc", "m (tgt1)"  )
+                             , ("e (src2)"  , "newTgt")
+                             , ("newTgt", "g (tgt2)"  )
                              ]
             ]
-            
+
+hasE2NetworkNodeSrc :: Network
+hasE2NetworkNodeSrc =
+    (nodes, edges)
+  where
+    nodes :: [Node]
+    nodes = fold
+            [ existingN   <$>  ["root", "a", "c", "i", "j"
+                               , "k", "n" , "o", "p", "q" ,"r"
+                               ]
+            , newN        <$> ["newSrc", "newTgt"]
+            , contextualN <$> ["g (src1)", "h (src2)", "l (tgt1)", "m (tgt2)"]
+            ]
+    
+    edges :: [Edge]
+    edges = fold
+            [ existingE  <$>
+                  [ ("root", "a"), ("root", "b")
+                  , ("a", "c"), ("a" ,"d"), ("b", "d"), ("b", "e")
+                  , ("d", "f"), ("e", "g (src1)"), ("e", "h (src2)")
+                  , ("f", "i"), ("f", "j")
+                  , ("g (src1)", "k")
+                  , ("h (src2)", "n")
+                  , ("m (tgt2)", "o"), ("n", "o"), ("m (tgt2)", "p"), ("n", "q")
+                  , ("o", "r")
+                  ]
+            , candidateE <$> [("newSrc", "newTgt")]
+            , newE       <$> [ ("g (src1)"  , "newSrc")
+                             , ("newSrc", "l (tgt1)"  )
+                             , ("h (src2)"  , "newTgt")
+                             , ("newTgt", "m (tgt2)"  )
+                             ]
+            ]
+
+hasE2NetworkNodeTgt :: Network
+hasE2NetworkNodeTgt =
+    (nodes, edges)
+  where
+    nodes :: [Node]
+    nodes = fold
+            [ existingN   <$>  ["root", "a", "b", "c", "d", "e", "f", "g", "i", "j"
+                               , "k", "l", "p", "q" ,"r"
+                               ]
+            , newN        <$> ["newSrc", "newTgt"]
+            , contextualN <$> ["h (src1)", "n (src2)", "m (tgt1)", "o (tgt2)"]
+            ]
+    
+    edges :: [Edge]
+    edges = fold
+            [ existingE  <$>
+                  [ ("root", "a"), ("root", "b")
+                  , ("a", "c"), ("a" ,"d"), ("b", "d"), ("b", "e")
+                  , ("d", "f"), ("e", "g"), ("e", "h (src1)")
+                  , ("f", "i"), ("f", "j")
+                  , ("g", "k"), ("g", "l")
+                  ,  ("h (src1)", "n (src2)")
+                  , ("m (tgt1)", "o (tgt2)"), ("n (src2)", "o (tgt2)"), ("m (tgt1)", "p"), ("n (src2)", "q")
+                  , ("o (tgt2)", "r")
+                  ]
+            , candidateE <$> [("newSrc", "newTgt")]
+            , newE       <$> [ ("h (src1)"  , "newSrc")
+                             , ("newSrc", "m (tgt1)"  )
+                             , ("n (src2)"  , "newTgt")
+                             , ("newTgt", "o (tgt2)"  )
+                             ]
+            ]
+
+    
+
+
+e1DescendantE2AncestralNetwork :: Network
+e1DescendantE2AncestralNetwork = 
+    (nodes, edges)
+  where
+    nodes :: [Node]
+    nodes = fold
+            [ existingN   <$> ["root", "b", "d", "e", "g", "h", "j"
+                              , "k", "l","m", "n" , "o", "p", "q", "r"
+                              ]
+            , newN        <$> ["newSrc", "newTgt"]
+            , contextualN <$> ["a (src1)", "f (src2)", "c (tgt1)", "i (tgt2)"]
+            ]
+    
+    edges :: [Edge]
+    edges = fold
+            [ existingE  <$>
+                  [ ("root", "a (src1)"), ("root", "b")
+                  , ("a (src1)" ,"d"), ("b", "d"), ("b", "e")
+                  , ("d", "f (src2)"), ("e", "g"), ("e", "h")
+                  , ("f (src2)", "j")
+                  , ("g", "k"), ("g", "l")
+                  , ("h", "m"), ("h", "n")
+                  , ("m", "o"), ("n", "o"), ("m", "p"), ("n", "q")
+                  , ("o", "r")
+                  ]
+            , candidateE <$> [("newSrc", "newTgt")]
+            , newE       <$> [ ("a (src1)"  , "newSrc")
+                             , ("newSrc", "c (tgt1)"  )
+                             , ("f (src2)"  , "newTgt")
+                             , ("newTgt", "i (tgt2)"  )
+                             ]
+            ]
+
+
+e2DescendantE1AncestralNetwork :: Network
+e2DescendantE1AncestralNetwork = 
+    (nodes, edges)
+  where
+    nodes :: [Node]
+    nodes = fold
+            [ existingN   <$>  ["root", "e", "g" , "h", "i", "j"
+                               , "k", "l", "m", "n" , "o", "p", "q" ,"r"
+                               ]
+            , newN        <$> ["newSrc", "newTgt"]
+            , contextualN <$> ["d (src1)", "a (src2)", "f (tgt1)", "c (tgt2)"]
+            ]
+    
+    edges :: [Edge]
+    edges = fold
+            [ existingE  <$>
+                  [ ("root", "a (src2)"), ("root", "b")
+                  , ("a (src2)" ,"d (src1)"), ("b", "d (src1)"), ("b", "e")
+                  , ("e", "g"), ("e", "h")
+                  , ("f (tgt1)", "i"), ("f (tgt1)", "j")
+                  , ("g", "k"), ("g", "l")
+                  , ("h", "m"), ("h", "n")
+                  , ("m", "o"), ("n", "o"), ("m", "p"), ("n", "q")
+                  , ("o", "r")
+                  ]
+            , candidateE <$> [("newSrc", "newTgt")]
+            , newE       <$> [ ("d (src1)"  , "newSrc")
+                             , ("newSrc", "f (tgt1)"  )
+                             , ("a (src2)"  , "newTgt")
+                             , ("newTgt", "c (tgt2)"  )
+                             ]
+            ]
+    
+
+src2NetworkPairAncestralToE1Network :: Network
+src2NetworkPairAncestralToE1Network = 
+    (nodes, edges)
+  where
+    nodes :: [Node]
+    nodes = fold
+            [ existingN   <$>  ["root", "d", "f", "g"
+                               , "h", "i", "j" , "k", "l", "m", "n" , "o"
+                               , "p", "q", "r"
+                               ]
+            , newN        <$> ["newSrc", "newTgt"]
+            , contextualN <$> ["a (src1)", "b (src2)", "c (tgt1)", "e (tgt2)"]
+            ]
+    
+    edges :: [Edge]
+    edges = fold
+            [ existingE  <$>
+                  [ ("root", "a (src1)"), ("root", "b")
+                  , ("a (src1)", "c"), ("a (src1)" ,"d"), ("b", "d"), ("b", "e")
+                  , ("d", "f"), ("e", "g"), ("e", "h")
+                  , ("f", "i"), ("f", "j")
+                  , ("g", "k"), ("g", "l")
+                  , ("h", "m"), ("h", "n")
+                  , ("m", "o"), ("n", "o"), ("m", "p"), ("n", "q")
+                  , ("o", "r")
+                  ]
+            , candidateE <$> [ ("newSrc", "newTgt")]
+            , newE       <$> [ (" (src1)"  , "newSrc")
+                             , ("newSrc", " (tgt1)"  )
+                             , (" (src2)"  , "newTgt")
+                             , ("newTgt", " (tgt2)"  )
+                             ]
+            ]
+
+
+e1NetworkEdgeComplementNodeAncestralToE2 :: Network
+e1NetworkEdgeComplementNodeAncestralToE2 = 
+    (nodes, edges)
+  where
+    nodes :: [Node]
+    nodes = fold
+            [ existingN   <$>  ["root", "a", "c", "d", "e", "f", "g" , "h", "i", "j"
+                               , "k", "l", "m", "n" , "o", "p", "q", "r"
+                               ]
+            , newN        <$> ["newSrc", "newTgt"]
+            , contextualN <$> ["b (src1)", "g (src2)", "e (tgt1)", "k (tgt2)"]
+            ]
+    
+    edges :: [Edge]
+    edges = fold
+            [ existingE  <$>
+                  [ ("root", "a"), ("root", "b")
+                  , ("a", "c"), ("a" ,"d"), ("b", "d"), ("b", "e")
+                  , ("d", "f"), ("e", "g"), ("e", "h")
+                  , ("f", "i"), ("f", "j")
+                  , ("g", "k"), ("g", "l")
+                  , ("h", "m"), ("h", "n")
+                  , ("m", "o"), ("n", "o"), ("m", "p"), ("n", "q")   
+                  , ("o", "r")
+                  ]
+            , candidateE <$> [("newSrc", "newTgt")]
+            , newE       <$> [ ("b (src1)"  , "newSrc")
+                             , ("newSrc", "e (tgt1)"  )
+                             , ("g (src2)"  , "newTgt")
+                             , ("newTgt", "k (tgt2)"  )
+                             ]
+            ]
 
     
     
 networks :: [(Network, FilePath)]
-networks = [(baseNetwork, "baseNetwork"), (ancestralNetwork, "ancestralNetwork")]
+networks = [ (baseNetwork                   , "baseNetwork"                   )
+           , (hasE2NetworkNodeSrc           , "hasE2NetworkNodeSrc"           )
+           , (hasE2NetworkNodeTgt           , "hasE2NetworkNodeTgt"           )
+           , (e2AncestralEdgeNetwork        , "e2AncestralEdgeNetwork"        )
+           , (e1HasE2SrcAncestralNodeNetwork, "e1HasE2SrcDescendantNodeNetwork")
+           , (e1DescendantE2AncestralNetwork, "e1DescendantE2AncestralNetwork")
+           , (e2DescendantE1AncestralNetwork, "e2DescendantE1AncestralNetwork")
+           ]
+          
 
 
 
 
---renderExampleNetwork :: String
---renderExampleNetwork = unlines
---                         [ "                        root"
---                         , "                      /     \
---                         , "                     a       b
---                         , "                   /  \     /  \
---                         , "                  c    \   /    e
---                         , "                         d     /  \
---                         , "                         |    g   h
---                         , "                         f   / \
---                                                         i  j 
---                         ]
+--renderExampleNetwork :: String                                          
+--renderExampleNetwork = unlines                                          
+--                         [ "                        root"               
+--                         , "                      /     \               
+--                         , "                     a       b              
+--                         , "                   /  \     /  \            
+--                         , "                  c    \   /    e           
+--                         , "                         d     /  \         
+--                         , "                         |    g    \        
+--                         , "                         f   / \    \       
+--                                                    / \  k  l    \      
+--                         ,                         i   j          h     
+--                                                                 / \    
+--                                                                m   n   
+--                                                                 \ /    
+--                                                                  o     
+--                                                                  |     
+--                                                                  p     
+--                                                                        
+--                                                                        
+--                         ]                                              
+
+
 
 networkGraphParameters
  :: G.GraphvizParams
@@ -166,16 +408,51 @@ networkGraphParameters
 networkGraphParameters = G.defaultParams {
     G.fmtNode  = \case
         (_, ExistingNodeLabel  ) -> colorAttribute  black    
-        (_, ContextualNodeLabel) -> colorAttribute  blue
-        (_, NewNodeLabel       ) -> colorAttribute  red,
+        (_, ContextualNodeLabel) -> colorAttribute  red
+        (_, NewNodeLabel       ) -> colorAttribute  blue,
   
     G.fmtEdge = \case
         (_, _, ExistingEdgeLabel)  -> colorAttribute black
-        (_, _, NewEdgeLabel     )  -> colorAttribute blue
-        (_, _, CandNetEdgeLabel )  -> colorAttribute red
+        (_, _, NewEdgeLabel     )  -> colorAttribute red
+        (_, _, CandNetEdgeLabel )  -> colorAttribute blue
         }  
   where
     colorAttribute color = [ G.Color $ G.toColorList [ color ] ]
     black = G.RGB 0 0 0
     red   = G.RGB 30 144 255
     blue  = G.RGB 204 2 2
+
+
+
+template :: Network
+template = 
+    (nodes, edges)
+  where
+    nodes :: [Node]
+    nodes = fold
+            [ existingN   <$>  ["root", "a", "c", "d", "e", "f", "g" , "h", "i", "j"
+                               , "k", "l", "m", "n" , "o", "p", "q" ,"r"
+                               ]
+            , newN        <$> ["newSrc", "newTgt"]
+            , contextualN <$> ["b (src1)", "g (src2)", "e (tgt1)", "k (tgt2)"]
+            ]
+    
+    edges :: [Edge]
+    edges = fold
+            [ existingE  <$>
+                  [ ("root", "a"), ("root", "b")
+                  , ("a", "c"), ("a" ,"d"), ("b", "d"), ("b", "e")
+                  , ("d", "f"), ("e", "g"), ("e", "h")
+                  , ("f", "i"), ("f", "j")
+                  , ("g", "k"), ("g", "l")
+                  , ("h", "m"), ("h", "n")
+                  , ("m", "o"), ("n", "o"), ("m", "p"), ("n", "q")
+                  , ("o", "r")
+                  ]
+            , candidateE <$> [("newSrc", "newTgt")]
+            , newE       <$> [ (" (src1)"  , "newSrc")
+                             , ("newSrc", " (tgt1)"  )
+                             , (" (src2)"  , "newTgt")
+                             , ("newTgt", " (tgt2)"  )
+                             ]
+            ]
