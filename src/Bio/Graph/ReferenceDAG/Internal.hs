@@ -54,7 +54,7 @@ import           Data.Hashable                 (Hashable)
 import qualified Data.HashMap.Strict           as HM
 import           Data.IntMap                   (IntMap)
 import qualified Data.IntMap                   as IM
-import           Data.IntSet                   (IntSet)
+import           Data.IntSet                   (IntSet, notMember)
 import qualified Data.IntSet                   as IS
 import           Data.Key
 import           Data.List                     (intercalate, tails)
@@ -1592,7 +1592,7 @@ ancestralNodeSetContextFn
   -> IntSet                  -- ^ Current ancestral nodes
 ancestralNodeSetContextFn ancestralNodes (currInd, nodeDatum) =
     case ancestralNodes of
-      NoParent              -> mempty
+      NoParent              -> IS.singleton currInd
       OneParent parentAncestralNodes -> (IS.singleton currInd) <> parentAncestralNodes
 
       TwoParents ancestralEdgeSet1 ancestralEdgeSet2
@@ -1705,7 +1705,7 @@ tabulateNetworkInformation dag =
 data RootStatus = IncludeRoot | ExcludeRoot
 
 -- |
--- Find all candgidate network edges in a DAG.
+-- Find all candidate network edges in a DAG.
 candidateNetworkEdges'
   :: RootStatus     -- ^ Whether we include nodes adjacent to the root
   -> ReferenceDAG d e n
@@ -1733,10 +1733,16 @@ candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
        -- collect distinct edge pairs.
           (e1@(src1,tgt1) : es)       <- tails completeEdges
           e2@(src2, tgt2) <- es
-          guard $ symmetricTest e1 e2
           let
-            e1e2Bool = not (hasIncidentNetworkNode e2) && posetalTest e1 e2
-            e2e1Bool = not (hasIncidentNetworkNode e1) && posetalTest e2 e1
+                       -- Check the target edge is not incident to a network
+                       -- node as this leads to a display trees with illegal
+                       -- incident structure.
+            e1e2Bool =    not (hasIncidentNetworkNode e2)
+                       && ancestralTest e1 e2
+                       && posetalTest   e1 e2
+            e2e1Bool =    not (hasIncidentNetworkNode e1)
+                       && ancestralTest e2 e1
+                       && posetalTest   e2 e1
           case (e1e2Bool, e2e1Bool) of
                 (True, True)   -> pure (e1,e2) <|> pure (e2,e1)
                 (True, False)  -> pure (e1, e2)
@@ -1744,33 +1750,32 @@ candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
                 (False, False) -> Alt.empty
 
       where
-     -- Checks historical compatability in a symmetrical fashion.                    
-        symmetricTest :: (Int, Int) -> (Int, Int) -> Bool
-        symmetricTest e1@(src1,tgt1) e2@(src2, tgt2) =
+     -- Checks ancestral compatability i.e. we do not form a network event
+     -- with nodes ancestral to one another.
+        ancestralTest :: (Int, Int) -> (Int, Int) -> Bool
+        ancestralTest e1@(src1,tgt1) e2@(src2, tgt2) =
      -- Network Info
             let
               e1AncestralEdges, e2AncestralEdges :: EdgeSet (Int, Int)  
               e1AncestralEdges  = proj4_1 $ networkInformation ! tgt1  
               e2AncestralEdges  = proj4_1 $ networkInformation ! tgt2
   
-              e1TgtAncestralNodes, e2TgtAncestralNodes :: IntSet
-              e1TgtAncestralNodes = proj4_3 $ networkInformation ! tgt1
-              e2TgtAncestralNodes = proj4_3 $ networkInformation ! tgt2
-              
-        -- Boolean tests
-    --          e1NetworkEdgeTest, e2NetworkEdgeTest :: Bool
-    --          e1NetworkEdgeTest = networkDescendantTest src1 e2TgtAncestralNodes
-      --
+--              e1TgtAncestralNodes, e2TgtAncestralNodes :: IntSet
+              e1SrcAncestralNodes, e2SrcAncestralNodes :: IntSet
+              e1SrcAncestralNodes = proj4_3 $ networkInformation ! tgt1
+              e2SrcAncestralNodes = proj4_3 $ networkInformation ! tgt1
+--              e1TgtAncestralNodes = proj4_3 $ networkInformation ! tgt1
+--              e2TgtAncestralNodes = proj4_3 $ networkInformation ! tgt2
+--              
             in    
                 -- First check if the two edges are from the same parent to short circuit
               -- faster in this case.
                   src1 /= src2
               -- or if either edge is ancestral to the other.
               && (singletonEdgeSet e1 `disjoint` e2AncestralEdges)
-              && (singletonEdgeSet e2 `disjoint` e1AncestralEdges)
-              -- finally check if either node fails the network edge test.
-            --  && e1NetworkEdgeTest
-            --  && e2NetworkEdgeTest
+              && (src2 `notMember` e1SrcAncestralNodes)
+             -- && (singletonEdgeSet e2 `disjoint` e1AncestralEdges)
+
           
 
    
@@ -1887,7 +1892,9 @@ candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
                   (True , False) -> e2AncestralTest
                   (False, True ) -> e1AncestralTest
                   (False, False) -> e1AncestralTest
-                                    && e2AncestralTest
+                                 && e2AncestralTest
+                                 && e1NetworkEdgeTest
+                                 && e2NetworkEdgeTest
                 
 
 
