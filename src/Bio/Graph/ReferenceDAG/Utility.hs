@@ -35,6 +35,7 @@ import Data.Foldable
 import Data.Set (Set, (\\))
 import qualified Data.Set as Set
 import Data.Tuple.Utility
+import qualified Data.List.NonEmpty as NE
 
 
 import Debug.Trace
@@ -45,9 +46,10 @@ data NetworkInformation
   { _candidateNetworkEdges :: Set ((Int, Int), (Int, Int))
   , _networkAdjacentEdges  :: Set (Int, Int)
   , _edgeSet               :: Set (Int, Int)
+  , _rootNode              :: Int
   }
 
-emptyNetworkInfo = NetworkInformation mempty mempty mempty
+emptyNetworkInfo = NetworkInformation mempty mempty mempty 0
 
 
 
@@ -182,28 +184,31 @@ makeDoublyBranchedNetworkWithInfo
      , NetworkInformation    -- ^ Network information of n0 (with correct indices) 
      , NetworkInformation    -- ^ Network information of n1 (with correct indices)
      , NetworkInformation    -- ^ Network information of n2 (with correct indices)
+     , Int                   -- ^ Index of n0n1 root
      )
-makeDoublyBranchedNetworkWithInfo n0 n1 n2 = (network, n0NetInfo, n1NetInfo, n2NetInfo)
+makeDoublyBranchedNetworkWithInfo n0 n1 n2 = (network, n0NetInfo, n1NetInfo, n2NetInfo, xIndex)
   where
+ -- the index of the root of the non1 branch
+    xIndex = length n0 + length n1 + length n2 
     (n0n1Branched, n0NetInfo, n1NetInfo) = makeBranchedNetworkWithInfo n0 n1
     (network     , n2NetInfo, _        ) = makeBranchedNetworkWithInfo n2 n0n1Branched  
 
 -- |
 -- This function takes valid networks n0, n1, n2 and n3 and forms the network:
 --
--- >                    r
--- >                ┌───┴───┐
--- >                │       │
--- >                │       │
--- >                n3      a
--- >                   ┌────┴────┐
--- >                   │         │
--- >                   │         │
--- >                   b         c
--- >               ┌───┴───┐ ┌───┴───┐
--- >               │       │ │       │
--- >               │       │ │       │
--- >               │       └┬┘       │
+-- >                    r              
+-- >                ┌───┴───┐          
+-- >                │       │          
+-- >                │       │          
+-- >                n3      a          
+-- >                   ┌────┴────┐     
+-- >                   │         │     
+-- >                   │         │     
+-- >                   b         c     
+-- >               ┌───┴───┐ ┌───┴───┐ 
+-- >               │       │ │       │ 
+-- >               │       │ │       │ 
+-- >               │       └┬┘       │ 
 -- >              n0        n1       n2
 -- >
 -- >
@@ -337,14 +342,14 @@ generateBinaryTreeWithInfo ::  forall d n . (Monoid d, Monoid n, Show n)
        , NetworkInformation
        )
 generateBinaryTreeWithInfo = do
-  depth <- choose (1, 2)
+  depth <- choose (1, 7)
   pure $ makeBinaryTreeWithInfo @d @n depth
 
 
 generateBinaryTree ::  (Monoid d, Monoid n, Show n)
   => Gen (ReferenceDAG d () n)
 generateBinaryTree = do
-  depth <- choose (1, 2)
+  depth <- choose (1, 7)
   pure $ (makeBinaryTree depth)
 
 
@@ -388,7 +393,6 @@ generateBranchedNetwork =
   do
     n0 <- generateNetwork
     n1 <- generateNetwork
---    pure $ (n1, getNetworkInformation n1, getNetworkInformation n1)
     pure $ makeBranchedNetworkWithInfo n0 n1
 
 generateBranchedNetworkWithNetworkEvent
@@ -399,6 +403,9 @@ generateBranchedNetworkWithNetworkEvent
        , NetworkInformation  -- ^ Candidate network information of n1
        , NetworkInformation  -- ^ Candidate network information of n2
        , NetworkInformation  -- ^ Candidate network information of n3
+       , Int  -- ^ Index of internal node a
+       , Int  -- ^ Index of internal node b
+       , Int  -- ^ Index of internal node c
        )
 generateBranchedNetworkWithNetworkEvent =
   do
@@ -410,11 +417,19 @@ generateBranchedNetworkWithNetworkEvent =
     let n1NetworkInfo = getNetworkInformation n1
     let n2NetworkInfo = getNetworkInformation n2
     let n3NetworkInfo = getNetworkInformation n3
+
+    let lengthNets = length n0 + length n1 + length n2
+    let aIndex = lengthNets + 2
+    let bIndex = lengthNets
+    let cIndex = lengthNets + 1
     pure $ ( makeBranchedNetworkWithNetworkEvent n0 n1 n2 n3
            , n0NetworkInfo
            , n1NetworkInfo
            , n2NetworkInfo
            , n3NetworkInfo
+           , aIndex
+           , bIndex
+           , cIndex
            )
 
 generateDoublyBranchedNetwork
@@ -424,6 +439,7 @@ generateDoublyBranchedNetwork
       , NetworkInformation  -- ^ Candidate network information of n0
       , NetworkInformation  -- ^ Candidate network information of n1
       , NetworkInformation  -- ^ Candidate network information of n2
+      , Int                 -- ^ index of root node
       )
 generateDoublyBranchedNetwork =
   do
@@ -433,10 +449,12 @@ generateDoublyBranchedNetwork =
     let n0NetworkInfo = getNetworkInformation n0
     let n1NetworkInfo = getNetworkInformation n1
     let n2NetworkInfo = getNetworkInformation n2
+    let xInd          = length n0 + length n1 + length n2
     pure $ ( makeDoublyBranchedNetwork n0 n1 n2
            , n0NetworkInfo
            , n1NetworkInfo
            , n2NetworkInfo
+           , xInd
            )
 
 -- |
@@ -458,8 +476,9 @@ incrementNetworkInformation :: Int -> NetworkInformation -> NetworkInformation
 incrementNetworkInformation n NetworkInformation{..}
   = NetworkInformation
     { _candidateNetworkEdges = _candidateNetworkEdges'
-    , _networkAdjacentEdges   = _networkAdjacentEdges' 
+    , _networkAdjacentEdges  = _networkAdjacentEdges' 
     , _edgeSet               = _edgeSet'
+    , _rootNode              = _rootNode'
     }
      
   where
@@ -469,6 +488,8 @@ incrementNetworkInformation n NetworkInformation{..}
       = Set.map incrementEdge _networkAdjacentEdges
     _edgeSet'
       = Set.map incrementEdge _edgeSet
+
+    _rootNode' = _rootNode + n
 
     incrementEdge :: (Int, Int) -> (Int, Int)
     incrementEdge (src, tgt) = (src + n, tgt + n)
@@ -498,6 +519,7 @@ getNetworkInformation dag = NetworkInformation{..}
     _candidateNetworkEdges = candidateNetworkEdges' IncludeRoot dag
     _networkAdjacentEdges  = getNetworkEdges       dag
     _edgeSet               = getUnderlyingEdgeSet . referenceEdgeSet $ dag
+    _rootNode              = NE.head $ dag ^. _rootRefs
     
 
 -- |
