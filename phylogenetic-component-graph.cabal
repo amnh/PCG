@@ -252,7 +252,6 @@ library pcg-core
     Bio.Graph.Solution
     Bio.Graph.ZipperDAG
     Data.EdgeLength
-    Data.Range
     Data.NodeLabel
     Data.TopologyRepresentation
     Test.Custom.NucleotideSequence
@@ -290,7 +289,6 @@ library pcg-core
     Bio.Metadata.DiscreteWithTCM.Internal
     Bio.Metadata.Dynamic.Class
     Bio.Metadata.Dynamic.Internal
-    Bio.Metadata.MetricRepresentation
     Bio.Graph.BinaryRenderingTree
     Bio.Graph.Forest
     Bio.Graph.Node.Internal
@@ -576,16 +574,19 @@ library pcg-tcm
     QuickCheck              ^>= 2.12.6    && < 2.13,
     vector                   >= 0.12.0.2  && < 0.13,
 
-
   exposed-modules:
-    Data.TCM
-    Data.TCM.Dense
-    Data.TCM.Dense.FFI
-    Data.TCM.Memoized
-    Data.TCM.Memoized.FFI
+    Bio.Character.Exportable
+    Bio.Character.Exportable.MemoizationData
+    Bio.MetricRepresentation
+    Bio.TCM
+    Bio.TCM.Dense
+    Bio.TCM.Memoized
 
   other-modules:
-    Data.TCM.Internal
+    Bio.Character.Exportable.Class
+    Bio.TCM.Internal
+    Bio.TCM.Dense.FFI
+    Bio.TCM.Memoized.FFI
 
 
 --  Collection of utility functions and data structures
@@ -613,6 +614,7 @@ library pcg-utility
     Data.Matrix.NotStupid
     Data.MemoVector
     Data.MutualExclusionSet
+    Data.Range
     Data.Render.Utility
     Data.ShortText.Custom
     Data.TextShow.Custom
@@ -620,8 +622,8 @@ library pcg-utility
     Data.UnionSet
     Data.Vector.Custom
     Data.Vector.NonEmpty
-    FFI.Character.Exportable
-    FFI.Character.Exportable.Class
+--    FFI.Character.Exportable
+--    FFI.Character.Exportable.Class
     Numeric.Extended
     Numeric.Extended.Natural
     Numeric.Extended.Real

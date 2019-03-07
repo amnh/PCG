@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.MetricRepresentation
+-- Module      :  Bio.MetricRepresentation
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -19,19 +19,19 @@
 {-# LANGUAGE TypeFamilies     #-}
 {-# LANGUAGE UnboxedSums      #-}
 
-module Data.MetricRepresentation
+module Bio.MetricRepresentation
   ( MetricRepresentation(..)
   , retreiveSCM
   , retreivePairwiseTCM
   , retreiveThreewayTCM
   ) where
 
+import Bio.TCM         as TCM
 import Control.DeepSeq
 import Data.Bits
 import Data.Foldable
 import Data.Ord        (comparing)
 import Data.Range
-import Data.TCM        as TCM
 import GHC.Generics    hiding (to)
 
 

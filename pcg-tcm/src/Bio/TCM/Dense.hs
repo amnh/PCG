@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.TCM.Dense
+-- Module      :  Bio.TCM.Dense
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -10,13 +10,18 @@
 --
 -----------------------------------------------------------------------------
 
-module Data.TCM.Dense
-  ( DenseTransitionCostMatrix()
+module Bio.TCM.Dense
+  ( AlignmentStrategy(..)
+  , DenseTransitionCostMatrix(..)
+  , CostMatrix2d()
+  , CostMatrix3d()
     -- * Construction
   , generateDenseTransitionCostMatrix
-    -- * Accessor functions
+    -- * Lookup functions
   , lookupPairwise
   , lookupThreeway
+    -- * Query
+  , getAlignmentStrategy
   ) where
 
-import Data.TCM.Dense.FFI
+import Bio.TCM.Dense.FFI

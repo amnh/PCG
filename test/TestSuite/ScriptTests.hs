@@ -11,23 +11,23 @@ module TestSuite.ScriptTests
   ) where
 
 import Bio.Graph
-import Bio.Graph.ReferenceDAG (_dagCost, _graphData)
+import Bio.Graph.ReferenceDAG  (_dagCost, _graphData)
 import Control.DeepSeq
-import Control.Lens           (Getter, (^.))
-import Control.Monad.Except   (ExceptT(..), runExceptT)
-import Data.Binary            (decodeOrFail)
-import Data.ByteString.Lazy   (ByteString, readFile)
+import Control.Lens            (Getter, (^.))
+import Control.Monad.Except    (ExceptT (..), runExceptT)
+import Data.Binary             (decodeOrFail)
+import Data.ByteString.Lazy    (ByteString, readFile)
 import Data.Either
 import Data.Foldable
-import Data.List              (intercalate)
-import Data.List.NonEmpty     (NonEmpty(..))
-import Data.List.Utility      (equalityOf)
+import Data.List               (intercalate)
+import Data.List.NonEmpty      (NonEmpty (..))
+import Data.List.Utility       (equalityOf)
 import Data.Semigroup.Foldable
 import Numeric.Extended.Real
-import Prelude                hiding (readFile, writeFile)
-import System.Directory       (doesFileExist, makeAbsolute)
+import Prelude                 hiding (readFile, writeFile)
+import System.Directory        (doesFileExist, makeAbsolute)
 import System.Exit
-import System.FilePath.Posix  (splitFileName, takeFileName)
+import System.FilePath.Posix   (splitFileName, takeFileName)
 import System.Process
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -287,7 +287,7 @@ runScripts inputScripts outputPaths = do
   where
     runNextScript :: ExceptT (FilePath, Int) IO () -> FilePath -> ExceptT (FilePath, Int) IO ()
     runNextScript v s = v >> runScript s
-    
+
     runScript :: FilePath -> ExceptT (FilePath, Int) IO ()
     runScript script = ExceptT $ do
         ctx <- constructProcess script
@@ -296,7 +296,7 @@ runScripts inputScripts outputPaths = do
         pure $ case exitCode of
                  ExitFailure v -> Left (script, v)
                  _             -> Right ()
-    
+
     nicelyReadFile :: FilePath -> IO ByteString
     nicelyReadFile filePath = do
         fileExist   <- doesFileExist filePath
@@ -383,7 +383,7 @@ scriptsAllSucceed xs =
               in  testCase (makeTitle scripts) $ do
         v <- runScripts scripts []
         case v of
-          Right e -> assertBool "No files were to be collected" $ e == []
+          Right e -> assertBool "No files were to be collected" $ null e
           Left (failedScript, ec) -> assertFailure $ mconcat
                                        [ "Expected success of script '"
                                        , failedScript
@@ -394,7 +394,7 @@ scriptsAllSucceed xs =
 
 -- |
 -- Takes multiple file pathes and combines thier base names tinto a shorter title.
-makeTitle :: NonEmpty FilePath -> String 
+makeTitle :: NonEmpty FilePath -> String
 makeTitle (x:|xs) = (prefix <>) . intercalate "," . (name:) $ takeFileName <$> xs
    where
      (prefix, name) = splitFileName x

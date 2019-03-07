@@ -36,6 +36,7 @@ module Bio.Character.Encodable.Dynamic.Internal
 import           Bio.Character.Encodable.Dynamic.Class
 import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
+import           Bio.Character.Exportable
 import           Control.DeepSeq
 import           Control.Lens                          hiding (mapping)
 import           Data.Alphabet
@@ -55,7 +56,6 @@ import           Data.MonoTraversable
 import           Data.Range
 import           Data.String                           (fromString)
 import           Data.Vector                           (Vector)
-import           FFI.Character.Exportable.Class
 import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()

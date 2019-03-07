@@ -41,12 +41,12 @@ import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Bio.Metadata.Dynamic
 import Bio.Sequence.Block.Internal
+import Bio.TCM
 import Control.DeepSeq
 import Control.Lens
 import Data.Key
 import Data.List.NonEmpty           (last)
 import Data.Semigroup
-import Data.TCM
 import Data.Vector                  (Vector)
 import GHC.Generics
 import Prelude                      hiding (last, zipWith)

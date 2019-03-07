@@ -6,11 +6,11 @@ module Main (main) where
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Analysis.Parsimony.Dynamic.SequentialAlign
 import           Bio.Character.Encodable
+import           Bio.TCM.Memoized
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                                             as BM
 import qualified Data.List.NonEmpty                                     as NE
-import           Data.TCM.Memoized
 import           System.Environment                                     (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck

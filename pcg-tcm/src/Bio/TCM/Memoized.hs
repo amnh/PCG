@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.TCM.Memoized
+-- Module      :  Bio.TCM.Memoized
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -10,7 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
-module Data.TCM.Memoized
+module Bio.TCM.Memoized
   ( FFI.CBufferUnit
   , FFI.CDynamicChar
   , FFI.ForeignVoid
@@ -20,7 +20,7 @@ module Data.TCM.Memoized
   , FFI.getMedianAndCost3D
   ) where
 
-import qualified Data.TCM.Memoized.FFI as FFI
+import qualified Bio.TCM.Memoized.FFI as FFI
 
 
 -- |

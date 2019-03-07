@@ -41,6 +41,8 @@ import           Bio.Sequence                                  hiding (hexmap)
 import           Bio.Sequence.Block
 import qualified Bio.Sequence.Character                        as CS
 import qualified Bio.Sequence.Metadata                         as MD
+import           Bio.TCM                                       (TCM, TCMStructure (..))
+import qualified Bio.TCM                                       as TCM
 import           Control.Arrow                                 ((&&&), (***))
 import           Control.DeepSeq
 import           Control.Lens                                  (over)
@@ -71,8 +73,6 @@ import           Data.Semigroup.Foldable
 import           Data.Set                                      (Set, (\\))
 import qualified Data.Set                                      as Set
 import           Data.String
-import           Data.TCM                                      (TCM, TCMStructure (..))
-import qualified Data.TCM                                      as TCM
 import           Data.Text.Short                               (ShortText, toString)
 import qualified Data.Text.Short                               as TS
 import           Data.Vector.NonEmpty                          (Vector)

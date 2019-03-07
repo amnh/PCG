@@ -8,6 +8,8 @@ module PCG.Command.Read.Evaluate
   ) where
 
 import           Bio.Graph
+import           Bio.TCM                                   (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
+import qualified Bio.TCM                                   as TCM
 import           Control.Monad                             (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
@@ -35,8 +37,6 @@ import           Data.Ord                                  (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.String                               (IsString (fromString))
-import           Data.TCM                                  (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
-import qualified Data.TCM                                  as TCM
 import           Data.Text.IO                              (readFile)
 import           Data.Validation
 import qualified Data.Vector.NonEmpty                      as VNE

@@ -22,8 +22,8 @@ module Bio.Sequence.Block.Builder
   ) where
 
 
+import Bio.TCM
 import Data.DList
-import Data.TCM
 import Data.Vector.Instances ()
 
 

@@ -10,6 +10,7 @@
 --
 -- Module exposing a sequential alignment optimization.
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE FlexibleContexts    #-}
@@ -21,8 +22,8 @@ module Analysis.Parsimony.Dynamic.SequentialAlign
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (handleMissingCharacter)
 import qualified Analysis.Parsimony.Dynamic.SequentialAlign.FFI                  as FFI
 import           Bio.Character.Encodable
-import           Data.TCM.Memoized
-import           FFI.Character.Exportable.Class
+import           Bio.Character.Exportable
+import           Bio.TCM.Memoized
 
 
 -- |

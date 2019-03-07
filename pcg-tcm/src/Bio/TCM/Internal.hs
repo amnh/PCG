@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.TCM.Internal
+-- Module      :  Bio.TCM.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -15,7 +15,7 @@
 {-# LANGUAGE Strict         #-}
 {-# LANGUAGE TypeFamilies   #-}
 
-module Data.TCM.Internal
+module Bio.TCM.Internal
   ( TCM(..)
   , TCMDiagnosis(..)
   , TCMStructure(..)

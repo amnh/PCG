@@ -5,9 +5,9 @@ module TCM.Test
   ( testSuite
   ) where
 
+import Bio.TCM
 import Data.Bifunctor        (bimap)
 import Data.MonoTraversable
-import Data.TCM
 import Data.Word
 import Test.HUnit.Custom     (assertException)
 import Test.QuickCheck       (Positive (Positive), (===))

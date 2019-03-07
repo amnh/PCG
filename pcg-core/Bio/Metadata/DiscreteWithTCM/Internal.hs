@@ -31,20 +31,20 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   , discreteMetadataWithTCM
   ) where
 
+import Bio.Character.Exportable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class
-import Bio.Metadata.MetricRepresentation
+import Bio.MetricRepresentation
+import Bio.TCM                            as TCM
+import Bio.TCM.Memoized
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
 import Data.List                          (intercalate)
 import Data.Range
-import Data.TCM                           as TCM
-import Data.TCM.Memoized
 import Data.Text.Short                    (ShortText)
-import FFI.Character.Exportable
 import GHC.Generics                       hiding (to)
 import Text.XML
 

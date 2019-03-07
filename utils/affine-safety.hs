@@ -5,11 +5,11 @@ module Main (main) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Encodable
+import           Bio.TCM.Dense
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                                    as BM
 import qualified Data.List.NonEmpty                            as NE
-import           Data.TCM.Dense
 import           System.Environment                            (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck

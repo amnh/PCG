@@ -27,6 +27,7 @@ module Bio.Character.Encodable.Stream
   ) where
 
 import           Bio.Character.Encodable.Internal
+import           Bio.Character.Exportable
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                       as BM
@@ -38,7 +39,6 @@ import           Data.List.Utility
 import           Data.Maybe                       (fromMaybe)
 import           Data.MonoTraversable
 import           Data.String                      (IsString)
-import           FFI.Character.Exportable
 import           Foreign.C.Types
 
 

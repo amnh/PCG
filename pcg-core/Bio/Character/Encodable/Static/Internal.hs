@@ -30,6 +30,7 @@ module Bio.Character.Encodable.Static.Internal
 import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Static.Class
 import           Bio.Character.Encodable.Stream
+import           Bio.Character.Exportable
 import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
@@ -45,7 +46,6 @@ import           Data.Monoid                          ()
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.String                          (fromString)
-import           FFI.Character.Exportable.Class
 import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances  ()

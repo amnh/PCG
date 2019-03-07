@@ -22,6 +22,8 @@ module Data.Normalization.Metadata.Class
   , HasNormalizedMetadata(..)
   ) where
 
+import           Bio.TCM                              (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
+import qualified Bio.TCM                              as TCM
 import           Control.Applicative
 import           Data.Alphabet
 import           Data.Foldable
@@ -31,8 +33,6 @@ import           Data.Monoid
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata.Internal
 import           Data.String                          (IsString (fromString))
-import           Data.TCM                             (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
-import qualified Data.TCM                             as TCM
 import qualified Data.Vector                          as V
 import           Data.Vector.Instances                ()
 import           Data.Vector.NonEmpty                 (Vector)
