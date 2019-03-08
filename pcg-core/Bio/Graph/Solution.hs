@@ -8,7 +8,6 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
---
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric              #-}
@@ -93,7 +92,7 @@ instance {-# OVERLAPPABLE #-} PrintDot a => PrintDot (PhylogeneticSolution a) wh
     listToDot     = fmap mconcat . traverse   toDot
 
 
-instance Show n => PrintDot (PhylogeneticSolution (PhylogeneticDAG2 m e n u v w x y z)) where
+instance Show n => PrintDot (PhylogeneticSolution (PhylogeneticDAG m e n u v w x y z)) where
 
     unqtDot       = unqtDot . uncurry mkGraph . foldMap1 getSolutionDotContext . phylogeneticForests
 
@@ -184,7 +183,7 @@ instance
   , ToXML w
   , ToXML y
   , ToXML z
-  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG2 m e n u v w x y z)) where
+  ) => ToXML (PhylogeneticSolution (PhylogeneticDAG m e n u v w x y z)) where
 
     toXML soln@(PhylogeneticSolution forests) = xmlElement "Solution" attrs forestContents
         where
@@ -217,7 +216,7 @@ getSolutionDotContext
      , Key t ~ Int
      , Show n
      )
-  => t (PhylogeneticDAG2 m e n u v w x y z)
+  => t (PhylogeneticDAG m e n u v w x y z)
   -> ([DotNode GraphID], [DotEdge GraphID])
 getSolutionDotContext xs = foldMapWithKey1 g xs
   where

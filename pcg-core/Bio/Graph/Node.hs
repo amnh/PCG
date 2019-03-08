@@ -13,8 +13,8 @@
 module Bio.Graph.Node
   ( EdgeSet
   , NewickSerialization()
-  , PhylogeneticNode (..)
-  , PhylogeneticNode2(..)
+  , PhylogeneticFreeNode (..)
+  , PhylogeneticNode(..)
   , ResolutionCache
   , ResolutionInformation(..)
   , ResolutionMetadata(..)

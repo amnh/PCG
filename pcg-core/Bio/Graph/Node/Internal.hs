@@ -24,8 +24,8 @@
 module Bio.Graph.Node.Internal
   ( EdgeSet
   , NewickSerialization()
-  , PhylogeneticNode (..)
-  , PhylogeneticNode2(..)
+  , PhylogeneticFreeNode (..)
+  , PhylogeneticNode(..)
   , ResolutionCache
   , ResolutionInformation(..)
   , ResolutionMetadata(..)
@@ -67,7 +67,7 @@ import TextShow                    (TextShow (showb), toString, unlinesB)
 -- |
 -- This serves as a computation /invariant/ node decoration designed to hold node
 -- information such as name and later a subtree structure.
-data  PhylogeneticNode n s
+data  PhylogeneticFreeNode n s
     = PNode
     { nodeDecorationDatum :: !n
     , sequenceDecoration  :: !s
@@ -77,7 +77,7 @@ data  PhylogeneticNode n s
 -- |
 -- This serves as a computation /dependant/ node decoration designed to hold node
 -- information for a phylogenetic network (or tree).
-data  PhylogeneticNode2 s n
+data  PhylogeneticNode s n
     = PNode2
     { resolutions          :: !(ResolutionCache s)
     , nodeDecorationDatum2 :: !n
@@ -86,13 +86,13 @@ data  PhylogeneticNode2 s n
 
 -- |
 -- A 'Lens' for the 'resoluions' field.
-{-# SPECIALISE _resolutions :: Lens (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (ResolutionCache s) (ResolutionCache s') #-}
+{-# SPECIALISE _resolutions :: Lens (PhylogeneticNode s n) (PhylogeneticNode s' n) (ResolutionCache s) (ResolutionCache s') #-}
 class HasResolutions s t a b | s -> a, b s -> t where
 
     _resolutions :: Lens s t a b
 
 
-instance HasResolutions (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (ResolutionCache s) (ResolutionCache s') where
+instance HasResolutions (PhylogeneticNode s n) (PhylogeneticNode s' n) (ResolutionCache s) (ResolutionCache s') where
 
     {-# INLINE _resolutions #-}
     _resolutions = lens resolutions (\p s -> p {resolutions = s})
@@ -100,13 +100,13 @@ instance HasResolutions (PhylogeneticNode2 s n) (PhylogeneticNode2 s' n) (Resolu
 
 -- |
 -- A 'Lens' for the 'nodeDecorationDatum' field.
-{-# SPECIALISE _nodeDecorationDatum :: Lens (PhylogeneticNode2 s n) (PhylogeneticNode2 s n') n n' #-}
+{-# SPECIALISE _nodeDecorationDatum :: Lens (PhylogeneticNode s n) (PhylogeneticNode s n') n n' #-}
 class HasNodeDecorationDatum s t a b | s -> a, b s -> t where
 
     _nodeDecorationDatum :: Lens s t a b
 
 
-instance HasNodeDecorationDatum (PhylogeneticNode2 s n) (PhylogeneticNode2 s n') n n' where
+instance HasNodeDecorationDatum (PhylogeneticNode s n) (PhylogeneticNode s n') n n' where
 
     {-# INLINE _nodeDecorationDatum #-}
     _nodeDecorationDatum = lens nodeDecorationDatum2 (\p n -> p {nodeDecorationDatum2 = n})
@@ -326,7 +326,7 @@ instance Apply ResolutionInformation where
       }
 
 
-instance Bifunctor PhylogeneticNode where
+instance Bifunctor PhylogeneticFreeNode where
 
     bimap g f =
       PNode <$> g . nodeDecorationDatum
@@ -340,10 +340,10 @@ instance Eq  (ResolutionInformation s) where
                && lhs ^. _subtreeRepresentation == rhs ^. _subtreeRepresentation
 
 
-instance (NFData n, NFData s) => NFData (PhylogeneticNode n s)
+instance (NFData n, NFData s) => NFData (PhylogeneticFreeNode n s)
 
 
-instance (NFData s, NFData n) => NFData (PhylogeneticNode2 s n)
+instance (NFData s, NFData n) => NFData (PhylogeneticNode s n)
 
 
 instance NFData NewickSerialization
@@ -379,12 +379,12 @@ instance Semigroup ResolutionMetadata where
       }
 
 
-instance (TextShow n, TextShow s) => Show (PhylogeneticNode2 s n) where
+instance (TextShow n, TextShow s) => Show (PhylogeneticNode s n) where
 
     show = toString . showb
 
 
-instance (TextShow n, TextShow s) => TextShow (PhylogeneticNode s n) where
+instance (TextShow n, TextShow s) => TextShow (PhylogeneticFreeNode s n) where
 
     showb node = unlinesB
         [ "PNode {"
@@ -394,7 +394,7 @@ instance (TextShow n, TextShow s) => TextShow (PhylogeneticNode s n) where
         ]
 
 
-instance (TextShow n, TextShow s) => TextShow (PhylogeneticNode2 s n) where
+instance (TextShow n, TextShow s) => TextShow (PhylogeneticNode s n) where
 
     showb node = unlinesB
         [ showb $ nodeDecorationDatum2 node
@@ -431,12 +431,12 @@ instance TextShow s => TextShow (ResolutionInformation s) where
            ]
 
 
-instance Show s => ToNewick (PhylogeneticNode2 n s) where
+instance Show s => ToNewick (PhylogeneticNode n s) where
 
     toNewick node = show $ nodeDecorationDatum2 node
 
 
-instance (ToXML n) => ToXML (PhylogeneticNode2 n s) where
+instance (ToXML n) => ToXML (PhylogeneticNode n s) where
 
     toXML node = xmlElement "Phylogenetic_node" nodeAttrs contents
         where
@@ -489,8 +489,8 @@ addNetworkEdgeToTopology e x r
 
 
 -- |
--- A safe constructor of a 'PhylogeneticNode2'.
-pNode2 :: n -> ResolutionCache s -> PhylogeneticNode2 s n
+-- A safe constructor of a 'PhylogeneticNode'.
+pNode2 :: n -> ResolutionCache s -> PhylogeneticNode s n
 pNode2 = flip PNode2
 
 

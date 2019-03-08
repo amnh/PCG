@@ -21,8 +21,8 @@ module Bio.Graph.Constructions
   , FinalDecorationDAG
   , GlobalSettings
   , GraphState
+  , PhylogeneticFreeDAG(..)
   , PhylogeneticDAG(..)
-  , PhylogeneticDAG2(..)
   , PreOrderDecorationDAG
   , PostorderDecorationDAG
   , SearchState
@@ -68,7 +68,7 @@ import Data.Vector                         (Vector)
 -- |
 -- A /reified/ DAG that contains characters but has no decorations.
 type CharacterDAG =
-       PhylogeneticDAG2
+       PhylogeneticDAG
          ()
          EdgeLength
          NodeLabel
@@ -115,7 +115,7 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 -- |
 -- Decoration of a phylogenetic DAG after a pre-order traversal AND after the edge data has been finalized.
 type FinalDecorationDAG =
-       PhylogeneticDAG2
+       PhylogeneticDAG
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          EdgeAnnotation
          NodeLabel
@@ -130,7 +130,7 @@ type FinalDecorationDAG =
 -- |
 -- Decoration of a phylogenetic DAG after a pre-order traversal.
 type PreOrderDecorationDAG =
-       PhylogeneticDAG2
+       PhylogeneticDAG
          (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
          EdgeLength
          NodeLabel
@@ -145,7 +145,7 @@ type PreOrderDecorationDAG =
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
 type PostorderDecorationDAG m =
-       PhylogeneticDAG2
+       PhylogeneticDAG
          m
          EdgeLength
          NodeLabel
@@ -239,7 +239,7 @@ type UnifiedDynamicCharacter    = Maybe (DynamicDecorationInitial DynamicCharact
 -- |
 -- A DAG as read in from a READ command before being reified.
 type UnReifiedCharacterDAG =
-       PhylogeneticDAG
+       PhylogeneticFreeDAG
          ()
          EdgeLength
          NodeLabel

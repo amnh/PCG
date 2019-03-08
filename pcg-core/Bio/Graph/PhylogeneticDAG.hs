@@ -15,8 +15,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Bio.Graph.PhylogeneticDAG
-  ( PhylogeneticDAG(..)
-  , PhylogeneticDAG2(..)
+  ( PhylogeneticFreeDAG(..)
+  , PhylogeneticDAG(..)
   , PhylogeneticDAGish(..)
   , PostorderContextualData(..)
   , HasVirtualNodeMapping(..)
@@ -63,7 +63,7 @@ import qualified Data.List.NonEmpty                                  as NE
 -- Calculate the root cost for each character block.
 rootCosts
   :: HasBlockCost u v w x y z
-  => PhylogeneticDAG2 m s t u v w x y z -> NonEmpty Double
+  => PhylogeneticDAG m s t u v w x y z -> NonEmpty Double
 rootCosts (PDAG2 dag meta) = sequenceCost meta <$> rootDecs
   where
     roots     = rootRefs dag

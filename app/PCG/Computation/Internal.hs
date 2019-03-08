@@ -38,12 +38,16 @@ collapseReadCommands p@(x:|xs) =
 
 
 evaluate :: Computation -> SearchState
-evaluate (Computation (x:|xs)) =
-    case x of
-      READ c -> foldl' f (Read.evaluate c) xs
-      LOAD c -> foldl' f (Load.evaluate c) xs
-      _      -> fail "There was no input data specified to start the computation; expecting a LOAD or READ command."
+evaluate (Computation (x:|xs)) = foldl' f z xs
   where
+    z = case x of
+          READ c -> Read.evaluate c
+          LOAD c -> Load.evaluate c
+          _      -> fail $ unwords
+                      [ "There was no input data specified to start the computation;"
+                      , "expecting a LOAD or READ command."
+                      ]
+
     f :: SearchState -> Command -> SearchState
     f s = \case
              BUILD  c -> s >>=  Build.evaluate c

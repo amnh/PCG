@@ -30,12 +30,12 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 import           Bio.Character.Encodable
 import           Bio.TCM.Dense
 import           Bio.TCM.Memoized
-import           Data.List.NonEmpty                                                     (NonEmpty (..))
+import           Data.List.NonEmpty                                     (NonEmpty (..))
 import           Data.MonoTraversable
 import           Test.Custom.NucleotideSequence
 import           Test.Tasty
 import           Test.Tasty.QuickCheck
-import qualified Test.Tasty.SmallCheck                                                  as SC
+import qualified Test.Tasty.SmallCheck                                  as SC
 
 
 testSuite :: TestTree

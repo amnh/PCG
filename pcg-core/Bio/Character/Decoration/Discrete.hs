@@ -41,7 +41,6 @@ import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
 import Data.Range
-import Data.String
 import Numeric.Extended
 import Text.XML
 import TextShow                        (TextShow (showb))

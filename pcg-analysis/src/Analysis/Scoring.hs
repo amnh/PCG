@@ -55,8 +55,8 @@ import           Data.Vector                                   (Vector)
 -- Remove all scoring data from nodes.
 wipeScoring
   :: Default n
-  => PhylogeneticDAG2 m e n u v w x y z
-  -> PhylogeneticDAG2 m e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  => PhylogeneticDAG m e n u v w x y z
+  -> PhylogeneticDAG m e n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
 wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
   where
     wipedDAG =
@@ -65,8 +65,8 @@ wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
 
     wipeDecorations
       :: Default n
-      => IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
-      -> IndexData e (PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n)
+      => IndexData e (PhylogeneticNode (CharacterSequence u v w x y z) n)
+      -> IndexData e (PhylogeneticNode (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n)
     wipeDecorations ind =
       ind & _nodeDecoration %~ wipeNode shouldWipe
 
@@ -80,8 +80,8 @@ wipeNode
   :: ( Default n
      )
   => Bool -- ^ Do I wipe?
-  -> PhylogeneticNode2 (CharacterSequence        u         v         w         x         y         z ) n
-  -> PhylogeneticNode2 (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n
+  -> PhylogeneticNode (CharacterSequence        u         v         w         x         y         z ) n
+  -> PhylogeneticNode (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n
 wipeNode wipe =
   PNode2 <$> pure . g . NE.head . resolutions <*> f . nodeDecorationDatum2
       where
@@ -114,7 +114,7 @@ performDecoration
      , RangedCharacterDecoration w StaticCharacter
      , SimpleDynamicDecoration z DynamicCharacter
      )
-  => PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  => PhylogeneticDAG m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
 performDecoration x = finalizeEdgeData . performPreorderDecoration . performPostorderDecoration $ x
   where
@@ -158,7 +158,7 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
               pairwiseAlignmentFunction = selectDynamicMetric meta
 
     performPostorderDecoration
-      :: PhylogeneticDAG2 m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+      :: PhylogeneticDAG m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
       -> PostorderDecorationDAG
            ( TraversalTopology
            , Double

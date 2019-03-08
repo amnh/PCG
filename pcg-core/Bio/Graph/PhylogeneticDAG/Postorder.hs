@@ -60,15 +60,15 @@ postorderSequence'
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext x x' -> x')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext y y' -> y')
   -> (DynamicCharacterMetadataDec (Element DynamicCharacter)   -> PostorderContext z z' -> z')
-  -> PhylogeneticDAG2 m e n u  v  w  x  y  z
-  -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
+  -> PhylogeneticDAG m e n u  v  w  x  y  z
+  -> PhylogeneticDAG m e n u' v' w' x' y' z'
 
 postorderSequence' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag m) = pdag2 & _phylogeneticForest .~ newRDAG
   where
     completeLeafSetForDAG :: UnionSet
     completeLeafSetForDAG = foldMap' f dag
       where
-        f :: PhylogeneticNode2 charSeq decData -> UnionSet
+        f :: PhylogeneticNode charSeq decData -> UnionSet
         f = (^. _leafSetRepresentation) . NE.head . resolutions
 
     newRDAG =
@@ -94,7 +94,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag m) = pdag2 & _phylogenetic
                    . nodeDecoration
                    . (newReferences !)
 
-    memo :: V.Vector (IndexData e (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n))
+    memo :: V.Vector (IndexData e (PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n))
     memo = V.generate dagSize h
       where
         h i = (dag ^. _references . singular (ix i))
@@ -115,7 +115,7 @@ postorderSequence' f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag m) = pdag2 & _phylogenetic
             localResolutions
               = fmap (generateLocalResolutions f1 f2 f3 f4 f5 f6 m) childContextResolutions
 
-            node :: IndexData e (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+            node :: IndexData e (PhylogeneticNode (CharacterSequence u v w x y z) n)
             node             = references dag ! i
 
             childIndices :: ChildContext Int

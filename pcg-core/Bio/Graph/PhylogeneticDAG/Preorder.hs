@@ -80,8 +80,8 @@ preorderSequence ::
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext x x' -> x')
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext y y' -> y')
   -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> AP.PreorderContext z z' -> z')
-  -> PhylogeneticDAG2 m e n u  v  w  x  y  z
-  -> PhylogeneticDAG2 m e n u' v' w' x' y' z'
+  -> PhylogeneticDAG m e n u  v  w  x  y  z
+  -> PhylogeneticDAG m e n u' v' w' x' y' z'
 preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneticForest .~ newRDAG
   where
     refs          = references dag
@@ -101,7 +101,7 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
     -- the pre-order traversal. This memoization technique relies on lazy
     -- evaluation to compute the data for each vector index in the correct order
     -- of dependancy with the root node(s) as the base case(es).
-    memo :: Vector (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)
+    memo :: Vector (PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n)
     memo = V.generate dagSize g
       where
 
@@ -114,7 +114,7 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
             node            = refs ! currInd
 
             -- This is a singleton resolution cache to conform the the
-            -- PhylogeneticNode2 type requirements. It is the part of that gets
+            -- PhylogeneticNode type requirements. It is the part of that gets
             -- updated and requires a bunch of work to be performed.
             newResolution    = mockResInfo datumResolutions newSequence
 
@@ -159,7 +159,7 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
               = toEnum . length . takeWhile (/= currInd) . IM.keys . childRefs $ refs ! j
 
             selectTopologyFromParentOptions
-              :: NonEmpty (Int, PhylogeneticNode2 (CharacterSequence u1 v1 w1 x1 y1 z1) n)
+              :: NonEmpty (Int, PhylogeneticNode (CharacterSequence u1 v1 w1 x1 y1 z1) n)
               -> Int
               -> TraversalTopology
               -> ( TraversalTopology
@@ -214,7 +214,7 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
     -- A "sequence" of the minimum topologies that correspond to each block.
 getSequenceOfBlockMinimumTopologies
   :: HasBlockCost u v w x y z
-  => PhylogeneticDAG2 m e n u v w x y z
+  => PhylogeneticDAG m e n u v w x y z
   -> BlockTopologies
 getSequenceOfBlockMinimumTopologies (PDAG2 dag meta) = getTopologies blockMinimalResolutions
       where
@@ -332,7 +332,7 @@ data  PreorderContext c
     | NoBlockData
 
 
-generateDotFile :: Show n => PhylogeneticDAG2 m e n u v w x y z -> String
+generateDotFile :: Show n => PhylogeneticDAG m e n u v w x y z -> String
 generateDotFile = (<> "\n") . L.unpack . renderDot . toDot
 
 
@@ -349,14 +349,14 @@ preorderFromRooting
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NEV.Vector (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
-  -> PhylogeneticDAG2 m e' n' u' v' w' x' y' z
-  -> PhylogeneticDAG2 m e' n' u' v' w' x' y' z'
+  -> PhylogeneticDAG m e' n' u' v' w' x' y' z
+  -> PhylogeneticDAG m e' n' u' v' w' x' y' z'
 preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyContextPerBlock pdag2@(PDAG2 dag meta)
   =  pdag2 & _phylogeneticForest .~ newRDAG
   where
     newRDAG
       :: ReferenceDAG
-      (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e' (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n')
+      (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e' (PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n')
     newRDAG =
          dag & _references .~ newReferences
              & _graphData  %~ buildMetaData
@@ -489,18 +489,18 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
     -- Unlike 'preorderSequence' this memoized vector only updates the dynamic
     -- characters.
 
-    memo :: Vector (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n')
+    memo :: Vector (PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n')
     memo = V.generate nodeCount gen
       where
 
         -- This is the generating function.
         -- It computes the updated node decoration for a given index of the vector.
-        gen :: Int -> PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n'
+        gen :: Int -> PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n'
         gen i = (node ^. _nodeDecoration) & _resolutions .~ newResolution
           where
 
             -- This is a singleton resolution cache to conform to the
-            -- PhylogeneticNode2 type requirements. It is the part that gets
+            -- PhylogeneticNode type requirements. It is the part that gets
             -- updated, and requires a bunch of work to be performed.
             -- Remember, this only updates the dynamic characters.
 
@@ -600,8 +600,8 @@ setEdgeSequences
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (y, y) -> y')
   -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> (z, z) -> z')
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z')))
-  -> PhylogeneticDAG2 m e n u v w x y z
-  -> PhylogeneticDAG2 m (e, CharacterSequence u' v' w' x' y' z') n u v w x y z
+  -> PhylogeneticDAG m e n u v w x y z
+  -> PhylogeneticDAG m (e, CharacterSequence u' v' w' x' y' z') n u v w x y z
 setEdgeSequences f1 f2 f3 f4 f5 f6 edgeMappingVec (PDAG2 dag meta) = PDAG2 updatedDAG meta
   where
     -- Looks like this value is bad and can't be used.
@@ -614,14 +614,14 @@ setEdgeSequences f1 f2 f3 f4 f5 f6 edgeMappingVec (PDAG2 dag meta) = PDAG2 updat
       :: Int
       -> ( IndexData
              e
-             (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+             (PhylogeneticNode (CharacterSequence u v w x y z) n)
          , HashMap
              EdgeReference
              (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z'))
          )
       -> IndexData
            (e, CharacterSequence u' v' w' x' y' z')
-           (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+           (PhylogeneticNode (CharacterSequence u v w x y z) n)
     updateEdgeData _i (idx, _edgeMapping) = idx { childRefs = addEdgeSeq <#$> childRefs idx }
       where
         thisSeq  = getDatum idx :: CharacterSequence u v w x y z

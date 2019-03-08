@@ -51,10 +51,7 @@ parseArgs args =
     (.!.) :: BM.Bimap (NonEmpty String) (NonEmpty String)
           -> NonEmpty String
           -> NonEmpty String
-    (.!.) bm k =
-        case BM.lookup k bm of
-          Nothing -> error $ "Bimap left key not found: " <> show k
-          Just  v -> v
+    (.!.) bm k = fromMaybe (error $ "Bimap left key not found: " <> show k) $ BM.lookup k bm
 
 
 performCounterExampleSearch :: Maybe DynamicCharacter -> IO ()

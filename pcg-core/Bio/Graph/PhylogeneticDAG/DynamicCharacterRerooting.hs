@@ -78,8 +78,8 @@ assignOptimalDynamicCharacterRootEdges
      )
   => (DynamicCharacterMetadataDec (Element DynamicCharacter)
   -> PostorderContext z z -> z)  -- ^ Post-order traversal function for Dynamic Characters.
-  -> PhylogeneticDAG2 m e n u v w x y z
-  -> ( PhylogeneticDAG2 m e n u v w x y z
+  -> PhylogeneticDAG m e n u v w x y z
+  -> ( PhylogeneticDAG m e n u v w x y z
      ,         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
      , Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
      )

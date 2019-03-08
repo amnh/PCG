@@ -97,7 +97,7 @@ assignPunitiveNetworkEdgeCost
   :: ( HasBlockCost u v w x y z
      , HasRootCost  u v w x y z
      )
-  => PhylogeneticDAG2 m e n u v w x y z
+  => PhylogeneticDAG m e n u v w x y z
   -> ( NEV.Vector
        ( TraversalTopology
        , Double
@@ -105,7 +105,7 @@ assignPunitiveNetworkEdgeCost
        , Double
        , Vector (NonEmpty TraversalFocusEdge)
        )
-     , PhylogeneticDAG2
+     , PhylogeneticDAG
          ( TraversalTopology
          , Double
          , Double
@@ -192,7 +192,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (da
 --
 -- * Each taxon in the input DAG is connected to exactly one root.
 --
-gatherDisplayForests :: PhylogeneticDAG2 m e n u v w x y z -> [ResolutionCache (CharacterSequence u v w x y z)]
+gatherDisplayForests :: PhylogeneticDAG m e n u v w x y z -> [ResolutionCache (CharacterSequence u v w x y z)]
 gatherDisplayForests (PDAG2 dag _) = result
   where
     -- First we collect all resolutions for each root node

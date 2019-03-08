@@ -21,11 +21,10 @@ module Bio.Graph
   , FinalDecorationDAG
   , GlobalSettings
   , GraphState
+  , PhylogeneticFreeDAG(..)
   , PhylogeneticDAG(..)
-  , PhylogeneticDAG2(..)
   , PhylogeneticDAGish(..)
   , PhylogeneticForest(..)
-  , PhylogeneticNode2(..)
   , PhylogeneticSolution(..)
   , PreOrderDecorationDAG
   , PostorderDecorationDAG
@@ -68,7 +67,6 @@ module Bio.Graph
 
 
 import Bio.Graph.Constructions
-import Bio.Graph.Node
 import Bio.Graph.PhylogeneticDAG
 import Bio.Graph.PhylogeneticDAG.Reification
 import Bio.Graph.Solution

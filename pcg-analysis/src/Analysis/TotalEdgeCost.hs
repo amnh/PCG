@@ -8,8 +8,6 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
---
---
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE BangPatterns     #-}
@@ -58,7 +56,7 @@ totalEdgeCosts
      , Ord (Element c)
      , Element c ~ DynamicCharacterElement
      )
-  => PhylogeneticDAG2 m e n u v w x y z
+  => PhylogeneticDAG m e n u v w x y z
   -> NonEmpty [Double]
 --totalEdgeCosts _ (PDAG2 dag _) | trace ("Before Total Edge Cost: " <> referenceRendering dag) False = undefined
 totalEdgeCosts (PDAG2 dag meta) = {-- toNonEmpty . --} applyWeights $ foldlWithKey f initAcc refVec

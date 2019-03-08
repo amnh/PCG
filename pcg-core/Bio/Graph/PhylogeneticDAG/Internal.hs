@@ -1,3 +1,4 @@
+
 ------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.PhylogeneticDAG.Internal
@@ -29,9 +30,9 @@
 
 module Bio.Graph.PhylogeneticDAG.Internal
   ( EdgeReference
-  , PhylogeneticDAG(..)
+  , PhylogeneticFreeDAG(..)
   , PostorderContextualData(..)
-  , PhylogeneticDAG2(..)
+  , PhylogeneticDAG(..)
   , applySoftwireResolutions
   , generateLocalResolutions
   , getDotContextWithBaseAndIndex
@@ -101,10 +102,10 @@ import           Type.Reflection                 (Typeable)
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * y = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicCharacter'     or 'Bio.Metadata.DiscreteWithTCM'
-data  PhylogeneticDAG m e n u v w x y z
+data  PhylogeneticFreeDAG m e n u v w x y z
     = PDAG
     { simpleColumnMetadata     :: MetadataSequence m
-    , simplePhylogeneticForest :: ReferenceDAG () e (PhylogeneticNode n (CharacterSequence u v w x y z))
+    , simplePhylogeneticForest :: ReferenceDAG () e (PhylogeneticFreeNode n (CharacterSequence u v w x y z))
     } deriving (Generic)
 
 
@@ -141,18 +142,17 @@ data PostorderContextualData t = PostorderContextualData
 instance NFData t => NFData (PostorderContextualData t)
 
 
--- TODO: RENAME THIS to PhylogeneticForest
 -- |
 -- The primitive phylogenetic object.
 --
 -- Contains each taxon exactly once, though the leaves do not need to be connected.
 -- The graph object allows for multiple roots and recticulation events.
-data  PhylogeneticDAG2 m e n u v w x y z
+data  PhylogeneticDAG m e n u v w x y z
     = PDAG2
     { phylogeneticForest :: ReferenceDAG
                               (PostorderContextualData (CharacterSequence u v w x y z))
                               e
-                              (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+                              (PhylogeneticNode (CharacterSequence u v w x y z) n)
     , columnMetadata     :: MetadataSequence m
     } deriving (Generic, Typeable)
 
@@ -176,7 +176,7 @@ instance HasVirtualNodeMapping (PostorderContextualData t) (HashMap EdgeReferenc
     _virtualNodeMapping = lens virtualNodeMapping (\p v -> p {virtualNodeMapping = v})
 
 
-instance HasVirtualNodeMapping (PhylogeneticDAG2 m e n u v w x y z) (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))) where
+instance HasVirtualNodeMapping (PhylogeneticDAG m e n u v w x y z) (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))) where
 
     {-# INLINE _virtualNodeMapping #-}
     _virtualNodeMapping = lens
@@ -199,30 +199,30 @@ instance HasMinimalNetworkContext (PostorderContextualData t) (Maybe (NonEmpty (
 
 
 -- |
--- A 'Lens' for the 'phyogeneticForest' field in 'PhylogeneticDAG2'
+-- A 'Lens' for the 'phyogeneticForest' field in 'PhylogeneticDAG'
 class HasPhylogeneticForest s t a b | s -> a, t -> b, s b -> t, t a -> s where
 
     _phylogeneticForest :: Lens s t a b
 
 
 instance HasPhylogeneticForest
-           (PhylogeneticDAG2 m e n u v w x y z)
-           (PhylogeneticDAG2 m e n u' v' w' x' y' z')
-           (ReferenceDAG (PostorderContextualData (CharacterSequence u v w x y z)) e (PhylogeneticNode2 (CharacterSequence u v w x y z) n))
-           (ReferenceDAG (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e (PhylogeneticNode2 (CharacterSequence u' v' w' x' y' z') n)) where
+           (PhylogeneticDAG m e n u v w x y z)
+           (PhylogeneticDAG m e n u' v' w' x' y' z')
+           (ReferenceDAG (PostorderContextualData (CharacterSequence u v w x y z)) e (PhylogeneticNode (CharacterSequence u v w x y z) n))
+           (ReferenceDAG (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e (PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n)) where
 
     {-# INLINE _phylogeneticForest #-}
     _phylogeneticForest = lens phylogeneticForest (\p pf -> p {phylogeneticForest = pf})
 
 -- |
--- A 'Lens' for the 'columnMetadata' field in 'PhylogeneticDAG2'
+-- A 'Lens' for the 'columnMetadata' field in 'PhylogeneticDAG'
 class HasColumnMetadata s t a b | s -> a, t -> b, s b -> t, t a -> s where
     _columnMetadata :: Lens s t a b
 
 
 instance HasColumnMetadata
-           (PhylogeneticDAG2 m  e n u v w x y z)
-           (PhylogeneticDAG2 m' e n u v w x y z)
+           (PhylogeneticDAG m  e n u v w x y z)
+           (PhylogeneticDAG m' e n u v w x y z)
            (MetadataSequence m                 )
            (MetadataSequence m'                ) where
     {-# INLINE _columnMetadata #-}
@@ -230,13 +230,13 @@ instance HasColumnMetadata
 
 
 -- | (✔)
-instance HasLeafSet (PhylogeneticDAG2 m e n u v w x y z) (LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)) where
+instance HasLeafSet (PhylogeneticDAG m e n u v w x y z) (LeafSet (PhylogeneticNode (CharacterSequence u v w x y z) n)) where
 
     leafSet = Lens.to getter
         where
             getter ::
-              PhylogeneticDAG2 m e n u v w x y z
-              -> LeafSet (PhylogeneticNode2 (CharacterSequence u v w x y z) n)
+              PhylogeneticDAG m e n u v w x y z
+              -> LeafSet (PhylogeneticNode (CharacterSequence u v w x y z) n)
             getter (PDAG2 e _) =  e ^. leafSet
 
 
@@ -250,11 +250,11 @@ instance ( NFData m
          , NFData x
          , NFData y
          , NFData z
-         ) => NFData (PhylogeneticDAG2 m e n u v w x y z)
+         ) => NFData (PhylogeneticDAG m e n u v w x y z)
 
 
 -- | (✔)
-instance Show n => PrintDot (PhylogeneticDAG2 m e n u v w x y z) where
+instance Show n => PrintDot (PhylogeneticDAG m e n u v w x y z) where
 
     unqtDot       = unqtDot . discardCharacters
 
@@ -274,7 +274,7 @@ instance ( TextShow e
          , TextShow x
          , TextShow y
          , TextShow z
-         ) => Show (PhylogeneticDAG m e n u v w x y z) where
+         ) => Show (PhylogeneticFreeDAG m e n u v w x y z) where
 
     show = toString . showb
 
@@ -288,7 +288,7 @@ instance ( TextShow e
          , TextShow x
          , TextShow y
          , TextShow z
-         ) => TextShow (PhylogeneticDAG m e n u v w x y z) where
+         ) => TextShow (PhylogeneticFreeDAG m e n u v w x y z) where
 
     showb (PDAG _ dag) = showb dag <> "\n" <> foldMapWithKey f dag
       where
@@ -306,13 +306,13 @@ instance ( HasBlockCost u v w x y z
          , TextShow x
          , TextShow y
          , TextShow z
-         ) => Show (PhylogeneticDAG2 m e n u v w x y z) where
+         ) => Show (PhylogeneticDAG m e n u v w x y z) where
 
     show = toString . showb
 
 
 -- | (✔)
-instance Show n => ToNewick (PhylogeneticDAG2 m e n u v w x y z) where
+instance Show n => ToNewick (PhylogeneticDAG m e n u v w x y z) where
 
     toNewick = toNewick . discardCharacters
 
@@ -337,7 +337,7 @@ instance ( HasBlockCost u v w x y z
          , TextShow x
          , TextShow y
          , TextShow z
-         ) => TextShow (PhylogeneticDAG2 m e n u v w x y z) where
+         ) => TextShow (PhylogeneticDAG m e n u v w x y z) where
 
     showb p@(PDAG2 dag m) = unlinesB
         [ renderSummary  p
@@ -362,7 +362,7 @@ instance ( TextShow n
          , ToXML w
          , ToXML y
          , ToXML z
-         ) => ToXML (PhylogeneticDAG2 m e n u v w x y z)  where
+         ) => ToXML (PhylogeneticDAG m e n u v w x y z)  where
 
     toXML (PDAG2 refDag _) = toXML refDag
 
@@ -373,7 +373,7 @@ getDotContextWithBaseAndIndex
   :: Show n
   => Int -- ^ Base over which the Unique
   -> Int
-  -> PhylogeneticDAG2 m e n u v w x y z
+  -> PhylogeneticDAG m e n u v w x y z
   -> ([DotNode GraphID], [DotEdge GraphID])
 getDotContextWithBaseAndIndex i j (PDAG2 dag _) = getDotContext i j $ nodeDecorationDatum2 <$> dag
 
@@ -584,8 +584,8 @@ resolutionsDoNotOverlap x y
 
 
 -- |
--- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG2'.
-discardCharacters :: PhylogeneticDAG2 m e n u v w x y z -> ReferenceDAG () e n
+-- Retrieve only 'ReferenceDAG' from 'PhylogeneticDAG'.
+discardCharacters :: PhylogeneticDAG m e n u v w x y z -> ReferenceDAG () e n
 discardCharacters (PDAG2 x _) = defaultMetadata $ nodeDecorationDatum2 <$> x
 
 
@@ -629,7 +629,7 @@ renderSummary
      , TextShow z
      , HasBlockCost u v w x y z
      )
-  => PhylogeneticDAG2 m e n u v w x y z
+  => PhylogeneticDAG m e n u v w x y z
   -> Builder
 renderSummary pdag@(PDAG2 dag _) = unlinesB
     [ showb dag
@@ -650,7 +650,7 @@ renderSequenceSummary
   :: ( TextShow n
      , HasBlockCost u v w x y z
      )
-  => PhylogeneticDAG2 m e n u v w x y z
+  => PhylogeneticDAG m e n u v w x y z
   -> Builder
 renderSequenceSummary pdag@(PDAG2 dag _meta)
   = ("Sequence Summary\n\n" <>)
@@ -694,7 +694,7 @@ renderBlockSummary
   :: ( HasBlockCost u v w x y z
      , TextShow n
      )
-  => PhylogeneticDAG2 m e n u v w x y z
+  => PhylogeneticDAG m e n u v w x y z
   -> Int
   -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> Builder
