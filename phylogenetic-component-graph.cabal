@@ -369,8 +369,6 @@ library pcg-analysis
     Analysis.Scoring
     Analysis.TotalEdgeCost
 
-    Test.Custom.DynamicCharacterNode
-
   other-modules:
     Analysis.Parsimony.Additive.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Internal
@@ -832,25 +830,6 @@ executable sequential-alignment-invariants
     pcg-analysis,
     pcg-core,
     pcg-tcm,
-
-
-executable three-way-mean-check
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  main-is:
-    three-way-mean-check.hs
-
-  hs-source-dirs:
-    utils
-
-  build-depends:
-    pcg-alphabet,
-    pcg-analysis,
-    pcg-core,
 
 
 executable ukkonen-do-comparison
