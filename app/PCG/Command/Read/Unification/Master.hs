@@ -346,43 +346,40 @@ deriveCharacterNames
      )
   => t FracturedParseResult
   -> t (PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure)))
-deriveCharacterNames xs = (`evalState` charNames) . traverse g $ xs
-    -- TODO: Use assignCharacterNames
+deriveCharacterNames = inlineName . assignCharacterNames h 
   where
-    g :: FracturedParseResult
-      -> State
-           [CharacterName]
-           (PartiallyUnififedCharacterSequences (Maybe (TCM, TCMStructure)))
-    g fpr = do
-        unusedNames <- get
-        -- Split the unused names into the names will use for this fractured Parse result and
-        -- and the remainging names for remaining fractured parse results.
-        let (localNames, remainingNames) = splitAt (length localMetadata) unusedNames
-        -- Put the remainging names back into the state
-        put remainingNames
-        pure $ charMapToSplitValues localNames <$> parsedChars fpr
+    h :: FracturedParseResult
+      -> ( FileSource
+         , Map Identifier
+             (NonEmpty
+                ( Maybe ShortText
+                , (NormalizedCharacter, NormalizedMetadata, FileSource, (Maybe (TCM, TCMStructure)))
+                )
+             )
+         )
+    h fpr = (inputFilePath, expandSeqence <$> parsedChars fpr)
       where
         localMetadata = foldMap toList $ parsedMetas fpr
-
-        charMapToSplitValues
-          :: [CharacterName]
-          -> Vector NormalizedCharacter
-          -> NonEmpty (PartiallyUnififedCharacterSequence (Maybe (TCM, TCMStructure)))
-        charMapToSplitValues characterNames v = NE.fromList $ zip5 a b c d e
+        inputFilePath = force . fromString $ sourceFile fpr
+        inputTCM      = force              $ relatedTcm fpr
+        
+        expandSeqence v = fmap pullOutName . NE.fromList $ zip5 a b c d e
           where
             a = toList v
             b = localMetadata
-            c = let x = force . fromString $ sourceFile fpr in repeat x
-            d = let x = force              $ relatedTcm fpr in repeat x
-            e = characterNames
+            c = repeat inputFilePath
+            d = repeat inputTCM
+            e = correctName . characterName <$> localMetadata
 
---    charNames :: Foldable1 f => f CharacterName
-    charNames = makeCharacterNames $ foldMap1 nameTransform xs
-      where
-        nameTransform x = fmap (const (sourceFile x) &&& correctName . characterName) . foldMap toList $ parsedMetas x
-        correctName txt
-          | TS.null txt = Nothing
-          | otherwise   = Just txt
+    inlineName = fmap (fmap (fmap pushInName))
+
+    pullOutName (a,b,c,d,e)   = (e,(a,b,c,d))
+
+    pushInName  (e,(a,b,c,d)) = (a,b,c,d,e)
+
+    correctName txt
+      | TS.null txt = Nothing
+      | otherwise   = Just txt
 
 
 fromTreeOnlyFile :: FracturedParseResult -> Bool

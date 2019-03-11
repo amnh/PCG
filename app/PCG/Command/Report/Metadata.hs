@@ -33,13 +33,13 @@ import           Data.Csv
 import           Data.Text.Short            (ShortText)
 
 
-data CharacterReportMetadata =
-  CharacterReportMetadata
-  { characterNameRM  :: String
-  , charsourceFileRM :: FilePath
-  , characterTypeRM  :: CharacterType
-  , tcmSourceFile    :: ShortText
-  }
+data  CharacterReportMetadata
+    = CharacterReportMetadata
+    { characterNameRM  :: String
+    , charsourceFileRM :: ShortText
+    , characterTypeRM  :: CharacterType
+    , tcmSourceFile    :: ShortText
+    }
 
 instance ToNamedRecord CharacterReportMetadata where
   toNamedRecord CharacterReportMetadata {..} =
@@ -87,10 +87,10 @@ getCharacterReportMetadata =
       dynamicBin
 
   where
-    charName :: HasCharacterName s CharacterName =>  s -> String
+    charName :: HasCharacterName s CharacterName => s -> String
     charName = show . (^. characterName)
 
-    charSourceFilePath :: HasCharacterName s CharacterName =>  s -> FilePath
+    charSourceFilePath :: HasCharacterName s CharacterName => s -> ShortText
     charSourceFilePath = sourceFile . (^. characterName)
 
     tcmSourceFilePath :: HasTcmSourceFile s ShortText => s -> ShortText

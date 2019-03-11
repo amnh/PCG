@@ -70,8 +70,8 @@ import TextShow.Data.List       (showbListWith)
 -- |
 -- Represents the name of a character in a type-safe manner which resolves namespace ambiguities.
 data CharacterName
-   = UserDefined !FilePath !ShortText
-   | Default     !FilePath {-# UNPACK #-} !Word
+   = UserDefined !ShortText !ShortText
+   | Default     !ShortText {-# UNPACK #-} !Word
    deriving (Eq, Generic)
 
 
@@ -109,7 +109,7 @@ instance Ord CharacterName where
         GT -> LT
         EQ -> EQ
   lhs@(UserDefined _ name) `compare` rhs@(Default path _index)
-    | (fromString path <> ":") `isPrefixOf` name = LT
+    | (path <> ":") `isPrefixOf` name = LT
     | otherwise = strCmp lhs rhs
   lhs `compare` rhs = strCmp lhs rhs
 
@@ -128,7 +128,7 @@ isUserDefined _             = False
 
 -- |
 -- Determine the source file for the character.
-sourceFile :: CharacterName -> FilePath
+sourceFile :: CharacterName -> ShortText
 sourceFile (UserDefined x _) = x
 sourceFile (Default     x _) = x
 
@@ -186,20 +186,33 @@ sourceFile (Default     x _) = x
 -- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.txt", Just ""), ("foo.txt", Nothing)]
 -- ["foo.txt:0","foo.txt:1","foo.txt:2"]
 --
-makeCharacterNames :: Traversable t => t (FilePath, Maybe ShortText) -> t CharacterName
-makeCharacterNames = fmap (fst . head) . assignCharacterNames . fmap (fmap (\x -> [(x, ())]))
-{-
+makeCharacterNames :: Traversable t => t (ShortText, Maybe ShortText) -> t CharacterName
+makeCharacterNames = (`evalState` mempty) . traverse (uncurry assignName)
+
+
+assignCharacterNames
+  :: ( Traversable f
+     , Traversable g
+     , Traversable h
+     )
+  => (a -> (ShortText, g (h (Maybe ShortText, b))))
+  -> f a
+  -> f (g (h (CharacterName, b)))
+assignCharacterNames f = (`evalState` mempty) . traverse (g . f)
   where
-    f (path, may) =
+    g (path, struct) = traverse (traverse (h path)) struct
+
+    h path (may, val) = (\x -> (x,val)) <$> assignName path may
+{-      
       case may of
-        Just name | validName name -> pure $ UserDefined path name
+        Just name | validName name -> pure (UserDefined path name, val)
         _ -> do
-               seenMap <- get
-               modify $ incMap path
-               pure $
-                 case path `lookup` seenMap of
-                   Nothing -> Default path 0
-                   Just i  -> Default path i
+          seenMap <- get
+          modify $ incMap path
+          pure $
+              case path `lookup` seenMap of
+                Nothing -> (Default path 0, val)
+                Just i  -> (Default path i, val)
 -}
 
 
@@ -215,16 +228,24 @@ validName name =
       _             -> True
 
 
-assignCharacterNames'
-  :: ( Traversable f
-     , Traversable t
-     )
-  => (a -> (FilePath, t (Maybe ShortText, b)))
-  -> f a
-  -> f (t (CharacterName, b))
-assignCharacterNames' = undefined
+assignName
+  :: MonadState (Map ShortText Word) f
+  => ShortText
+  -> Maybe ShortText
+  -> f CharacterName
+assignName path may =
+      case may of
+        Just name | validName name -> pure $ UserDefined path name
+        _ -> do
+               seenMap <- get
+               modify $ incMap path
+               pure $
+                 case path `lookup` seenMap of
+                   Nothing -> Default path 0
+                   Just i  -> Default path i
 
 
+{-
 assignCharacterNames
   :: ( Traversable f
      , Traversable t
@@ -245,3 +266,4 @@ assignCharacterNames = (`evalState` mempty) . traverse f
               case path `lookup` seenMap of
                 Nothing -> (Default path 0, val)
                 Just i  -> (Default path i, val)
+-}
