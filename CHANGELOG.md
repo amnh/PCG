@@ -8,7 +8,7 @@ Releases are available [on GitHub][2].
 ## _v0.2.0.0_ - Unreleased Changes
 
 * Using semantic versioning
-* Updated to GHC-8.6.3
+* Updated to GHC-8.6.4
 * Updated to Cabal-2.4
 * Updated build command to add network edges to input graphs rather than wagner build a new tree first.
 * Updated read command grammar to allow for more specific TCM specification
@@ -18,11 +18,15 @@ Releases are available [on GitHub][2].
 * Improved efficiency of three-way median and cost calculation (discrete metric, L1 norm, and small alphabet specialization)
 * Improved representation of character & metadata sequences
 * Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
+* Improved representation of character alphabet & character names
 * Improved representation of the types of postorder and preorder functions
 * Improved master postorder and preorder functions for readability
+* Improved safety of data normalization and unification
 * Enhanced file parser selection to intelligently look at the file extension
 * Enhanced DOT file parser to accept DOT labels on leaf nodes as identifiers
 * Enhanced FASTA file parser to better interpret accept amino acid input files
+* Enhanced REPORT command to move files by default if new output would overwrite an old file
+* Enhanced Evaluation monad to disallow NoOp state
 * Added Travis CI build script
 * Added integration test suite
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
