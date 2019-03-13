@@ -31,9 +31,10 @@ module Data.EdgeSet
 
 
 import           Control.DeepSeq
+import           Data.Coerce
 import           Data.Foldable
 import           Data.IntSet          (IntSet)
-import qualified Data.IntSet as IS
+import qualified Data.IntSet          as IS
 import           Data.MonoTraversable (MonoFoldable (..))
 import           Data.Semigroup
 import           Data.Set             (Set)
@@ -42,7 +43,6 @@ import           GHC.Generics         (Generic)
 import           Prelude              hiding (zipWith)
 import           TextShow             (TextShow)
 import           TextShow.Instances   ()
-import           Data.Coerce
 
 
 -- |
