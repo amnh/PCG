@@ -1,15 +1,14 @@
-{-# LANGUAGE LambdaCase      #-}
+{-# LANGUAGE LambdaCase #-}
 
 module Main where
 
-import qualified Data.GraphViz as G
+import           Data.Foldable                     (Foldable (fold), traverse_)
+import qualified Data.GraphViz                     as G
 import qualified Data.GraphViz.Attributes.Complete as G
-import qualified Data.GraphViz.Types as G
-import System.FilePath.Posix ((<.>))
-import qualified Data.Text.Lazy as TL
-import qualified Data.Text.Lazy.IO as TL
-import System.Directory (createDirectoryIfMissing, setCurrentDirectory)
-import Data.Foldable (traverse_, Foldable(fold))
+import qualified Data.Text.Lazy                    as TL
+import qualified Data.Text.Lazy.IO                 as TL
+import           System.Directory                  (createDirectoryIfMissing, setCurrentDirectory)
+import           System.FilePath.Posix             ((<.>))
 
 
 main :: IO ()
@@ -19,7 +18,7 @@ main = do
     setCurrentDirectory "graphviz-examples"
     traverse_ makeDotFile networks
 
-    
+
 makeDotFile :: (Network, FilePath) -> IO ()
 makeDotFile ((nodes, edges), filename) = do
     let
@@ -29,7 +28,7 @@ makeDotFile ((nodes, edges), filename) = do
 
 data EdgeLabel =
     ExistingEdgeLabel
-  | NewEdgeLabel     
+  | NewEdgeLabel
   | CandNetEdgeLabel
 
 
@@ -64,7 +63,7 @@ type Network = ([Node], [Edge])
 
 
 baseNetwork :: Network
-baseNetwork = 
+baseNetwork =
     (nodes, edges)
   where
     nodes :: [Node]
@@ -72,7 +71,7 @@ baseNetwork =
                           , "g", "h", "i", "j", "k", "l", "m", "n"
                           , "o", "p", "q", "r"
                           ]
-    
+
     edges :: [Edge]
     edges = existingE <$>
               [ ("root", "a"), ("root", "b")
@@ -84,11 +83,11 @@ baseNetwork =
               , ("m", "o"), ("n", "o"), ("m", "p"), ("n", "q")
               , ("o", "r")
               ]
-               
+
 
 
 e2AncestralEdgeNetwork :: Network
-e2AncestralEdgeNetwork = 
+e2AncestralEdgeNetwork =
     (nodes, edges)
   where
     nodes :: [Node]
@@ -99,7 +98,7 @@ e2AncestralEdgeNetwork =
             , newN        <$> ["newSrc", "newTgt"]
             , contextualN <$> ["b (src1)", "g (src2)", "e (tgt1)", "k (tgt2)"]
             ]
-    
+
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
@@ -121,7 +120,7 @@ e2AncestralEdgeNetwork =
             ]
 
 e1HasE2SrcAncestralNodeNetwork :: Network
-e1HasE2SrcAncestralNodeNetwork = 
+e1HasE2SrcAncestralNodeNetwork =
     (nodes, edges)
   where
     nodes :: [Node]
@@ -132,7 +131,7 @@ e1HasE2SrcAncestralNodeNetwork =
             , newN        <$> ["newSrc", "newTgt"]
             , contextualN <$> ["h (src1)", "e (src2)", "m (tgt1)", "g (tgt2)"]
             ]
-    
+
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
@@ -165,7 +164,7 @@ hasE2NetworkNodeSrc =
             , newN        <$> ["newSrc", "newTgt"]
             , contextualN <$> ["g (src1)", "h (src2)", "l (tgt1)", "m (tgt2)"]
             ]
-    
+
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
@@ -198,7 +197,7 @@ hasE2NetworkNodeTgt =
             , newN        <$> ["newSrc", "newTgt"]
             , contextualN <$> ["h (src1)", "n (src2)", "m (tgt1)", "o (tgt2)"]
             ]
-    
+
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
@@ -219,11 +218,11 @@ hasE2NetworkNodeTgt =
                              ]
             ]
 
-    
+
 
 
 e1DescendantE2AncestralNetwork :: Network
-e1DescendantE2AncestralNetwork = 
+e1DescendantE2AncestralNetwork =
     (nodes, edges)
   where
     nodes :: [Node]
@@ -234,7 +233,7 @@ e1DescendantE2AncestralNetwork =
             , newN        <$> ["newSrc", "newTgt"]
             , contextualN <$> ["a (src1)", "f (src2)", "c (tgt1)", "i (tgt2)"]
             ]
-    
+
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
@@ -257,7 +256,7 @@ e1DescendantE2AncestralNetwork =
 
 
 e2DescendantE1AncestralNetwork :: Network
-e2DescendantE1AncestralNetwork = 
+e2DescendantE1AncestralNetwork =
     (nodes, edges)
   where
     nodes :: [Node]
@@ -268,7 +267,7 @@ e2DescendantE1AncestralNetwork =
             , newN        <$> ["newSrc", "newTgt"]
             , contextualN <$> ["d (src1)", "a (src2)", "f (tgt1)", "c (tgt2)"]
             ]
-    
+
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
@@ -288,10 +287,10 @@ e2DescendantE1AncestralNetwork =
                              , ("newTgt", "c (tgt2)"  )
                              ]
             ]
-    
+
 
 src2NetworkPairAncestralToE1Network :: Network
-src2NetworkPairAncestralToE1Network = 
+src2NetworkPairAncestralToE1Network =
     (nodes, edges)
   where
     nodes :: [Node]
@@ -303,7 +302,7 @@ src2NetworkPairAncestralToE1Network =
             , newN        <$> ["newSrc", "newTgt"]
             , contextualN <$> ["a (src1)", "b (src2)", "c (tgt1)", "e (tgt2)"]
             ]
-    
+
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
@@ -326,7 +325,7 @@ src2NetworkPairAncestralToE1Network =
 
 
 e1NetworkEdgeComplementNodeAncestralToE2 :: Network
-e1NetworkEdgeComplementNodeAncestralToE2 = 
+e1NetworkEdgeComplementNodeAncestralToE2 =
     (nodes, edges)
   where
     nodes :: [Node]
@@ -337,7 +336,7 @@ e1NetworkEdgeComplementNodeAncestralToE2 =
             , newN        <$> ["newSrc", "newTgt"]
             , contextualN <$> ["b (src1)", "g (src2)", "e (tgt1)", "k (tgt2)"]
             ]
-    
+
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
@@ -347,7 +346,7 @@ e1NetworkEdgeComplementNodeAncestralToE2 =
                   , ("f", "i"), ("f", "j")
                   , ("g", "k"), ("g", "l")
                   , ("h", "m"), ("h", "n")
-                  , ("m", "o"), ("n", "o"), ("m", "p"), ("n", "q")   
+                  , ("m", "o"), ("n", "o"), ("m", "p"), ("n", "q")
                   , ("o", "r")
                   ]
             , candidateE <$> [("newSrc", "newTgt")]
@@ -358,8 +357,8 @@ e1NetworkEdgeComplementNodeAncestralToE2 =
                              ]
             ]
 
-    
-    
+
+
 networks :: [(Network, FilePath)]
 networks = [ (baseNetwork                   , "baseNetwork"                   )
            , (hasE2NetworkNodeSrc           , "hasE2NetworkNodeSrc"           )
@@ -369,32 +368,32 @@ networks = [ (baseNetwork                   , "baseNetwork"                   )
            , (e1DescendantE2AncestralNetwork, "e1DescendantE2AncestralNetwork")
            , (e2DescendantE1AncestralNetwork, "e2DescendantE1AncestralNetwork")
            ]
-          
 
 
 
 
---renderExampleNetwork :: String                                          
---renderExampleNetwork = unlines                                          
---                         [ "                        root"               
---                         , "                      /     \               
---                         , "                     a       b              
---                         , "                   /  \     /  \            
---                         , "                  c    \   /    e           
---                         , "                         d     /  \         
---                         , "                         |    g    \        
---                         , "                         f   / \    \       
---                                                    / \  k  l    \      
---                         ,                         i   j          h     
---                                                                 / \    
---                                                                m   n   
---                                                                 \ /    
---                                                                  o     
---                                                                  |     
---                                                                  p     
---                                                                        
---                                                                        
---                         ]                                              
+
+--renderExampleNetwork :: String
+--renderExampleNetwork = unlines
+--                         [ "                        root"
+--                         , "                      /     \
+--                         , "                     a       b
+--                         , "                   /  \     /  \
+--                         , "                  c    \   /    e
+--                         , "                         d     /  \
+--                         , "                         |    g    \
+--                         , "                         f   / \    \
+--                                                    / \  k  l    \
+--                         ,                         i   j          h
+--                                                                 / \
+--                                                                m   n
+--                                                                 \ /
+--                                                                  o
+--                                                                  |
+--                                                                  p
+--
+--
+--                         ]
 
 
 
@@ -407,15 +406,15 @@ networkGraphParameters
        NodeLabel       -- cluster label type
 networkGraphParameters = G.defaultParams {
     G.fmtNode  = \case
-        (_, ExistingNodeLabel  ) -> colorAttribute  black    
+        (_, ExistingNodeLabel  ) -> colorAttribute  black
         (_, ContextualNodeLabel) -> colorAttribute  red
         (_, NewNodeLabel       ) -> colorAttribute  blue,
-  
+
     G.fmtEdge = \case
         (_, _, ExistingEdgeLabel)  -> colorAttribute black
         (_, _, NewEdgeLabel     )  -> colorAttribute red
         (_, _, CandNetEdgeLabel )  -> colorAttribute blue
-        }  
+        }
   where
     colorAttribute color = [ G.Color $ G.toColorList [ color ] ]
     black = G.RGB 0 0 0
@@ -425,7 +424,7 @@ networkGraphParameters = G.defaultParams {
 
 
 template :: Network
-template = 
+template =
     (nodes, edges)
   where
     nodes :: [Node]
@@ -436,7 +435,7 @@ template =
             , newN        <$> ["newSrc", "newTgt"]
             , contextualN <$> ["b (src1)", "g (src2)", "e (tgt1)", "k (tgt2)"]
             ]
-    
+
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
