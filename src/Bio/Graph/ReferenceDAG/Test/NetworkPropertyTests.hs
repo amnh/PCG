@@ -14,19 +14,16 @@ module Bio.Graph.ReferenceDAG.Test.NetworkPropertyTests
   ( candidateNetworkProperties
   )  where
 
-import Bio.Graph.ReferenceDAG.Utility
-import           Test.Tasty
-import qualified Test.Tasty.QuickCheck as QC
 import           Bio.Graph.ReferenceDAG.Internal hiding (fromList)
-import qualified Data.Set as S (toList, fromList, difference)
-import Test.QuickCheck (forAll, Property, (===))
-import Control.Applicative ((<|>))
-import Data.Set (notMember, singleton, disjoint, fromList, Set, toList)
-import qualified Data.List.NonEmpty as NE
-import Control.Lens.Operators ((^.))
-import Control.Applicative ((<|>))
-
-import Debug.Trace
+import           Bio.Graph.ReferenceDAG.Utility
+import           Control.Applicative             ((<|>))
+import           Control.Lens.Operators          ((^.))
+import qualified Data.List.NonEmpty              as NE
+import           Data.Set                        (Set, intersection, fromList, toList)
+import qualified Data.Set                        as S (fromList, toList)
+import           Test.QuickCheck                 (Property, forAll, (===))
+import           Test.Tasty
+import qualified Test.Tasty.QuickCheck           as QC
 
 
 
@@ -57,16 +54,16 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
           [ "Given valid networks n0, n1 and n2 (with roots r0, r1 and r2), the "
           , "      candidateNetworkEdges of a network with the following shape: "
           ,  renderDoublyBranchedNetworkWithNetworkEvent
-          , "      should not contain edges from (r,x), (r, r0), (x,r1), (x, r2)"
+          , "      should not contain edges from (r,a), (r, r0), (a,r1), (x, r2)"
           , "      to any edge in n0 or n1."
           ]
         )
-        doublyBranchedNetworkProperty
+        branchedNetworkWithNetworkEventProperty
     ]
   where
     branchedNetworkProperty :: Property
     branchedNetworkProperty = forAll generateBranchedNetwork correctBranchedCandidateEdges
-    
+
     correctBranchedCandidateEdges
       :: ( ReferenceDAG () () ()
          , NetworkInformation
@@ -75,7 +72,7 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
       -> Property
     correctBranchedCandidateEdges (branchedNet, n0NetInfo, n1NetInfo) =
           lhs === rhs
-    
+
       where
         lhs = candidateNetworkEdges branchedNet
         rhs = newNetworkEdges
@@ -93,7 +90,7 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
             n0Edge <- S.toList  n0NonNetworkEdges
             n1Edge <- S.toList n1NonNetworkEdges
             pure (n0Edge, n1Edge) <|> pure (n1Edge, n0Edge)
- 
+
 
     doublyBranchedNetworkProperty :: Property
     doublyBranchedNetworkProperty =
@@ -106,9 +103,9 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
              , NetworkInformation
              , Int
              )
-          -> Bool
+          -> Property
         noAncestorEdges (dag, _, n1NetInfo, n2NetInfo, n0n1RootIndex)
-            = disallowedEdges `disjoint` candEdges
+            = disallowedEdges `intersection` candEdges === mempty
           where
 
             candEdges = candidateNetworkEdges dag
@@ -127,8 +124,8 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
                 ancestralEdge <- [rxEdge, xN1Edge, xN2Edge]
                 n1n2Edge      <- n1Edges <|> n2Edges
                 pure (ancestralEdge, n1n2Edge)
-                
-            
+
+
 
 
     branchedNetworkWithNetworkEventProperty :: Property
@@ -140,23 +137,23 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
              , NetworkInformation
              , NetworkInformation
              , NetworkInformation
-             , NetworkInformation
+             , Int
              , Int
              , Int
              , Int
              )
-          -> Bool
+          -> Property
         ancestralNetworkEventTest
             ( dag
             , n0NetInfo
             , n1NetInfo
             , n2NetInfo
-            , n3NetInfo
             , aIndex
             , bIndex
             , cIndex
-            ) = disallowedEdges `disjoint` candEdges
-              
+            , dIndex
+            ) = disallowedEdges `intersection` candEdges === mempty
+
           where
 
             candEdges = candidateNetworkEdges dag
@@ -164,22 +161,22 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
             acEdge    = (aIndex, cIndex)
             n0Edges   = toList $ _edgeSet n0NetInfo
             n1Edges   = toList $ _edgeSet n1NetInfo
-            n2Edges   = toList $ _edgeSet n2NetInfo 
-            
+            n2Edges   = toList $ _edgeSet n2NetInfo
+
             disallowedEdges = fromList $
               do
                 ancestralEdge <- [abEdge, acEdge]
                 n0n1n2Edge    <- n0Edges <|> n1Edges <|> n2Edges
                 pure (ancestralEdge, n0n1n2Edge)
-                
-                
-                
-              
 
-      
-         
-         
-         
+
+
+
+
+
+
+
+
 
 
 renderBranchedNetwork :: String

@@ -7,13 +7,9 @@ module Bio.Graph.ReferenceDAG.Test
   ( testSuite
   ) where
 
-import           Bio.Graph.ReferenceDAG.Internal
 import qualified Bio.Graph.ReferenceDAG.Test.NetworkPropertyTests as NPT
 import           Bio.Graph.ReferenceDAG.Test.NetworkUnitTests     as NUT
-import           Data.Set                        as Set
-import qualified Data.Vector                     as V
 import           Test.Tasty
-import           Test.Tasty.HUnit                as HU
 
 
 testSuite :: TestTree
