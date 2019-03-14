@@ -416,7 +416,7 @@ generateBranchedNetwork =
 generateBranchedNetworkWithNetworkEvent
   :: (Monoid d, Monoid n)
   => Gen
-       ( (ReferenceDAG d () n)
+       ( ReferenceDAG d () n
        , NetworkInformation  -- ^ Candidate network information of n0
        , NetworkInformation  -- ^ Candidate network information of n1
        , NetworkInformation  -- ^ Candidate network information of n2
@@ -532,7 +532,7 @@ getNetworkInformation dag = NetworkInformation{..}
   where
     _candidateNetworkEdges = candidateNetworkEdges' IncludeRoot dag
     _networkAdjacentEdges  = getNetworkEdges       dag
-    _edgeSet               = getEdgeSet $ dag
+    _edgeSet               = getEdgeSet dag
     _rootNode              = NE.head  $ dag ^. _rootRefs
 
 

@@ -51,7 +51,7 @@ candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges func
         )
         doublyBranchedNetworkProperty
     , QC.testProperty
-        ( unlines $
+        ( unlines
           [ "Given valid networks n0, n1 and n2 (with roots r0, r1 and r2), the "
           , "      candidateNetworkEdges of a network with the following shape: "
           ,  renderDoublyBranchedNetworkWithNetworkEvent

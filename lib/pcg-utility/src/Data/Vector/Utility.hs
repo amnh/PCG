@@ -12,13 +12,14 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE InstanceSigs        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Data.Vector.Utility
   ( DVector(..)
   , generateMemo
+  , liftExp2
   , zip2
   , pair3
   , pair4
@@ -26,10 +27,10 @@ module Data.Vector.Utility
   , zip4
   ) where
 
-import Control.Arrow      ((&&&))
+import Control.Arrow ((&&&))
 import Data.Coerce
-import Data.Vector        as V hiding (zip3, zip4)
-import Prelude            hiding (zip3)
+import Data.Vector   as V hiding (zip3, zip4)
+import Prelude       hiding (zip3)
 
 
 type Endo a = (a -> a)
@@ -65,7 +66,6 @@ class ExpFunctor f where
     xmap :: (a -> b) -> (b -> a) -> f a -> f b
 
 instance ExpFunctor DVector where
-    {-# SPECIALIZE xmap :: forall a b . (a -> b) -> (b -> a) -> DVector a -> DVector b #-}
     xmap :: forall a b . (a -> b) -> (b -> a) -> DVector a -> DVector b
     xmap = coerce $ xmapE @Int @a @b
 
@@ -73,7 +73,6 @@ class Cartesian f where
     pair :: f a -> f b -> f (a, b)
 
 instance Cartesian DVector where
-    {-# SPECIALIZE pair :: forall a b . DVector a -> DVector b -> DVector (a, b) #-}
     pair = zip2
 
 
