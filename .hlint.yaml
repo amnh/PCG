@@ -24,14 +24,14 @@
         , lhs: V.fromList
         , rhs: V.fromList'
         }
-- warn: { name: Prefer fold to mconcat
-        , lhs: mconcat
-        , rhs: fold
-        }
-- warn: { name: Prefer fold1 to sconcat
-        , lhs: sconcat
-        , rhs: fold1
-        }
+# - warn: { name: Prefer fold to mconcat
+#         , lhs: mconcat
+#         , rhs: fold
+#         }
+# - warn: { name: Prefer fold1 to sconcat
+#         , lhs: sconcat
+#         , rhs: fold1
+#         }
 
 # Custom suggestion hints
 - suggestion: { name: Strict sum
@@ -115,7 +115,18 @@
           , within: Data.Binary.Utility
           }
 
-# Ignore const rename suggestion
 - ignore: { name: Use const
           , within: Bio.Metadata.Discrete.Class
+          }
+
+- ignore: { name: Reduce duplication
+          , within: Bio.Graph.ReferenceDAG.Traversal
+          }
+
+- ignore: { name: Reduce duplication
+          , within: Bio.Graph.ReferenceDAG.Utility
+          }
+
+- ignore: { name: Use <$>
+          , within: Bio.Graph.ReferenceDAG.Utility
           }
