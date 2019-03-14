@@ -20,14 +20,14 @@
 module Bio.Graph.ReferenceDAG.Utility where
 
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Graph.ReferenceDAG.Network
 import           Control.Lens
 import           Control.Monad.Loops
-import           Data.EdgeSet
 import           Data.Foldable
 import           Data.IntMap                     (IntMap)
 import qualified Data.IntMap                     as IM (mapKeys)
 import           Data.IntSet                     (IntSet)
-import qualified Data.IntSet                     as IS (map, singleton, fromList)
+import qualified Data.IntSet                     as IS (map, singleton)
 import           Data.Key                        ((!))
 import qualified Data.List.NonEmpty              as NE
 import           Data.Set                        (Set, (\\))
@@ -207,7 +207,7 @@ makeDoublyBranchedNetworkWithInfo n0 n1 n2 = (network, n0NetInfo, n1NetInfo, n2N
 -- >               │       │ │       │
 -- >               │       └┬┘       │
 -- >              n0        d       n2
--- >                        │  
+-- >                        │
 -- >                        n1
 -- >
 -- >
@@ -240,7 +240,7 @@ makeBranchedNetworkWithNetworkEventWithInfo  n0 n1 n2 n3
                    , pure cIndexData
                    , pure aIndexData
                    ]
-                   
+
     rootRefs = pure aIndex
     graphData = (n1 ^. _graphData) <> (n2 ^. _graphData) <> (n3 ^. _graphData)
 
@@ -300,8 +300,8 @@ makeBranchedNetworkWithNetworkEventWithInfo  n0 n1 n2 n3
 
     n0NetworkInfo, n1NetworkInfo, n2NetworkInfo :: NetworkInformation
     n0NetworkInfo = incrementNetworkInformation (length n3) $ getNetworkInformation n0
-    n1NetworkInfo = incrementNetworkInformation (length n3) $ getNetworkInformation n1'
-    n2NetworkInfo = incrementNetworkInformation (length n3) $ getNetworkInformation n2'
+    n1NetworkInfo = incrementNetworkInformation (n0Nodes + length n3) $ getNetworkInformation n1
+    n2NetworkInfo = incrementNetworkInformation (n0n1Nodes + length n3) $ getNetworkInformation n2
 
     referencesN0, referencesN1', referencesN2' :: Vector (IndexData () n)
     referencesN0   = n0  ^. _references
@@ -355,20 +355,20 @@ makeBinaryTree n = proj3_1 $ makeBinaryTreeWithInfo n
 
 generateBinaryTreeWithInfo ::  forall d n . (Monoid d, Monoid n)
   => Gen
-       ( (ReferenceDAG d () n)
+       ( ReferenceDAG d () n
        , NetworkInformation
        , NetworkInformation
        )
 generateBinaryTreeWithInfo = do
-  depth <- choose (1, 2)
+  depth <- choose (1, 7)
   pure $ makeBinaryTreeWithInfo @d @n depth
 
 
 generateBinaryTree ::  (Monoid d, Monoid n)
   => Gen (ReferenceDAG d () n)
 generateBinaryTree = do
-  depth <- choose (1, 2)
-  pure $ (makeBinaryTree depth)
+  depth <- choose (1, 7)
+  pure $ makeBinaryTree depth
 
 
 
@@ -383,7 +383,7 @@ generateNetwork  = do
         (_,    False) -> True
         (rdag, True ) -> null $ candidateNetworkEdges rdag
 
-      addNetworkEdge :: (ReferenceDAG d () n, Bool) -> Gen ((ReferenceDAG d () n), Bool)
+      addNetworkEdge :: (ReferenceDAG d () n, Bool) -> Gen (ReferenceDAG d () n, Bool)
       addNetworkEdge (dag, _) = do
           (prob :: Int) <- choose (1, 100)
           if prob > 90 then
@@ -423,7 +423,6 @@ generateBranchedNetworkWithNetworkEvent
        , Int  -- ^ Index of internal node a
        , Int  -- ^ Index of internal node b
        , Int  -- ^ Index of internal node c
-       , Int  -- ^ Index of internal node d
        )
 generateBranchedNetworkWithNetworkEvent =
   do
@@ -438,21 +437,19 @@ generateBranchedNetworkWithNetworkEvent =
     let aIndex = lengthNets + 3
     let bIndex = lengthNets + 1
     let cIndex = lengthNets + 2
-    let dIndex = lengthNets
-    pure $ ( dag
-           , n0NetInfo
-           , n1NetInfo
-           , n2NetInfo
-           , aIndex
-           , bIndex
-           , cIndex
-           , dIndex
-           )
+    pure ( dag
+         , n0NetInfo
+         , n1NetInfo
+         , n2NetInfo
+         , aIndex
+         , bIndex
+         , cIndex
+         )
 
 generateDoublyBranchedNetwork
   :: (Monoid d, Monoid n)
   => Gen
-      ( (ReferenceDAG d () n)
+      ( ReferenceDAG d () n
       , NetworkInformation  -- ^ Candidate network information of n0
       , NetworkInformation  -- ^ Candidate network information of n1
       , NetworkInformation  -- ^ Candidate network information of n2
@@ -467,18 +464,18 @@ generateDoublyBranchedNetwork =
     let n1NetworkInfo = getNetworkInformation n1
     let n2NetworkInfo = getNetworkInformation n2
     let xInd          = length n0 + length n1 + length n2
-    pure $ ( makeDoublyBranchedNetwork n0 n1 n2
-           , n0NetworkInfo
-           , n1NetworkInfo
-           , n2NetworkInfo
-           , xInd
-           )
+    pure ( makeDoublyBranchedNetwork n0 n1 n2
+         , n0NetworkInfo
+         , n1NetworkInfo
+         , n2NetworkInfo
+         , xInd
+         )
 
 -- |
 -- This function takes an `Int` and increments the internal names of nodes
 -- uniformly by that amount.
 incrementNodeIndices :: forall d e n . Int -> ReferenceDAG d e n -> ReferenceDAG d e n
-incrementNodeIndices n refDAG = refDAG & _rootRefs   %~ (fmap (+ n))
+incrementNodeIndices n refDAG = refDAG & _rootRefs   %~ fmap (+ n)
                                        & _references %~ incrementRefVector n
 
 
@@ -535,12 +532,12 @@ getNetworkInformation dag = NetworkInformation{..}
   where
     _candidateNetworkEdges = candidateNetworkEdges' IncludeRoot dag
     _networkAdjacentEdges  = getNetworkEdges       dag
-    _edgeSet               = getUnderlyingEdgeSet . referenceEdgeSet $ dag
-    _rootNode              = NE.head $ dag ^. _rootRefs
+    _edgeSet               = getEdgeSet $ dag
+    _rootNode              = NE.head  $ dag ^. _rootRefs
 
 
 -- |
 -- Gets all edges which are not adjacent to a network node
-getNonNetworkEdges :: NetworkInformation -> Set ((Int, Int))
+getNonNetworkEdges :: NetworkInformation -> Set (Int, Int)
 getNonNetworkEdges NetworkInformation{..} = _edgeSet \\ _networkAdjacentEdges
 

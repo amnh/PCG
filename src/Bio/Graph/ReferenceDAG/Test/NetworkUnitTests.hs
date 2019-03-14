@@ -21,13 +21,12 @@ module Bio.Graph.ReferenceDAG.Test.NetworkUnitTests
   )  where
 
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Graph.ReferenceDAG.Network
 import           Data.Foldable                   (fold)
 import           Data.Set                        (Set)
 import qualified Data.Vector                     as V
 import           Test.Tasty
 import           Test.Tasty.HUnit                as HU
-
-import           Debug.Trace
 
 
 candidateNetworkEdgesCases :: TestTree

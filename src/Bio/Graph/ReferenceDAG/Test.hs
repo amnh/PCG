@@ -1,8 +1,3 @@
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedLists     #-}
-{-# LANGUAGE RecordWildCards     #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Bio.Graph.ReferenceDAG.Test
   ( testSuite
   ) where
