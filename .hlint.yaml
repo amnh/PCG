@@ -24,13 +24,23 @@
         , lhs: V.fromList
         , rhs: V.fromList'
         }
+- warn: { name: Prefer fold to mconcat
+        , lhs: mconcat
+        , rhs: fold
+        }
+- warn: { name: Prefer fold1 to sconcat
+        , lhs: sconcat
+        , rhs: fold1
+        }
 
 # Custom suggestion hints
 - suggestion: { name: Strict sum
-              , note: Prefer custom strict sum to lazy sum. Decreases laziness.
+              , note: Prefer custom strict sum to lazy sum. Decreases laziness
               , lhs: sum
               , rhs: sum'
               }
+
+
 
 
 # Replace a $ b $ c with a . b $ c
