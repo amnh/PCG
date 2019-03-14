@@ -218,6 +218,8 @@ library
     Bio.Graph.PhylogeneticDAG
     Bio.Graph.ReferenceDAG
     Bio.Graph.ReferenceDAG.Internal
+    Bio.Graph.ReferenceDAG.Network
+    Bio.Graph.ReferenceDAG.Traversal
     Bio.Graph.ReferenceDAG.Utility
     Bio.Graph.Solution
     Bio.Graph.ZipperDAG
