@@ -61,20 +61,20 @@ instance Show NetworkInformation where
 -- >                │       │
 -- >                │       │
 -- >               n0       n1
-makeBranchedNetworkWithInfo'
-  ::  Semigroup d
-  =>  (n -> n -> n)        -- ^ Function for combining node decorations.
-  ->   ReferenceDAG d () n   -- ^ n0
+-- > also returning the network information for n0 and n1 (with the correct internal indices)
+makeBranchedNetworkWithInfo
+  ::  (Monoid d, Monoid n)
+  =>   ReferenceDAG d () n   -- ^ n0
   ->   ReferenceDAG d () n   -- ^ n1
   -> ( ReferenceDAG d () n
-     , NetworkInformation  -- ^ Network information for n0
-     , NetworkInformation  -- ^ Network information for n1 (with correct indicies)
+     , NetworkInformation
+     , NetworkInformation
      )
-makeBranchedNetworkWithInfo' fnn n0 n1 = (ReferenceDAG{..}, networkInfoN0, networkInfoN1')
+makeBranchedNetworkWithInfo n0 n1 = (ReferenceDAG{..}, networkInfoN0, networkInfoN1')
   where
     newNode    = IndexData {..}
       where
-        nodeDecoration = fnn nodeDec0 nodeDec1
+        nodeDecoration = nodeDec0 <> nodeDec1
         parentRefs     = []
         childRefs      = [(rootIndex0, ()), (rootIndex1', ())]
 
@@ -111,33 +111,12 @@ makeBranchedNetworkWithInfo' fnn n0 n1 = (ReferenceDAG{..}, networkInfoN0, netwo
     networkInfoN1' = incrementNetworkInformation (length references0) networkInfoN1
 
 
-makeBranchedNetwork'
-  ::  Semigroup d
-  =>  (n -> n -> n)        -- ^ Function for combining node decorations.
-  -> ReferenceDAG d () n   -- ^ n0
-  -> ReferenceDAG d () n   -- ^ n1
-  -> ReferenceDAG d () n
-makeBranchedNetwork' fnn n0 n1 = proj3_1 $ makeBranchedNetworkWithInfo' fnn n0 n1
-
-
-makeBranchedNetworkWithInfo
-  ::   (Semigroup d, Monoid n)
-  =>   ReferenceDAG d () n   -- ^ n0
-  ->   ReferenceDAG d () n   -- ^ n1
-  -> ( ReferenceDAG d () n
-     , NetworkInformation    -- ^ Network Information for n0
-     , NetworkInformation    -- ^ Network Information for n1 (with correct indices)
-     )
-makeBranchedNetworkWithInfo = makeBranchedNetworkWithInfo' (<>)
-
-
 makeBranchedNetwork
-  :: (Semigroup d, Monoid n)
+  :: (Monoid d, Monoid n)
   => ReferenceDAG d () n   -- ^ n0
   -> ReferenceDAG d () n   -- ^ n1
   -> ReferenceDAG d () n
-makeBranchedNetwork = makeBranchedNetwork' (<>)
-
+makeBranchedNetwork n0 n1 = proj3_1 $ makeBranchedNetworkWithInfo n0 n1
 
 -- |
 -- This function takes valid networks n0, n1 and n2 and forms the network:
@@ -151,26 +130,17 @@ makeBranchedNetwork = makeBranchedNetwork' (<>)
 -- >                    │       │
 -- >                    │       │
 -- >                   n0       n1
--- |
-makeDoublyBranchedNetwork'
-  ::  (Monoid d)
-  =>  (n -> n -> n)        -- ^ Function for combining node decorations.
-  -> ReferenceDAG d () n   -- ^ n0
-  -> ReferenceDAG d () n   -- ^ n1
-  -> ReferenceDAG d () n   -- ^ n2
-  -> ReferenceDAG d () n
-makeDoublyBranchedNetwork' fnn n0 n1 n2 = makeBranchedNetwork' fnn n2 n0n1Branched
-  where
-    n0n1Branched = makeBranchedNetwork' fnn n0 n1
-
+-- This also returns network information about n0, n1, n2 and the index
+-- of x in the above diagram.
 makeDoublyBranchedNetwork
-  ::  forall d n . (Monoid d, Monoid n)
+  ::  (Monoid d, Monoid n)
   => ReferenceDAG d () n   -- ^ n0
   -> ReferenceDAG d () n   -- ^ n1
   -> ReferenceDAG d () n   -- ^ n2
   -> ReferenceDAG d () n
-makeDoublyBranchedNetwork = makeDoublyBranchedNetwork' (<>)
-
+makeDoublyBranchedNetwork n0 n1 n2 = makeBranchedNetwork n2 n0n1Branched
+  where
+    n0n1Branched = makeBranchedNetwork n0 n1
 
 makeDoublyBranchedNetworkWithInfo
   ::  forall d n . (Monoid d, Monoid n)
@@ -209,8 +179,8 @@ makeDoublyBranchedNetworkWithInfo n0 n1 n2 = (network, n0NetInfo, n1NetInfo, n2N
 -- >              n0        d       n2
 -- >                        │
 -- >                        n1
--- >
--- >
+--
+-- This also returns the network information about n0, n1 and n2.
 makeBranchedNetworkWithNetworkEventWithInfo
   ::  forall d n . (Monoid d, Monoid n)
   => ReferenceDAG d () n    -- ^ n0
@@ -218,14 +188,14 @@ makeBranchedNetworkWithNetworkEventWithInfo
   -> ReferenceDAG d () n    -- ^ n2
   -> ReferenceDAG d () n    -- ^ n3
   -> ( ReferenceDAG d () n
-     , NetworkInformation   -- ^ Network information of n0 (with correct indices)
-     , NetworkInformation   -- ^ Network information of n1 (with correct indices)
-     , NetworkInformation   -- ^ Network information of n2 (with correct indices)
+     , NetworkInformation
+     , NetworkInformation
+     , NetworkInformation
      )
 makeBranchedNetworkWithNetworkEventWithInfo  n0 n1 n2 n3
     = (network, n0NetworkInfo, n1NetworkInfo, n2NetworkInfo)
   where
-    (network, _, _ ) = makeBranchedNetworkWithInfo' (<>) n3 internalNetwork
+    (network, _, _ ) = makeBranchedNetworkWithInfo n3 internalNetwork
 
     internalNetwork :: ReferenceDAG d () n
     internalNetwork = ReferenceDAG{..}
@@ -335,34 +305,15 @@ makeBranchedNetworkWithNetworkEvent n0 n1 n2 n3
   = proj4_1 $ makeBranchedNetworkWithNetworkEventWithInfo n0 n1 n2 n3
 
 
-
-makeBinaryTreeWithInfo
-  :: forall d n . (Monoid d, Monoid n)
-  =>  Int                    -- ^ depth of binary tree
-  -> ( ReferenceDAG d () n
-     , NetworkInformation
-     , NetworkInformation)
-makeBinaryTreeWithInfo 0 = (singletonRefDAG mempty, emptyNetworkInfo, emptyNetworkInfo)
-makeBinaryTreeWithInfo n = let subtree = makeBinaryTree (n - 1) in
-                     makeBranchedNetworkWithInfo subtree subtree
-
-
 makeBinaryTree  :: forall d n . (Monoid d, Monoid n)
   =>  Int                    -- ^ depth of binary tree
   -> ReferenceDAG d () n
-makeBinaryTree n = proj3_1 $ makeBinaryTreeWithInfo n
-
-
-generateBinaryTreeWithInfo ::  forall d n . (Monoid d, Monoid n)
-  => Gen
-       ( ReferenceDAG d () n
-       , NetworkInformation
-       , NetworkInformation
-       )
-generateBinaryTreeWithInfo = do
-  depth <- choose (1, 7)
-  pure $ makeBinaryTreeWithInfo @d @n depth
-
+makeBinaryTree depth = go depth (singletonRefDAG mempty)
+  where
+    go :: Int -> ReferenceDAG d () n -> ReferenceDAG d () n
+    go 0 subtree = subtree
+    go n subtree = go (n - 1) (makeBranchedNetwork subtree subtree)
+   
 
 generateBinaryTree ::  (Monoid d, Monoid n)
   => Gen (ReferenceDAG d () n)
@@ -374,7 +325,7 @@ generateBinaryTree = do
 
 generateNetwork :: forall d n . (Monoid d, Monoid n) => Gen (ReferenceDAG d () n)
 generateNetwork  = do
-  (binTree :: ReferenceDAG d () n)  <- generateBinaryTree
+  binTree  <- generateBinaryTree @d @n
   (refDAG, _) <- iterateUntilM stoppingCondition addNetworkEdge (binTree, False)
   pure refDAG
     where
