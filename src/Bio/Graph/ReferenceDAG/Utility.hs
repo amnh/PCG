@@ -148,10 +148,10 @@ makeDoublyBranchedNetworkWithInfo
   ->   ReferenceDAG d () n   -- ^ n1
   ->   ReferenceDAG d () n   -- ^ n2
   -> ( ReferenceDAG d () n
-     , NetworkInformation    -- ^ Network information of n0 (with correct indices)
-     , NetworkInformation    -- ^ Network information of n1 (with correct indices)
-     , NetworkInformation    -- ^ Network information of n2 (with correct indices)
-     , Int                   -- ^ Index of n0n1 root
+     , NetworkInformation
+     , NetworkInformation
+     , NetworkInformation
+     , Int               
      )
 makeDoublyBranchedNetworkWithInfo n0 n1 n2 = (network, n0NetInfo, n1NetInfo, n2NetInfo, xIndex)
   where
@@ -305,6 +305,8 @@ makeBranchedNetworkWithNetworkEvent n0 n1 n2 n3
   = proj4_1 $ makeBranchedNetworkWithNetworkEventWithInfo n0 n1 n2 n3
 
 
+-- |
+-- Make a binary tree of a given depth.
 makeBinaryTree  :: forall d n . (Monoid d, Monoid n)
   =>  Int                    -- ^ depth of binary tree
   -> ReferenceDAG d () n
@@ -315,14 +317,17 @@ makeBinaryTree depth = go depth (singletonRefDAG mempty)
     go n subtree = go (n - 1) (makeBranchedNetwork subtree subtree)
    
 
+-- |
+-- Generate a random binary tree of some depth.
 generateBinaryTree ::  (Monoid d, Monoid n)
   => Gen (ReferenceDAG d () n)
 generateBinaryTree = do
-  depth <- choose (1, 7)
+  depth <- choose (1, 8)
   pure $ makeBinaryTree depth
 
 
-
+-- |
+-- Generate a tree with potential network edges.
 generateNetwork :: forall d n . (Monoid d, Monoid n) => Gen (ReferenceDAG d () n)
 generateNetwork  = do
   binTree  <- generateBinaryTree @d @n
@@ -350,13 +355,14 @@ generateNetwork  = do
           combine n1 n2 n3 = n1 <> n2 <> n3
 
 
-
+-- |
+-- Generate a random network in the same shape as 'makeBranchedNetworkWithInfo'.
 generateBranchedNetwork
   :: forall d n . (Monoid d, Monoid n)
   => Gen
-      ( ReferenceDAG d () n -- ^ Branched network
-      , NetworkInformation  -- ^ Candidate network information of n0
-      , NetworkInformation  -- ^ Candidate network information of n1
+      ( ReferenceDAG d () n
+      , NetworkInformation
+      , NetworkInformation
       )
 generateBranchedNetwork =
   do
@@ -364,16 +370,20 @@ generateBranchedNetwork =
     n1 <- generateNetwork
     pure $ makeBranchedNetworkWithInfo n0 n1
 
+-- |
+-- Generate a random network in the same shape as 'makeBranchedNetworkWithNetworkEventWithInfo'
+-- returning also the candidate network information of n0, n1 and n2 and the index of the nodes
+-- called a, b and c (in the above diagram).
 generateBranchedNetworkWithNetworkEvent
   :: (Monoid d, Monoid n)
   => Gen
        ( ReferenceDAG d () n
-       , NetworkInformation  -- ^ Candidate network information of n0
-       , NetworkInformation  -- ^ Candidate network information of n1
-       , NetworkInformation  -- ^ Candidate network information of n2
-       , Int  -- ^ Index of internal node a
-       , Int  -- ^ Index of internal node b
-       , Int  -- ^ Index of internal node c
+       , NetworkInformation
+       , NetworkInformation
+       , NetworkInformation
+       , Int
+       , Int
+       , Int
        )
 generateBranchedNetworkWithNetworkEvent =
   do
@@ -397,14 +407,18 @@ generateBranchedNetworkWithNetworkEvent =
          , cIndex
          )
 
+-- |
+-- Generate a random network in the same shape as 'makeDoublyBranchedNetwork'
+-- also returning 'NetworkInformation' about the sub-networks and the internal
+-- index of the x node.
 generateDoublyBranchedNetwork
   :: (Monoid d, Monoid n)
   => Gen
       ( ReferenceDAG d () n
-      , NetworkInformation  -- ^ Candidate network information of n0
-      , NetworkInformation  -- ^ Candidate network information of n1
-      , NetworkInformation  -- ^ Candidate network information of n2
-      , Int                 -- ^ index of root node
+      , NetworkInformation
+      , NetworkInformation
+      , NetworkInformation
+      , Int
       )
 generateDoublyBranchedNetwork =
   do
@@ -429,7 +443,8 @@ incrementNodeIndices :: forall d e n . Int -> ReferenceDAG d e n -> ReferenceDAG
 incrementNodeIndices n refDAG = refDAG & _rootRefs   %~ fmap (+ n)
                                        & _references %~ incrementRefVector n
 
-
+-- |
+-- Increment all of the index data in a reference vector.
 incrementRefVector :: Int ->  Vector (IndexData e n) -> Vector (IndexData e n)
 incrementRefVector n = fmap incrementIndexData
   where
@@ -437,6 +452,8 @@ incrementRefVector n = fmap incrementIndexData
     incrementIndexData ind = ind & _parentRefs %~ IS.map     (+ n)
                                  & _childRefs  %~ IM.mapKeys (+ n)
 
+-- |
+-- Increment all index data in 'NetworkInformation'
 incrementNetworkInformation :: Int -> NetworkInformation -> NetworkInformation
 incrementNetworkInformation n NetworkInformation{..}
   = NetworkInformation
