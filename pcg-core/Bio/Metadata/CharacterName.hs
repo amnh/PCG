@@ -202,18 +202,7 @@ assignCharacterNames f = (`evalState` mempty) . traverse (g . f)
   where
     g (path, struct) = traverse (traverse (h path)) struct
 
-    h path (may, val) = (\x -> (x,val)) <$> assignName path may
-{-      
-      case may of
-        Just name | validName name -> pure (UserDefined path name, val)
-        _ -> do
-          seenMap <- get
-          modify $ incMap path
-          pure $
-              case path `lookup` seenMap of
-                Nothing -> (Default path 0, val)
-                Just i  -> (Default path i, val)
--}
+    h path (may, val) = (\x -> (x, val)) <$> assignName path may
 
 
 incMap :: Ord a => a -> Map a Word -> Map a Word

@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Decoration.Discrete
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -10,6 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass         #-}
+{-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -39,8 +41,10 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
+import Control.DeepSeq
 import Control.Lens
 import Data.Range
+import GHC.Generics
 import Numeric.Extended
 import Text.XML
 import TextShow                        (TextShow (showb))
@@ -49,7 +53,7 @@ import TextShow                        (TextShow (showb))
 -- |
 -- General, concrete type for 'Discrete' characters.
 newtype DiscreteDecoration c = DiscreteDec { discreteDecorationCharacter :: c }
-
+    deriving (Generic, NFData)
 
 -- |
 -- A 'Lens' for the 'discreteCharacter' field

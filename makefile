@@ -256,7 +256,7 @@ format-code: install-stylish-haskell
 	@echo "[✓] Formatting complete!"
 
 run-linter: install-hlint install-weeder format-code
-	hlint $(code-dirs)
+	hlint --no-exit-code $(code-dirs)
 #	weeder . --build
 
 # Copies documentation director to local scope

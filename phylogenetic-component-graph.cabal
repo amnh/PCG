@@ -40,7 +40,7 @@ common dependencies
     containers               >= 0.5.8     && < 0.7,
     criterion                >= 1.5       && < 2.0,
     data-default             >= 0.5.2     && < 0.8,
-    deepseq                  >= 1.3       && < 2.0,
+    deepseq                  >= 1.4       && < 2.0,
     directory                >= 1.3       && < 2.0,
     dlist                    >= 0.8       && < 1.0,
     filepath                 >= 1.4       && < 2.0,
@@ -415,6 +415,35 @@ library pcg-data-normalization
     Data.Normalization.Metadata.Internal
 
 
+-- Library for taking data from disperate input sources and converting the data
+-- to a normalized form.
+library pcg-data-unification
+
+  import:             
+    dependencies,
+    ghc-flags,
+    language-specs
+
+  hs-source-dirs:
+    pcg-data-unification/src
+
+  build-depends:
+    pcg-alphabet,
+    pcg-core,
+    pcg-data-normalization,
+    pcg-file-parsers,
+    pcg-utility,
+    pcg-serialize,
+    pcg-tcm,
+
+  exposed-modules:
+    Data.Unification
+
+  other-modules:
+    Data.Unification.Error
+    Data.Unification.InputData
+
+
 -- A library for the evaluation monad used by pcg.
 library pcg-evaluation
 
@@ -658,7 +687,8 @@ executable pcg
     pcg-analysis,
     pcg-evaluation,
     pcg-core,
-    pcg-data-normalization,            
+    pcg-data-normalization,
+    pcg-data-unification,            
     pcg-file-parsers,
     pcg-language,
     pcg-utility,
@@ -673,8 +703,8 @@ executable pcg
     PCG.Command.Read.DecorationInitialization
     PCG.Command.Read.Evaluate
     PCG.Command.Read.ReadError
-    PCG.Command.Read.Unification.Master
-    PCG.Command.Read.Unification.UnificationError
+--    PCG.Command.Read.Unification.Master
+--    PCG.Command.Read.Unification.UnificationError
     PCG.Command.Report.Evaluate
     PCG.Command.Report.GraphViz
     PCG.Command.Report.Metadata

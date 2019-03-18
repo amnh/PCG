@@ -370,7 +370,7 @@ scriptDiffOutputFiles is os =
 scriptFailure :: String -> TestTree
 scriptFailure scriptPath = testCase scriptPath $ do
     v <- runScripts (scriptPath:|[]) []
-    assertBool "Expected script success" $ isLeft v
+    assertBool "Expected script failure, but script was successful..." $ isLeft v
 
 
 -- |

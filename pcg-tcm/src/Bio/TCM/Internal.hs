@@ -13,6 +13,7 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric  #-}
 {-# LANGUAGE Strict         #-}
+{-# LANGUAGE StrictData     #-}
 {-# LANGUAGE TypeFamilies   #-}
 
 module Bio.TCM.Internal
@@ -66,7 +67,7 @@ import           Text.XML
 -- Attempts to construct an empty or singleton 'TCM' through the above
 -- constructors will result in a runtime exception.
 data TCM
-   = TCM Int (Vector Word32)
+   = TCM {-# UNPACK #-} Int !(Vector Word32)
    deriving (Eq, Generic, NFData)
 
 

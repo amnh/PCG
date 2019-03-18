@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module PCG.Command.Read.Unification.UnificationError
+module Data.Unification.Error
   ( TaxaName
   , UnificationError(..)
   , UnificationErrorMessage(ForestDuplicateTaxa, ForestExtraTaxa, ForestMissingTaxa, VacuousInput)
@@ -21,6 +21,7 @@ newtype UnificationError
       = UnificationError (NonEmpty UnificationErrorMessage)
 
 
+-- TODO: Rename this better
 data UnificationErrorMessage
    = NonMatchingTaxa     [TaxaName] [TaxaName]
    | NonMatchingTaxaSeqs [TaxaName] [TaxaName]
@@ -28,6 +29,7 @@ data UnificationErrorMessage
    | ForestExtraTaxa     (NonEmpty TaxaName) FilePath
    | ForestMissingTaxa   (NonEmpty TaxaName) FilePath
    | VacuousInput        (NonEmpty FilePath)
+-- TODO: Add an error case for a nonempty set oft axa with only missing data observations.
 
 
 instance Semigroup UnificationError where
