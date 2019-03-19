@@ -18,12 +18,11 @@ import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise (filterGaps)
 import Bio.Character.Encodable
 import Bio.Character.Exportable
 import Bio.Character.Exportable.MemoizationData
-import Bio.TCM.Memoized
 import Foreign         hiding (alignPtr)
 import Foreign.C.Types
 import System.IO.Unsafe
 
-import Debug.Trace
+--import Debug.Trace
 
 #include "sequentialAlignInterface.h"
 #include "sequentialAlignOutputTypes.h"
@@ -101,9 +100,9 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
 --        !_ <- trace ("Shown character 1: " <> show char1) $ pure ()
 --        !_ <- trace ("Shown character 2: " <> show char2) $ pure ()
 
-        !_ <- trace "Before FFI call" $ pure ()
+--        !_ <- trace "Before FFI call" $ pure ()
         !_success     <- performSeqAlignfn_c char1' char2' (costMatrix memo) resultPointer
-        !_ <- trace "After  FFI call" $ pure ()
+--        !_ <- trace "After  FFI call" $ pure ()
 
 --        _ <- free char1'
 --        _ <- free char2'
@@ -124,7 +123,7 @@ pairwiseSequentialAlignment memo char1 char2 = unsafePerformIO $ do
         !_ <- trace ("Shown character 1 aligned: " <> show alignedChar1   ) $ pure ()
         !_ <- trace ("Shown character 2 aligned: " <> show alignedChar2   ) $ pure ()
 --}
-        !_ <- trace "Right Before Return" $ pure ()
+--        !_ <- trace "Right Before Return" $ pure ()
         pure (alignmentCost, ungapped, medianAlignment, alignedChar1, alignedChar2)
     where
         width = exportedElementWidthSequence $ toExportableBuffer char1

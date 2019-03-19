@@ -35,9 +35,11 @@ module Analysis.Parsimony.Internal
   , rootFunction
   ) where
 
+import Bio.Graph.Node.Context
 import Data.MonoTraversable
 
 
+{-
 -- |
 -- A node context for performing a postorder traversal on a binary
 -- network with potential in-degree 2, out-degree 1 network nodes.
@@ -181,3 +183,5 @@ otoParentContext xs =
       []      -> NoParent
       [p]     -> OneParent p
       (l:r:_) -> TwoParents l r
+
+-}

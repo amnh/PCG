@@ -43,7 +43,8 @@ import           Data.List
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty        as NE
 import           Data.Semigroup.Foldable
-import qualified Data.Text.Lazy            as L
+import qualified Data.Text                 as T
+import qualified Data.Text.Lazy            as TL
 import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
@@ -92,7 +93,7 @@ instance {-# OVERLAPPABLE #-} PrintDot a => PrintDot (PhylogeneticSolution a) wh
     listToDot     = fmap mconcat . traverse   toDot
 
 
-instance Show n => PrintDot (PhylogeneticSolution (PhylogeneticDAG m e n u v w x y z)) where
+instance TextShow n => PrintDot (PhylogeneticSolution (PhylogeneticDAG m e n u v w x y z)) where
 
     unqtDot       = unqtDot . uncurry mkGraph . foldMap1 getSolutionDotContext . phylogeneticForests
 
@@ -136,7 +137,7 @@ instance TextShow a => TextShow (PhylogeneticSolution a) where
           . fmap renderForest
           . phylogeneticForests
       where
-        indent       = L.intercalate  "\n" . fmap ("  " <>) . L.lines
+        indent       = TL.intercalate  "\n" . fmap ("  " <>) . TL.lines
         renderForest = indent . foldMapWithKey f
           where
             f k e = fold
@@ -159,18 +160,11 @@ instance TextShow a => TextShow (PhylogeneticSolution a) where
 
 instance ToNewick a => ToNewick (PhylogeneticSolution a) where
 
-    toNewick soln = unlines $ fmap toNewick (toList $ phylogeneticForests soln)
+    toNewick soln = T.unlines $ fmap toNewick (toList $ phylogeneticForests soln)
 
 
 instance
   ( HasBlockCost u v w x y z
-  , Show n
-  , Show u
-  , Show v
-  , Show w
-  , Show x
-  , Show y
-  , Show z
   , TextShow n
   , TextShow u
   , TextShow v
@@ -199,10 +193,10 @@ instance
 
             graphRepresentations = xmlElement "Graph_representations" attrs graphContents
             graphContents        = [ Left ("DOT"   , getDOT   soln)
-                                   , Left ("Newick", toNewick soln)
+                                   , Left ("Newick", T.unpack $ toNewick soln)
                                    ]
 
-            getDOT = L.unpack . renderDot . toDot
+            getDOT = TL.unpack . renderDot . toDot
 
             characterMetadata = xmlElement "Character_metadata" attrs metadataContents
             metadataContents  = [Right $ toXML metadataSequence]
@@ -214,7 +208,7 @@ getSolutionDotContext
   :: ( FoldableWithKey1 t
      , Functor t
      , Key t ~ Int
-     , Show n
+     , TextShow n
      )
   => t (PhylogeneticDAG m e n u v w x y z)
   -> ([DotNode GraphID], [DotEdge GraphID])

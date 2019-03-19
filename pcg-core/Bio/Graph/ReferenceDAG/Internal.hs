@@ -33,7 +33,6 @@ import           Bio.Graph.BinaryRenderingTree
 import           Bio.Graph.Component
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node.Context
-import           Control.Applicative           as Alt (Alternative (empty, (<|>)))
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
 import           Control.Lens                  as Lens (Lens, Lens', lens, to)
@@ -60,13 +59,14 @@ import           Data.List                     (intercalate)
 import           Data.List.NonEmpty            (NonEmpty (..), intersperse)
 import qualified Data.List.NonEmpty            as NE
 import           Data.List.Utility             (isSingleton)
-import           Data.MemoVector               as DV
 import           Data.Monoid                   hiding ((<>))
 import           Data.MonoTraversable
 import           Data.Semigroup                hiding (First (..))
 import           Data.Semigroup.Foldable
 import qualified Data.Set                      as S
 import           Data.String
+import           Data.Text                     (Text)
+import qualified Data.Text                     as T
 import qualified Data.TextShow.Custom          as TextShow (intercalateB)
 import           Data.Traversable
 import           Data.Tree                     (unfoldTree)
@@ -140,153 +140,176 @@ data NodeClassification
 newtype NodeRef = NR Int deriving (Eq, Enum)
 
 
+type instance Key (ReferenceDAG d e) = Int
+
+
 -- |
 -- A 'Lens' for the 'nodeDecoration' field in 'IndexData'
-class HasNodeDecoration s t a b | s -> a, t -> b, s b -> t, t a -> s where
-  _nodeDecoration :: Lens s t a b
-
 {-# SPECIALISE _nodeDecoration :: Lens (IndexData e n) (IndexData e n') n n' #-}
+class HasNodeDecoration s t a b | s -> a, t -> b, s b -> t, t a -> s where
 
-instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
-  {-# INLINE _nodeDecoration #-}
-  _nodeDecoration = lens nodeDecoration (\i n' -> i {nodeDecoration = n'})
+    _nodeDecoration :: Lens s t a b
+
 
 -- |
 -- A 'Lens' for the 'parentRefs' field in 'IndexData'
+{-# SPECIALIZE _parentRefs :: Lens' (IndexData e n) IntSet #-}
 class HasParentRefs s a | s -> a where
-  _parentRefs :: Lens' s a
 
-{-# SPECIALISE _parentRefs :: Lens' (IndexData e n) IntSet #-}
+    _parentRefs :: Lens' s a
 
-instance HasParentRefs (IndexData e n) IntSet where
-  {-# INLINE _parentRefs #-}
-  _parentRefs = lens parentRefs (\i p -> i {parentRefs = p})
 
 -- |
 -- A 'Lens' for the 'childRefs' field in 'IndexData'
-class HasChildRefs s t a b | s -> a, t -> b, s b -> t, t a -> s where
-  _childRefs :: Lens s t a b
-
 {-# SPECIALISE _childRefs :: Lens' (IndexData e n) IntSet #-}
+class HasChildRefs s t a b | s -> a, t -> b, s b -> t, t a -> s where
 
-instance HasChildRefs (IndexData e n) (IndexData e' n) (IntMap e) (IntMap e') where
-  {-# INLINE _childRefs #-}
-  _childRefs = lens childRefs (\i c -> i {childRefs = c})
+    _childRefs :: Lens s t a b
 
 
 -- |
 -- A 'Lens' for the 'graphData' field.
+{-# SPECIALISE _graphData :: Lens (ReferenceDAG d e n) (ReferenceDAG d' e n) (GraphData d) (GraphData d') #-}
 class HasGraphData s t a b | s -> a, t -> b,  s b -> t, t a -> s where
-  _graphData :: Lens s t a b
 
-{-# SPECIALISE _graphData :: Lens (ReferenceDAG d e n) (ReferenceDAG d' e n)
-                                  (GraphData d)        (GraphData d')
-  #-}
-
-instance HasGraphData
-  (ReferenceDAG d e n) (ReferenceDAG d' e n) (GraphData d) (GraphData d')
-  where
-  {-# INLINE _graphData #-}
-  _graphData = lens graphData (\r g -> r {graphData = g})
-
+    _graphData :: Lens s t a b
 
 
 -- |
 -- A 'Lens' for the 'references' field
+{-# SPECIALISE  _references :: Lens (ReferenceDAG d e n) (ReferenceDAG d e' n') (Vector (IndexData e n)) (Vector (IndexData e' n')) #-}
 class HasReferenceVector s t a b | s -> a, b s -> t where
-  _references :: Lens s t a b
 
-{-# SPECIALISE
-  _references :: Lens (ReferenceDAG d e n)     (ReferenceDAG d e' n')
-                      (Vector (IndexData e n)) (Vector (IndexData e' n')) #-}
+    _references :: Lens s t a b
 
-instance HasReferenceVector
-  (ReferenceDAG d e n)
-  (ReferenceDAG d e' n')
-  (Vector (IndexData e n))
-  (Vector (IndexData e' n'))
-    where
-  {-# INLINE _references #-}
-  _references = lens references (\r v -> r {references = v})
 
 -- |
 -- A 'Lens' for the 'rootRefs' field
-class HasRootReferences s a | s -> a where
-  _rootRefs :: Lens' s a
-
 {-# SPECIALISE _rootRefs :: Lens' (ReferenceDAG d e n) (NonEmpty Int) #-}
+class HasRootReferences s a | s -> a where
 
-
-instance HasRootReferences (ReferenceDAG d e n) (NonEmpty Int) where
-  {-# INLINE _rootRefs #-}
-  _rootRefs = lens rootRefs (\r v -> r {rootRefs = v})
+    _rootRefs :: Lens' s a
 
 
 -- |
 -- A 'Fold' for folding over a structure containing node decorations.
-class FoldNodeDecoration s a | s -> a where
-  foldNodeDecoration :: Fold s a
 {-# SPECIALISE foldNodeDecoration :: Fold (ReferenceDAG d e n) n #-}
+class FoldNodeDecoration s a | s -> a where
 
-instance FoldNodeDecoration (ReferenceDAG d e n) n where
-  {-# INLINE foldNodeDecoration #-}
-  foldNodeDecoration = _references . folding id . _nodeDecoration
+    foldNodeDecoration :: Fold s a
+
 
 -- |
 -- A 'Lens' for the 'dagCost' field
-class HasDagCost s a | s -> a where
-  _dagCost :: Lens' s a
 {-# SPECIALISE _dagCost :: (GraphData d) ExtendedReal #-}
+class HasDagCost s a | s -> a where
 
+    _dagCost :: Lens' s a
 
-instance HasDagCost (GraphData d) ExtendedReal where
-  {-# INLINE _dagCost #-}
-  _dagCost = lens dagCost (\g d -> g {dagCost = d})
 
 -- |
 -- A 'Lens' for the 'networkEdgeCost' field.
-class HasNetworkEdgeCost s a | s -> a where
-  _networkEdgeCost :: Lens' s a
 {-# SPECIALISE _networkEdgeCost :: Lens' (GraphData d) ExtendedReal #-}
+class HasNetworkEdgeCost s a | s -> a where
 
+    _networkEdgeCost :: Lens' s a
 
-instance HasNetworkEdgeCost (GraphData d) ExtendedReal where
-  {-# INLINE _networkEdgeCost #-}
-  _networkEdgeCost = lens networkEdgeCost (\g n -> g {networkEdgeCost = n})
 
 -- |
 -- a 'Lens' for the 'rootingCost' field.
-class HasRootingCost s a | s -> a where
-  _rootingCost :: Lens' s a
 {-# SPECIALISE _rootingCost :: Lens' (GraphData d) Double #-}
+class HasRootingCost s a | s -> a where
 
-instance HasRootingCost (GraphData d) Double where
-  {-# INLINE _rootingCost #-}
-  _rootingCost = lens rootingCost (\g r -> g {rootingCost = r})
+    _rootingCost :: Lens' s a
+
 
 -- |
 -- A 'Lens' for 'totalBlockClost' field.
-class HasTotalBlockCost s a | s -> a where
-  _totalBlockCost :: Lens' s a
 {-# SPECIALISE _totalBlockCost :: Lens' (GraphData d) Double #-}
+class HasTotalBlockCost s a | s -> a where
 
-instance HasTotalBlockCost (GraphData d) Double where
-  {-# INLINE _totalBlockCost #-}
-  _totalBlockCost = lens totalBlockCost (\g t -> g {totalBlockCost = t})
+    _totalBlockCost :: Lens' s a
+
 
 -- |
 -- a 'Lens' for the 'graphMetadata' field.
-class HasGraphMetadata s t a b | s -> a, t -> b, s b -> t, t a -> s where
-  _graphMetadata :: Lens s t a b
 {-# SPECIALISE _graphMetadata :: Lens' (GraphData d) d #-}
+class HasGraphMetadata s t a b | s -> a, t -> b, s b -> t, t a -> s where
+
+    _graphMetadata :: Lens s t a b
+
+
+instance HasNodeDecoration (IndexData e n) (IndexData e n') n n' where
+    {-# INLINE _nodeDecoration #-}
+
+    _nodeDecoration = lens nodeDecoration (\i n' -> i {nodeDecoration = n'})
+
+
+instance HasParentRefs (IndexData e n) IntSet where
+    {-# INLINE _parentRefs #-}
+
+    _parentRefs = lens parentRefs (\i p -> i {parentRefs = p})
+
+
+instance HasChildRefs (IndexData e n) (IndexData e' n) (IntMap e) (IntMap e') where
+    {-# INLINE _childRefs #-}
+
+    _childRefs = lens childRefs (\i c -> i {childRefs = c})
+
+
+instance HasRootReferences (ReferenceDAG d e n) (NonEmpty Int) where
+    {-# INLINE _rootRefs #-}
+
+    _rootRefs = lens rootRefs (\r v -> r {rootRefs = v})
+
+
+instance FoldNodeDecoration (ReferenceDAG d e n) n where
+    {-# INLINE foldNodeDecoration #-}
+
+    foldNodeDecoration = _references . folding id . _nodeDecoration
+
+
+instance HasDagCost (GraphData d) ExtendedReal where
+    {-# INLINE _dagCost #-}
+
+    _dagCost = lens dagCost (\g d -> g {dagCost = d})
+
+
+instance HasNetworkEdgeCost (GraphData d) ExtendedReal where
+    {-# INLINE _networkEdgeCost #-}
+
+    _networkEdgeCost = lens networkEdgeCost (\g n -> g {networkEdgeCost = n})
+
+
+instance HasRootingCost (GraphData d) Double where
+    {-# INLINE _rootingCost #-}
+
+    _rootingCost = lens rootingCost (\g r -> g {rootingCost = r})
+
+
+instance HasTotalBlockCost (GraphData d) Double where
+    {-# INLINE _totalBlockCost #-}
+
+    _totalBlockCost = lens totalBlockCost (\g t -> g {totalBlockCost = t})
+
 
 instance HasGraphMetadata (GraphData d) (GraphData d') d d' where
-  {-# INLINE _graphMetadata #-}
-  _graphMetadata = lens graphMetadata (\g m -> g {graphMetadata = m})
+    {-# INLINE _graphMetadata #-}
+
+    _graphMetadata = lens graphMetadata (\g m -> g {graphMetadata = m})
 
 
 
-type instance Key (ReferenceDAG d e) = Int
+instance HasGraphData (ReferenceDAG d e n) (ReferenceDAG d' e n) (GraphData d) (GraphData d') where
+    {-# INLINE _graphData #-}
+
+    _graphData = lens graphData (\r g -> r {graphData = g})
+
+
+instance HasReferenceVector (ReferenceDAG d e n) (ReferenceDAG d e' n') (Vector (IndexData e n)) (Vector (IndexData e' n')) where
+    {-# INLINE _references #-}
+
+    _references = lens references (\r v -> r {references = v})
 
 
 -- | (✔)
@@ -420,7 +443,7 @@ instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
 
 
 -- | (✔)
-instance Show n => PrintDot (ReferenceDAG d e n) where
+instance TextShow n => PrintDot (ReferenceDAG d e n) where
 
     unqtDot       = unqtDot . uncurry mkGraph . getDotContext 0 0
 
@@ -494,9 +517,9 @@ instance Monoid d => Monoid (GraphData d) where
              }
 
 -- | (✔)
-instance Show n => ToNewick (ReferenceDAG d e n) where
+instance TextShow n => ToNewick (ReferenceDAG d e n) where
 
-    toNewick refDag = mconcat [ newickString, "[", show cost, "]" ]
+    toNewick refDag = T.concat [ newickString, "[", showt cost, "]" ]
       where
         (_,newickString) = generateNewick namedVec rootRef mempty
         cost     = dagCost $ graphData refDag
@@ -506,7 +529,7 @@ instance Show n => ToNewick (ReferenceDAG d e n) where
         namedVec = zipWith (\x n -> n { nodeDecoration = x }) labelVec vec
         labelVec = (`evalState` (1,1,1)) $ mapM deriveLabel vec -- All network nodes have "htu\d" as nodeDecoration.
 
-        deriveLabel :: IndexData e n -> State (Int, Int, Int) String
+        deriveLabel :: IndexData e n -> State (Int, Int, Int) Text
         deriveLabel node
           | shownLabel /= "{Unlabeled Node}" = pure shownLabel
           | otherwise = do
@@ -514,15 +537,15 @@ instance Show n => ToNewick (ReferenceDAG d e n) where
               case getNodeType node of
                 LeafNode    -> do
                     put (lC+1, nC, tC)
-                    pure $ "Leaf_" <> show lC
+                    pure $ "Leaf_" <> showt lC
                 NetworkNode -> do
                     put (lC, nC+1, tC)
-                    pure $ "HTU_"  <> show nC
+                    pure $ "HTU_"  <> showt nC
                 _           -> do
                     put (lC, nC, tC+1)
-                    pure $ "Node_" <> show tC
+                    pure $ "Node_" <> showt tC
           where
-            shownLabel = show $ nodeDecoration node
+            shownLabel = showt $ nodeDecoration node
 
 
 -- | (✔)
@@ -545,12 +568,12 @@ instance Show n => ToXML (IndexData e n) where
 
 
 -- | (✔)
-instance (Show n, ToXML n) => ToXML (ReferenceDAG d e n) where
+instance (TextShow n, ToXML n) => ToXML (ReferenceDAG d e n) where
 
     toXML dag = xmlElement "Directed_acyclic_graph" [] [newick, meta, vect]
       where
           meta   = Right . toXML $ graphData dag
-          newick = Left ("Newick_representation", toNewick dag)
+          newick = Left ("Newick_representation", T.unpack $ toNewick dag)
           vect   = Right . collapseElemList "Nodes" [] $ dag
 
 
@@ -967,7 +990,7 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
 -- 'generateNewick' recursively retrieves the node name at a given index in an 'IndexData' vector.
 -- The set acts as an accumulator to remember which network nodes have been referenced thus far.
 -- Each network node has already been assigned an index. That index will be used as the node reference in the eNewick output.
-generateNewick :: Vector (IndexData e String) -> Int -> S.Set String -> (S.Set String, String)
+generateNewick :: Vector (IndexData e Text) -> Int -> S.Set Text -> (S.Set Text, Text)
 generateNewick refs idx htuNumSet = (finalNumSet, finalStr)
   where
     node = refs ! idx
@@ -1270,13 +1293,14 @@ unfoldDAG f origin =
 -- Extract a context from the 'ReferenceDAG' that can be used to create a dot
 -- context for rendering.
 getDotContext
-  :: Show n
+  :: TextShow n
   => Int -- ^ Base over which the Unique
   -> Int
   -> ReferenceDAG d e n
   -> ([DotNode GraphID], [DotEdge GraphID])
 --getDotContext dag | trace ("About to render this to DOT:\n\n" <> show dag) False = undefined
-getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . unzip $ foldMapWithKey f vec
+getDotContext uniqueIdentifierBase mostSignificantDigit dag =
+    second mconcat . unzip $ foldMapWithKey f vec
   where
     idOffest = uniqueIdentifierBase * mostSignificantDigit
 
@@ -1285,13 +1309,12 @@ getDotContext uniqueIdentifierBase mostSignificantDigit dag = second mconcat . u
     toId :: Int -> GraphID
     toId = Num . Int . (+ idOffest)
 
-    toAttributes :: Show a => a -> Attributes
+    toAttributes :: TextShow a => a -> Attributes
     toAttributes x =
-      case show x of
-        ""  -> []
-        str -> [ toLabel str ]
+      let txt = showt x
+      in  if T.null txt then [] else [ toLabel $ T.unpack txt ]
 
-    f :: Show n => Int -> IndexData e n -> [(DotNode GraphID, [DotEdge GraphID])]
+    f :: TextShow n => Int -> IndexData e n -> [(DotNode GraphID, [DotEdge GraphID])]
     f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]
       where
         datum       = nodeDecoration v

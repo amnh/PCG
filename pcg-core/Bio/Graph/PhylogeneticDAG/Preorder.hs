@@ -26,7 +26,7 @@ module Bio.Graph.PhylogeneticDAG.Preorder
   , setEdgeSequences
   ) where
 
-                 -- TO DO: Change to more sensible qualified name
+-- TODO: Change to more sensible qualified name
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
 import           Bio.Graph.Node
@@ -61,6 +61,7 @@ import qualified Data.Vector                        as V
 import           Data.Vector.Instances              ()
 import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup, zip)
+import           TextShow
 
 
 type BlockTopologies = NEV.Vector TraversalTopology
@@ -332,7 +333,7 @@ data  PreorderContext c
     | NoBlockData
 
 
-generateDotFile :: Show n => PhylogeneticDAG m e n u v w x y z -> String
+generateDotFile :: TextShow n => PhylogeneticDAG m e n u v w x y z -> String
 generateDotFile = (<> "\n") . L.unpack . renderDot . toDot
 
 
@@ -344,7 +345,7 @@ generateDotFile = (<> "\n") . L.unpack . renderDot . toDot
 -- and returns the new decoration for the current node.
 preorderFromRooting
   :: forall m u v w x y z e' n' u' v' w' x' y' z'
-  .  (Show n')
+  .  (TextShow n')
   => (DynamicCharacterMetadataDec (Element DynamicCharacter) ->  AP.PreorderContext z z' -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))

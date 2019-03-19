@@ -63,12 +63,13 @@ xmlContent (key, val) = Elem $ Element (xmlQName key) [] [CRef val] Nothing
 -- Otherwise, return the Element val as Elem val (to create Content).
 xmlElement :: String -> [(String, String)] -> [Either (String, String) Element] -> Element
 xmlElement name attrs contLst = Element (xmlQName name) attributes contents Nothing
-    where
-        attributes      = xmlAttr   <$> attrs
-        contents        = parseList <$> contLst
-        parseList conts = case conts of
-            Left  tuple   -> xmlContent tuple
-            Right element -> Elem element
+  where
+    attributes      = xmlAttr   <$> attrs
+    contents        = parseList <$> contLst
+    parseList conts =
+        case conts of
+          Left  tuple   -> xmlContent tuple
+          Right element -> Elem element
 
 
 -- |

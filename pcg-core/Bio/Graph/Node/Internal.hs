@@ -61,7 +61,7 @@ import Data.UnionSet
 import GHC.Generics
 import Text.Newick.Class
 import Text.XML
-import TextShow                    (TextShow (showb), toString, unlinesB)
+import TextShow                    (TextShow (showb, showt), toString, unlinesB)
 
 
 -- |
@@ -92,18 +92,18 @@ class HasResolutions s t a b | s -> a, b s -> t where
     _resolutions :: Lens s t a b
 
 
-instance HasResolutions (PhylogeneticNode s n) (PhylogeneticNode s' n) (ResolutionCache s) (ResolutionCache s') where
-
-    {-# INLINE _resolutions #-}
-    _resolutions = lens resolutions (\p s -> p {resolutions = s})
-
-
 -- |
 -- A 'Lens' for the 'nodeDecorationDatum' field.
 {-# SPECIALISE _nodeDecorationDatum :: Lens (PhylogeneticNode s n) (PhylogeneticNode s n') n n' #-}
 class HasNodeDecorationDatum s t a b | s -> a, b s -> t where
 
     _nodeDecorationDatum :: Lens s t a b
+
+
+instance HasResolutions (PhylogeneticNode s n) (PhylogeneticNode s' n) (ResolutionCache s) (ResolutionCache s') where
+
+    {-# INLINE _resolutions #-}
+    _resolutions = lens resolutions (\p s -> p {resolutions = s})
 
 
 instance HasNodeDecorationDatum (PhylogeneticNode s n) (PhylogeneticNode s n') n n' where
@@ -431,9 +431,9 @@ instance TextShow s => TextShow (ResolutionInformation s) where
            ]
 
 
-instance Show s => ToNewick (PhylogeneticNode n s) where
+instance TextShow s => ToNewick (PhylogeneticNode n s) where
 
-    toNewick node = show $ nodeDecorationDatum2 node
+    toNewick = showt . nodeDecorationDatum2
 
 
 instance (ToXML n) => ToXML (PhylogeneticNode n s) where

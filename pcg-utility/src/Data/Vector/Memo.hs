@@ -16,7 +16,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
-module Data.MemoVector
+module Data.Vector.Memo
   ( DVector(..)
   , generateMemo
   , liftExp2

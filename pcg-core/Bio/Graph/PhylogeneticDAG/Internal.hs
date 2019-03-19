@@ -170,6 +170,28 @@ class HasVirtualNodeMapping s a | s -> a where
     _virtualNodeMapping :: Lens' s a
 
 
+-- |
+-- A 'Lens' for the 'minimalNetworkContext' field in 'PostorderContextualData'
+{-# SPECIALISE  _minimalNetworkContext :: Lens' (PostorderContextualData t) (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))) #-}
+class HasMinimalNetworkContext s a | s -> a where
+
+    _minimalNetworkContext :: Lens' s a
+
+
+-- |
+-- A 'Lens' for the 'phyogeneticForest' field in 'PhylogeneticDAG'
+class HasPhylogeneticForest s t a b | s -> a, t -> b, s b -> t, t a -> s where
+
+    _phylogeneticForest :: Lens s t a b
+
+
+-- |
+-- A 'Lens' for the 'columnMetadata' field in 'PhylogeneticDAG'
+class HasColumnMetadata s t a b | s -> a, t -> b, s b -> t, t a -> s where
+
+    _columnMetadata :: Lens s t a b
+
+
 instance HasVirtualNodeMapping (PostorderContextualData t) (HashMap EdgeReference (ResolutionCache t)) where
 
     {-# INLINE _virtualNodeMapping #-}
@@ -184,25 +206,10 @@ instance HasVirtualNodeMapping (PhylogeneticDAG m e n u v w x y z) (HashMap Edge
         (\p v -> p & _phylogeneticForest . _graphData . _graphMetadata . _virtualNodeMapping .~ v)
 
 
--- |
--- A 'Lens' for the 'minimalNetworkContext' field in 'PostorderContextualData'
-{-# SPECIALISE  _minimalNetworkContext :: Lens' (PostorderContextualData t) (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))) #-}
-class HasMinimalNetworkContext s a | s -> a where
-
-    _minimalNetworkContext :: Lens' s a
-
-
 instance HasMinimalNetworkContext (PostorderContextualData t) (Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))) where
 
     {-# INLINE _minimalNetworkContext #-}
     _minimalNetworkContext = lens minimalNetworkContext (\p m -> p {minimalNetworkContext = m})
-
-
--- |
--- A 'Lens' for the 'phyogeneticForest' field in 'PhylogeneticDAG'
-class HasPhylogeneticForest s t a b | s -> a, t -> b, s b -> t, t a -> s where
-
-    _phylogeneticForest :: Lens s t a b
 
 
 instance HasPhylogeneticForest
@@ -213,11 +220,6 @@ instance HasPhylogeneticForest
 
     {-# INLINE _phylogeneticForest #-}
     _phylogeneticForest = lens phylogeneticForest (\p pf -> p {phylogeneticForest = pf})
-
--- |
--- A 'Lens' for the 'columnMetadata' field in 'PhylogeneticDAG'
-class HasColumnMetadata s t a b | s -> a, t -> b, s b -> t, t a -> s where
-    _columnMetadata :: Lens s t a b
 
 
 instance HasColumnMetadata
@@ -254,7 +256,7 @@ instance ( NFData m
 
 
 -- | (✔)
-instance Show n => PrintDot (PhylogeneticDAG m e n u v w x y z) where
+instance TextShow n => PrintDot (PhylogeneticDAG m e n u v w x y z) where
 
     unqtDot       = unqtDot . discardCharacters
 
@@ -312,12 +314,13 @@ instance ( HasBlockCost u v w x y z
 
 
 -- | (✔)
-instance Show n => ToNewick (PhylogeneticDAG m e n u v w x y z) where
+instance TextShow n => ToNewick (PhylogeneticDAG m e n u v w x y z) where
 
     toNewick = toNewick . discardCharacters
 
+
 -- | (✔)
-instance  TextShow t => TextShow (PostorderContextualData t) where
+instance TextShow t => TextShow (PostorderContextualData t) where
 
     showb (PostorderContextualData virtual contextual minimal) = unlinesB
         [ showb virtual
@@ -370,7 +373,7 @@ instance ( TextShow n
 -- |
 -- Get the dot context of a 'PhylogeneticDAG' with useful internal node decorations.
 getDotContextWithBaseAndIndex
-  :: Show n
+  :: TextShow n
   => Int -- ^ Base over which the Unique
   -> Int
   -> PhylogeneticDAG m e n u v w x y z

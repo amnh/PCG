@@ -58,7 +58,8 @@ common dependencies
     megaparsec               >= 7.0       && < 7.1,
     MemoTrie,
     mmark,            
-    modern-uri,            
+    modern-uri,
+    monad-loops              >= 0.4       && < 1.0,
     mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
     optparse-applicative     >= 0.14      && < 0.15,
@@ -643,7 +644,6 @@ library pcg-utility
     Data.Foldable.Custom
     Data.List.Utility
     Data.Matrix.NotStupid
-    Data.MemoVector
     Data.MutualExclusionSet
     Data.Range
     Data.Render.Utility
@@ -652,6 +652,7 @@ library pcg-utility
     Data.Tuple.Utility
     Data.UnionSet
     Data.Vector.Custom
+    Data.Vector.Memo
     Data.Vector.NonEmpty
     Numeric.Extended
     Numeric.Extended.Natural
@@ -659,7 +660,6 @@ library pcg-utility
     Numeric.NonNegativeAverage
     Test.HUnit.Custom
     Test.QuickCheck.Arbitrary.Instances
-
 
   other-modules:
     Data.BitMatrix.Internal
@@ -1017,19 +1017,15 @@ test-suite unit-tests
     Bio.Graph.LeafSet
     Bio.Graph.Node.Context            
     Bio.Graph.ReferenceDAG.Internal
+    Bio.Graph.ReferenceDAG.Network
     Bio.Graph.ReferenceDAG.Test
     Bio.Graph.ReferenceDAG.Test.NetworkPropertyTests
     Bio.Graph.ReferenceDAG.Test.NetworkUnitTests
-    Control.Evaluation.Internal
-    Control.Evaluation.Test
-    Control.Evaluation.Unit
-    Control.Monad.Logger
+    Bio.Graph.ReferenceDAG.Traversal
+    Bio.Graph.ReferenceDAG.Utility
     Data.EdgeSet
     TestSuite.ExecutableTests
     TestSuite.LibraryTests
-
--- This should not be necessary
---    Bio.Graph.Node.Context
 
 
 test-suite pcg-utility-test-suite

@@ -15,10 +15,10 @@
 
 module Text.Newick.Class where
 
+import Data.Text
+
 
 -- | (✔)
 class ToNewick a where
 
-    toNewick :: a -> String
-
-
+    toNewick :: a -> Text

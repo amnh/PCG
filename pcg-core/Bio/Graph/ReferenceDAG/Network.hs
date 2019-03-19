@@ -15,7 +15,7 @@
 
 module Bio.Graph.ReferenceDAG.Network where
 
-import           Analysis.Parsimony.Internal
+import           Bio.Graph.Node.Context
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.ReferenceDAG.Traversal
 import           Control.Applicative              as Alt (Alternative (empty, (<|>)))
@@ -34,7 +34,7 @@ import           Data.Set                         (Set)
 import qualified Data.Set                         as S
 import           Data.Tuple.Utility
 import           Data.Vector                      (Vector)
-import           Data.Vector.Utility              as DV
+import           Data.Vector.Memo                 as DV
 
 data NetworkContext = NetworkContext
   { netNode    :: Int

@@ -14,13 +14,13 @@
 
 module Bio.Graph.ReferenceDAG.Traversal where
 
-import           Analysis.Parsimony.Internal
+import           Bio.Graph.Node.Context
 import           Bio.Graph.ReferenceDAG.Internal
 import           Control.Lens.Operators          ((^.))
 import qualified Data.IntMap                     as IM
 import qualified Data.IntSet                     as IS
 import           Data.Key
-import           Data.Vector.Utility             as DV
+import           Data.Vector.Memo                as DV
 
 -- |
 -- A function that recursively builds  a generating function

@@ -20,6 +20,7 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
@@ -33,11 +34,11 @@ import Control.Lens            as Lens hiding (Indexable)
 import Data.Foldable
 import Data.GraphViz.Printing
 import Data.Key
-import Data.List               (intercalate)
 import Data.List.NonEmpty      (NonEmpty (..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
+import Data.Text               (intercalate)
 import GHC.Generics
 import Prelude                 hiding (lookup, zip, zipWith)
 import Text.Newick.Class
@@ -129,6 +130,7 @@ instance PrintDot a => PrintDot (PhylogeneticForest a) where
     unqtListToDot = fmap mconcat . traverse unqtDot
 
     listToDot     = fmap mconcat . traverse toDot
+
 
 instance ToNewick a => ToNewick (PhylogeneticForest a) where
 
