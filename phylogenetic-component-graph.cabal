@@ -1,5 +1,5 @@
 cabal-version:      2.2
-category:           Biology
+Category:           Biology
 build-type:         Simple
 name:               phylogenetic-component-graph
 version:            0.1.0.1
@@ -250,6 +250,9 @@ library pcg-core
     Bio.Graph.PhylogeneticDAG
     Bio.Graph.ReferenceDAG
     Bio.Graph.ReferenceDAG.Internal
+    Bio.Graph.ReferenceDAG.Network
+    Bio.Graph.ReferenceDAG.Traversal
+    Bio.Graph.ReferenceDAG.Utility
     Bio.Graph.Solution
     Bio.Graph.ZipperDAG
     Data.EdgeLength
@@ -650,8 +653,6 @@ library pcg-utility
     Data.UnionSet
     Data.Vector.Custom
     Data.Vector.NonEmpty
---    FFI.Character.Exportable
---    FFI.Character.Exportable.Class
     Numeric.Extended
     Numeric.Extended.Natural
     Numeric.Extended.Real
@@ -703,8 +704,6 @@ executable pcg
     PCG.Command.Read.DecorationInitialization
     PCG.Command.Read.Evaluate
     PCG.Command.Read.ReadError
---    PCG.Command.Read.Unification.Master
---    PCG.Command.Read.Unification.UnificationError
     PCG.Command.Report.Evaluate
     PCG.Command.Report.GraphViz
     PCG.Command.Report.Metadata
@@ -732,6 +731,28 @@ executable fasta-differ
 
   build-depends:
     pcg-file-parsers,
+
+
+executable graphviz-examples
+
+  import:
+    ghc-flags,
+    language-specs
+
+  main-is:          graphviz-examples.hs
+
+  hs-source-dirs:   utils/graphviz-examples
+
+  build-depends:
+    base                     >= 4.11      && < 5.0,
+    directory                >= 1.3.3     && < 1.4,
+    filepath                 >= 1.4.2     && < 1.5,
+    graphviz                 >= 2999.20   && < 3000,
+    text                     >= 1.2.3     && < 1.3,
+
+
+    
+    
 
 
 executable 2d-do-comparison
@@ -994,15 +1015,21 @@ test-suite unit-tests
     Bio.Graph.BinaryRenderingTree
     Bio.Graph.Component
     Bio.Graph.LeafSet
+    Bio.Graph.Node.Context            
     Bio.Graph.ReferenceDAG.Internal
     Bio.Graph.ReferenceDAG.Test
+    Bio.Graph.ReferenceDAG.Test.NetworkPropertyTests
+    Bio.Graph.ReferenceDAG.Test.NetworkUnitTests
+    Control.Evaluation.Internal
+    Control.Evaluation.Test
+    Control.Evaluation.Unit
+    Control.Monad.Logger
     Data.EdgeSet
     TestSuite.ExecutableTests
     TestSuite.LibraryTests
 
 -- This should not be necessary
-    Test.Custom.NucleotideSequence
-    Bio.Graph.Node.Context
+--    Bio.Graph.Node.Context
 
 
 test-suite pcg-utility-test-suite

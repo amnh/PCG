@@ -158,8 +158,9 @@ cabal-full-build: clean cabal-setup cabal-build-prof
 install-cabal:
 	(cabal new-update && cabal new-install cabal-install)
 
+
 cabal-setup: phylogenetic-component-graph.cabal cabal.project
-	cabal new-configure --project-file=cabal.project
+	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests
 
 # Builds with no extra generated features and no optimizations
 cabal-build-quick: phylogenetic-component-graph.cabal cabal.project
@@ -199,6 +200,7 @@ cabal-test-integration: phylogenetic-component-graph.cabal cabal.project
 # Builds and runs unit tests after a standard build.
 cabal-test-unit: phylogenetic-component-graph.cabal cabal.project
 	cabal new-run test:unit-tests -- "--rerun-update"
+#	cabal new-run test:unit-tests --enable-profiling --enable-executable-profiling --ghc-options="-O0 -fprof-cafs -rtsopts=all" "+RTS -xc -RTS"
 
 # Builds tests and re-runs those that failed
 cabal-test-failures: phylogenetic-component-graph.cabal cabal.project

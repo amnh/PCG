@@ -52,3 +52,4 @@ module Bio.Graph.ReferenceDAG
   ) where
 
 import Bio.Graph.ReferenceDAG.Internal
+import Bio.Graph.ReferenceDAG.Network

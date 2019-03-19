@@ -25,6 +25,8 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedSums                #-}
 
+
+
 module Bio.Graph.ReferenceDAG.Internal where
 
 import           Bio.Graph.BinaryRenderingTree
@@ -54,23 +56,21 @@ import qualified Data.IntMap                   as IM
 import           Data.IntSet                   (IntSet)
 import qualified Data.IntSet                   as IS
 import           Data.Key
-import           Data.List                     (intercalate, tails)
+import           Data.List                     (intercalate)
 import           Data.List.NonEmpty            (NonEmpty (..), intersperse)
 import qualified Data.List.NonEmpty            as NE
 import           Data.List.Utility             (isSingleton)
 import           Data.MemoVector               as DV
 import           Data.Monoid                   hiding ((<>))
 import           Data.MonoTraversable
-import           Data.Semigroup
+import           Data.Semigroup                hiding (First (..))
 import           Data.Semigroup.Foldable
-import           Data.Set                      (Set)
 import qualified Data.Set                      as S
 import           Data.String
 import qualified Data.TextShow.Custom          as TextShow (intercalateB)
 import           Data.Traversable
 import           Data.Tree                     (unfoldTree)
 import           Data.Tree.Pretty              (drawVerticalTree)
-import           Data.Tuple.Utility
 import           Data.Vector                   (Vector)
 import qualified Data.Vector                   as V
 import           Data.Vector.Binary            ()
@@ -179,12 +179,8 @@ instance HasChildRefs (IndexData e n) (IndexData e' n) (IntMap e) (IntMap e') wh
 class HasGraphData s t a b | s -> a, t -> b,  s b -> t, t a -> s where
   _graphData :: Lens s t a b
 
-{-# SPECIALISE _graphData
-                 :: Lens
-                      (ReferenceDAG d e n)
-                      (ReferenceDAG d' e n)
-                      (GraphData d)
-                      (GraphData d')
+{-# SPECIALISE _graphData :: Lens (ReferenceDAG d e n) (ReferenceDAG d' e n)
+                                  (GraphData d)        (GraphData d')
   #-}
 
 instance HasGraphData
@@ -201,12 +197,8 @@ class HasReferenceVector s t a b | s -> a, b s -> t where
   _references :: Lens s t a b
 
 {-# SPECIALISE
-  _references :: Lens
-                   (ReferenceDAG d e n)
-                   (ReferenceDAG d e' n')
-                   (Vector (IndexData e n))
-                   (Vector (IndexData e' n'))
-  #-}
+  _references :: Lens (ReferenceDAG d e n)     (ReferenceDAG d e' n')
+                      (Vector (IndexData e n)) (Vector (IndexData e' n')) #-}
 
 instance HasReferenceVector
   (ReferenceDAG d e n)
@@ -224,9 +216,11 @@ class HasRootReferences s a | s -> a where
 
 {-# SPECIALISE _rootRefs :: Lens' (ReferenceDAG d e n) (NonEmpty Int) #-}
 
+
 instance HasRootReferences (ReferenceDAG d e n) (NonEmpty Int) where
   {-# INLINE _rootRefs #-}
   _rootRefs = lens rootRefs (\r v -> r {rootRefs = v})
+
 
 -- |
 -- A 'Fold' for folding over a structure containing node decorations.
@@ -243,6 +237,7 @@ instance FoldNodeDecoration (ReferenceDAG d e n) n where
 class HasDagCost s a | s -> a where
   _dagCost :: Lens' s a
 {-# SPECIALISE _dagCost :: (GraphData d) ExtendedReal #-}
+
 
 instance HasDagCost (GraphData d) ExtendedReal where
   {-# INLINE _dagCost #-}
@@ -476,7 +471,27 @@ instance (TextShow d, TextShow n) => TextShow (ReferenceDAG d e n) where
         , showb $ graphData dag
         ]
 
+-- | (✔)
+instance Semigroup d => Semigroup (GraphData d) where
+  (<>)
+    (GraphData dagCost1 networkEdgeCost1 rootingCost1 totalBlockCost1 graphMetadata1)
+    (GraphData dagCost2 networkEdgeCost2 rootingCost2 totalBlockCost2 graphMetadata2)
+      = GraphData
+          (dagCost1         + dagCost2        )
+          (networkEdgeCost1 + networkEdgeCost2)
+          (rootingCost1     + rootingCost2    )
+          (totalBlockCost1  + totalBlockCost2 )
+          (graphMetadata1  <> graphMetadata2  )
 
+-- | (✔)
+instance Monoid d => Monoid (GraphData d) where
+  mempty = GraphData
+             { dagCost         = 0
+             , networkEdgeCost = 0
+             , rootingCost     = 0
+             , totalBlockCost  = 0
+             , graphMetadata   = mempty
+             }
 
 -- | (✔)
 instance Show n => ToNewick (ReferenceDAG d e n) where
@@ -758,13 +773,7 @@ defaultMetadata = _graphData %~ defaultGraphMetadata
 zeroCostGraphData :: Monoid m => GraphData m
 {-# INLINE zeroCostGraphData #-}
 zeroCostGraphData
-  = GraphData
-  { dagCost         = 0
-  , networkEdgeCost = 0
-  , rootingCost     = 0
-  , totalBlockCost  = 0
-  , graphMetadata   = mempty
-  }
+  = mempty
 
 
 -- |
@@ -1358,332 +1367,12 @@ leafIndices dag = foldMapWithKey leafTest $ dag ^. _references
         then IS.singleton index
         else  mempty
 
--- |
--- A function that recursively builds (in a postorder fashion) a generating function
--- to be consumed as reference data. The function returned uses open recursion
--- (for memoization purposes), in the form of a 'DVector'.
-dVectorPostorder
-  :: forall a d e n
-   . (  ChildContext a       --  Child values
-     -> (Int, IndexData e n) --  Current index information
-     -> a                    --  Index data
-     )
-  -> ReferenceDAG d e n -> DVector a
-dVectorPostorder indexFn dag = DVector f
-  where
-    refs        = dag ^. _references
-    leafInds    = leafIndices dag
 
- -- A generate function with open recursion
-    f :: (Int -> a) -> Int -> a
-    f recurseFn ind =
-      if ind `IS.member` leafInds
-        then indexFn NoChildren (ind, refs ! ind)  -- inductive case updating leaves
-        else
-          case otoChildContext . IM.keysSet $ (refs ! ind) ^. _childRefs of
-            NoChildren
-              -> error "Non-leaf node without children!"
-            OneChild childInd                           -- recursively apply the function
-              -> indexFn
-                   (OneChild (recurseFn childInd))
-                   (ind, refs ! ind)
-            TwoChildren childInd1 childInd2                 -- Same as above.
-              -> indexFn
-                   (TwoChildren (recurseFn childInd1) (recurseFn childInd2))
-                   (ind, refs ! ind)
+getChildContext :: forall e n . Vector (IndexData e n) -> Int -> ChildContext Int
+{-# INLINE getChildContext #-}
+getChildContext refs ind = otoChildContext . IM.keysSet $ (refs ! ind) ^. _childRefs
 
 
-
-
--- |
--- A function that recursively builds (in a preorder fashion) a generating function
--- to be consumed as reference data. The function returned uses open recursion
--- (for memoization purposes), in the form of a 'DVector'.
-dVectorPreorder
-  :: forall a d e n
-   . (  ParentContext a      --  Parent values
-     -> (Int, IndexData e n) --  Current index information
-     -> a                    --  Index data
-     )
-  -> ReferenceDAG d e n -> DVector a
-dVectorPreorder indexFn dag = DVector f
-  where
-    refs        = dag ^. _references
-    rootInds    = rootRefs dag
-
- -- A generate function with open recursion
-    f :: (Int -> a) -> Int -> a
-    f recurseFn ind =
-      if ind `elem` rootInds
-        then indexFn NoParent (ind, refs ! ind)  -- base case updating roots
-        else
-          case otoParentContext $ (refs ! ind) ^. _parentRefs of
-            NoParent
-              -> error "Non-root node without parents!"
-            OneParent parInd                           -- recursively apply the function
-              -> indexFn
-                   (OneParent (recurseFn parInd))
-                   (ind, refs ! ind)
-            TwoParents parInd1 parInd2                 -- Same as above.
-              -> indexFn
-                   (TwoParents (recurseFn parInd1) (recurseFn parInd2))
-                   (ind, refs ! ind)
-
-
--- |
--- This computes, in a nodal context, the set of ancestral
--- edges from the parent edge sets and current node data.
-ancestralEdgeSetContextFn
-  :: ParentContext (EdgeSet (Int, Int))  -- ^ Parent ancestral edge sets
-  -> (Int, IndexData e n)                -- ^ Current node data
-  -> EdgeSet (Int, Int)                  -- ^ Current node edge sets
-ancestralEdgeSetContextFn ancestralEdgeSets (currInd, nodeDatum) =
-    case ancestralEdgeSets of
-      NoParent                   -> mempty
-      OneParent ancestralEdgeSet -> currentEdgeSet <> ancestralEdgeSet
-
-      TwoParents ancestralEdgeSet1 ancestralEdgeSet2
-        -> currentEdgeSet <> ancestralEdgeSet1 <> ancestralEdgeSet2
-  where
-    parRefs        = nodeDatum ^. _parentRefs
-    currentEdgeSet = makeParentEdgeSet currInd parRefs
-
-
-
-
--- |
--- This computes, in a nodal context, the set of descendent
--- network nodes from the child descendent network sets and current node data.
--- It does this via a 'traversal with state' which keeps track of whether a child
--- node has only a single child and so is a descendant network node.
-descendantNetworkNodesContextFn
-  ::  ChildContext (IntSet, Maybe Int)   -- ^ child descendent network set and maybe node
-  -> (Int, IndexData e n)                -- ^ Current node data
-  -> (IntSet, Maybe Int)                 -- ^ Current descendant edge sets and maybe node
-descendantNetworkNodesContextFn descendantNetworkNodes (currInd, _) =
-  case descendantNetworkNodes of
-    NoChildren                              -> (mempty, Nothing)
- -- If a node has a single child then it is a network node and so is added
- -- to the set of nodes to be included in the parent descendant sets.
-    OneChild (networkNodes, optNode)
-      -> case optNode of
-          Nothing -> (networkNodes, Just currInd)
-       -- This case should never happen as it corresponds to a
-       -- current network node with descendant network node.
-          Just n  -> (IS.singleton n <> networkNodes, Just currInd)
-    TwoChildren
-      (networkNodes1, optNode1)  (networkNodes2, optNode2)
-      -> case (optNode1, optNode2) of
-           (Nothing , Nothing)
-             -> (networkNodes1 <> networkNodes2, Nothing)
-           (Just n1 , Nothing)
-             -> (IS.singleton n1 <> networkNodes1 <> networkNodes2, Nothing)
-           (Nothing , Just n2)
-             -> (IS.singleton n2 <> networkNodes1 <> networkNodes2, Nothing)
-           (Just n1 , Just n2)
-             -> (     IS.singleton n1
-                   <> IS.singleton n2
-                   <> networkNodes1
-                   <> networkNodes2
-                , Nothing
-                )
-
-
--- |
--- This computes, in a nodal context, the set of ancestral
--- nodes which are incident to a root node set. It does this
--- via a 'traversal with state' passing a boolean value of
--- whether a node is a root node.
-ancestralRootIncidentNodesContextFn
-  :: ParentContext (IntSet,Bool)  -- ^ parent root node set and state information
-  -> (Int, IndexData e n)         -- ^ Current node data
-  -> (IntSet, Bool)               -- ^ Current node edge sets
-ancestralRootIncidentNodesContextFn ancestralRootNodes (currInd, nodeDatum) =
-  case ancestralRootNodes of
-    NoParent
-      -> (mempty, True)
-    OneParent (parAncestralSet, incidentToRoot)
-      -> if incidentToRoot
-           then (IS.singleton currInd, False)
-           else (parAncestralSet, False)
-    TwoParents
-      (parAncestralSet1, incidentToRoot1)
-      (parAncestralSet2, incidentToRoot2)
-        -> if incidentToRoot1 && incidentToRoot2
-             then (IS.singleton currInd <> parAncestralSet1 <> parAncestralSet2, False)
-             else (parAncestralSet1 <> parAncestralSet2, False)
-
--- |
--- Generate a vector of graph data for finding the candidate network edges in a memoized
--- fashion.
-tabulateNetworkInformation
-  :: ReferenceDAG d e n
-  -> Vector
-        ( EdgeSet (Int, Int)    -- Ancestral Edge set
-        , (IntSet, Maybe Int)   -- Pair of Descendant Network Node Information and
-                                -- potential network node index
-        , (IntSet, Bool)        -- Ancestral root incident nodes and root node bool
-        )
-tabulateNetworkInformation dag =
-  let
-    dVectorAncestralEdge         = dVectorPreorder  ancestralEdgeSetContextFn       dag
-    dVectorDescendantNet         = dVectorPostorder descendantNetworkNodesContextFn dag
-    dVectorAncestralRootIncident = dVectorPreorder  ancestralRootIncidentNodesContextFn dag
-
-    dVectorNetInfo
-      = DV.zip3
-          dVectorAncestralEdge
-          dVectorDescendantNet
-          dVectorAncestralRootIncident
-  in
-    generateMemo lengthRefs dVectorNetInfo
-  where
-    lengthRefs = length $ dag ^. _references
-
-
-
--- |
--- Find all candidate network edges in a DAG.
-candidateNetworkEdges :: ReferenceDAG d e n -> Set ((Int, Int), (Int,Int))
-candidateNetworkEdges dag = S.fromList candidateEdgesList
-  where
-    completeEdges      = toList $ getEdges dag
-    rootIndices        = IS.fromList . toList . rootRefs $ dag
-    networkNodes       = gatherDescendantNetworkNodes rootIndices networkInformation
-
-  -- This vector contains all the information needed for the various edge
- -- compatibility criteria.
-    networkInformation = tabulateNetworkInformation dag
-
-
- -- Gets all pairs of distinct edges from the edge set that can be
- -- compatably added to the network.
-    candidateEdgesList :: [((Int, Int), (Int, Int))]
-    candidateEdgesList =
-        do
-       -- collect distinct edge pairs.
-          (e1 : es)       <- tails completeEdges
-          e2@(src2, tgt2) <- es
-          guard (symmetricCompatibility e1 e2)
-
-          let  e1e2Bool = not (hasIncidentNetworkNode e2) && posetalCompatibility e1 e2
-          let  e2e1Bool = not (hasIncidentNetworkNode e1) && posetalCompatibility e2 e1
-          case (e1e2Bool, e2e1Bool) of
-            (True, True)   -> pure (e1,e2) <|> pure (e2,e1)
-            (True, False)  -> pure (e1, e2)
-            (False, True)  -> pure (e2, e1)
-            (False, False) -> Alt.empty
-
- -- Checks historical compatability in a symmetrical fashion.
-    symmetricCompatibility :: (Int, Int) -> (Int, Int) -> Bool
-    symmetricCompatibility e1@(src1, tgt1) e2@(src2, tgt2) =
-      let
-     -- Ancestral/descendant network information:
-        e1AncestralEdges = proj3_1 $ networkInformation ! tgt1
-        e2AncestralEdges = proj3_1 $ networkInformation ! tgt2
-
-        e1NoRootSource
-          = not $ src1 `IS.member` rootIndices
-        e2NoRootSource
-          = not $ src2 `IS.member` rootIndices
-      in
-          -- First check if the two edges are from the same parent to short circuit
-          -- faster in this case.
-             src1 /= src2
-          -- or if either edge is ancestral to the other.
-          && (e1AncestralEdges `disjoint` e2AncestralEdges)
-          && e1NoRootSource && e2NoRootSource
-
- -- This checks posetal/historical compability for inserting an edge from
- -- e1 to e2.
-    posetalCompatibility :: (Int, Int) -> (Int, Int) -> Bool
-    posetalCompatibility e1@(src1, tgt1) e2@(src2, tgt2) =
- -- We check historical compatibility by checking if the
- -- descendant network node of tgt1 is "historically compatible" to the descendant
- -- network nodes of src2. This is because these are the historical
- -- coniditons the new nodes will inherit:
- --                o  ── src1     ┌─────────────────────────────────────────────────┐
- --               /             ┌─│ New parent network node of newTgt has the same  │
- --              /              │ │ descendant network events as tgt1.              │
- --             o  ── newSrc ───┘ └─────────────────────────────────────────────────┘
- --            /  \______________________
- --           /                          \
- --          o ── tgt1                    \
- --                                     [...]
- --                                         \              ┌───────── o ── src2
- --                                          \____________ │ __      /
- --    ┌────────────────────────────────────────────┐      │   \    /
- --    │  src2 is the other new parent network node │      │    \  /
- --    │  of newTgt and so must be potentially      │──────┘      o  ── newTgt
- --    │  historically coincident with newSrc.      │            /
- --    └────────────────────────────────────────────┘           /
- --                                                            o  ── tgt2
- --   ┌─────────────────────────────────────┐
- --   │ Potentially historically coincident │
- --   └─────────────────────────────────────┘
- --   This  means that any descendant network node of src2 cannot be a descendant
- --   network node to a non-root node ancestral to src1 as this would lead to
- --   non-transitivty in the implied oredering. Similarly we cannot have that a
- --   descendant network node of tgt1 (which has the same  descendant nodes as
- --   newSrc other than newTgt) equal to a descendant network node of a non-root
- --   node ancestral to src2.
-      let
-     -- Ancestral/descendant network information:
-        e1AncestralRootIncidentNodes
-          = (fst . proj3_3 $ networkInformation ! tgt1)
-        e2AncestralRootIncidentNodes
-          = (fst . proj3_3 $ networkInformation ! tgt2)
-
-        e1SrcAncestralNetworkNodes
-          = gatherDescendantNetworkNodes e1AncestralRootIncidentNodes networkInformation
-        e2SrcAncestralNetworkNodes
-          = gatherDescendantNetworkNodes e2AncestralRootIncidentNodes networkInformation
-
-        e1TgtDescendantNetworkNodes
-          = fst . proj3_2 $ networkInformation ! tgt1
-        e2SrcDescendantNetworkNodes
-          = fst . proj3_2 $ networkInformation ! src2
-
-     -- Boolean tests:
-      {-- See TODO below
-        e1HasRootSource
-          = src1 `IS.member` rootIndices
-        e2HasRootSource
-          = src2 `IS.member` rootIndices --}
-        e1AncestralTest
-          = e2SrcDescendantNetworkNodes `IS.disjoint` e1SrcAncestralNetworkNodes
-        e2AncestralTest
-          = e1TgtDescendantNetworkNodes `IS.disjoint` e2SrcAncestralNetworkNodes
-      in
-      -- This is the correct version if we allow root node as edge source
-      --
-      -- TODO: Revisit this network edge constraint.
-      -- We will re-evaluate how to add network edges incident to the root after
-      -- some of the core data structures related to the topology and character
-      -- matrix
-      {-
-        case (e1HasRootSource, e2HasRootSource) of
-          (True , True ) -> False
-          (True , False) -> e2AncestralTest
-          (False, True ) -> e1AncestralTest
-          (False, False) -> e1AncestralTest && e2AncestralTest
-      -}
-        e1AncestralTest && e2AncestralTest
-
-
-    hasIncidentNetworkNode :: (Int, Int) -> Bool
-    hasIncidentNetworkNode e@(src,tgt) =
-         tgt `IS.member` networkNodes
-      || src `IS.member` networkNodes
-
-
-
-
--- |
--- Helper function to get all descendent network nodes from an `IntSet` of nodes.
-gatherDescendantNetworkNodes
-  :: IntSet                     -- ^ Node set
-  -> Vector (a, (IntSet, b), c) -- ^ Vector tuple with network node indices
-  -> IntSet                     -- ^ All descendant network nodes
-gatherDescendantNetworkNodes inds vect
-  = ofoldMap (\ind -> fst . proj3_2 $ vect ! ind) inds
+getParentContext :: forall e n . Vector (IndexData e n) -> Int -> ParentContext Int
+{-# INLINE getParentContext #-}
+getParentContext refs ind = otoParentContext $ (refs ! ind) ^. _parentRefs

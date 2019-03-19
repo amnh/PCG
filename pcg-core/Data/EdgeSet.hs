@@ -26,10 +26,12 @@ module Data.EdgeSet
 --  , member
   , singletonEdgeSet
 --  , toIntSet
+  , getUnderlyingEdgeSet
   ) where
 
 
 import           Control.DeepSeq
+import           Data.Coerce
 import           Data.Foldable
 import           Data.IntSet          (IntSet)
 import           Data.MonoTraversable (MonoFoldable (..))
@@ -191,3 +193,10 @@ makeParentEdgeSet
   -> IntSet             -- ^ Parent indices
   -> EdgeSet (Int, Int)
 makeParentEdgeSet currInd = ofoldMap (\parInd -> singletonEdgeSet (parInd, currInd))
+
+
+
+-- |
+-- Get underlying 'Set' of edges from 'EdgeSet'
+getUnderlyingEdgeSet :: EdgeSet e -> Set e
+getUnderlyingEdgeSet = coerce

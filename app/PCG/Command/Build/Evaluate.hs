@@ -202,7 +202,7 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
 
 iterativeNetworkBuild :: FinalDecorationDAG -> FinalDecorationDAG
 iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
-    case toList $ candidateNetworkEdges inputDag of
+    case toList $ DAG.candidateNetworkEdges inputDag of
       []   -> currentNetwork
       x:xs ->
         -- DO NOT use rdeepseq! Prefer rseq!
