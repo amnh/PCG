@@ -34,7 +34,7 @@ import           Data.Set                         (Set)
 import qualified Data.Set                         as S
 import           Data.Tuple.Utility
 import           Data.Vector                      (Vector)
-import           Data.Vector.Utility              as DV
+import           Data.Vector.Memo              as Memo
 
 data NetworkContext = NetworkContext
   { netNode    :: Int
@@ -222,7 +222,7 @@ tabulateNetworkInformation dag =
 
 
     dVectorNetInfo
-      = DV.zip4
+      = Memo.zip4
           dVectorAncestralEdge
           dVectorDescendantNet
           dVectorAncestralNodes

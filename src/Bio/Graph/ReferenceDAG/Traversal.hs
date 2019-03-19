@@ -20,7 +20,7 @@ import           Control.Lens.Operators          ((^.))
 import qualified Data.IntMap                     as IM
 import qualified Data.IntSet                     as IS
 import           Data.Key
-import           Data.Vector.Utility             as DV
+import           Data.Vector.Memo                as Memo
 
 -- |
 -- A function that recursively builds  a generating function
@@ -33,8 +33,8 @@ dVectorPostorderWithContext
      -> (Int, IndexData e n)                  --  Current index information
      -> a                                     --  Index data
      )
-  -> ReferenceDAG d e n -> DVector a
-dVectorPostorderWithContext indexFn dag = DVector f
+  -> ReferenceDAG d e n -> Memo.DVector a
+dVectorPostorderWithContext indexFn dag = Memo.DVector f
   where
     refs        = dag ^. _references
     leafInds    = leafIndices dag
@@ -64,15 +64,15 @@ dVectorPostorderWithContext indexFn dag = DVector f
 -- |
 -- A function that recursively builds (in a postorder fashion) a generating function
 -- to be consumed as reference data. The function returned uses open recursion
--- (for memoization purposes), in the form of a 'DVector'.
+-- (for memoization purposes), in the form of a 'Memoector'.
 dVectorPostorder
   :: forall a d e n
    . (  ChildContext a       --  Child values
      -> (Int, IndexData e n) --  Current index information
      -> a                    --  Index data
      )
-  -> ReferenceDAG d e n -> DVector a
-dVectorPostorder indexFn dag = DVector f
+  -> ReferenceDAG d e n -> Memo.DVector a
+dVectorPostorder indexFn dag = Memo.DVector f
   where
     refs        = dag ^. _references
     leafInds    = leafIndices dag
@@ -101,15 +101,15 @@ dVectorPostorder indexFn dag = DVector f
 -- |
 -- A function that recursively builds (in a preorder fashion) a generating function
 -- to be consumed as reference data. The function returned uses open recursion
--- (for memoization purposes), in the form of a 'DVector'.
+-- (for memoization purposes), in the form of a 'Memo.DVector'.
 dVectorPreorder
   :: forall a d e n
    . (  ParentContext a      --  Parent data
      -> (Int, IndexData e n) --  Current index information
      -> a                    --  Index data
      )
-  -> ReferenceDAG d e n -> DVector a
-dVectorPreorder indexFn dag = DVector f
+  -> ReferenceDAG d e n -> Memo.DVector a
+dVectorPreorder indexFn dag = Memo.DVector f
   where
     refs        = dag ^. _references
     rootInds    = rootRefs dag
@@ -135,7 +135,7 @@ dVectorPreorder indexFn dag = DVector f
 -- |
 -- A function that recursively builds (in a preorder fashion) a generating function
 -- to be consumed as reference data. The function returned uses open recursion
--- (for memoization purposes), in the form of a 'DVector'.
+-- (for memoization purposes), in the form of a 'Memo.DVector'.
 dVectorPreorderWithContext
   :: forall a d e n
    . (  ParentContext (a, Int, IndexData e n)  -- Parent data with their index information
@@ -143,8 +143,8 @@ dVectorPreorderWithContext
      -> (Int, IndexData e n)                   -- Current index information
      -> a                                      -- Index data
      )
-  -> ReferenceDAG d e n -> DVector a
-dVectorPreorderWithContext indexFn dag = DVector f
+  -> ReferenceDAG d e n -> Memo.DVector a
+dVectorPreorderWithContext indexFn dag = Memo.DVector f
   where
     refs        = dag ^. _references
     rootInds    = rootRefs dag

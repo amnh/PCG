@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.Vector.Utility
+-- Module      :  Data.Vector.Memo
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -16,7 +16,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
-module Data.Vector.Utility
+module Data.Vector.Memo
   ( DVector(..)
   , generateMemo
   , liftExp2

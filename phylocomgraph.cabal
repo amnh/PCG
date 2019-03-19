@@ -482,7 +482,7 @@ library pcg-utility
     Data.TextShow.Custom
     Data.Tuple.Utility
     Data.UnionSet
-    Data.Vector.Utility
+    Data.Vector.Memo
     Numeric.Extended
     Numeric.Extended.Natural
     Numeric.Extended.Real
