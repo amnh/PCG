@@ -1,28 +1,18 @@
 cabal-version:      2.2
 Category:           Biology
 build-type:         Simple
-name:               phylogenetic-component-graph
-version:            0.1.0.1
+name:               pcg-alphabet
+version:            0.2.0
 
 author:             Ward Wheeler
 maintainer:         wheeler@amnh.org
 license:            BSD-3-Clause
 license-file:       LICENSE
 
-synopsis:           Program and library for general phylogenetic graph search
+synopsis:           General purpose library for managing a collection of character state names.
 
-description:        Phylogenetic Componet Graph provides a library for
-                    interacting with phylogenetic graphs. It defines a
-                    decalartive scripting language for defining phylogenetic
-                    searches. Said scripts can be evaluated by the provided pcg
-                    program to perform a phylogenetic search on an input dataset.
-
-extra-source-files:
-    AUTHORS.md
-    CHANGELOG.md
-    FUNDING.md
-    README.md
-    
+description:        Defines custom types for working with an alphabet of character
+                    state names dealing with ambiguity groups.
         
 common dependencies
 
@@ -47,7 +37,7 @@ common dependencies
     foldl                    >= 1.3.2     && < 2.0,
     free                     >= 5.0       && < 6.0,
     gitrev                   >= 1.3       && < 2.0,
-    Glob                     >= 0.10      && < 2.0,
+--    Glob                     >= 0.10      && < 2.0,
     -- >=2999.20 Required for forgiving construction of DOT object
     graphviz                 >= 2999.20   && < 3000,
     hashable                 >= 1.2       && < 2.0,
@@ -101,7 +91,6 @@ common dependencies
     vector-instances         >= 3.4       && < 3.5,
     xml                      >= 1.3.14    && < 1.4,
 
-
 -- A litany of GHC warnings designed to alert us during the build of any common
 -- pitfalls, future compatibility issues, or coding conventions.
 common ghc-flags
@@ -147,7 +136,6 @@ common ghc-flags
     -Wwrong-do-bind
 
 
--- Global deviations from Haskell98
 common language-specs
 
   default-language: Haskell2010
@@ -156,57 +144,29 @@ common language-specs
   other-extensions: MonadFailDesugaring
 
 
-executable pcg
+library
 
   import:
     dependencies,
     ghc-flags,
-    language-specs
+    language-specs     
 
-  main-is:
-    Main.hs
-
-  ghc-options:
-    -threaded -rtsopts
-
-  hs-source-dirs:
-    app/pcg
+  hs-source-dirs:    
+    src
 
   build-depends:
-    pcg-alphabet,
---    pcg-analysis,
-    pcg-evaluation,
-    pcg-core,
-    pcg-data-normalization,
-    pcg-data-unification,            
-    pcg-file-parsers,
-    pcg-language,
     pcg-utility,
     pcg-serialize,
---    pcg-tcm,
-    pcg-tcm-memo
 
+  exposed-modules:
+    Data.Alphabet
+    Data.Alphabet.IUPAC
+    Data.Alphabet.Special
+ 
   other-modules:
-    Paths_phylogenetic_component_graph
-    PCG.Command.Build.Evaluate
-    PCG.Command.Echo.Evaluate
-    PCG.Command.Load.Evaluate
-    PCG.Command.Read.DecorationInitialization
-    PCG.Command.Read.Evaluate
-    PCG.Command.Read.ReadError
-    PCG.Command.Report.Evaluate
-    PCG.Command.Report.GraphViz
-    PCG.Command.Report.Metadata
-    PCG.Command.Save.Evaluate
-    PCG.CommandLineOptions
-    PCG.CommandLineOptions.Display
-    PCG.CommandLineOptions.Types
-    PCG.Computation.Internal
-    PCG.Software.Credits
-    PCG.Software.Metadata            
+    Data.Alphabet.Internal
 
-
-executable fasta-differ
+test-suite test-suite
 
   import:
     dependencies,
@@ -214,214 +174,19 @@ executable fasta-differ
     language-specs
 
   main-is:
-    fasta-differ.hs
-
-  hs-source-dirs:
-    app
-
-  build-depends:
-    pcg-file-parsers,
-
-
-executable graphviz-examples
-
-  import:
-    ghc-flags,
-    language-specs
-
-  main-is:
-    graphviz-examples.hs
-
-  hs-source-dirs:
-    app/graphviz-examples
-
-  build-depends:
-    base                     >= 4.11      && < 5.0,
-    directory                >= 1.3.3     && < 1.4,
-    filepath                 >= 1.4.2     && < 1.5,
-    graphviz                 >= 2999.20   && < 3000,
-    text                     >= 1.2.3     && < 1.3,
-
-
-executable 2d-do-comparison
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  main-is:
-    2d-do-comparison.hs
-
-  hs-source-dirs:
-    app
-
-  build-depends:
-    pcg-alphabet,
---    pcg-analysis,
-    pcg-core,
---    pcg-tcm,
-    pcg-tcm-memo,            
-
-
-executable 3d-do-comparison
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  main-is:
-    3d-do-comparison.hs
-
-  hs-source-dirs:
-    app
-
-  build-depends:
-    pcg-alphabet,
---    pcg-analysis,
-    pcg-core,
---    pcg-tcm,
-    pcg-tcm-memo,            
-
-
-executable affine-safety
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  main-is:
-    affine-safety.hs
-
-  hs-source-dirs:
-    app
-
-  build-depends:
-    pcg-alphabet,
---    pcg-analysis,
-    pcg-core,
---    pcg-tcm,
-    pcg-tcm-memo,            
-
-
-executable generate-data-set
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  main-is:
-    generate-data-set.hs
-
-  hs-source-dirs:
-    app
-
-
-executable generate-tcm
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  main-is:
-    generate-tcm.hs
-
-  hs-source-dirs:
-    app
-
-  build-depends:
-    pcg-utility,
-
-
-executable newick-resolver
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  main-is:
-    newick-resolver.hs
-
-  hs-source-dirs:
-    app
-
-  build-depends:
-    pcg-file-parsers,
-
-
-executable sequential-alignment-invariants
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  main-is:
-    sequential-alignment-invariants.hs
-
-  hs-source-dirs:
-    app
-
-  build-depends:
-    pcg-alphabet,
---    pcg-analysis,
-    pcg-core,
---    pcg-tcm,
-    pcg-tcm-memo,            
-
-
-executable ukkonen-do-comparison
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  main-is:
-    ukkonen-do-comparison.hs
-
-  hs-source-dirs:
-    app
-
-  build-depends:
-    pcg-alphabet,
---    pcg-analysis,
-    pcg-core,
---    pcg-tcm,
-    pcg-tcm-memo,
-
-
-test-suite integration-tests
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-specs
-
-  main-is:
-    IntegrationTests.hs
+    TestSuite.hs
 
   type:
     exitcode-stdio-1.0
 
-  ghc-options:
-    -threaded -with-rtsopts=-N
-
   hs-source-dirs:
     test
 
+  ghc-options:
+    -threaded
+
   build-depends:
-    pcg-alphabet,
-    pcg-serialize,
-    pcg-core,
-    pcg-utility,
+    pcg-alphabet
 
   other-modules:
-    TestSuite.GoldenTests
-    TestSuite.ScriptTests
-    TestSuite.SubProcess
+    Data.Alphabet.Test

@@ -28,3 +28,16 @@ require-stack-version: ">=1.7.1"
 resolver: lts-13.9
 
 dump-logs: all
+
+packages:
+  - lib/pcg-alphabet
+  - lib/pcg-core
+  - lib/pcg-data-normalization
+  - lib/pcg-data-unification
+  - lib/pcg-evaluation
+  - lib/pcg-exportable
+  - lib/pcg-file-parsers
+  - lib/pcg-language
+  - lib/pcg-serialize
+  - lib/pcg-tcm-memo
+  - lib/pcg-utility

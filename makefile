@@ -10,7 +10,7 @@ haddock       = --haddock --haddock-deps
               # --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
-code-dirs     = app ffi test utils $(shell find . -maxdepth 1 -type d -name "pcg-*") 
+code-dirs     = app test $(shell find . -maxdepth 3 -type d -name "pcg-*") 
 
 sub-libs      = pcg-file-parsers pcg-language pcg-utility
 
@@ -254,7 +254,7 @@ format-code: install-stylish-haskell
 	@find $(code-dirs) -type f -name "*.hs" | while read fname; do \
 	  stylish-haskell -i "$$fname"; \
 	done
-	@echo -n -e "\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b"
+	@echo -n -e "\33[2K\r"
 	@echo "[✓] Formatting complete!"
 
 run-linter: install-hlint install-weeder format-code
@@ -282,7 +282,7 @@ set-dir-variables:
 clean: phylogenetic-component-graph.cabal stack.yaml
 	stack clean
 	cabal new-clean
-	@echo "[X] Cleaning directories of junk files"
+	@echo -n "[X] Cleaning directories of junk files..."
 	@for dir in $(code-dirs); do \
 	  find $$dir -type f -name '*.o'           -delete; \
 	  find $$dir -type f -name '*.hi'          -delete; \
@@ -293,6 +293,8 @@ clean: phylogenetic-component-graph.cabal stack.yaml
 	  find $$dir -type f -name '*dump\-hi*'    -delete; \
 	  find $$dir -type f -name '*dump\-simpl*' -delete; \
 	done
+	@echo -n -e "\33[2K\r"
+	@echo "[✓] Cleaning complete!"
 
 # Calls other make files to pre-process FFI files
 ffi-code-cleaning: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
