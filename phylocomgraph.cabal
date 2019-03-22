@@ -707,6 +707,20 @@ executable generate-tcm
     vector                   >= 0.12.0.2  && < 0.13,
 
 
+executable network-heuristics
+
+  import:
+    ghc-flags,
+    language-specs
+
+  main-is:          network-heuristics.hs
+
+  hs-source-dirs:   utils/
+
+  build-depends:
+    base                     >= 4.11      && < 5.0,
+
+
 executable newick-resolver
 
   import:

@@ -315,6 +315,18 @@ makeBinaryTree depth = go depth (singletonRefDAG mempty)
     go :: Int -> ReferenceDAG d () n -> ReferenceDAG d () n
     go 0 subtree = subtree
     go n subtree = go (n - 1) (makeBranchedNetwork subtree subtree)
+
+
+-- |
+-- Make a pectinate tree of a given depth.
+makePectinateTree  :: forall d n . (Monoid d, Monoid n)
+  =>  Int                    -- ^ depth of pectinate tree
+  -> ReferenceDAG d () n
+makePectinateTree depth = go depth (singletonRefDAG mempty)
+  where
+    go :: Int -> ReferenceDAG d () n -> ReferenceDAG d () n
+    go 0 subtree = subtree
+    go n subtree = go (n - 1) (makeBranchedNetwork (singletonRefDAG mempty) subtree)
    
 
 -- |
