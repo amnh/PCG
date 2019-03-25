@@ -23,9 +23,9 @@ extra-deps:
 
 local-bin-path: bin
 
-require-stack-version: ">=1.7.1"
+require-stack-version: ">=1.9.1"
 
-resolver: lts-13.9
+resolver: lts-13.14
 
 dump-logs: all
 
