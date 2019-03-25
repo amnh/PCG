@@ -12,15 +12,12 @@ Haskell program and library for general phylogenetic graph search
 
 | Directory   | Description of Contents
 |:----------- |:---------------------------------------- |
-| `app`       | binaries are defined here                |
-| `bin`       | binaries are placed here                 |
+| `app`       | executables source code                  |
+| `bin`       | binaries are placed here after build     |
 | `doc`       | Haddock & PDF documentation              |
-| `ffi`       | supporting C & C++ code and FFI bindings |
-| `lib`       | sub-libraries                            |
+| `lib`       | project libraries source code            |
 | `prototype` | experimental/legacy codebase             |
-| `src`       | main code base                           |
-| `test`      | test suites and test data                |
-| `utils`     | diagnostic and testing binaries          |
+| `test`      | integration tests and test data          |
 
 ### Funding provided by:
 
