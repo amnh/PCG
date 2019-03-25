@@ -30,6 +30,7 @@ resolver: lts-13.9
 dump-logs: all
 
 packages:
+  - .
   - lib/pcg-alphabet
   - lib/pcg-core
   - lib/pcg-data-normalization

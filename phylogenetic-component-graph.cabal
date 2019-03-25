@@ -174,7 +174,6 @@ executable pcg
 
   build-depends:
     pcg-alphabet,
---    pcg-analysis,
     pcg-evaluation,
     pcg-core,
     pcg-data-normalization,
@@ -183,7 +182,6 @@ executable pcg
     pcg-language,
     pcg-utility,
     pcg-serialize,
---    pcg-tcm,
     pcg-tcm-memo
 
   other-modules:
@@ -258,9 +256,7 @@ executable 2d-do-comparison
 
   build-depends:
     pcg-alphabet,
---    pcg-analysis,
     pcg-core,
---    pcg-tcm,
     pcg-tcm-memo,            
 
 
@@ -279,9 +275,7 @@ executable 3d-do-comparison
 
   build-depends:
     pcg-alphabet,
---    pcg-analysis,
     pcg-core,
---    pcg-tcm,
     pcg-tcm-memo,            
 
 
@@ -300,9 +294,7 @@ executable affine-safety
 
   build-depends:
     pcg-alphabet,
---    pcg-analysis,
     pcg-core,
---    pcg-tcm,
     pcg-tcm-memo,            
 
 
@@ -369,9 +361,7 @@ executable sequential-alignment-invariants
 
   build-depends:
     pcg-alphabet,
---    pcg-analysis,
     pcg-core,
---    pcg-tcm,
     pcg-tcm-memo,            
 
 
@@ -390,9 +380,7 @@ executable ukkonen-do-comparison
 
   build-depends:
     pcg-alphabet,
---    pcg-analysis,
     pcg-core,
---    pcg-tcm,
     pcg-tcm-memo,
 
 
