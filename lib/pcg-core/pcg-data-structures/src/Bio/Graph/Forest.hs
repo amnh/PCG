@@ -97,7 +97,7 @@ instance Indexable PhylogeneticForest where
     {-# INLINE index #-}
     index forest i = fromMaybe errorMessage $ i `lookup` unwrap forest
       where
-        errorMessage =  error $ mconcat
+        errorMessage =  error $ fold
             [ "Could not index PhylogeneticForest at location '"
             , show i
             , "' with a valid range of [0,"
@@ -127,9 +127,9 @@ instance PrintDot a => PrintDot (PhylogeneticForest a) where
 
     toDot         = listToDot . toList . unwrap
 
-    unqtListToDot = fmap mconcat . traverse unqtDot
+    unqtListToDot = fmap fold . traverse unqtDot
 
-    listToDot     = fmap mconcat . traverse toDot
+    listToDot     = fmap fold . traverse toDot
 
 
 instance ToNewick a => ToNewick (PhylogeneticForest a) where

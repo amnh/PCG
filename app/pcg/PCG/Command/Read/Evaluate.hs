@@ -74,7 +74,7 @@ evaluate (ReadCommand fileSpecs) = do
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
-        case toEither . decoration . unifyPartialInputs $ transformation <$> sconcat xs of
+        case toEither . decoration . unifyPartialInputs $ transformation <$> fold1 xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
           Right g   -> liftIO $ compact g
@@ -338,7 +338,7 @@ getSpecifiedTcm tcmPath = do
 
 
 getSpecifiedFileContents :: Foldable1 f => f FilePath -> ExceptT ReadError IO (NonEmpty FileResult)
-getSpecifiedFileContents = fmap sconcat . eitherTValidation . fmap getFileContents . toNonEmpty
+getSpecifiedFileContents = fmap fold1 . eitherTValidation . fmap getFileContents . toNonEmpty
 
 
 getSpecifiedContentSimple :: Foldable1 f => f FilePath -> ExceptT ReadError IO FileSpecificationContent

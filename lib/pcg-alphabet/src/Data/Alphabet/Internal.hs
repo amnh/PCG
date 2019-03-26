@@ -297,7 +297,7 @@ instance Indexable Alphabet where
     {-# INLINE index #-}
     index a i = fromMaybe raiseError $ i `lookup` a
       where
-        raiseError = error $ mconcat
+        raiseError = error $ fold
             ["Error indexing Alphabet at location "
             , show i
             , ", valid inclusive index range is [0, "
@@ -337,7 +337,7 @@ instance NFData a => NFData (  NamedSymbol a)
 
 instance Show a => Show (Alphabet a) where
 
-    show x = mconcat
+    show x = fold
         [ "Alphabet: {"
         , intercalate ", " $ show <$> toList x
         , "}"
@@ -346,7 +346,7 @@ instance Show a => Show (Alphabet a) where
 
 instance TextShow a => TextShow (Alphabet a) where
 
-    showb x = mconcat
+    showb x = fold
         [ "Alphabet: {"
         , intercalateB ", " $ showb <$> toList x
         , "}"

@@ -41,7 +41,7 @@ outputHUTs = False
 
 --iaOutput :: (MetadataSolution s m, GeneralSolution s f) => AlignmentSolution DynamicCharacter -> s -> [(FilePath, String)]
 iaOutput :: StandardSolution -> [(FilePath, String)]
---iaOutput align solution | trace (mconcat [show align, show solution]) False = undefined
+--iaOutput align solution | trace (fold [show align, show solution]) False = undefined
 iaOutput solution = {- (\x -> trace (intercalate "\n\n"
                                          [ integrityCheckSolution solution
                                          , renderAlignments align
@@ -94,7 +94,7 @@ iaOutput solution = {- (\x -> trace (intercalate "\n\n"
     -- characterToFastaFile :: Int -> Alphabet -> [(FilePath, String)]
     characterToFastaFile i alpha = [(characterFileName, foldMapWithKey f nodeCharacterMapping)]
       where
-        characterFileName = mconcat ["Character", show i, ".fasta"]
+        characterFileName = fold ["Character", show i, ".fasta"]
         f nodeName characters =
           case i `lookup` characters of
             Nothing        -> titleLine <> "\n (No sequence)\n"
@@ -111,13 +111,13 @@ iaOutput solution = {- (\x -> trace (intercalate "\n\n"
 integrityCheckSolution :: StandardSolution -> String
 integrityCheckSolution sol = ("Solution:\n" <>) . unlines' $ f <#$> getForests sol
       where
-        f i forest = mconcat ["Forest ", show i, ": \n", unlines' $ g <#$> forest]
+        f i forest = fold ["Forest ", show i, ": \n", unlines' $ g <#$> forest]
           where
             g :: Show a => a -> DAG -> String
             g j dag = prefix
                     $ if   failures == 0
                       then "OK"
-                      else mconcat ["Failures ", show failures, " ", wrap $ intercalate ","  raw]
+                      else fold ["Failures ", show failures, " ", wrap $ intercalate ","  raw]
               where
                 prefix x = " * DAG " <> show j <> " integrity check: " <> x
                 (failures, raw) = foldrWithKey h accum $ nodes dag

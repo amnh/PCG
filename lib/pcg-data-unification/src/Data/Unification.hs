@@ -25,56 +25,56 @@ module Data.Unification
   ) where
 
 import           Bio.Character
-import           Bio.Character.Decoration.Continuous           hiding (characterName)
-import           Bio.Character.Decoration.Discrete             hiding (characterName)
-import           Bio.Character.Decoration.Dynamic              hiding (characterName)
+import           Bio.Character.Decoration.Continuous hiding (characterName)
+import           Bio.Character.Decoration.Discrete   hiding (characterName)
+import           Bio.Character.Decoration.Dynamic    hiding (characterName)
 import           Bio.Character.Encodable
 import           Bio.Graph
 import           Bio.Graph.Node
-import qualified Bio.Graph.ReferenceDAG                        as DAG
-import           Bio.Metadata.CharacterName                    hiding (sourceFile)
-import           Bio.Metadata.Continuous                       (continuousMetadata)
-import           Bio.Metadata.DiscreteWithTCM                  (discreteMetadataFromTCM)
-import           Bio.Metadata.Dynamic                          ( dynamicMetadataFromTCM)
-import           Bio.Sequence                                  hiding (hexmap)
+import qualified Bio.Graph.ReferenceDAG              as DAG
+import           Bio.Metadata.CharacterName          hiding (sourceFile)
+import           Bio.Metadata.Continuous             (continuousMetadata)
+import           Bio.Metadata.DiscreteWithTCM        (discreteMetadataFromTCM)
+import           Bio.Metadata.Dynamic                (dynamicMetadataFromTCM)
+import           Bio.Sequence                        hiding (hexmap)
 import           Bio.Sequence.Block
-import qualified Bio.Sequence.Character                        as CS
-import qualified Bio.Sequence.Metadata                         as MD
-import           Control.Arrow                                 ((&&&), (***))
+import qualified Bio.Sequence.Character              as CS
+import qualified Bio.Sequence.Metadata               as MD
+import           Control.Arrow                       ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                                  (over)
+import           Control.Lens                        (over)
 import           Control.Monad.State.Strict
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
-import           Data.Coerce                                   (coerce)
+import           Data.Coerce                         (coerce)
 import           Data.Default
 import           Data.Foldable
-import           Data.Functor.Identity                         (runIdentity)
-import qualified Data.IntMap                                   as IM
-import qualified Data.IntSet                                   as IS
+import           Data.Functor.Identity               (runIdentity)
+import qualified Data.IntMap                         as IM
+import qualified Data.IntSet                         as IS
 import           Data.Key
-import           Data.List                                     (zip5)
-import           Data.List.NonEmpty                            (NonEmpty (..))
-import qualified Data.List.NonEmpty                            as NE
-import           Data.List.Utility                             (catMaybes1)
-import           Data.Map                                      (Map)
-import qualified Data.Map                                      as Map
-import qualified Data.Map.Merge.Strict                         as Map
-import           Data.Maybe                                    (fromMaybe)
+import           Data.List                           (zip5)
+import           Data.List.NonEmpty                  (NonEmpty (..))
+import qualified Data.List.NonEmpty                  as NE
+import           Data.List.Utility                   (catMaybes1)
+import           Data.Map                            (Map)
+import qualified Data.Map                            as Map
+import qualified Data.Map.Merge.Strict               as Map
+import           Data.Maybe                          (fromMaybe)
 import           Data.NodeLabel
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata
 import           Data.Normalization.Topology
 import           Data.Semigroup.Foldable
 import           Data.String
-import           Data.TCM                                      (TCM, TCMStructure (..))
-import qualified Data.TCM                                      as TCM
-import           Data.Text.Short                               (ShortText, toString)
-import qualified Data.Text.Short                               as TS
-import           Data.Unification.InputData
+import           Data.TCM                            (TCM, TCMStructure (..))
+import qualified Data.TCM                            as TCM
+import           Data.Text.Short                     (ShortText, toString)
+import qualified Data.Text.Short                     as TS
 import           Data.Unification.Error
+import           Data.Unification.InputData
 import           Data.Validation
-import           Prelude                                       hiding (lookup, zipWith)
+import           Prelude                             hiding (lookup, zipWith)
 
 
 type FileSource = ShortText
@@ -333,7 +333,7 @@ collapseAndMerge xs = extractResult $ foldlM sequenceMerge initialMap ms
               -- newly encountered taxa.
               -- Additionally, append the newly constructed metadata block to the
               -- metadata sequence being build in the state's context.
-              modify $ (<> pure b)
+              modify (<> pure b)
               -- Lastly, we merge the maps
               pure . force . runIdentity $ Map.mergeA
                   (oldTaxaMissing (pure missingBlock))

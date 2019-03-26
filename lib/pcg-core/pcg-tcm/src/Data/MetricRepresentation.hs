@@ -26,12 +26,12 @@ module Data.MetricRepresentation
   , retreiveThreewayTCM
   ) where
 
-import Data.TCM        as TCM
 import Control.DeepSeq
 import Data.Bits
 import Data.Foldable
 import Data.Ord        (comparing)
 import Data.Range
+import Data.TCM        as TCM
 import GHC.Generics    hiding (to)
 
 

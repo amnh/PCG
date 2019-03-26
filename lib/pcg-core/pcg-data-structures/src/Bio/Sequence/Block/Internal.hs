@@ -35,12 +35,13 @@ import           Control.Lens
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Semigroup
-import qualified Data.Text             as T (Text, lines, unlines)
-import           Data.Vector           (Vector, fromListN)
-import           Data.Vector.Instances ()
+import           Data.Semigroup.Foldable
+import qualified Data.Text               as T (Text, lines, unlines)
+import           Data.Vector             (Vector, fromListN)
+import           Data.Vector.Instances   ()
 import           GHC.Generics
 import           Text.XML
-import           TextShow              (TextShow (showb, showt), fromText)
+import           TextShow                (TextShow (showb, showt), fromText)
 
 
 -- |
@@ -215,14 +216,14 @@ instance Semigroup (Block u v w x y z) where
 
     sconcat =
         Block
-          <$> sconcat . fmap  _continuousBin
-          <*> sconcat . fmap _nonAdditiveBin
-          <*> sconcat . fmap    _additiveBin
-          <*> sconcat . fmap      _metricBin
-          <*> sconcat . fmap   _nonMetricBin
-          <*> sconcat . fmap     _dynamicBin
+          <$> foldMap1  _continuousBin
+          <*> foldMap1 _nonAdditiveBin
+          <*> foldMap1    _additiveBin
+          <*> foldMap1      _metricBin
+          <*> foldMap1   _nonMetricBin
+          <*> foldMap1     _dynamicBin
 
-    stimes i _ | i < 1 = error $ mconcat
+    stimes i _ | i < 1 = error $ fold
         [ "Call to Bio.Sequence.Block.stimes with non-positive value: "
         , show (fromIntegral i :: Integer)
         , " <= 0"

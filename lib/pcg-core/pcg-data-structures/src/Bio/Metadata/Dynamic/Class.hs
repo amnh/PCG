@@ -33,7 +33,7 @@ module Bio.Metadata.Dynamic.Class
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
-import Data.TCM.Dense                (DenseTransitionCostMatrix)
+import Data.TCM.Dense               (DenseTransitionCostMatrix)
 import Data.TCM.Memoized
 
 

@@ -1,10 +1,3 @@
-{-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedLists     #-}
-{-# LANGUAGE RecordWildCards     #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications    #-}
-
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.ReferenceDAG.Utility
@@ -16,6 +9,12 @@
 -- Portability :  portable
 --
 -----------------------------------------------------------------------------
+
+{-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE OverloadedLists     #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Bio.Graph.ReferenceDAG.Utility where
 
@@ -151,7 +150,7 @@ makeDoublyBranchedNetworkWithInfo
      , NetworkInformation
      , NetworkInformation
      , NetworkInformation
-     , Int               
+     , Int
      )
 makeDoublyBranchedNetworkWithInfo n0 n1 n2 = (network, n0NetInfo, n1NetInfo, n2NetInfo, xIndex)
   where
@@ -201,15 +200,17 @@ makeBranchedNetworkWithNetworkEventWithInfo  n0 n1 n2 n3
     internalNetwork = ReferenceDAG{..}
 
     references :: Vector (IndexData () n)
-    references = mconcat
-                   [ referencesN0WithRoot
-                   , referencesN1WithRoot
-                   , referencesN2WithRoot
-                   , pure dIndexData
-                   , pure bIndexData
-                   , pure cIndexData
-                   , pure aIndexData
-                   ]
+    references = fold vs
+      where
+        vs :: [Vector (IndexData () n)]
+        vs = [ referencesN0WithRoot
+             , referencesN1WithRoot
+             , referencesN2WithRoot
+             , pure dIndexData
+             , pure bIndexData
+             , pure cIndexData
+             , pure aIndexData
+             ]
 
     rootRefs = pure aIndex
     graphData = (n1 ^. _graphData) <> (n2 ^. _graphData) <> (n3 ^. _graphData)
@@ -315,7 +316,7 @@ makeBinaryTree depth = go depth (singletonRefDAG mempty)
     go :: Int -> ReferenceDAG d () n -> ReferenceDAG d () n
     go 0 subtree = subtree
     go n subtree = go (n - 1) (makeBranchedNetwork subtree subtree)
-   
+
 
 -- |
 -- Generate a random binary tree of some depth.

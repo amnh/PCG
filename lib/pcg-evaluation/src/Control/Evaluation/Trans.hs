@@ -21,7 +21,12 @@
 -- This is needed due to the functional dependency in MonadReader.
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Control.Evaluation.Trans where
+module Control.Evaluation.Trans
+  ( EvaluationT(..)
+  , impure
+  , showRun
+  , state
+  ) where
 
 import           Control.Applicative
 import           Control.DeepSeq

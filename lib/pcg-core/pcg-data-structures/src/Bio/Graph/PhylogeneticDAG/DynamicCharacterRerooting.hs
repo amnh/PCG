@@ -332,20 +332,20 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                           case lhsContext of
                             []   -> rhsMemo
                             x:xs -> let lhsMemo' = x:|xs
-                                    in  sconcat  $ lhsMemo' :| [localResolutionApplication extensionTransformation meta lhsMemo' rhsMemo]
+                                    in  fold1  $ lhsMemo' :| [localResolutionApplication extensionTransformation meta lhsMemo' rhsMemo]
 
                       (True , False) ->
                           case rhsContext of
                             []   -> rhsMemo
                             x:xs -> let rhsMemo' = x:|xs
-                                    in  sconcat  $ rhsMemo' :| [localResolutionApplication extensionTransformation meta lhsMemo  rhsMemo']
+                                    in  fold1  $ rhsMemo' :| [localResolutionApplication extensionTransformation meta lhsMemo  rhsMemo']
 
                       (True , True ) ->
                           case (lhsContext, rhsContext) of
                              (  [],   []) -> error $ "Well, that's embarassing...\nContext: " <> unwords ["Focus edge", show (i,n), "LHS edge", show (n,j), "RHS edge", show (n,k) ]
                              (x:xs,   []) -> x:|xs
                              (  [], y:ys) -> y:|ys
-                             (x:xs, y:ys) -> sconcat $ (x:|xs) :| [y:|ys]
+                             (x:xs, y:ys) -> fold1 $ (x:|xs) :| [y:|ys]
 
 
             -- Filter from the resolution cache all resolutions that have any of

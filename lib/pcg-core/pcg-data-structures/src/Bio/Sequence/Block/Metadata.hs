@@ -43,9 +43,11 @@ import Bio.Metadata.Dynamic
 import Bio.Sequence.Block.Internal
 import Control.DeepSeq
 import Control.Lens
+import Data.Foldable
 import Data.Key
 import Data.List.NonEmpty           (last)
 import Data.Semigroup
+import Data.Semigroup.Foldable
 import Data.TCM
 import Data.Vector                  (Vector)
 import GHC.Generics
@@ -136,9 +138,9 @@ instance Semigroup (MetadataBlock m) where
 
     sconcat =
         MB <$> (_blockMetadata . last)
-           <*> sconcat . fmap _blockDataSet
+           <*> fold1 . fmap _blockDataSet
 
-    stimes i _ | i < 1 = error $ mconcat
+    stimes i _ | i < 1 = error $ fold
         [ "Call to Bio.Sequence.MetadataBlock.stimes with non-positive value: "
         , show (fromIntegral i :: Integer)
         , " <= 0"

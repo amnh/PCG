@@ -326,17 +326,8 @@ src2NetworkPairAncestralToE1Network =
 
 e1NetworkEdgeComplementNodeAncestralToE2 :: Network
 e1NetworkEdgeComplementNodeAncestralToE2 =
-    (nodes, edges)
+    (templateNodes, edges)
   where
-    nodes :: [Node]
-    nodes = fold
-            [ existingN   <$>  ["root", "a", "c", "d", "e", "f", "g" , "h", "i", "j"
-                               , "k", "l", "m", "n" , "o", "p", "q", "r"
-                               ]
-            , newN        <$> ["newSrc", "newTgt"]
-            , contextualN <$> ["b (src1)", "g (src2)", "e (tgt1)", "k (tgt2)"]
-            ]
-
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
@@ -422,20 +413,10 @@ networkGraphParameters = G.defaultParams {
     blue  = G.RGB 204 2 2
 
 
-
 template :: Network
 template =
-    (nodes, edges)
+    (templateNodes, edges)
   where
-    nodes :: [Node]
-    nodes = fold
-            [ existingN   <$>  ["root", "a", "c", "d", "e", "f", "g" , "h", "i", "j"
-                               , "k", "l", "m", "n" , "o", "p", "q" ,"r"
-                               ]
-            , newN        <$> ["newSrc", "newTgt"]
-            , contextualN <$> ["b (src1)", "g (src2)", "e (tgt1)", "k (tgt2)"]
-            ]
-
     edges :: [Edge]
     edges = fold
             [ existingE  <$>
@@ -455,3 +436,13 @@ template =
                              , ("newTgt", " (tgt2)"  )
                              ]
             ]
+
+
+templateNodes :: [Node]
+templateNodes = fold
+        [ existingN   <$>  ["root", "a", "c", "d", "e", "f", "g" , "h", "i", "j"
+                           , "k", "l", "m", "n" , "o", "p", "q", "r"
+                           ]
+        , newN        <$> ["newSrc", "newTgt"]
+        , contextualN <$> ["b (src1)", "g (src2)", "e (tgt1)", "k (tgt2)"]
+        ]

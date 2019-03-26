@@ -64,6 +64,7 @@ import           Data.Foldable
 import           Data.List.NonEmpty           (NonEmpty (..))
 import           Data.MonoTraversable         (Element)
 import           Data.Semigroup
+import           Data.Semigroup.Foldable
 import qualified Data.Text                    as T (Text, lines, unlines)
 import           Data.Vector                  (Vector, fromListN)
 import qualified Data.Vector                  as V
@@ -251,12 +252,12 @@ instance Semigroup (CharacterBlock u v w x y z) where
     sconcat cbs =
         case foldMap unwrapCharacterBlock cbs of
           []   -> BlockDoesNotExist
-          x:xs -> CB . sconcat $ x:|xs
+          x:xs -> CB . fold1 $ x:|xs
       where
         unwrapCharacterBlock (CB b) = [b]
         unwrapCharacterBlock  _     = []
 
-    stimes i _ | i < 1 = error $ mconcat
+    stimes i _ | i < 1 = error $ fold
         [ "Call to Bio.Sequence.CharacterBlock.stimes with non-positive value: "
         , show (fromIntegral i :: Integer)
         , " <= 0"

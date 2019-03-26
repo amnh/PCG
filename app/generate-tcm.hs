@@ -73,7 +73,7 @@ main = do
 
 
 insertSuffix :: FilePath -> String -> FilePath
-insertSuffix path suff = mconcat [ prefixName, "-", suff, ".", extension ]
+insertSuffix path suff = fold [ prefixName, "-", suff, ".", extension ]
   where
     (prefixName, extension) = swap . (reverse *** reverse . tail') . break (=='.') $ reverse path
     tail'    []  = []
@@ -97,20 +97,20 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
                  ]
 
     argSpec :: Read a => Char -> String -> String -> Parser a
-    argSpec c s h = option auto $ mconcat [short c, long s, help h]
+    argSpec c s h = option auto $ fold [short c, long s, help h]
 
     argStr :: Char -> String -> String -> Parser String
-    argStr c s h = strOption $ mconcat [short c, long s, help h]
+    argStr c s h = strOption $ fold [short c, long s, help h]
 
-    metricFlag v s desc = flag' v $ mconcat [long s, help desc]
+    metricFlag v s desc = flag' v $ fold [long s, help desc]
 
-    description = mconcat
+    description = fold
         [ fullDesc
         , headerDoc . Just $ string "\n  Generate a TCM specification for a given alphabet"
         , footerDoc $ Just mempty
         ]
 
-    preferences = prefs $ mconcat [showHelpOnError, showHelpOnEmpty]
+    preferences = prefs $ fold [showHelpOnError, showHelpOnEmpty]
 
 
 validateUserInput :: UserInput -> Specification

@@ -354,7 +354,7 @@ fromList xs
     dimension     = floor $ sqrt (fromIntegral len :: Double)
     notSquareList = square dimension /= len
     square x      = x*x
-    notSquareErrorMsg = mconcat [ "fromList: The number of element ("
+    notSquareErrorMsg = fold [ "fromList: The number of element ("
                                 , show len
                                 ,") is not a square number. "
                                 , "Cannot construct an non-square TCM! "
@@ -387,13 +387,13 @@ fromCols xs
   | hasJaggedCols    = error jaggedColsErrorMsg
   | width /= height  = error notSquareErrorMsg
   | height < 2       = error "fromCols: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
-  | otherwise        = fromListUnsafe . mconcat . transpose $ toList <$> toList xs
+  | otherwise        = fromListUnsafe . fold . transpose $ toList <$> toList xs
   where
     width            = length xs
     height           = length . head $ toList xs
     hasJaggedCols    = not . equalityOf length $ toList xs
 
-    jaggedColsErrorMsg = mconcat
+    jaggedColsErrorMsg = fold
                        [ "fromCols: All the columns did not have the same height! "
                        , "Expected modal height of ("
                        , show mode
@@ -403,7 +403,7 @@ fromCols xs
       where
         (mode, otherLengths) = modeAndOutlierLengths xs
 
-    notSquareErrorMsg = mconcat [ "fromRows: The number of rows ("
+    notSquareErrorMsg = fold [ "fromRows: The number of rows ("
 
                                 , show height
                                 ,") did not match the number of columns ("
@@ -437,7 +437,7 @@ fromRows xs
     width            = length . head $  toList xs
     hasJaggedRows    = not $ equalityOf length xs
 
-    jaggedRowsErrorMsg = mconcat
+    jaggedRowsErrorMsg = fold
                        [ "fromRows: All the rows did not have the same width! "
                        , "Expected modal width of ("
                        , show mode
@@ -447,7 +447,7 @@ fromRows xs
       where
         (mode, otherLengths) = modeAndOutlierLengths xs
 
-    notSquareErrorMsg = mconcat [ "fromRows: The number of rows ("
+    notSquareErrorMsg = fold [ "fromRows: The number of rows ("
                                 , show height
                                 ,") did not match the number of columns ("
                                 , show width
@@ -516,17 +516,17 @@ generate n f
     resultVector = V.generate (n*n) g
       where
         g i = coerce . f . (toEnum *** toEnum) $ (i `divMod` n)
-    negativeErrorMessage = mconcat
+    negativeErrorMessage = fold
       [ "The call to 'generate ", show n, " f' is malformed, "
       , "the dimension (", show n, ") is a negative number. "
       , "Cannot construct a TCM with a negative dimension!"
       ]
-    nullErrorMessage = mconcat
+    nullErrorMessage = fold
       [ "The call to 'generate 0 f' is malformed, "
       , "the dimension is zero. "
       , "Cannot construct an empty TCM with a nullary dimension!"
       ]
-    singletonErrorMessage = mconcat
+    singletonErrorMessage = fold
       [ "The call to 'generate 1 f' is malformed, "
       , "the dimension is one. "
       , "Cannot construct a singlton TCM with a dimension of one!"

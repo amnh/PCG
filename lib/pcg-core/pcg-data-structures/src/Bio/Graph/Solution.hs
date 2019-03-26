@@ -88,9 +88,9 @@ instance {-# OVERLAPPABLE #-} PrintDot a => PrintDot (PhylogeneticSolution a) wh
 
     toDot         =     listToDot . toList . phylogeneticForests
 
-    unqtListToDot = fmap mconcat . traverse unqtDot
+    unqtListToDot = fmap fold . traverse unqtDot
 
-    listToDot     = fmap mconcat . traverse   toDot
+    listToDot     = fmap fold . traverse   toDot
 
 
 instance TextShow n => PrintDot (PhylogeneticSolution (PhylogeneticDAG m e n u v w x y z)) where
@@ -99,9 +99,9 @@ instance TextShow n => PrintDot (PhylogeneticSolution (PhylogeneticDAG m e n u v
 
     toDot         =   toDot . uncurry mkGraph . foldMap1 getSolutionDotContext . phylogeneticForests
 
-    unqtListToDot = fmap mconcat . traverse unqtDot
+    unqtListToDot = fmap fold . traverse unqtDot
 
-    listToDot     = fmap mconcat . traverse   toDot
+    listToDot     = fmap fold . traverse   toDot
 
 
 instance Show a => Show (PhylogeneticSolution a) where
@@ -111,7 +111,7 @@ instance Show a => Show (PhylogeneticSolution a) where
         indent       = intercalate "\n" . fmap ("  " <>) . lines
         renderForest = indent . foldMapWithKey f
           where
-            f k e = mconcat
+            f k e = fold
                 [ "Component #"
                 , show k
                 , ":\n\n"
@@ -120,7 +120,7 @@ instance Show a => Show (PhylogeneticSolution a) where
                 ]
         renderForests = indent . foldMapWithKey f
           where
-            f k e = mconcat
+            f k e = fold
                 [ "Forest #"
                 , show k
                 , ":\n\n"

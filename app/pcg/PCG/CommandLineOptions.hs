@@ -3,15 +3,15 @@
 module PCG.CommandLineOptions
   ( -- * Types
     CommandLineOptions(..)
-  , Verbosity(..)
+  , Verbosity()
     -- * Parser
   , parseCommandLineOptions
   , parserHelpMessage
-  , parserInformation
     -- * Display information
   , gatherDisplayInformation
   ) where
 
+import Data.Foldable
 import Data.Semigroup                 ((<>))
 import Options.Applicative            hiding (ParseError)
 import PCG.CommandLineOptions.Display
@@ -26,7 +26,7 @@ import Text.PrettyPrint.ANSI.Leijen   (align, indent, int, line, string, text, (
 parseCommandLineOptions :: IO CommandLineOptions
 parseCommandLineOptions = customExecParser preferences parserInformation
   where
-    preferences = prefs $ mconcat [showHelpOnError, showHelpOnEmpty]
+    preferences = prefs $ fold [showHelpOnError, showHelpOnEmpty]
 
 
 -- |
@@ -47,20 +47,20 @@ parserInformation = info (helper <*> commandLineOptions) description
         CommandLineOptions
           <$> fileSpec 'i' "input"  "STDIN"  "Input PCG script file"
           <*> fileSpec 'o' "output" "STDOUT" "Output file"
-          <*> switch  (mconcat [long "version", help "Display version number"])
-          <*> switch  (mconcat [long "splash" , help "Display splash image"])
-          <*> switch  (mconcat [long "credits", help "Display project contributions"])
+          <*> switch  (fold [long "version", help "Display version number"])
+          <*> switch  (fold [long "splash" , help "Display splash image"])
+          <*> switch  (fold [long "credits", help "Display project contributions"])
           <*> (validateVerbosity <$> option auto verbositySpec)
 
-    fileSpec c s d h = strOption $ mconcat
+    fileSpec c s d h = strOption $ fold
         [ short c
         , long  s
         , value d
-        , help  $ mconcat [h, " (default ", d, ")"]
+        , help  $ fold [h, " (default ", d, ")"]
         , metavar "FILE"
         ]
 
-    verbositySpec = mconcat
+    verbositySpec = fold
         [ short 'v'
         , long "verbosity"
         , value 3
@@ -68,7 +68,7 @@ parserInformation = info (helper <*> commandLineOptions) description
         , metavar "LEVEL"
         ]
 
-    description = mconcat
+    description = fold
         [ fullDesc
         , headerDoc . Just . string $ "  " <> softwareName <> "\n  " <> shortVersionInformation
         ]

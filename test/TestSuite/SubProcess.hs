@@ -11,15 +11,15 @@ module TestSuite.SubProcess
   ) where
 
 import Control.Arrow         ((&&&))
-import Control.Monad         (when)
 import Control.DeepSeq
+import Control.Monad         (when)
 import Data.ByteString.Lazy  (ByteString, readFile)
 import Data.Foldable
+import Prelude               hiding (readFile)
 import System.Directory
 import System.FilePath.Posix
 import System.IO             (hClose)
 import System.Process
-import Prelude        hiding (readFile)
 
 
 -- |

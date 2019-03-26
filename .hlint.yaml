@@ -131,6 +131,7 @@
 # Ignore const rename suggestion
 - ignore: { name: Use /=
           , within: Control.Evaluation.Test
+          }
 
 - ignore: { name: Reduce duplication
           , within: Bio.Graph.ReferenceDAG.Traversal

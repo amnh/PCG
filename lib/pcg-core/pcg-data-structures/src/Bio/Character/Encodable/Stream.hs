@@ -102,7 +102,7 @@ class ( EncodableStreamElement (Element s)
     indexStream xs i = fromMaybe raiseError $ xs `lookupStream` i
       where
         raiseError = error
-                   $ mconcat ["Stream indexing at ", show i, " is out of range [0,", show $ olength xs - 1,"]."]
+                   $ fold ["Stream indexing at ", show i, " is out of range [0,", show $ olength xs - 1,"]."]
 
     lookupStream :: s -> Int -> Maybe (Element s)
     lookupStream xs i = fst $ ofoldl' f (Nothing, 0) xs

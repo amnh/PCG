@@ -328,7 +328,7 @@ scriptCheckValue
 scriptCheckValue getter expectedValue scriptPath outputPath = testCase scriptPath $ do
     v <- runScripts (scriptPath:|[]) [outputPath]
     case v of
-      Left  (path, exitCode) -> assertFailure $ mconcat
+      Left  (path, exitCode) -> assertFailure $ fold
                                   ["Script '", path, "'failed with exit code: ", show exitCode]
       Right               [] -> assertFailure "No files were returned despite supplying one path!"
       Right (   binStream:_) ->
@@ -356,7 +356,7 @@ scriptDiffOutputFiles is os =
                     in  testCase (makeTitle scripts) $ do
                         v <- runScripts scripts outFiles
                         case v of
-                          Left  (path, exitCode) -> assertFailure $ mconcat
+                          Left  (path, exitCode) -> assertFailure $ fold
                               ["Script '", path, "'failed with exit code: ", show exitCode]
                           Right  binStreams      -> assertBool "Not all outputs were the same!" $
                                                         equalityOf id binStreams
@@ -381,7 +381,7 @@ scriptsAllSucceed xs =
         v <- runScripts scripts []
         case v of
           Right e -> assertBool "No files were to be collected" $ null e
-          Left (failedScript, ec) -> assertFailure $ mconcat
+          Left (failedScript, ec) -> assertFailure $ fold
                                        [ "Expected success of script '"
                                        , failedScript
                                        , "', but failed with exit code: "

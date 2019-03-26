@@ -253,11 +253,11 @@ bitMatrix m n f =
       | m /= 0 && n == 0 = Just $ unwords [errorPrefix, errorZeroCols, errorZeroSuffix] <> "."
       | otherwise        = Nothing
       where
-        errorPrefix     = mconcat ["The call to bitMatrix ", show m, " ", show n, " f is malformed,"]
-        errorRowCount   = mconcat ["the number of rows, "   , show m, ", is a negative number"]
-        errorColCount   = mconcat ["the number of columns, ", show n, ", is a negative number"]
-        errorZeroRows   = mconcat ["the number of rows was 0 but the number of columns, ", show n, ", was positive."]
-        errorZeroCols   = mconcat ["the number of columns was 0 but the number of rows, ", show m, ", was positive."]
+        errorPrefix     = fold ["The call to bitMatrix ", show m, " ", show n, " f is malformed,"]
+        errorRowCount   = fold ["the number of rows, "   , show m, ", is a negative number"]
+        errorColCount   = fold ["the number of columns, ", show n, ", is a negative number"]
+        errorZeroRows   = fold ["the number of rows was 0 but the number of columns, ", show n, ", was positive."]
+        errorZeroCols   = fold ["the number of columns was 0 but the number of rows, ", show m, ", was positive."]
         errorZeroSuffix = "To construct the empty matrix, both rows and columns must be zero"
 
 
@@ -288,7 +288,7 @@ factorRows n bv
   | otherwise        = error erroMsg
   where
     len = dimension bv
-    erroMsg = mconcat
+    erroMsg = fold
         [ "The supplied BitVector length ("
         , show len
         , ") cannot be evenly divided by the supplied column count ("
@@ -360,7 +360,7 @@ row bm@(BitMatrix nCols bv) i
     lower    = upper - toEnum nCols + 1
     nRows    = numRows bm
     errorMsg = unwords ["Index", show i, "is outside the range", rangeStr]
-    rangeStr = mconcat ["[0..", show nRows, "]."]
+    rangeStr = fold ["[0..", show nRows, "]."]
 
 
 -- |

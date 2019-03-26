@@ -5,6 +5,7 @@ module Main (main) where
 
 import           Control.Applicative (liftA2)
 import           Data.Bifunctor      (first)
+import           Data.Foldable
 import           Data.Key
 import           Data.Map            (Map, keys, singleton, unionWith)
 import           Data.Set            (difference, intersection)
@@ -61,12 +62,12 @@ performFileDiff (lhs, rhs) = maybe (Right fileDiffResult) Left errorMessage
     toMap = foldMap (singleton <$> taxonName <*> taxonSequence)
 
     renderTaxa :: String -> String -> String
-    renderTaxa taxaName taxaSequences = mconcat [ "> ", taxaName, "\n", taxaSequences, "\n"]
+    renderTaxa taxaName taxaSequences = fold [ "> ", taxaName, "\n", taxaSequences, "\n"]
 
     errorMessage
       | null lhsUnique &&
         null rhsUnique = Nothing
-      | otherwise      = Just $ mconcat
+      | otherwise      = Just $ fold
                               [ "The taxa from the two files do not exacly match!\n"
                               , "Found the following unique taxa in the first file\n:"
                               , show lhsUnique

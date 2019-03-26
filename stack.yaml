@@ -1,4 +1,4 @@
-allow-newer: true
+#allow-newer: true
 
 compiler: ghc-8.6.4
 
@@ -7,14 +7,12 @@ compiler-check: match-exact
 extra-deps:
   - bv-little-1.0.0
   - compact-0.1.0.1
-  - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
+#  - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
+  - graphviz-2999.20.0.3
   - pretty-tree-0.1.0.0
-  - tasty-rerun-1.1.12
+  - tasty-rerun-1.1.14
   - text-show-3.7.5
   - text-show-instances-3.7
-
-  - Glob-0.9.3
-  - containers-0.6.0.1
   - mono-traversable-keys-0.1.0
 
 #ghc-options:

@@ -171,7 +171,7 @@ instance Show TestingDecoration where
 
     show decoration = intercalate "\n" $ catMaybes renderings
       where
-        renderings = mconcat [renderedId, renderedCosts, renderedDecorations]
+        renderings = fold [renderedId, renderedCosts, renderedDecorations]
 
         renderedId = pure . pure $ "Node ( " <> show (refEquality decoration) <> " )"
         renderedCosts =
@@ -426,7 +426,7 @@ instance RT.ReferentialTree SimpleTree SimpleTree where
 
     getNthNode tree@(TT root) pos =
         case foldl' f (0, Nothing) root of
-          (outerBound, Nothing         ) -> error    $ mconcat ["Could not get node at position ", show pos, "! Valid range is [0,", show $ outerBound - 1, "]."]
+          (outerBound, Nothing         ) -> error    $ fold ["Could not get node at position ", show pos, "! Valid range is [0,", show $ outerBound - 1, "]."]
           (_         , Just decoration ) -> fromJust $ findNode (idMatches (refEquality decoration)) tree
       where
         f (counter, found) e

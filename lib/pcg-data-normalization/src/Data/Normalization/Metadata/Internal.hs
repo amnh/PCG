@@ -19,7 +19,13 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeSynonymInstances  #-}
 
-module Data.Normalization.Metadata.Internal where
+module Data.Normalization.Metadata.Internal
+  ( NormalizedMetadata(..)
+  , developAlphabets
+  , makeEncodeInfo
+  , genAdditive
+  , genFitch
+  ) where
 
 import           Control.DeepSeq
 import           Data.Alphabet

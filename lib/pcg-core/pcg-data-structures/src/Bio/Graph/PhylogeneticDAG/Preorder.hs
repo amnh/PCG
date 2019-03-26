@@ -417,8 +417,9 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
              -- :: Vector (IM.IntMap (PreorderContext z))
             dynCharVec = parentMapping ! blockIndex
 
-            (!!!) v i = fromMaybe
-                (error $ mconcat
+            (!!!) v i = fromMaybe err $ i `lookup` v
+              where
+                err = error $ fold
                     [ "Can't index at "
                     , show i
                     , " when given "
@@ -428,7 +429,6 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                     , "\n\n"
                     , generateDotFile pdag2
                     ]
-                ) $ i `lookup` v
 
         parentMapping = delta minTopologyContextPerBlock
 

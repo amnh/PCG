@@ -15,11 +15,12 @@
 module Bio.Graph.BinaryRenderingTree where
 
 
-import Control.Arrow      ((&&&))
+import Control.Arrow           ((&&&))
 import Data.Foldable
-import Data.List.NonEmpty hiding (length, takeWhile)
+import Data.List.NonEmpty      hiding (length, takeWhile)
 import Data.Semigroup
-import Prelude            hiding (head)
+import Data.Semigroup.Foldable
+import Prelude                 hiding (head)
 
 
 -- |
@@ -46,7 +47,7 @@ horizontalRendering = fold . intersperse "\n" . go
   where
     go :: BinaryRenderingTree -> NonEmpty String
     go (Leaf label) = pure $ "─ " <> label
-    go (Node _ labelMay kids) = sconcat paddedSubtrees
+    go (Node _ labelMay kids) = fold1 paddedSubtrees
       where
         paddedSubtrees   = maybe prefixedSubtrees (`applyPadding` prefixedSubtrees) labelMay
 

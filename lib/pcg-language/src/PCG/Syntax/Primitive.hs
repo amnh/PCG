@@ -44,6 +44,7 @@ import           Control.Applicative        hiding (many)
 import           Control.Monad.Free
 import           Data.CaseInsensitive       (FoldCase)
 import           Data.Char                  (isControl)
+import           Data.Foldable              (fold)
 import           Data.Functor               (void, ($>))
 import           Data.Key
 import           Data.List.NonEmpty         (NonEmpty (..))
@@ -363,7 +364,7 @@ typeMismatchContext p targetType = do
         in
           if   targetType == resultType || targetType == TypeOfReal && resultType == TypeOfInt
           then p
-          else let uxpMsg = Just . Label . NE.fromList $ mconcat [ getPrimitiveName parseResult, " '", chunkToTokens (Proxy :: Proxy s) str, "'" ]
+          else let uxpMsg = Just . Label . NE.fromList $ fold [ getPrimitiveName parseResult, " '", chunkToTokens (Proxy :: Proxy s) str, "'" ]
                    expMsg = S.singleton . Label . NE.fromList $ getPrimitiveName targetType
                in  failure uxpMsg expMsg
   where

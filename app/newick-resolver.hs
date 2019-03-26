@@ -4,9 +4,10 @@
 
 module Main (main) where
 
-import Data.List.NonEmpty hiding (unfoldr)
+import Data.Foldable
+import Data.List.NonEmpty      hiding (unfoldr)
 import Data.Maybe
-import Data.Semigroup
+import Data.Semigroup.Foldable
 import Data.Void
 import File.Format.Newick
 import System.Environment
@@ -43,14 +44,14 @@ main = do
         getLabel = fromJust . newickLabel
         renderBinaryTree = appendSemicolon . renderNewickString . fmap getLabel
         renderAllResolutions = fmap (foldMap (<>"\n") . fmap renderBinaryTree . unfoldr descendants)
-        nicelyPrintAllResolutions = mapM_ putStrLn . sconcat
+        nicelyPrintAllResolutions = mapM_ putStrLn . fold1
 
 
 -- |
 -- Take a 'NewickNode' and map over its descendents to render the entire string in Newick format.
 renderNewickString :: BinaryTree String -> String
 renderNewickString (Leaf x) = x
-renderNewickString (Branch lhs rhs) = mconcat
+renderNewickString (Branch lhs rhs) = fold
     [ "("
     , renderNewickString lhs
     , ", "

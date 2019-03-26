@@ -25,6 +25,7 @@ import Bio.Character.Encodable.Continuous.Class
 import Bio.Character.Encodable.Internal
 import Control.Arrow                            ((&&&))
 import Control.DeepSeq
+import Data.Foldable
 import Data.Range
 import GHC.Generics
 import Numeric.Extended.Real
@@ -81,7 +82,7 @@ instance Show ContinuousCharacter where
       | lower == upper = show lower
       | otherwise      = renderRange lower upper
         where
-            renderRange x y = mconcat [ "[", show x, ", ", show y, "]" ]
+            renderRange x y = fold [ "[", show x, ", ", show y, "]" ]
 
 -- | (✔)
 instance TextShow ContinuousCharacter where
@@ -90,7 +91,7 @@ instance TextShow ContinuousCharacter where
       | lower == upper = showb lower
       | otherwise      = renderRange lower upper
         where
-            renderRange x y = mconcat [ "[", showb x, ", ", showb y, "]" ]
+            renderRange x y = fold [ "[", showb x, ", ", showb y, "]" ]
 
 -- | (✔)
 instance ToXML ContinuousCharacter where

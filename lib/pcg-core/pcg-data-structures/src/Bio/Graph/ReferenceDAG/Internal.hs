@@ -449,9 +449,9 @@ instance TextShow n => PrintDot (ReferenceDAG d e n) where
 
     toDot         = toDot   . uncurry mkGraph . getDotContext 0 0
 
-    unqtListToDot = unqtDot . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap (getDotContext 0 0)
+    unqtListToDot = unqtDot . uncurry mkGraph . bimap fold fold . unzip . fmap (getDotContext 0 0)
 
-    listToDot     = toDot   . uncurry mkGraph . bimap mconcat mconcat . unzip . fmap (getDotContext 0 0)
+    listToDot     = toDot   . uncurry mkGraph . bimap fold fold . unzip . fmap (getDotContext 0 0)
 
 
 -- | (✔)
@@ -488,7 +488,7 @@ instance (TextShow d, TextShow n) => TextShow (ReferenceDAG d e n) where
     showb dag = TextShow.intercalateB "\n"
         [ fromString . topologyRendering $ dag
         , ""
-        , fromString . sconcat . intersperse "\n" $ horizontalRendering <$> toBinaryRenderingTree (toString . showb) dag
+        , fromString . fold1 . intersperse "\n" $ horizontalRendering <$> toBinaryRenderingTree (toString . showb) dag
         , ""
         , fromString . referenceRendering $ dag
         , showb $ graphData dag
@@ -1005,9 +1005,9 @@ generateNewick refs idx htuNumSet = (finalNumSet, finalStr)
                 (updatedHtuNumSet', subtreeNewickStr) = generateNewick refs childIdx updatedHtuNumSet
             in if   htuNumberStr `elem` htuNumSet
                -- If the node is already a member, no update to htuNumberSet.
-               then (         htuNumSet, mconcat [ "#", htuNumberStr ])
+               then (         htuNumSet, fold [ "#", htuNumberStr ])
                -- Network node but not yet in set of traversed nodes, so update htuNumberSet.
-               else ( updatedHtuNumSet', mconcat [ subtreeNewickStr, "#", htuNumberStr ])
+               else ( updatedHtuNumSet', fold [ subtreeNewickStr, "#", htuNumberStr ])
 
               -- Both root and tree node. Originally root was a separate case that resolved to an error,
               -- but the first call to this fn is always root, so can't error out on that.
@@ -1016,14 +1016,14 @@ generateNewick refs idx htuNumSet = (finalNumSet, finalStr)
              case IM.keys $ childRefs node of
                  []              -> error "Graph construction should prevent a 'root' node or 'tree' node with no children."
                  lhsIdx:rhsIdx:_ -> ( updatedHtuNumSet'
-                                    , mconcat [ "(", lhsReturnString, ", ", rhsReturnString, ")" ]
+                                    , fold [ "(", lhsReturnString, ", ", rhsReturnString, ")" ]
                                     )
                    where
                      (updatedHtuNumSet , lhsReturnString) = generateNewick refs lhsIdx htuNumSet
                      (updatedHtuNumSet', rhsReturnString) = generateNewick refs rhsIdx updatedHtuNumSet
                     -- Next should happen only under network node, but here for completion.
                  [singleChild]   -> ( updatedHtuNumSet'
-                                    , mconcat [ "(", updatedNewickStr, ")" ]
+                                    , fold [ "(", updatedNewickStr, ")" ]
                                     )
                    where
                      (updatedHtuNumSet', updatedNewickStr) = generateNewick refs singleChild htuNumSet
@@ -1300,7 +1300,7 @@ getDotContext
   -> ([DotNode GraphID], [DotEdge GraphID])
 --getDotContext dag | trace ("About to render this to DOT:\n\n" <> show dag) False = undefined
 getDotContext uniqueIdentifierBase mostSignificantDigit dag =
-    second mconcat . unzip $ foldMapWithKey f vec
+    second fold . unzip $ foldMapWithKey f vec
   where
     idOffest = uniqueIdentifierBase * mostSignificantDigit
 

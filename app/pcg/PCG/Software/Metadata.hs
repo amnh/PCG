@@ -6,6 +6,7 @@ module PCG.Software.Metadata
   , fullVersionInformation
   ) where
 
+import Data.Foldable
 import Data.Semigroup                     ((<>))
 import Data.Version                       (showVersion)
 import Development.GitRev                 (gitCommitCount, gitHash)
@@ -30,7 +31,7 @@ shortVersionInformation = "(alpha) version " <> showVersion version
 -- Uses @TemplateHaskell@ to splice in git hash and commit count information
 -- from the compilation environment.
 fullVersionInformation :: String
-fullVersionInformation = mconcat
+fullVersionInformation = fold
     [ softwareName
     , " "
     , shortVersionInformation

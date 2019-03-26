@@ -21,7 +21,6 @@
 module Control.Evaluation.Internal
   ( Evaluation(..)
   , Notification(..)
-  , getEvalUnit
   , notifications
   , prependNotifications
   ) where

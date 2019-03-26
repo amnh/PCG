@@ -61,7 +61,7 @@ import           Data.Ord
 import           Data.Range
 import           Data.Semigroup
 import           Data.TCM
-import qualified Data.TCM                      as TCM
+import qualified Data.TCM                     as TCM
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Data.Text.Short              (ShortText)

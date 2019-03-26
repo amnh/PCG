@@ -4,9 +4,6 @@
 
 module PCG.CommandLineOptions.Display
   ( gatherDisplayInformation
-  , printVersionInformation
-  , printSplashImage
-  , printContributions
   ) where
 
 import Control.Arrow                ((&&&))

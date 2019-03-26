@@ -57,7 +57,7 @@ rnaAlphabet = fromBimap iupacToRna
 -- The discrete alphabet includes the following 63 values:
 -- > ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-"
 discreteAlphabet :: (IsString s, Ord s) => Alphabet s
-discreteAlphabet = fromSymbols $ fromString . pure <$> mconcat [['0'..'9'], ['A'..'Z'], ['a'..'z'], "-"]
+discreteAlphabet = fromSymbols $ fromString . pure <$> fold [['0'..'9'], ['A'..'Z'], ['a'..'z'], "-"]
 
 
 -- |

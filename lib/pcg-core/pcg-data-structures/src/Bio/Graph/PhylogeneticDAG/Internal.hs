@@ -294,7 +294,7 @@ instance ( TextShow e
 
     showb (PDAG _ dag) = showb dag <> "\n" <> foldMapWithKey f dag
       where
-        f i (PNode n sek) = mconcat [ "Node {", showb i, "}:\n\n", unlinesB [showb n, showb sek] ]
+        f i (PNode n sek) = fold [ "Node {", showb i, "}:\n\n", unlinesB [showb n, showb sek] ]
 
 
 -- | (✔)
@@ -702,7 +702,7 @@ renderBlockSummary
   -> (Maybe Double, Maybe Double, Maybe TraversalTopology, CharacterBlock u v w x y z)
   -> Builder
 renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displayMay, block)
-  = mconcat . (renderedPrefix:) .
+  = fold . (renderedPrefix:) .
     (renderBlockMeta pair :) $
     [ unlinesB . fmap renderStaticCharacterSummary              . toList . uncurry zip . ((^.  continuousBin) *** (^.  continuousBin))
     , unlinesB . fmap renderStaticCharacterWithAlphabetSummary  . toList . uncurry zip . ((^. nonAdditiveBin) *** (^. nonAdditiveBin))
@@ -778,7 +778,7 @@ renderDisplayForestNewick dag topo = fromText . T.unlines $ renderDisplayTree <$
                      (l, r) -- Do this to bias parens right
                        | openParensIn x' > openParensIn y' = (y', x')
                        | otherwise                         = (x', y')
-                 in mconcat ["(", l, ",", r, ")"]
+                 in fold ["(", l, ",", r, ")"]
       where
         nodeVal = refVec ! nodeIdx
         kidRefs = filter (\i -> (nodeIdx, i) `isEdgePermissibleWith` topo) . IM.keys $ childRefs nodeVal

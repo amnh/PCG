@@ -9,7 +9,8 @@ module PCG.Command.Read.ReadError
   , unparsable
   ) where
 
-import Data.List.NonEmpty
+import Data.Foldable
+import Data.List.NonEmpty      hiding (toList)
 import Data.Maybe              (catMaybes)
 import Data.Semigroup.Foldable
 import Text.Megaparsec
@@ -93,7 +94,7 @@ instance Show ReadErrorMessage where
     show (FileUnfindable    path) = "'" <> path <> "'"
     show (FileUnopenable    path) = "'" <> path <> "'"
     show (FileUnparsable    pErr) = pErr
-    show (InvalidPrealigned path cols) = mconcat ["'", path, "', has characters of lengths ", fold1 . intersperse ", " $ show <$> cols]
+    show (InvalidPrealigned path cols) = fold ["'", path, "', has characters of lengths ", fold1 . intersperse ", " $ show <$> cols]
     show (FileAmbiguous path matches) = message
       where
         files   = toList matches

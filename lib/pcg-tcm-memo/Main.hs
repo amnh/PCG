@@ -4,11 +4,11 @@
 module Main (main) where
 
 import Bio.Character.Exportable
+import Control.Applicative      (liftA2)
 import Data.TCM.Memoized
-import Control.Applicative            (liftA2)
 import Foreign.C.Types
-import Safe                           (readMay)
-import System.Environment             (getArgs)
+import Safe                     (readMay)
+import System.Environment       (getArgs)
 
 
 newtype MyStruct = T [CULong] deriving (Show)

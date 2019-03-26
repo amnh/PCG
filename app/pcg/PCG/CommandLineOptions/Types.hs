@@ -2,7 +2,7 @@
 
 module PCG.CommandLineOptions.Types
   ( CommandLineOptions(..)
-  , Verbosity(..)
+  , Verbosity()
   , validateVerbosity
   ) where
 

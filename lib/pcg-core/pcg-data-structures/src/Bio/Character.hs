@@ -20,6 +20,7 @@ module Bio.Character
   , StaticCharacter()
   , StaticCharacterBlock()
     -- * Character Classes
+  , EncodedAmbiguityGroupContainer(..)
   , EncodableContinuousCharacter(..)
   , EncodableDynamicCharacter(..)
   , EncodableStaticCharacter(..)

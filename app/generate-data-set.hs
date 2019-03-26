@@ -16,6 +16,7 @@ import           Data.List.NonEmpty           (NonEmpty (..))
 import qualified Data.Map                     as M
 import           Data.MemoTrie                (memo)
 import           Data.Semigroup               hiding (option)
+import           Data.Semigroup.Foldable
 import           Data.Set                     (Set)
 import qualified Data.Set                     as S
 import           Data.Validation
@@ -84,7 +85,7 @@ instance Monad Enumeration where
 
     return  = pure
 
-    e >>= f = sconcat $ f <$> enumerate e
+    e >>= f = fold1 $ f <$> enumerate e
 
 
 instance Semigroup (Enumeration a) where
@@ -150,21 +151,21 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
         <*> argSpec 'd' "delete"       "Deletion     event probability   :: Double (0, 1)"
         <*> argSpec 's' "substitution" "Substitution event probability   :: Double (0, 1)"
         <*> argSpec 'r' "root-length"  "Sequence length at the root node :: Word"
-        <*> switch  (mconcat [long "aligned", help "Generate aligned output data"])
+        <*> switch  (fold [long "aligned", help "Generate aligned output data"])
 
     argSpec :: Read a => Char -> String -> String -> Parser a
-    argSpec c s h = option auto $ mconcat [short c, long s, help h]
+    argSpec c s h = option auto $ fold [short c, long s, help h]
 
     argStr :: Char -> String -> String -> Parser String
-    argStr c s h = strOption $ mconcat [short c, long s, help h]
+    argStr c s h = strOption $ fold [short c, long s, help h]
 
-    description = mconcat
+    description = fold
         [ fullDesc
         , headerDoc . Just $ string "\n  Generate a random Newick tree and FASTA file of random sequences"
         , footerDoc $ Just mempty
         ]
 
-    preferences = prefs $ mconcat [showHelpOnError, showHelpOnEmpty]
+    preferences = prefs $ fold [showHelpOnError, showHelpOnEmpty]
 
 
 validateUserInput :: UserInput -> Validation (NonEmpty String) Specification
@@ -215,7 +216,7 @@ generateRandomSequence alphabet sub indelMay rootLen tree = do
         suff <- case indelMay of
                   Nothing      -> pure []
                   Just (ins,_) -> insertStr ins
-        pure  $ mconcat mStr <> suff
+        pure  $ fold mStr <> suff
       where
         mutateSymbol :: String -> IO [String]
         mutateSymbol x = do
@@ -280,7 +281,7 @@ enumTreesMemo :: Int -> Enumeration Tree
 enumTreesMemo = memo enumTreesMemo'
   where
     enumTreesMemo' 0 = singleEnum Leaf
-    enumTreesMemo' n = sconcat $
+    enumTreesMemo' n = fold1 $
         ( Node <$> enumTreesMemo (n-1) <*> enumTreesMemo 0
         ) :|
         [ Node <$> enumTreesMemo (n-k-1) <*> enumTreesMemo k
@@ -310,7 +311,7 @@ toNewick :: BinaryTree a String -> String
 toNewick = (<>";\n") . go
   where
     go (Terminal _ x) = x
-    go (Branch _ l r) = mconcat ["(", go l, ",", go r, ")"]
+    go (Branch _ l r) = fold ["(", go l, ",", go r, ")"]
 
 
 toFASTA :: BinaryTree [String] String -> String
@@ -319,9 +320,9 @@ toFASTA = foldMapWithKey f . buildMap
     buildMap (Terminal s i) = M.singleton i $ unwords s
     buildMap (Branch _ l r) = buildMap l <> buildMap r
 
-    f k v = mconcat [ ">", k, "\n", v, "\n\n" ]
+    f k v = fold [ ">", k, "\n", v, "\n\n" ]
 
 
 toParens :: Tree -> String
 toParens Leaf       = ""
-toParens (Node l r) = mconcat ["(", toParens l, ")", toParens r]
+toParens (Node l r) = fold ["(", toParens l, ")", toParens r]

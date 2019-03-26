@@ -15,7 +15,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
@@ -29,33 +28,33 @@ module Data.Unification.InputData
 
 import           Bio.Graph.Component
 import           Bio.Graph.ReferenceDAG
-import           Control.Arrow                                 ((&&&))
+import           Control.Arrow                ((&&&))
 import           Control.Monad.State.Strict
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
-import           Data.Bifunctor                                (first)
-import           Data.Coerce                                   (coerce)
+import           Data.Bifunctor               (first)
+import           Data.Coerce                  (coerce)
 import           Data.Foldable
 import           Data.Functor
-import           Data.List.NonEmpty                            (NonEmpty (..), nonEmpty)
-import qualified Data.List.NonEmpty                            as NE
-import           Data.List.Utility                             (duplicates)
-import qualified Data.Map                                      as Map
-import           Data.Maybe                                    (catMaybes)
+import           Data.List.NonEmpty           (NonEmpty (..), nonEmpty)
+import qualified Data.List.NonEmpty           as NE
+import           Data.List.Utility            (duplicates)
+import qualified Data.Map                     as Map
+import           Data.Maybe                   (catMaybes, mapMaybe)
 import           Data.NodeLabel
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata
 import           Data.Normalization.Topology
-import           Data.Semigroup                                (sconcat, (<>))
+import           Data.Semigroup               ((<>))
 import           Data.Semigroup.Foldable
-import           Data.Set                                      (Set, (\\))
-import qualified Data.Set                                      as Set
+import           Data.Set                     (Set, (\\))
+import qualified Data.Set                     as Set
 import           Data.String
-import           Data.TCM                                      (TCM, TCMStructure (..))
+import           Data.TCM                     (TCM, TCMStructure (..))
 import           Data.Unification.Error
 import           Data.Validation
-import           Data.Vector.NonEmpty                          (Vector)
-import           Prelude                                       hiding (lookup, zipWith)
+import           Data.Vector.NonEmpty         (Vector)
+import           Prelude                      hiding (lookup, zipWith)
 
 
 data  PartialInputData
@@ -106,7 +105,7 @@ gatherPartialInputData pids = InputData{..}
     dataSequences   = nonEmpty . filter (not . fromTreeOnlyFile) $ toList pids
 
     -- Union the taxa names together into total terminal set
-    taxaSet         = foldMap (sconcat . ((Map.keysSet . parsedChars) `pmap`)) dataSequences
+    taxaSet         = foldMap (fold1 . ((Map.keysSet . parsedChars) `pmap`)) dataSequences
 
     -- Gather forest file data
     allForests      = nonEmpty . filter (not . null . parsedForests) $ toList pids
@@ -132,7 +131,7 @@ getUnificationErrors v@InputData{..} = foldr1 (<~>) possibleUnificationErrors $>
         , validateInputWith ForestExtraTaxa     hasExtraNames
         , validateInputWith ForestMissingTaxa   hasMissingNames
         ]
-    
+
     -- Assert that each forest's terminal node set is not a proper superset of
     -- the taxa set from "data files"
     hasExtraNames   = (\\ taxaSet) . Set.fromList . toList
@@ -187,7 +186,7 @@ fromTreeOnlyFile pid = null chars || all null chars
 
 
 terminalNames2 :: ReferenceDAG a b (Maybe NodeLabel) -> [Identifier]
-terminalNames2 dag = coerce $ catMaybes $ (`nodeDatum` dag) <$> leaves dag
+terminalNames2 dag = coerce . mapMaybe (`nodeDatum` dag) $ leaves  dag
 
 
 gatherForestsTerminalNames :: PartialInputData -> ([NonEmpty Identifier], PartialInputData)

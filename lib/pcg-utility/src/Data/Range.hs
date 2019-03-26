@@ -40,6 +40,7 @@ module Data.Range
 
 
 import Control.DeepSeq
+import Data.Foldable
 import GHC.Generics
 import TextShow        (TextShow (showb))
 
@@ -73,12 +74,12 @@ class Num (Bound a) => Ranged a where
 
 instance Show r => Show (Range r) where
 
-    show (Range (x,y,_)) = mconcat [ "[" , show x, ", ", show y, "]" ]
+    show (Range (x,y,_)) = fold [ "[" , show x, ", ", show y, "]" ]
 
 
 instance TextShow r => TextShow (Range r) where
 
-    showb (Range (x,y,_)) = mconcat [ "[" , showb x, ", ", showb y, "]" ]
+    showb (Range (x,y,_)) = fold [ "[" , showb x, ", ", showb y, "]" ]
 
 
 -- |

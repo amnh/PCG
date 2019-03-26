@@ -4,23 +4,23 @@ module Bio.Character.Encodable.Static.Test
   ( testSuite
   ) where
 
-import           Bio.Character.Encodable.Static
+import           Bio.Character
 import           Data.Alphabet
 import           Data.Bits
 import           Data.Foldable
 import           Data.Functor.Compose
 import           Data.Functor.Identity
-import           Data.Key                       ((!))
-import           Data.List.NonEmpty             (NonEmpty ((:|)))
-import qualified Data.List.NonEmpty             as NE
+import           Data.Key              ((!))
+import           Data.List.NonEmpty    (NonEmpty ((:|)))
+import qualified Data.List.NonEmpty    as NE
 import           Data.MonoTraversable
 import           Data.Semigroup
-import           Data.Set                       (Set)
-import qualified Data.Set                       as Set (fromList, intersection, union)
-import           Data.Vector                    (Vector, fromList)
+import           Data.Set              (Set)
+import qualified Data.Set              as Set (fromList, intersection, union)
+import           Data.Vector           (Vector, fromList)
 import           Test.Tasty
 import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck          hiding ((.&.))
+import           Test.Tasty.QuickCheck hiding ((.&.))
 
 
 testSuite :: TestTree

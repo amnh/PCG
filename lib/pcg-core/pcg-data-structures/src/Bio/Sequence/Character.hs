@@ -146,7 +146,7 @@ instance ( Show u
       where
 --        prefix = "Sequence Cost: " <> show (sequenceCost seek)
         suffix = foldMapWithKey f $ toBlocks seek
-        f blockNumber shownBlock = mconcat
+        f blockNumber shownBlock = fold
             [ "Character Block #"
             , show blockNumber
             , "\n\n"

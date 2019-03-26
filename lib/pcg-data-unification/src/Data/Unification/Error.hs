@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Data.Unification.Error
-  ( TaxaName
-  , UnificationError(..)
+  ( UnificationError(..)
   , UnificationErrorMessage(ForestDuplicateTaxa, ForestExtraTaxa, ForestMissingTaxa, VacuousInput)
   ) where
 
@@ -49,42 +48,42 @@ instance Show UnificationErrorMessage where
 
 instance TextShow UnificationErrorMessage where
 
-    showb (NonMatchingTaxa xs ys) = mconcat
+    showb (NonMatchingTaxa xs ys) = fold
         [ "LHS: "
         , showb xs
         , "\nRHS: "
         , showb ys
         ]
 
-    showb (NonMatchingTaxaSeqs xs ys) = mconcat
+    showb (NonMatchingTaxaSeqs xs ys) = fold
         [ "LHS: "
         , showb xs
         , "\nRHS:  "
         , showb ys
         ]
 
-    showb (ForestDuplicateTaxa names path) = mconcat
+    showb (ForestDuplicateTaxa names path) = fold
         [ "The trees from file '"
         , showb path
         , "' contain an multiple entries for the following taxa: \n"
         , listShowB names
         ]
 
-    showb (ForestExtraTaxa names path) = mconcat
+    showb (ForestExtraTaxa names path) = fold
         [ "A tree from file '"
         , showb path
         , "' contains an entry for the following taxa not included in the data set(s): \n"
         , listShowB names
         ]
 
-    showb (ForestMissingTaxa names path) = mconcat
+    showb (ForestMissingTaxa names path) = fold
         [ "None of the trees from file '"
         , showb path
         , "' contain an entry for the taxa: \n"
         , listShowB names
         ]
 
-    showb (VacuousInput files) = mconcat
+    showb (VacuousInput files) = fold
        [ "There was niether any character sequences nor any trees found in any of the supplied input files:\n"
        , (\x -> "  ["<>x<>"]") . intercalateB ", " $ showb <$> toList files
        ]
