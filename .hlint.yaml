@@ -24,13 +24,23 @@
         , lhs: V.fromList
         , rhs: V.fromList'
         }
+- warn: { name: Prefer fold to mconcat
+        , lhs: mconcat
+        , rhs: fold
+        }
+- warn: { name: Prefer fold1 to sconcat
+        , lhs: sconcat
+        , rhs: fold1
+        }
 
 # Custom suggestion hints
 - suggestion: { name: Strict sum
-              , note: Prefer custom strict sum to lazy sum. Decreases laziness.
+              , note: Prefer custom strict sum to lazy sum. Decreases laziness
               , lhs: sum
               , rhs: sum'
               }
+
+
 
 
 # Replace a $ b $ c with a . b $ c
@@ -73,6 +83,11 @@
             [ Control.Evaluation.Test
             ]
           }
+- ignore: { name: Use =<<
+          , within:
+            [ Control.Evaluation.Test
+            ]
+          }
 - ignore: { name: "Functor law"
           , within:
             [ Control.Evaluation.Test
@@ -92,7 +107,10 @@
 
 # Ignore strict sum in modules defining Foldable instance
 - ignore: { name: Strict sum
-          , within: Data.MutualExclusionSet.Internal
+          , within:
+              [ Data.MutualExclusionSet.Internal
+              , Control.Evaluation.Test
+              ]
           }
 
 # Ignore . re-write suggestion in PCG.Command.Unification.Master
@@ -105,7 +123,24 @@
           , within: Data.Binary.Utility
           }
 
-# Ignore const rename suggestion
 - ignore: { name: Use const
           , within: Bio.Metadata.Discrete.Class
+          }
+
+
+# Ignore const rename suggestion
+- ignore: { name: Use /=
+          , within: Control.Evaluation.Test
+          }
+
+- ignore: { name: Reduce duplication
+          , within: Bio.Graph.ReferenceDAG.Traversal
+          }
+
+- ignore: { name: Reduce duplication
+          , within: Bio.Graph.ReferenceDAG.Utility
+          }
+
+- ignore: { name: Use <$>
+          , within: Bio.Graph.ReferenceDAG.Utility
           }

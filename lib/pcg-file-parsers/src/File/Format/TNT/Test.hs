@@ -8,7 +8,7 @@ module File.Format.TNT.Test
 import           Control.Monad                     (filterM)
 import           Data.Bifunctor
 import           Data.Char
-import           Data.Either.Combinators           (isLeft, isRight)
+import           Data.Either                       (isLeft, isRight)
 import           Data.Foldable
 import           Data.List                         (inits, nub)
 import           Data.List.NonEmpty                (NonEmpty)

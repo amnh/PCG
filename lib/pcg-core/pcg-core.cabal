@@ -1,0 +1,531 @@
+cabal-version:      2.2
+Category:           Biology
+build-type:         Simple
+name:               pcg-core
+version:            0.2.0
+
+author:             Ward Wheeler
+maintainer:         wheeler@amnh.org
+license:            BSD-3-Clause
+license-file:       LICENSE
+
+synopsis:           Data-types for defining and interacting with phylogenetic components.
+
+description:        Exposes core data-types for constructing, mutating, and scoring
+                    phylogenetic components. Phylogenetic forests, the primitive component
+                    type, are defined here along with the interface for interacting with
+                    phylogenetic forests. Character sequences and matricies, character
+                    and graph metadata, and scoring methods are defined as well.
+
+        
+common dependencies
+
+  build-depends:
+    base                     >= 4.11      && < 5.0,
+    mono-traversable         >= 1.0       && < 2.0,
+
+
+-- Group of buildinfo specifications to correctly build and link to the C & C++:
+-- FFI code.
+common ffi-buildinfo
+
+  cc-options:
+    --std=c11
+
+  hs-source-dirs:
+    ffi
+
+  c-sources:
+    ffi/external-direct-optimization/alignCharacters.c
+    ffi/external-direct-optimization/alignmentMatrices.c
+    ffi/external-direct-optimization/c_alignment_interface.c
+    ffi/external-direct-optimization/c_code_alloc_setup.c
+    ffi/external-direct-optimization/costMatrix.c
+    ffi/external-direct-optimization/dyn_character.c
+    ffi/external-direct-optimization/ukkCheckPoint.c
+    ffi/external-direct-optimization/ukkCommon.c
+
+  -- Here we list all directories that contain C & C++ header files that the FFI
+  -- tools will need to locate when preprocessing the C files. Without listing
+  -- the directories containing the C header files here, the FFI preprocessor
+  -- (hsc2hs, c2hs, etc.) will fail to locate the requisite files. Note also,
+  -- that the parent directory of the nessicary C & C++ header files must be
+  -- specified. The preprocessor will not recursively look in subdirectories for
+  -- header files!
+  include-dirs:
+    ffi/external-direct-optimization
+
+
+-- A litany of GHC warnings designed to alert us during the build of any common
+-- pitfalls, future compatibility issues, or coding conventions.
+common ghc-flags
+
+  ghc-options:
+    -- Optimization flags
+    -O2
+    -fexpose-all-unfoldings
+    -foptimal-applicative-do
+    -fspecialize-aggressively
+    -- Usability flags
+    -fdiagnostics-color=always
+    -fhide-source-paths
+    -j
+    -- Sanity check warnings
+    -Wall
+    -Wcompat
+    -Wdodgy-foreign-imports
+    -Wduplicate-exports
+    -Wempty-enumerations
+    -Widentities
+    -Wincomplete-patterns
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-fields
+    -Wmissing-home-modules
+    -Wmissing-monadfail-instances
+    -Wmissing-signatures
+    -Wnoncanonical-monadfail-instances
+    -Wnoncanonical-monad-instances
+    -Wnoncanonical-monoid-instances
+    -Woverflowed-literals
+    -Woverlapping-patterns
+    -Wredundant-constraints
+    -Wsemigroup
+    -Wtabs
+    -Wunrecognised-warning-flags
+    -Wunused-binds
+    -Wunused-do-bind
+    -Wunused-foralls
+    -Wunused-imports
+    -Wunused-matches
+    -Wwrong-do-bind
+
+
+-- Global deviations from Haskell98
+common language-specs
+
+  default-language: Haskell2010
+
+  -- Always use MonadFail(fail), not Monad(fail)
+  other-extensions: MonadFailDesugaring
+
+ 
+library
+
+  import:
+    language-specs
+
+  build-depends:
+    pcg-analysis,
+    pcg-data-structures,           
+    pcg-tcm,
+
+  reexported-modules:
+    Analysis.Parsimony.Additive,
+    Analysis.Parsimony.Dynamic.DirectOptimization,
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise,
+    Analysis.Parsimony.Fitch,
+    Analysis.Parsimony.Sankoff,
+    Analysis.Scoring,
+    Analysis.TotalEdgeCost,
+    Bio.Character,
+    Bio.Character.Decoration.Additive,
+    Bio.Character.Decoration.Continuous,
+    Bio.Character.Decoration.Discrete,
+    Bio.Character.Decoration.Dynamic,
+    Bio.Character.Decoration.Fitch,
+    Bio.Character.Decoration.Metric,
+    Bio.Character.Decoration.NonMetric,
+    Bio.Character.Encodable,
+    Bio.Character.Encodable.Continuous,
+    Bio.Character.Type,
+    Bio.Metadata,
+    Bio.Metadata.CharacterName,
+    Bio.Metadata.Continuous,
+    Bio.Metadata.Discrete,
+    Bio.Metadata.DiscreteWithTCM,
+    Bio.Metadata.Dynamic,
+    Bio.Sequence,
+    Bio.Sequence.Block,
+    Bio.Sequence.Character,
+    Bio.Sequence.Metadata,
+    Bio.Graph,
+    Bio.Graph.Component,
+    Bio.Graph.Constructions,
+    Bio.Graph.LeafSet,
+    Bio.Graph.Node,
+    Bio.Graph.Node.Context,
+    Bio.Graph.PhylogeneticDAG,
+    Bio.Graph.ReferenceDAG,
+    Bio.Graph.ReferenceDAG.Internal,
+    Bio.Graph.ReferenceDAG.Network,
+    Bio.Graph.ReferenceDAG.Traversal,
+    Bio.Graph.ReferenceDAG.Utility,
+    Bio.Graph.Solution,
+    Bio.Graph.ZipperDAG,
+    Data.EdgeLength,
+    Data.MetricRepresentation,
+    Data.NodeLabel,
+    Data.TCM,
+    Data.TCM.Dense,
+    Data.TopologyRepresentation,
+    Test.Custom.NucleotideSequence,
+
+
+-- Library for performing parsimony analysis.
+
+-- Provides various metrics for scoring static characters and
+-- performing string alignment on dynamic characters.
+library pcg-analysis
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+
+  hs-source-dirs:
+    pcg-analysis/src
+
+  build-depends:
+    pcg-data-structures,
+    pcg-exportable,
+    pcg-utility,
+    pcg-tcm,
+    pcg-tcm-memo,
+    -- >=0.5.8 Required for Data.Map.restrictKeys
+    containers               >= 0.5.8     && < 0.7,
+    data-default             >= 0.5.2     && < 0.8,
+    deepseq                  >= 1.4       && < 2.0,
+    dlist                    >= 0.8       && < 1.0,
+    foldl                    >= 1.3.2     && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.17      && < 5.0,
+    mtl                      >= 2.0       && < 3.0,
+    -- required for Data.Semigroup.Foldable.toNonEmpty
+    semigroupoids            >= 5.2.1     && < 5.4,
+    -- >=0.12.0.2 required for compatability with "compact regions"
+    vector                   >= 0.12.0.2  && < 0.13,
+    -- >=3.4 required for corrected definition of (!) & index
+    vector-instances         >= 3.4       && < 3.5,
+
+  exposed-modules:
+    Analysis.Parsimony.Additive
+    Analysis.Parsimony.Dynamic.DirectOptimization
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
+    Analysis.Parsimony.Fitch
+    Analysis.Parsimony.Sankoff
+    Analysis.Scoring
+    Analysis.TotalEdgeCost
+
+  other-modules:
+    Analysis.Parsimony.Additive.Internal
+    Analysis.Parsimony.Dynamic.DirectOptimization.Internal
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
+    Analysis.Parsimony.Fitch.Internal
+    Analysis.Parsimony.Sankoff.Internal
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
+
+    
+library pcg-data-structures
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+
+  hs-source-dirs:
+    pcg-data-structures/src
+
+  build-depends:
+    pcg-alphabet,
+    pcg-evaluation,
+    pcg-exportable,
+    pcg-utility,
+    pcg-serialize,
+    pcg-tcm,
+    pcg-tcm-memo,
+    bimap                    >= 0.3       && < 0.4,
+    binary                   >= 0.6       && < 1.0,
+    bv-little                >= 1.0       && < 2.0,
+    cassava                  >= 0.5       && < 0.6,
+    compact                  >= 0.1       && < 2.0,
+    -- >=0.5.8 Required for Data.Map.restrictKeys
+    containers               >= 0.5.8     && < 0.7,
+    data-default             >= 0.5.2     && < 0.8,
+    deepseq                  >= 1.4       && < 2.0,
+    dlist                    >= 0.8       && < 1.0,
+    foldl                    >= 1.3.2     && < 2.0,
+    -- >=2999.20 Required for forgiving construction of DOT object
+    graphviz                 >= 2999.20   && < 3000,
+    hashable                 >= 1.2       && < 2.0,
+    hashtables               >= 1.2.3     && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.17      && < 5.0,
+    monad-loops              >= 0.4       && < 1.0,
+    mtl                      >= 2.0       && < 3.0,
+    parallel                 >= 3.2       && < 4.0,
+    pretty-tree              >= 0.1       && < 0.2,
+    QuickCheck               >= 2.12      && < 3.0,
+    -- required for Data.Semigroup.Foldable.toNonEmpty
+    semigroupoids            >= 5.2.1     && < 5.4,
+    smallcheck               >= 1.1.5     && < 2.0,
+    stm                      >= 2.4       && < 3.0,
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1       && < 1.0,
+    text-show                >= 3.0       && < 4.0,
+    text-show-instances      >= 3.0       && < 4.0,
+    unordered-containers     >= 0.2.9     && < 1.0,
+    -- >=0.12.0.2 required for compatability with "compact regions"
+    vector                   >= 0.12.0.2  && < 0.13,
+    vector-binary-instances  >= 0.2.1.1   && < 0.3,
+    -- >=3.4 required for corrected definition of (!) & index
+    vector-instances         >= 3.4       && < 3.5,
+    xml                      >= 1.3.14    && < 1.4,
+
+  exposed-modules:
+    Bio.Character
+    Bio.Character.Decoration.Additive
+    Bio.Character.Decoration.Continuous
+    Bio.Character.Decoration.Discrete
+    Bio.Character.Decoration.Dynamic
+    Bio.Character.Decoration.Fitch
+    Bio.Character.Decoration.Metric
+    Bio.Character.Decoration.NonMetric
+    Bio.Character.Encodable
+    Bio.Character.Encodable.Continuous
+    Bio.Character.Type
+    Bio.Metadata
+    Bio.Metadata.CharacterName
+    Bio.Metadata.Continuous
+    Bio.Metadata.Discrete
+    Bio.Metadata.DiscreteWithTCM
+    Bio.Metadata.Dynamic
+    Bio.Sequence
+    Bio.Sequence.Block
+    Bio.Sequence.Character
+    Bio.Sequence.Metadata
+    Bio.Graph
+    Bio.Graph.Component
+    Bio.Graph.Constructions
+    Bio.Graph.LeafSet
+    Bio.Graph.Node
+    Bio.Graph.Node.Context
+    Bio.Graph.PhylogeneticDAG
+    Bio.Graph.ReferenceDAG
+    Bio.Graph.ReferenceDAG.Internal
+    Bio.Graph.ReferenceDAG.Network
+    Bio.Graph.ReferenceDAG.Traversal
+    Bio.Graph.ReferenceDAG.Utility
+    Bio.Graph.Solution
+    Bio.Graph.ZipperDAG
+    Data.EdgeLength
+    Data.NodeLabel
+    Data.TopologyRepresentation
+    Test.Custom.NucleotideSequence
+
+  other-modules:
+    Bio.Character.Decoration.Additive.Class
+    Bio.Character.Decoration.Additive.Internal
+    Bio.Character.Decoration.Continuous.Class
+    Bio.Character.Decoration.Continuous.Internal
+    Bio.Character.Decoration.Dynamic.Class
+    Bio.Character.Decoration.Dynamic.Internal
+    Bio.Character.Decoration.Fitch.Class
+    Bio.Character.Decoration.Fitch.Internal
+    Bio.Character.Decoration.Metric.Class
+    Bio.Character.Decoration.Metric.Internal
+    Bio.Character.Decoration.NonMetric.Class
+    Bio.Character.Decoration.NonMetric.Internal
+    Bio.Character.Decoration.Shared
+    Bio.Character.Encodable.Continuous.Class
+    Bio.Character.Encodable.Continuous.Internal
+    Bio.Character.Encodable.Dynamic
+    Bio.Character.Encodable.Dynamic.Class
+    Bio.Character.Encodable.Dynamic.Internal
+    Bio.Character.Encodable.Internal
+    Bio.Character.Encodable.Static
+    Bio.Character.Encodable.Static.Class
+    Bio.Character.Encodable.Static.Internal
+    Bio.Character.Encodable.Stream
+    Bio.Metadata.General
+    Bio.Metadata.General.Class
+    Bio.Metadata.General.Internal
+    Bio.Metadata.Discrete.Class
+    Bio.Metadata.Discrete.Internal
+    Bio.Metadata.DiscreteWithTCM.Class
+    Bio.Metadata.DiscreteWithTCM.Internal
+    Bio.Metadata.Dynamic.Class
+    Bio.Metadata.Dynamic.Internal
+    Bio.Graph.BinaryRenderingTree
+    Bio.Graph.Forest
+    Bio.Graph.Node.Internal
+    Bio.Graph.PhylogeneticDAG.Class
+    Bio.Graph.PhylogeneticDAG.Internal
+    Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
+    Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
+    Bio.Graph.PhylogeneticDAG.Postorder
+    Bio.Graph.PhylogeneticDAG.Preorder
+    Bio.Graph.PhylogeneticDAG.Reification
+    Bio.Graph.ZipperDAG.Internal
+    Bio.Sequence.Block.Builder
+    Bio.Sequence.Block.Character
+    Bio.Sequence.Block.Internal
+    Bio.Sequence.Block.Metadata
+    Bio.Sequence.Internal
+    Data.EdgeSet
+
+
+-- Library for working with TCMs and SCMs in various representations.
+
+-- General purpose library for working with transition cost matrices (TCMs)
+-- and symbol change matrices (SCMs). Specialization options are provided
+-- for the discrete metric (non-additive) and the L1 norm (additive) TCMs &
+-- SCMs. Exposes a memoized binding for sparsely indexed, large TCMs.
+library pcg-tcm
+
+  import:
+    dependencies,
+    ffi-buildinfo,
+    ghc-flags,
+    language-specs,
+
+  hs-source-dirs:
+    pcg-tcm/src
+
+  build-depends:
+    pcg-exportable,
+    pcg-utility,
+    pcg-serialize,
+    pcg-tcm-memo,
+    -- >=0.5.8 Required for Data.Map.restrictKeys
+    containers               >= 0.5.8     && < 0.7,
+    deepseq                  >= 1.4       && < 2.0,
+    QuickCheck               >= 2.12      && < 3.0,
+    -- >=0.12.0.2 required for compatability with "compact regions"
+    vector                   >= 0.12.0.2  && < 0.13,
+
+  exposed-modules:
+    Data.MetricRepresentation
+    Data.TCM
+    Data.TCM.Dense
+
+  other-modules:
+    Data.TCM.Internal
+    Data.TCM.Dense.FFI
+
+
+test-suite analysis-tests
+
+  import:
+--    dependencies,
+    ghc-flags,
+    language-specs
+
+  main-is:
+    TestSuite.hs
+
+  type:             
+    exitcode-stdio-1.0
+
+  hs-source-dirs:   
+    pcg-analysis/test
+
+  build-depends:
+    pcg-analysis,
+    pcg-data-structures,
+    pcg-tcm,
+    pcg-tcm-memo,                    
+    base                     >= 4.11      && < 5.0,
+    mono-traversable         >= 1.0       && < 2.0,
+    QuickCheck               >= 2.12      && < 3.0,
+    semigroups               >= 0.18      && < 1.0,
+    smallcheck               >= 1.1.5     && < 2.0,
+    tasty                    >= 1.2       && < 2.0,
+    tasty-quickcheck         >= 0.9       && < 1.0,
+    tasty-rerun              >= 1.1.14    && < 2.0,
+    tasty-smallcheck         >= 0.8       && < 1.0,
+
+  other-modules:
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
+
+
+test-suite data-structures-tests
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+
+  main-is:
+    TestSuite.hs
+
+  type:
+    exitcode-stdio-1.0
+
+  ghc-options:
+    -threaded
+--    -with-rtsopts=-N4
+
+  hs-source-dirs:
+    pcg-data-structures/test
+
+  build-depends:
+    pcg-alphabet,
+    pcg-data-structures,
+    -- >=0.5.8 Required for Data.Map.restrictKeys
+    containers               >= 0.5.8     && < 0.7,
+    deepseq                  >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.17      && < 5.0,
+    QuickCheck               >= 2.12      && < 3.0,
+    semigroups               >= 0.18      && < 1.0,
+    tasty                    >= 1.2       && < 2.0,
+    tasty-hunit              >= 0.10      && < 1.0,
+    tasty-quickcheck         >= 0.9       && < 1.0,
+    tasty-rerun              >= 1.1.14    && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
+
+  other-modules:
+    Bio.Character.Encodable.Dynamic.Test
+    Bio.Character.Encodable.Static.Test
+    Bio.Graph.ReferenceDAG.Test
+    Bio.Graph.ReferenceDAG.Test.NetworkPropertyTests
+    Bio.Graph.ReferenceDAG.Test.NetworkUnitTests
+
+
+test-suite tcm-tests
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+
+  main-is:
+    TestSuite.hs
+
+  type:
+    exitcode-stdio-1.0
+
+  hs-source-dirs:
+    pcg-tcm/test
+
+  ghc-options:
+    -threaded
+
+  build-depends:
+    pcg-utility,
+    pcg-tcm,
+    pcg-tcm-memo,
+    QuickCheck               >= 2.12      && < 3.0,
+    semigroups               >= 0.18      && < 1.0,
+    tasty                    >= 1.2       && < 2.0,
+    tasty-hunit              >= 0.10      && < 1.0,
+    tasty-quickcheck         >= 0.9       && < 1.0,
+    tasty-rerun              >= 1.1.14    && < 2.0,
+
+  other-modules:
+    Data.TCM.Test

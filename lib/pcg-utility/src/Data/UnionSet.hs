@@ -22,10 +22,11 @@ import Control.DeepSeq
 import Data.Bits
 import Data.BitVector.LittleEndian
 import GHC.Generics
+import TextShow                    (TextShow)
 
 
 newtype UnionSet = Union BitVector
-  deriving (Bits, Generic, Ord)
+  deriving (Bits, Generic, Ord, TextShow)
 
 
 instance Eq UnionSet where

@@ -1,0 +1,114 @@
+cabal-version:      2.2
+Category:           Biology
+build-type:         Simple
+name:               pcg-data-normalization
+version:            0.2.0
+
+author:             Ward Wheeler
+maintainer:         wheeler@amnh.org
+license:            BSD-3-Clause
+license-file:       LICENSE
+
+synopsis:           Normalizing disparate input sources
+
+description:        Library for taking data from disperate input sources and
+                    converting the data to a normalized form. Normalization does
+                    *not* check that the disparate data sources are consistent.
+                    That check is performed by the pcg-data-unification library.
+
+
+-- A litany of GHC warnings designed to alert us during the build of any common
+-- pitfalls, future compatibility issues, or coding conventions.
+common ghc-flags
+
+  ghc-options:
+    -- Optimization flags
+    -O2
+    -fexpose-all-unfoldings
+    -foptimal-applicative-do
+    -fspecialize-aggressively
+    -- Usability flags
+    -fdiagnostics-color=always
+    -fhide-source-paths
+    -j
+    -- Sanity check warnings
+    -Wall
+    -Wcompat
+    -Wdodgy-foreign-imports
+    -Wduplicate-exports
+    -Wempty-enumerations
+    -Widentities
+    -Wincomplete-patterns
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-fields
+    -Wmissing-home-modules
+    -Wmissing-monadfail-instances
+    -Wmissing-signatures
+    -Wnoncanonical-monadfail-instances
+    -Wnoncanonical-monad-instances
+    -Wnoncanonical-monoid-instances
+    -Woverflowed-literals
+    -Woverlapping-patterns
+    -Wredundant-constraints
+    -Wsemigroup
+    -Wtabs
+    -Wunrecognised-warning-flags
+    -Wunused-binds
+    -Wunused-do-bind
+    -Wunused-foralls
+    -Wunused-imports
+    -Wunused-matches
+    -Wwrong-do-bind
+
+
+-- Global deviations from Haskell98
+common language-specs
+
+  default-language: Haskell2010
+
+  -- Always use MonadFail(fail), not Monad(fail)
+  other-extensions: MonadFailDesugaring
+
+
+library
+
+  import:             
+    ghc-flags,
+    language-specs
+
+  hs-source-dirs:
+    src
+
+  build-depends:
+    pcg-alphabet,
+    pcg-core,
+    pcg-file-parsers,
+    pcg-utility,
+    base                     >= 4.11      && < 5.0,
+    -- >=0.5.8 Required for Data.Map.restrictKeys
+    containers               >= 0.5.8     && < 0.7,
+    deepseq                  >= 1.4       && < 2.0,
+    -- >=2999.20 Required for forgiving construction of DOT object
+    graphviz                 >= 2999.20   && < 3000,
+    hashable                 >= 1.2       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    -- required for Data.Semigroup.Foldable.toNonEmpty
+    semigroupoids            >= 5.2.1     && < 5.4,
+    semigroups               >= 0.18      && < 1.0,
+    text-short               >= 0.1       && < 1.0,
+    -- >=0.12.0.2 required for compatability with "compact regions"
+    vector                   >= 0.12.0.2  && < 0.13,
+    -- >=3.4 required for corrected definition of (!) & index
+    vector-instances         >= 3.4       && < 3.5,
+
+  exposed-modules:
+    Data.Normalization.Character
+    Data.Normalization.Metadata
+    Data.Normalization.Topology
+  
+  other-modules:
+    Data.Normalization.Character.Class
+    Data.Normalization.Character.Internal
+    Data.Normalization.Metadata.Class
+    Data.Normalization.Metadata.Internal

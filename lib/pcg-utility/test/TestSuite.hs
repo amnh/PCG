@@ -1,6 +1,7 @@
 module Main ( main ) where
 
 
+import qualified Control.Parallel.Test           as Parallel
 import qualified Data.BitMatrix.Test             as BitMatrix
 import qualified Data.List.Test                  as DataList
 import qualified Data.MutualExclusionSet.Test    as MutualExclusionSet
@@ -21,7 +22,8 @@ main =
 
 testSuite :: TestTree
 testSuite = testGroup "Library Test Suite"
-    [ BitMatrix.testSuite
+    [ Parallel.testSuite
+    , BitMatrix.testSuite
     , ExtendedNatural.testSuite
     , ExtendedReal.testSuite
     , NonNegativeAverage.testSuite

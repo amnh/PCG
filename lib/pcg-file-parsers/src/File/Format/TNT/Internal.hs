@@ -77,7 +77,7 @@ import           Control.Monad              ((<=<))
 import           Data.Bits
 import           Data.CaseInsensitive
 import           Data.Char                  (isAlpha, isLower, isUpper, toLower, toUpper)
-import           Data.Foldable              (toList)
+import           Data.Foldable
 import           Data.Functor               (($>))
 import           Data.Key                   (lookup, (!))
 import           Data.List                  (inits)
@@ -603,7 +603,7 @@ characterStateChar = oneOf (toList discreteStateValues)
 -- |
 -- The only 64 (case-insensitive) valid state values for a TNT file.
 discreteStateValues :: Vector Char
-discreteStateValues = V.fromList $ mconcat [['0'..'9'], ['A'..'Z'], ['a'..'z'], "-", "?"]
+discreteStateValues = V.fromList $ fold [['0'..'9'], ['A'..'Z'], ['a'..'z'], "-", "?"]
 
 
 -- |

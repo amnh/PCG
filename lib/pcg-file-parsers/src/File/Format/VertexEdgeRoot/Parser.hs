@@ -94,7 +94,7 @@ data  VertexEdgeRoot
 
 -- | (✔)
 instance Show EdgeInfo where
-  show (EdgeInfo x y c) = mconcat $ ["(", show x, ", ", show y, ")"] <> renderCost c
+  show (EdgeInfo x y c) = fold $ ["(", show x, ", ", show y, ")"] <> renderCost c
     where
       renderCost = fmap ((":" <>) . show) . toList
 
@@ -407,7 +407,7 @@ validateForest ver@(VER vs es rs ) =
     badRootErrorMessages :: [String]
     badRootErrorMessages = foldMapWithKey f badRoots
       where
-        f k v = pure $ mconcat
+        f k v = pure $ fold
             [ "Root node cannot have parents! For specified root node '"
             , show k
             , "' the following parent nodes were found: "

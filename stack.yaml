@@ -1,32 +1,41 @@
-allow-newer: true
+#allow-newer: true
 
-compiler: ghc-8.6.3
+compiler: ghc-8.6.4
 
 compiler-check: match-exact
 
 extra-deps:
+  - bv-little-1.0.0
   - compact-0.1.0.1
-  - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
+  - graphviz-2999.20.0.3
   - pretty-tree-0.1.0.0
-  - tasty-rerun-1.1.12
+  - tasty-rerun-1.1.14
+  - text-show-3.7.5
+  - text-show-instances-3.7
+  - mono-traversable-keys-0.1.0
 
-flags: {}
-
-ghc-options:
-  "$everything": -j -fdiagnostics-color=always -fspecialise-aggressively 
-  "$locals": -fhide-source-paths
+#ghc-options:
+#  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively -fexpose-all-unfoldings
+#  "$locals": -fhide-source-paths 
 
 local-bin-path: bin
 
+require-stack-version: ">=1.9.1"
+
+resolver: lts-13.14
+
+dump-logs: all
+
 packages:
-  - '.'
+  - .
+  - lib/pcg-alphabet
+  - lib/pcg-core
+  - lib/pcg-data-normalization
+  - lib/pcg-data-unification
+  - lib/pcg-evaluation
+  - lib/pcg-exportable
   - lib/pcg-file-parsers
   - lib/pcg-language
+  - lib/pcg-serialize
+  - lib/pcg-tcm-memo
   - lib/pcg-utility
-  #We use this upstream commit until it is uploaded to hackage and stackage respectively.
-  - location:  https://github.com/recursion-ninja/fgl/archive/d6735ce.zip
-    extra-dep: true
-
-require-stack-version: ">=1.7.1"
-
-resolver: lts-13.2

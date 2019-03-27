@@ -98,4 +98,4 @@ listDirectoryWithFilePath fp
 -- |
 -- Name of golden tests directory.
 goldenDir :: FilePath
-goldenDir = "datasets" </> "golden-tests"
+goldenDir = "test" </> "data-sets" </> "golden-tests"

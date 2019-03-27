@@ -278,8 +278,8 @@ testFromRows = testGroup "Construction using fromRows"
         f params = testBM == controlBM
           where
             (_, _, bvs) = getParameters params
-            testBM      = mconcat . rows $ fromRows bvs
-            controlBM   = mconcat bvs
+            testBM      = fold . rows $ fromRows bvs
+            controlBM   = fold bvs
 
     testWidth = testProperty "Number of columns is correct" f
       where
@@ -380,10 +380,10 @@ testFactorRows = testProperty "toBits === fmap (isSet bm) . factorRows n" f
 
 
 testConcatanationOfRows :: TestTree
-testConcatanationOfRows = testProperty "expandRows === mconcat . rows" f
+testConcatanationOfRows = testProperty "expandRows === fold . rows" f
   where
     f :: BitMatrix -> Property
-    f bm = expandRows bm === (mconcat . rows) bm
+    f bm = expandRows bm === (fold . rows) bm
 
 
 testExpandFactorIdentity :: TestTree
