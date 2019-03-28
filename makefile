@@ -257,9 +257,11 @@ format-code: install-stylish-haskell
 	@echo -n -e "\33[2K\r"
 	@echo "[✓] Formatting complete!"
 
-run-linter: install-hlint install-weeder format-code
-	hlint --no-exit-code $(code-dirs)
+run-linter: install-hlint install-weeder format-code run-hlint
 #	weeder . --build
+
+run-hlint: 
+	hlint --no-exit-code $(code-dirs)
 
 # Copies documentation director to local scope
 copy-haddock: set-dir-variables
