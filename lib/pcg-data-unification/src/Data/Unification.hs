@@ -8,7 +8,10 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Containing the master command for unifying all input types: tree, metadata, and sequence
+-- Containing the command for unifying all input types:
+--  - Character
+--  - Metadata
+--  - Topological
 --
 -----------------------------------------------------------------------------
 
@@ -108,7 +111,7 @@ performUnification inputPaths InputData{..} = fmap reifiedSolution <$> dagForest
     dagForest =
         case (suppliedForests, joinSequences <$> dataSequences) of
           -- Throw a unification error here
-          (Nothing, Nothing) -> Failure . UnificationError . pure $ VacuousInput inputPaths
+          (Nothing, Nothing) -> Failure $ vacuousInputFiles inputPaths
 
           -- Build a forest of with Units () as character type parameter
           (Just someForests, Nothing) -> Success . Left  . PhylogeneticSolution $ someForests

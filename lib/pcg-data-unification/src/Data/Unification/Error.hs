@@ -1,8 +1,26 @@
+----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Unification.Error
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Create and merge errors that occur during data unificaation.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE OverloadedStrings #-}
 
 module Data.Unification.Error
-  ( UnificationError(..)
-  , UnificationErrorMessage(ForestDuplicateTaxa, ForestExtraTaxa, ForestMissingTaxa, VacuousInput)
+  ( UnificationError()
+  -- * Constructors
+  , forestWithDuplicateTaxa
+  , forestWithExtraTaxa
+  , forestWithMissingTaxa
+  , vacuousInputFiles
   ) where
 
 import Data.Foldable
@@ -13,22 +31,22 @@ import TextShow
 import TextShow.Custom
 
 
-type TaxaName = ShortText
-
-
+-- |
+-- A collection of errors that occured during unification.
+--
+-- Has nice 'Show'/'TextShow' instances for rendering.
 newtype UnificationError
       = UnificationError (NonEmpty UnificationErrorMessage)
 
 
--- TODO: Rename this better
-data UnificationErrorMessage
-   = NonMatchingTaxa     [TaxaName] [TaxaName]
-   | NonMatchingTaxaSeqs [TaxaName] [TaxaName]
-   | ForestDuplicateTaxa (NonEmpty TaxaName) FilePath
-   | ForestExtraTaxa     (NonEmpty TaxaName) FilePath
-   | ForestMissingTaxa   (NonEmpty TaxaName) FilePath
-   | VacuousInput        (NonEmpty FilePath)
--- TODO: Add an error case for a nonempty set oft axa with only missing data observations.
+data  UnificationErrorMessage
+    = NonMatchingTaxa     [ShortText] [ShortText]
+    | NonMatchingTaxaSeqs [ShortText] [ShortText]
+    | ForestDuplicateTaxa FilePath (NonEmpty ShortText) 
+    | ForestExtraTaxa     FilePath (NonEmpty ShortText)
+    | ForestMissingTaxa   FilePath (NonEmpty ShortText)
+    | VacuousInput        (NonEmpty FilePath)
+-- TODO: Add an error case for a nonempty set of taxa with only missing data observations.
 
 
 instance Semigroup UnificationError where
@@ -87,6 +105,35 @@ instance TextShow UnificationErrorMessage where
        [ "There was niether any character sequences nor any trees found in any of the supplied input files:\n"
        , (\x -> "  ["<>x<>"]") . intercalateB ", " $ showb <$> toList files
        ]
+
+
+-- |
+-- Creates a UnificationError describing a forest supplied by an input file that
+-- contains multiple, identical leaf labels.
+forestWithDuplicateTaxa :: FilePath -> NonEmpty ShortText -> UnificationError
+forestWithDuplicateTaxa path = UnificationError . pure . ForestDuplicateTaxa path
+
+
+-- |
+-- Creates a UnificationError describing a forest supplied by an input file that
+-- contains one or more leaf labels that were not present in any data files.
+forestWithExtraTaxa :: FilePath -> NonEmpty ShortText -> UnificationError
+forestWithExtraTaxa path = UnificationError . pure . ForestExtraTaxa path
+
+
+-- |
+-- Creates a UnificationError describing a forest supplied by an input file that
+-- has one or more leaf labels missing that were present in the data files.
+forestWithMissingTaxa :: FilePath -> NonEmpty ShortText -> UnificationError
+forestWithMissingTaxa path = UnificationError . pure . ForestMissingTaxa path
+
+
+-- |
+-- Creates a UnificationError describing one or more input fileswhere there were
+-- niether any character sequences nor any trees found in the aforementioned
+-- input files.
+vacuousInputFiles :: NonEmpty FilePath -> UnificationError
+vacuousInputFiles = UnificationError . pure . VacuousInput
 
 
 listShowB :: (Foldable t, TextShow a) => t a -> Builder

@@ -57,6 +57,11 @@ import           Data.Vector.NonEmpty         (Vector)
 import           Prelude                      hiding (lookup, zipWith)
 
 
+-- |
+-- A single component of the input data.
+--
+-- Requires unification with zero or more 'PartialInputData' values to create an
+-- 'InputData' value that is consistent.
 data  PartialInputData
      = PID
      { parsedChars   :: NormalizedCharacters
@@ -67,6 +72,8 @@ data  PartialInputData
      }
 
 
+-- |
+-- A single, consistent collection of the input data.
 data  InputData
     = InputData
     { dataSequences :: Maybe (NonEmpty PartialInputData)
@@ -127,9 +134,9 @@ getUnificationErrors v@InputData{..} = foldr1 (<~>) possibleUnificationErrors $>
   where
     possibleUnificationErrors :: NonEmpty (Validation UnificationError ())
     possibleUnificationErrors = NE.fromList
-        [ validateInputWith ForestDuplicateTaxa duplicates
-        , validateInputWith ForestExtraTaxa     hasExtraNames
-        , validateInputWith ForestMissingTaxa   hasMissingNames
+        [ validateInputWith forestWithDuplicateTaxa duplicates
+        , validateInputWith forestWithExtraTaxa     hasExtraNames
+        , validateInputWith forestWithMissingTaxa   hasMissingNames
         ]
 
     -- Assert that each forest's terminal node set is not a proper superset of
@@ -142,7 +149,7 @@ getUnificationErrors v@InputData{..} = foldr1 (<~>) possibleUnificationErrors $>
 
     validateInputWith
       :: Foldable f
-      => (NonEmpty Identifier -> FilePath -> UnificationErrorMessage)
+      => (FilePath -> NonEmpty Identifier -> UnificationError)
       -> (NonEmpty Identifier -> f Identifier)
       -> Validation UnificationError ()
     validateInputWith c f =
@@ -168,15 +175,15 @@ expandForestErrors = fmap f
 
 colateErrors
   :: (Foldable t, Foldable t')
-  => (NonEmpty Identifier -> FilePath -> UnificationErrorMessage)
+  => (FilePath -> NonEmpty Identifier -> UnificationError)
   -> t (t' Identifier, PartialInputData)
   -> Validation UnificationError ()
 colateErrors f xs =
   case toList xs of
     []   -> Success ()
-    y:ys -> Failure . UnificationError $ transformPID <$> (y:|ys)
+    y:ys -> Failure . foldMap1 transformPID $ y:|ys
   where
-    transformPID (x,y) = f (NE.fromList $ toList x) $ sourceFile y
+    transformPID (x,y) = f (sourceFile y) . NE.fromList $ toList x
 
 
 fromTreeOnlyFile :: PartialInputData -> Bool

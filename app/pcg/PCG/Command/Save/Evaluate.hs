@@ -16,8 +16,7 @@ evaluate :: SaveCommand -> GraphState -> SearchState
 evaluate (SaveCommand filePath serial) g =
   case serial of
     Compact -> liftIO $ writeCompact filePath g $> g
-    Binary  ->
-      do
+    Binary  -> do
         let graph  = getCompact g
         let refDAG = extractReferenceDAG graph
         liftIO $ encodeFile filePath refDAG
