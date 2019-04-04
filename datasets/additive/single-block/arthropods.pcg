@@ -1,2 +1,0 @@
-read("../../shared-data/arthropods/arthAdd.hen")
-save(binary, "graph.bin")

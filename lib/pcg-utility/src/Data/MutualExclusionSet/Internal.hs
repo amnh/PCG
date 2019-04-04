@@ -40,7 +40,6 @@ import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
 import           Data.Key
-import           Data.List.NonEmpty   (NonEmpty (..))
 import           Data.Map             (Map)
 import qualified Data.Map             as M
 import qualified Data.Map.Internal    as M
@@ -177,10 +176,7 @@ instance Ord a => Monoid (MutualExclusionSet a) where
     mappend = (<>)
 
     {-# INLINABLE mconcat #-}
-    mconcat v =
-      case v of
-        []   -> mempty
-        x:xs -> sconcat $ x:|xs
+    mconcat = mergeMany
 
     mempty  = MES mempty mempty mempty mempty
 
@@ -388,7 +384,7 @@ unsafeFromList xs = MES incMap' excMap' incMap excMap
 -- Shows the internal state inluding bijectivity and mutual exclusivity
 -- violations.
 prettyPrintMutualExclusionSet :: (Ord a, Show a) => MutualExclusionSet a -> String
-prettyPrintMutualExclusionSet mes = mconcat
+prettyPrintMutualExclusionSet mes = fold
     [ "MutualExclusionSet\n"
     , bijectiveValues
     , violationValues
@@ -400,7 +396,7 @@ prettyPrintMutualExclusionSet mes = mconcat
         bijectiveRender (k,v) = unwords [ " ", show k, "<-->", show v ]
 
     violationValues = unlines . fmap indent . ("Violations":)
-                    $ mconcat [ tooManyExcluded, {- inBoth, -} tooManyIncluded ]
+                    $ fold [ tooManyExcluded, {- inBoth, -} tooManyIncluded ]
 
     tooManyExcluded = foldMapWithKey renderTooManyExcluded
                     . M.withoutKeys (includedFullMap mes)

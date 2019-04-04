@@ -5,16 +5,20 @@
 
 module TestSuite.SubProcess
   ( ScriptContext(..)
+  , collectFileContents
   , constructProcess
   ,  destructProcess
   ) where
 
 import Control.Arrow         ((&&&))
+import Control.DeepSeq
 import Control.Monad         (when)
+import Data.ByteString.Lazy  (ByteString, readFile)
 import Data.Foldable
+import Prelude               hiding (readFile)
 import System.Directory
 import System.FilePath.Posix
-import System.IO
+import System.IO             (hClose)
 import System.Process
 
 
@@ -28,12 +32,31 @@ data  ScriptContext
     }
 
 
+testDirectory :: FilePath
+testDirectory = "test" </> "data-sets"
+
+
 outLogFileName :: FilePath
 outLogFileName = "log" <.> "out"
 
 
 errLogFileName :: FilePath
 errLogFileName = "log" <.> "err"
+
+
+collectFileContents :: Traversable t => t FilePath -> IO (t ByteString)
+collectFileContents = traverse nicelyReadFile . fmap (testDirectory </>)
+  where
+   nicelyReadFile :: FilePath -> IO ByteString
+   nicelyReadFile filePath = do
+      fileExist   <- doesFileExist filePath
+      absFilePath <- makeAbsolute  filePath
+      if   fileExist
+      then force <$> readFile filePath
+      else fail $ unlines
+                [ "No file found with the specified filepath:"
+                , absFilePath
+                ]
 
 
 constructProcess
@@ -81,7 +104,7 @@ constructProcess scriptStr = do
         , errPath = errFilePath
         }
   where
-    (scriptDirectory, scriptFileName) = breakScriptPath scriptStr
+    (scriptDirectory, scriptFileName) = breakScriptPath $ testDirectory </> scriptStr
 
     breakScriptPath = (normalise . foldl' (</>) defaultDirectory . init &&& last) . splitDirectories
       where

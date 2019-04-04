@@ -21,9 +21,6 @@ module File.Format.Fasta.Parser
   , fastaStreamParser
   , fastaTaxonSequenceDefinition
   , fastaSequence
-  , iupacAminoAcidChars
-  , iupacNucleotideChars
-  , iupacRNAChars
   ) where
 
 import Control.Arrow              ((&&&))

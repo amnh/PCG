@@ -1,0 +1,12 @@
+packages: .
+          lib/pcg-alphabet
+          lib/pcg-core
+          lib/pcg-data-normalization
+          lib/pcg-data-unification
+          lib/pcg-evaluation
+          lib/pcg-exportable
+          lib/pcg-file-parsers
+          lib/pcg-language
+          lib/pcg-serialize
+          lib/pcg-tcm-memo
+          lib/pcg-utility

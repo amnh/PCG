@@ -14,8 +14,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeFamilies  #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+
 
 module Numeric.Extended.Real
   ( ExtendedReal()
@@ -29,6 +31,7 @@ import Data.Binary
 import GHC.Generics
 import Numeric.Extended.Internal
 import Test.QuickCheck
+import TextShow                  (TextShow (showb))
 
 
 -- |
@@ -92,9 +95,11 @@ instance Fractional ExtendedReal where
 
     lhs@(Cost x) / rhs@(Cost y) =
         case (lhs == infinity, rhs == infinity) of
-          ( True,    _) -> infinity
-          (False, True) -> minBound
-          (False,False) -> Cost $ x / y
+          ( True,     _) -> infinity
+          (False,  True) -> minBound
+          (False, False) -> if   y == 0
+                            then infinity
+                            else Cost $ x / y
 
     recip (Cost x) = Cost $ recip x
 
@@ -150,6 +155,13 @@ instance Show ExtendedReal where
     show value@(Cost x)
       | value == infinity = "∞"
       | otherwise         = show x
+
+
+instance TextShow ExtendedReal where
+
+    showb value@(Cost x)
+      | value == infinity = "∞"
+      | otherwise         = showb x
 
 
 {-# INLINE toDouble #-}

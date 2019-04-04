@@ -41,6 +41,7 @@ module File.Format.Newick
   , branchLength
   , descendants
   , newickLabel
+  , newickLabelShort
   , isLeaf
   -- * Node Rendering
   , renderNewickForest

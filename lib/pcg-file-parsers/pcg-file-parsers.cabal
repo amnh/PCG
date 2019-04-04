@@ -1,9 +1,8 @@
 cabal-version:      2.2
-category:           Parser
+Category:           Biology
 build-type:         Simple
-
 name:               pcg-file-parsers
-version:            0.0.1.1
+version:            0.2.0
 
 author:             Ward Wheeler
 maintainer:         wheeler@amnh.org
@@ -21,185 +20,275 @@ description:        Defines file parsers for Fasta files with sequence spliting,
                     format.
 
 
-common ghc-settings
+common dependencies
+
+  build-depends:
+    base                     >= 4.11      && < 5.0,
+    -- >=0.5.8 Required for Data.Map.restrictKeys
+    containers               >= 0.5.8     && < 0.7,
+    megaparsec               >= 7.0       && < 7.1,
+    semigroups               >= 0.18      && < 1.0,
+
+
+-- Group of buildinfo specifications to correctly build and link to the C & C++:
+-- FFI code.
+common ffi-buildinfo
+
+  cc-options:       --std=c11
+
+  cxx-options:      --std=c++14
+
+  -- This library is required for linking to the C++ standard template library.
+  extra-libraries:  stdc++
+
+  hs-source-dirs:   ffi
+
+  c-sources:
+    ffi/external-direct-optimization/alignCharacters.c
+    ffi/external-direct-optimization/alignmentMatrices.c
+    ffi/external-direct-optimization/c_alignment_interface.c
+    ffi/external-direct-optimization/c_code_alloc_setup.c
+    ffi/external-direct-optimization/costMatrix.c
+    ffi/external-direct-optimization/dyn_character.c
+    ffi/external-direct-optimization/ukkCheckPoint.c
+    ffi/external-direct-optimization/ukkCommon.c
+    ffi/memoized-tcm/costMatrixWrapper.c
+    ffi/memoized-tcm/dynamicCharacterOperations.c
+    ffi/sequential-align/sequentialAlignInterface.c
+    ffi/sequential-align/sequentialAlign.c
+
+  cxx-sources:
+    ffi/memoized-tcm/costMatrix_2d.cpp
+    ffi/memoized-tcm/costMatrix_3d.cpp
+
+  -- Here we list all directories that contain C & C++ header files that the FFI
+  -- tools will need to locate when preprocessing the C files. Without listing
+  -- the directories containing the C header files here, the FFI preprocessor
+  -- (hsc2hs, c2hs, etc.) will fail to locate the requisite files. Note also,
+  -- that the parent directory of the nessicary C & C++ header files must be
+  -- specified. The preprocessor will not recursively look in subdirectories for
+  -- header files!
+  include-dirs:
+    ffi/external-direct-optimization
+    ffi/memoized-tcm
+    ffi/sequential-align
+
+
+-- A litany of GHC warnings designed to alert us during the build of any common
+-- pitfalls, future compatibility issues, or coding conventions.
+common ghc-flags
+
+  ghc-options:
+    -- Optimization flags
+    -O2
+    -fexpose-all-unfoldings
+    -foptimal-applicative-do
+    -fspecialize-aggressively
+    -- Usability flags
+    -fdiagnostics-color=always
+    -fhide-source-paths
+    -j
+    -- Sanity check warnings
+    -Wall
+    -Wcompat
+    -Wdodgy-foreign-imports
+    -Wduplicate-exports
+    -Wempty-enumerations
+    -Widentities
+    -Wincomplete-patterns
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-fields
+    -Wmissing-home-modules
+    -Wmissing-monadfail-instances
+    -Wmissing-signatures
+    -Wnoncanonical-monadfail-instances
+    -Wnoncanonical-monad-instances
+    -Wnoncanonical-monoid-instances
+    -Woverflowed-literals
+    -Woverlapping-patterns
+    -Wredundant-constraints
+    -Wsemigroup
+    -Wtabs
+    -Wunrecognised-warning-flags
+    -Wunused-binds
+    -Wunused-do-bind
+    -Wunused-foralls
+    -Wunused-imports
+    -Wunused-matches
+    -Wwrong-do-bind
+
+
+-- Global deviations from Haskell98
+common language-specs
 
   default-language: Haskell2010
 
-  ghc-options:      -O2
-                    -- We turn this on to make the most of ApplicativeDo usage
-                    -foptimal-applicative-do
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
-
+  -- Always use MonadFail(fail), not Monad(fail)
   other-extensions: MonadFailDesugaring
 
 
 library
 
-  import:           ghc-settings
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
 
-  build-depends:    base               >=4.10
-                  , case-insensitive
-                  -- >=0.5.8 Required for Data.Map.restrictKeys
-                  , containers         >=0.5.8
-                  , dlist
-                    -- >=2999.20 Required for forgivig constructio of DOT object
-                  , graphviz           >=2999.20
-                  , keys
-                  , megaparsec         >=7.0.0
-                  , mtl
-                  , parser-combinators >=0.2.0
-                  , pcg-utility
-                  , safe
-                  , scientific
-                  , semigroupoids
-                  , text
-                  -- >=0.12.0.2 required for compatability with "compact regions"
-                  , vector             >=0.12.0.2 
+  hs-source-dirs:
+    src
 
-  hs-source-dirs:   src
+  build-depends:
+    pcg-alphabet,
+    pcg-utility,
+    bimap                    >= 0.3       && < 0.4,
+    case-insensitive         >= 1.2.0     && < 1.3,
+    dlist                    >= 0.8       && < 1.0,
+    -- >=2999.20 Required for forgiving construction of DOT object
+    graphviz                 >= 2999.20   && < 3000,
+    integer-gmp              >= 1.0       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    matrix                   >= 0.3.6     && < 0.4,
+    mtl                      >= 2.0       && < 3.0,
+    parser-combinators       >= 1.0       && < 1.1,
+    safe                     >= 0.3.17    && < 0.4,
+    scientific               >= 0.3.6     && < 0.4,
+    -- required for Data.Semigroup.Foldable.toNonEmpty
+    semigroupoids            >= 5.2.1     && < 5.4,
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1       && < 1.0,
+    transformers             >= 0.5.5     && < 1.0,
+    -- >=0.12.0.2 required for compatability with "compact regions"
+    vector                   >= 0.12.0.2  && < 0.13,
 
-  exposed-modules:  File.Format.Dot
-                    File.Format.Fasta
-                    File.Format.Fastc
-                    File.Format.Newick
-                    File.Format.Nexus
-                    File.Format.TNT
-                    File.Format.TransitionCostMatrix
-                    File.Format.VertexEdgeRoot
-
-  other-modules:    File.Format.Fasta.Converter
-                    File.Format.Fasta.Internal
-                    File.Format.Fasta.Parser
-                    File.Format.Fastc.Parser
-                    File.Format.Newick.Internal
-                    File.Format.Newick.Parser
-                    File.Format.Nexus.Data
-                    File.Format.Nexus.Parser
-                    File.Format.Nexus.Partition
-                    File.Format.Nexus.Validate
-                    File.Format.TNT.Command.CCode
-                    File.Format.TNT.Command.CNames
-                    File.Format.TNT.Command.Cost
-                    File.Format.TNT.Command.NStates
-                    File.Format.TNT.Command.Procedure
-                    File.Format.TNT.Command.TRead
-                    File.Format.TNT.Command.XRead
-                    File.Format.TNT.Parser
-                    File.Format.TNT.Partitioning
-                    File.Format.TNT.Internal
-                    File.Format.TransitionCostMatrix.Parser
-                    File.Format.VertexEdgeRoot.Parser
-                    Text.Megaparsec.Custom
-
-
-Test-Suite unit-tests
-
-  import:           ghc-settings
-
-  type:             exitcode-stdio-1.0
-
-  main-is:          TestSuite.hs
-
-  build-depends:    base               >=4.8
-                  , case-insensitive
-                  -- >=0.5.8 Required for Data.Map.restrictKeys
-                  , containers         >=0.5.8
-                  , dlist
-                  , either
-                  , keys
-                  , megaparsec         >=7.0.0
-                  , parser-combinators >=0.2.0
-                  , pcg-utility
-                  , safe
-                  , scientific
-                  , smallcheck
-                  , tasty
-                  , tasty-hunit
-                  , tasty-quickcheck
-                  , tasty-rerun
-                  , vector
-
-  hs-source-dirs:   src, test
-
-  ghc-options:      -threaded
+  exposed-modules:
+    File.Format.Dot
+    File.Format.Fasta
+    File.Format.Fastc
+    File.Format.Newick
+    File.Format.Nexus
+    File.Format.TNT
+    File.Format.TransitionCostMatrix
+    File.Format.VertexEdgeRoot
 
   other-modules:
-                       File.Format.Fasta.Internal
-                       File.Format.Fasta.Parser
-                       File.Format.Fasta.Test
-                       File.Format.Fastc.Parser
-                       File.Format.Fastc.Test
-                       File.Format.Newick.Internal
-                       File.Format.Newick.Parser
-                       File.Format.Newick.Test
-                       File.Format.TNT.Command.CCode
-                       File.Format.TNT.Command.CNames
-                       File.Format.TNT.Command.Procedure
-                       File.Format.TNT.Command.TRead
-                       File.Format.TNT.Command.XRead
-                       File.Format.TNT.Internal
-                       File.Format.TNT.Test
-                       File.Format.TransitionCostMatrix.Parser
-                       File.Format.TransitionCostMatrix.Test
-                       File.Format.VertexEdgeRoot.Parser
-                       File.Format.VertexEdgeRoot.Test
-                       Test.Custom.Parse
-                       Text.Megaparsec.Custom
-                       Text.Megaparsec.Custom.Test
+    File.Format.Fasta.Converter
+    File.Format.Fasta.Internal
+    File.Format.Fasta.Parser
+    File.Format.Fastc.Parser
+    File.Format.Newick.Internal
+    File.Format.Newick.Parser
+    File.Format.Nexus.Data
+    File.Format.Nexus.Parser
+    File.Format.Nexus.Partition
+    File.Format.Nexus.Validate
+    File.Format.TNT.Command.CCode
+    File.Format.TNT.Command.CNames
+    File.Format.TNT.Command.Cost
+    File.Format.TNT.Command.NStates
+    File.Format.TNT.Command.Procedure
+    File.Format.TNT.Command.TRead
+    File.Format.TNT.Command.XRead
+    File.Format.TNT.Parser
+    File.Format.TNT.Partitioning
+    File.Format.TNT.Internal
+    File.Format.TransitionCostMatrix.Parser
+    File.Format.VertexEdgeRoot.Parser
+    Text.Megaparsec.Custom
 
 
-Executable file-tests
+executable file-tests
 
-  main-is:             FileTests.hs
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+         
+  main-is:
+    FileTests.hs
 
-  build-depends:       base               >=4.8
-                     -- >=0.5.8 Required for Data.Map.restrictKeys
-                     , containers         >=0.5.8
-                     , directory
-                     , megaparsec         >=7.0.0
-                     , pcg-file-parsers
-                     , tasty
-                     , tasty-hunit
---                     , tasty-rerun
+  ghc-options:
+    -threaded
 
-  hs-source-dirs:      test
+  hs-source-dirs:
+    test
+  
+  build-depends:
+    pcg-file-parsers,
+    directory                >= 1.3       && < 2.0,
+    tasty                    >= 1.2       && < 2.0,
+    tasty-hunit              >= 0.10      && < 1.0,
 
-  ghc-options:         -threaded
+  other-modules:
+    Test.Custom.Parse
+    TestSuite.GeneratedTests
+    TestSuite.GeneratedTests.Fasta
+    TestSuite.GeneratedTests.Fastc
+    TestSuite.GeneratedTests.Internal
+    TestSuite.GeneratedTests.Nexus
+    TestSuite.GeneratedTests.TNT
 
-  other-modules:       Test.Custom.Parse
-                       TestSuite.GeneratedTests
-                       TestSuite.GeneratedTests.Fasta
-                       TestSuite.GeneratedTests.Fastc
-                       TestSuite.GeneratedTests.Internal
-                       TestSuite.GeneratedTests.Nexus
-                       TestSuite.GeneratedTests.TNT
 
+test-suite unit-tests
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+
+  main-is:          
+    TestSuite.hs
+
+  type:             
+    exitcode-stdio-1.0
+
+  hs-source-dirs:   
+    src,
+    test
+
+  ghc-options:      
+    -threaded
+
+  build-depends:
+    pcg-utility,
+    case-insensitive         >= 1.2.0     && < 1.3,
+    dlist                    >= 0.8       && < 1.0,
+    integer-gmp              >= 1.0       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    matrix                   >= 0.3.6     && < 0.4,
+    parser-combinators       >= 1.0       && < 1.1,
+    QuickCheck               >= 2.12      && < 3.0,
+    safe                     >= 0.3.17    && < 0.4,
+    scientific               >= 0.3.6     && < 0.4,
+    smallcheck               >= 1.1.5     && < 2.0,
+    tasty                    >= 1.2       && < 2.0,
+    tasty-hunit              >= 0.10      && < 1.0,
+    tasty-quickcheck         >= 0.9       && < 1.0,
+    tasty-rerun              >= 1.1.14    && < 2.0,
+    text-short               >= 0.1       && < 1.0,
+    -- >=0.12.0.2 required for compatability with "compact regions"
+    vector                   >= 0.12.0.2  && < 0.13,
+
+  other-modules:
+    File.Format.Fasta.Internal
+    File.Format.Fasta.Parser
+    File.Format.Fasta.Test
+    File.Format.Fastc.Parser
+    File.Format.Fastc.Test
+    File.Format.Newick.Internal
+    File.Format.Newick.Parser
+    File.Format.Newick.Test
+    File.Format.TNT.Command.CCode
+    File.Format.TNT.Command.CNames
+    File.Format.TNT.Command.Procedure
+    File.Format.TNT.Command.TRead
+    File.Format.TNT.Command.XRead
+    File.Format.TNT.Internal
+    File.Format.TNT.Test
+    File.Format.TransitionCostMatrix.Parser
+    File.Format.TransitionCostMatrix.Test
+    File.Format.VertexEdgeRoot.Parser
+    File.Format.VertexEdgeRoot.Test
+    Test.Custom.Parse
+    Text.Megaparsec.Custom
+    Text.Megaparsec.Custom.Test

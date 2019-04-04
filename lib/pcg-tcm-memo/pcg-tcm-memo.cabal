@@ -1,0 +1,157 @@
+cabal-version:      2.2
+category:           Example
+build-type:         Simple
+extra-source-files: README.md
+
+name:               pcg-tcm-memo
+version:            0.2.0
+
+author:             Ward Wheeler 
+maintainer:         wheeler@amnh.org
+copyright:          2015 - 2018 Ward Wheeler
+license:            BSD-3-Clause
+license-file:       LICENSE
+                    
+synopsis:           A binding to a C++ hashtable for thread-safe memoization.
+
+description:        This package is designed to provide a thread safe binding 
+                    to a "pure" memoization of two-way and three-way Sankoff 
+                    character cost and median computations.
+
+
+common dependencies
+
+  build-depends:
+    base                     >= 4.11      && < 5.0,
+    semigroups               >= 0.18      && < 1.0,
+
+
+-- Group of buildinfo specifications to correctly build and link to the C & C++:
+-- FFI code.
+common ffi-buildinfo
+
+  cc-options:       --std=c11
+
+  cxx-options:      --std=c++14
+
+  -- This library is required for linking to the C++ standard template library.
+  extra-libraries:  stdc++
+
+  hs-source-dirs:   ffi
+
+  c-sources:
+    ffi/memoized-tcm/costMatrixWrapper.c
+    ffi/memoized-tcm/dynamicCharacterOperations.c
+
+  cxx-sources:
+    ffi/memoized-tcm/costMatrix_2d.cpp
+    ffi/memoized-tcm/costMatrix_3d.cpp
+
+  -- Here we list all directories that contain C & C++ header files that the FFI
+  -- tools will need to locate when preprocessing the C files. Without listing
+  -- the directories containing the C header files here, the FFI preprocessor
+  -- (hsc2hs, c2hs, etc.) will fail to locate the requisite files. Note also,
+  -- that the parent directory of the nessicary C & C++ header files must be
+  -- specified. The preprocessor will not recursively look in subdirectories for
+  -- header files!
+  include-dirs:
+    ffi/memoized-tcm
+
+
+-- A litany of GHC warnings designed to alert us during the build of any common
+-- pitfalls, future compatibility issues, or coding conventions.
+common ghc-flags
+
+  ghc-options:
+    -- Optimization flags
+    -O2
+    -fexpose-all-unfoldings
+    -foptimal-applicative-do
+    -fspecialize-aggressively
+    -- Usability flags
+    -fdiagnostics-color=always
+    -fhide-source-paths
+    -j
+    -- Sanity check warnings
+    -Wall
+    -Wcompat
+    -Wdodgy-foreign-imports
+    -Wduplicate-exports
+    -Wempty-enumerations
+    -Widentities
+    -Wincomplete-patterns
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-fields
+    -Wmissing-home-modules
+    -Wmissing-monadfail-instances
+    -Wmissing-signatures
+    -Wnoncanonical-monadfail-instances
+    -Wnoncanonical-monad-instances
+    -Wnoncanonical-monoid-instances
+    -Woverflowed-literals
+    -Woverlapping-patterns
+    -Wredundant-constraints
+    -Wsemigroup
+    -Wtabs
+    -Wunrecognised-warning-flags
+    -Wunused-binds
+    -Wunused-do-bind
+    -Wunused-foralls
+    -Wunused-imports
+    -Wunused-matches
+    -Wwrong-do-bind
+
+
+-- Global deviations from Haskell98
+common language-specs
+
+  default-language: Haskell2010
+
+  -- Always use MonadFail(fail), not Monad(fail)
+  other-extensions: MonadFailDesugaring
+
+
+library
+
+  import:
+    dependencies,
+    ffi-buildinfo,
+    ghc-flags,
+    language-specs,
+
+  hs-source-dirs:
+    src
+
+  build-depends:
+    pcg-exportable,
+    deepseq                  >= 1.4       && < 2.0,
+    QuickCheck               >= 2.12      && < 3.0,
+
+  exposed-modules:
+    Data.TCM.Memoized
+    Data.TCM.Memoized.Types
+
+  other-modules:
+    Data.TCM.Memoized.FFI
+
+
+executable use-the-code
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs,
+
+  main-is:
+    Main.hs
+
+  hs-source-dirs:
+    .
+
+  build-depends:
+    base,
+    safe,
+    pcg-exportable,
+    pcg-tcm-memo,
+    safe                     >= 0.3.17    && < 0.4,
