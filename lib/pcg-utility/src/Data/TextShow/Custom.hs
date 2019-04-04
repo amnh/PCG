@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.TextShow.Custom
@@ -13,6 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE LambdaCase #-}
 
 module Data.TextShow.Custom
   ( intercalateB
@@ -20,6 +20,11 @@ module Data.TextShow.Custom
 
 import TextShow (Builder)
 
+-- |
+-- Insert the given element in between each element the list and concatenates
+-- the result.
+--
+-- TextShow builder equivelent of 'Data.List.intercalate'.
 intercalateB :: Builder -> [Builder] -> Builder
 intercalateB sep = go sep mempty
     where

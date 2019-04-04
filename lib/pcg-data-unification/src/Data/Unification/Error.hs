@@ -42,7 +42,7 @@ newtype UnificationError
 data  UnificationErrorMessage
     = NonMatchingTaxa     [ShortText] [ShortText]
     | NonMatchingTaxaSeqs [ShortText] [ShortText]
-    | ForestDuplicateTaxa FilePath (NonEmpty ShortText) 
+    | ForestDuplicateTaxa FilePath (NonEmpty ShortText)
     | ForestExtraTaxa     FilePath (NonEmpty ShortText)
     | ForestMissingTaxa   FilePath (NonEmpty ShortText)
     | VacuousInput        (NonEmpty FilePath)
