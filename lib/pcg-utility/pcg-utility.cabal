@@ -1,9 +1,8 @@
 cabal-version:      2.2
-category:           Data
+Category:           Biology
 build-type:         Simple
-
 name:               pcg-utility
-version:            0.0.1.0
+version:            0.2.0
 
 author:             Ward Wheeler
 maintainer:         wheeler@amnh.org
@@ -11,150 +10,209 @@ license:            BSD-3-Clause
 license-file:       LICENSE
 
 synopsis:           Collection of utility functions and data structures
-
+                    
 description:        Defines custom data structures for special use cases,
-                    more abstract functions that base provides, and reexported
+                    more abstract functions that base provides, and re-exported
                     correcting to deficient libraries.
 
+        
+common dependencies
 
-common ghc-settings
+  build-depends:
+    base                     >= 4.11      && < 5.0,
+    deepseq                  >= 1.4       && < 2.0,
+    semigroups               >= 0.18      && < 1.0,
+
+
+-- A litany of GHC warnings designed to alert us during the build of any common
+-- pitfalls, future compatibility issues, or coding conventions.
+common ghc-flags
+
+  ghc-options:
+    -- Optimization flags
+    -O2
+    -fexpose-all-unfoldings
+    -foptimal-applicative-do
+    -fspecialize-aggressively
+    -- Usability flags
+    -fdiagnostics-color=always
+    -fhide-source-paths
+    -j
+    -- Sanity check warnings
+    -Wall
+    -Wcompat
+    -Wdodgy-foreign-imports
+    -Wduplicate-exports
+    -Wempty-enumerations
+    -Widentities
+    -Wincomplete-patterns
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wmissing-fields
+    -Wmissing-home-modules
+    -Wmissing-monadfail-instances
+    -Wmissing-signatures
+    -Wnoncanonical-monadfail-instances
+    -Wnoncanonical-monad-instances
+    -Wnoncanonical-monoid-instances
+    -Woverflowed-literals
+    -Woverlapping-patterns
+    -Wredundant-constraints
+    -Wsemigroup
+    -Wtabs
+    -Wunrecognised-warning-flags
+    -Wunused-binds
+    -Wunused-do-bind
+    -Wunused-foralls
+    -Wunused-imports
+    -Wunused-matches
+    -Wwrong-do-bind
+
+common language-spec
 
   default-language: Haskell2010
 
-  ghc-options:      -O2
-                    -Wall
-                    -Wcompat
-                    -Wdodgy-foreign-imports
-                    -Wduplicate-exports
-                    -Wempty-enumerations
-                    -Widentities
-                    -Wincomplete-patterns
-                    -Wincomplete-record-updates
-                    -Wincomplete-uni-patterns
-                    -Wmissing-fields
-                    -Wmissing-home-modules
-                    -Wmissing-monadfail-instances
-                    -Wmissing-monadfail-instances
-                    -Wmissing-signatures
-                    -Wnoncanonical-monadfail-instances
-                    -Wnoncanonical-monad-instances
-                    -Wnoncanonical-monoid-instances
-                    -Woverflowed-literals
-                    -Woverlapping-patterns
-                    -Wredundant-constraints
-                    -Wsemigroup
-                    -Wtabs
-                    -Wunrecognised-warning-flags
-                    -Wunrecognised-warning-flags
-                    -Wunused-binds
-                    -Wunused-do-bind
-                    -Wunused-foralls
-                    -Wunused-imports
-                    -Wunused-matches
-                    -Wwrong-do-bind
+  -- Always use MonadFail(fail), not Monad(fail)
+  other-extensions: MonadFailDesugaring
 
 
 library
 
-  import:           ghc-settings
+  import:
+    dependencies,
+    ghc-flags,
+    language-spec     
 
-  build-depends:    base             >=4.8
-                  , binary
-                  , bv-little
-                  , containers       >=0.5.8
-                  , directory
-                  , deepseq
-                  , hashable
-                  , integer-gmp
-                  , keys
-                  , lens
-                  , matrix
-                  , mono-traversable >=1.0
-                  , pipes
-                  , pipes-safe
-                  , QuickCheck
-                  , text
-                  , text-short
-                  , text-show
-                  , transformers
-                  , validation
-                  -- >=0.12.0.2 required for compatability with "compact regions"
-                  , vector             >=0.12.0.2 
+  hs-source-dirs:
+    src
 
-  hs-source-dirs:   src
+  build-depends:
+    binary                   >= 0.6       && < 1.0,
+    bv-little                >= 1.0       && < 2.0,
+    -- >=0.5.8 Required for Data.Map.restrictKeys
+    containers               >= 0.5.8     && < 0.7,
+    directory                >= 1.3       && < 2.0,
+    foldl                    >= 1.3.2     && < 2.0,
+    hashable                 >= 1.2       && < 2.0,
+    integer-gmp              >= 1.0       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.17      && < 5.0,
+    matrix                   >= 0.3.6     && < 0.4,
+    mono-traversable         >= 1.0       && < 2.0,
+    parallel                 >= 3.2       && < 4.0,
+    pipes                    >= 4.0       && < 5.0,            
+    pointed                  >= 5.0       && < 6.0,
+    QuickCheck               >= 2.12      && < 3.0,
+    -- required for Data.Semigroup.Foldable.toNonEmpty
+    semigroupoids            >= 5.2.1     && < 5.4,
+    tasty-hunit              >= 0.10      && < 1.0,
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1       && < 1.0,
+    text-show                >= 3.0       && < 4.0,
+    text-show-instances      >= 3.0       && < 4.0,
+    transformers             >= 0.5.5     && < 1.0,
+    validation               >= 1         && < 2.0,
+    -- >=0.12.0.2 required for compatability with "compact regions"
+    vector                   >= 0.12.0.2  && < 0.13,
+    -- >=3.4 required for corrected definition of (!) & index
+    vector-instances         >= 3.4       && < 3.5,
 
-  exposed-modules:  Data.BitMatrix
-                    Data.Binary.Utility
-                    Data.Either.Custom
-                    Data.Foldable.Custom
-                    Data.List.Utility
-                    Data.Matrix.NotStupid
-                    Data.MutualExclusionSet
-                    Data.Render.Utility
-                    Data.ShortText.Custom
-                    Data.TextShow.Custom
-                    Data.Tuple.Utility
-                    Data.UnionSet
-                    Data.Vector.Utility
-                    Numeric.Extended
-                    Numeric.Extended.Natural
-                    Numeric.Extended.Real
-                    Numeric.NonNegativeAverage
+  exposed-modules:
+    Control.Parallel.Custom
+    Data.BitMatrix
+    Data.Binary.Utility
+    Data.Either.Custom
+    Data.Foldable.Custom
+    Data.List.Utility
+    Data.Matrix.NotStupid
+    Data.MutualExclusionSet
+    Data.Range
+    Data.Render.Utility
+    Data.ShortText.Custom
+    Data.TextShow.Custom
+    Data.Tuple.Utility
+    Data.UnionSet
+    Data.Vector.Custom
+    Data.Vector.Memo
+    Data.Vector.NonEmpty
+    Numeric.Extended
+    Numeric.Extended.Natural
+    Numeric.Extended.Real
+    Numeric.NonNegativeAverage
+    Test.HUnit.Custom
+    Test.QuickCheck.Arbitrary.Instances
 
-  other-modules:    Data.BitMatrix.Internal
-                    Data.MutualExclusionSet.Internal
-                    Numeric.Extended.Internal
+  other-modules:
+    Data.BitMatrix.Internal
+    Data.MutualExclusionSet.Internal
+    Numeric.Extended.Internal
+
+
+test-suite test-suite
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-spec     
+
+  main-is:          
+    TestSuite.hs
+
+  type:             
+    exitcode-stdio-1.0
+
+  hs-source-dirs:
+    test
+
+  build-depends:
+    pcg-utility,
+    bv-little                >= 1.0       && < 2.0,
+    integer-gmp              >= 1.0       && < 2.0,
+    mono-traversable         >= 1.0       && < 2.0,
+    parallel                 >= 3.2       && < 4.0,
+    QuickCheck               >= 2.12      && < 3.0,
+    tasty                    >= 1.2       && < 2.0,
+    tasty-hunit              >= 0.10      && < 1.0,
+    tasty-quickcheck         >= 0.9       && < 1.0,
+    tasty-rerun              >= 1.1.14    && < 2.0,
+                    
+  other-modules:
+    Control.Parallel.Test
+    Data.BitMatrix.Test
+    Data.MutualExclusionSet.Test
+    Numeric.Extended.Natural.Test
+    Numeric.Extended.Real.Test
+    Numeric.NonNegativeAverage.Test
+    Data.List.Test
+
 
 benchmark benchmark-suite
 
-  import:           ghc-settings
+  import:
+    dependencies,
+    ghc-flags,
+    language-spec     
 
-  type:             exitcode-stdio-1.0
+  main-is:          
+    Benchmarks.hs
 
-  main-is:          Benchmarks.hs
-                      
-  build-depends:    base               >=4.8
-                  , criterion
-                  , deepseq
-                  , ghc-prim
-                  , pcg-utility
+  type:             
+    exitcode-stdio-1.0
 
-  ghc-options:    -fdicts-cheap
-                  -fmax-simplifier-iterations=10
-                  -fspec-constr-count=6
-                  -threaded
+  hs-source-dirs: 
+    bench
 
-  hs-source-dirs: bench
+  build-depends:
+    pcg-utility,
+    criterion                >= 1.5       && < 2.0,
+
+  ghc-options:
+    -fdicts-cheap
+    -fmax-simplifier-iterations=10
+    -fspec-constr-count=6
+    -threaded
                     
-  other-modules:  Data.MutualExclusionSet.Bench
-                  Numeric.Extended.Natural.Bench
+  other-modules:
+    Data.MutualExclusionSet.Bench
+    Numeric.Extended.Natural.Bench
 
-                       
-test-suite test-suite
-
-  import:           ghc-settings
-
-  type:             exitcode-stdio-1.0
-
-  main-is:          TestSuite.hs
-
-  build-depends:    base               >=4.8
-                  , bv-little
-                  , deepseq
-                  , integer-gmp
-                  , mono-traversable   >=1.0
-                  , pcg-utility
-                  , QuickCheck
-                  , tasty
-                  , tasty-hunit
-                  , tasty-quickcheck
-                  , tasty-rerun
-
-  hs-source-dirs: test
-                    
-  other-modules:  Data.BitMatrix.Test
-                  Data.MutualExclusionSet.Test
-                  Numeric.Extended.Natural.Test
-                  Numeric.Extended.Real.Test
-                  Numeric.NonNegativeAverage.Test
-                  Data.List.Test

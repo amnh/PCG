@@ -10,13 +10,13 @@ haddock       = --haddock --haddock-deps
               # --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
-code-dirs     = app ffi lib src test utils
+code-dirs     = app test $(shell find . -maxdepth 2 -type d -name "pcg-*") 
 
 sub-libs      = pcg-file-parsers pcg-language pcg-utility
 
 # file paths
 
-cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.6.3/phylocomgraph-0.1.0.1/x/pcg/build/pcg/pcg
+cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.6.3/phylogenetic-component-graph-0.1.0.1/x/pcg/build/pcg/pcg
 
 
 # Target aliases for easy CLI use
@@ -27,10 +27,10 @@ all: cabal-standard-build
 #all: stack-build-profiling
 
 # Rebuilds with profiling
-prof: stack-build-profiling
+prof: cabal-build-profiling
 
 # Builds fast as possible
-quick: stack-build-quick
+quick: cabal-build-quick
 
 # Rebuilds as fast as possible
 rebuild: quick
@@ -39,25 +39,25 @@ rebuild: quick
 rebuild-full: clean rebuild
 
 # Clean then rebuild outputting core
-core: clean stack-build-core
+core: clean cabal-build-core
 
 # Clean then build with the llvm backend
-llvm: clean stack-build-llvm
+llvm: clean cabal-build-llvm
 
 # Rebuilds with optimizations and runs tests
-test: stack-build-test
+test: cabal-test
 
 # Re-builds project then runs only integration tests
-test-integration: stack-build-test-integration
+test-integration: cabal-build-test-integration
 
 # Re-builds project then runs only unit tests
-test-unit: stack-build-test-unit
+test-unit: cabal-build-test-unit
 
-test-failures: stack-build-test-failures
+test-failures: cabal-build-test-failures
 
-test-new: stack-build-test-new
+test-new: cabal-build-test-new
 
-test-golden-new: stack-build-test-golden-new
+test-golden-new: cabal-build-test-golden-new
 
 # Runs linter
 
@@ -65,7 +65,7 @@ lint: run-linter
 
 # Makes hoogle server
 
-hoogle: stack-hoogle-server
+hoogle: cabal-hoogle-server
 
 
 # Target Definitions
@@ -87,54 +87,55 @@ stack-full-build: install-stack clean stack-setup stack-build-prof
 install-stack:
 	which stack || (cabal update && cabal install stack)
 
-stack-setup: phylocomgraph.cabal stack.yaml
+stack-setup: phylogenetic-component-graph.cabal stack.yaml
 	stack setup
 
 # Builds with no extra generated features and no optimizations
-stack-build-quick: phylocomgraph.cabal stack.yaml
+stack-build-quick: phylogenetic-component-graph.cabal stack.yaml
 	stack build --fast
 
 # Builds with profiling enabled using a different work directory to cache
 # built dependencies.
-stack-build-profiling: phylocomgraph.cabal stack.yaml
-#	stack install $(profiling) --flag phylocomgraph:build-cpp-files
+stack-build-profiling: phylogenetic-component-graph.cabal stack.yaml
+#	stack install $(profiling) --flag phylogenetic-component-graph:build-cpp-files
 	stack install $(profiling) --work-dir=".stack-work-proifle" --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
 
+
 # Builds outputting simplified core files (without newtype coercions)
-stack-build-core: phylocomgraph.cabal stack.yaml
+stack-build-core: phylogenetic-component-graph.cabal stack.yaml
 	stack build --ghc-options="-ddump-simpl -dsupress-coercions"
 
 # Builds with the llvm backend
-stack-build-llvm: phylocomgraph.cabal stack.yaml
+stack-build-llvm: phylogenetic-component-graph.cabal stack.yaml
 	stack build --ghc-options="-fllvm"
 
 # Builds tests and updates log of tests that have been run
-stack-build-test: phylocomgraph.cabal stack.yaml
+stack-build-test: phylogenetic-component-graph.cabal stack.yaml
 	stack build --test --ta "--rerun-update"
 
 # Builds and runs integration tests after a standard build.
-stack-build-test-integration: phylocomgraph.cabal stack.yaml standard-build
-	stack build phylocomgraph:test:integration-tests
+stack-build-test-integration: phylogenetic-component-graph.cabal stack.yaml standard-build
+	stack build phylogenetic-component-graph:test:integration-tests
 
 # Builds and runs unit tests after a standard build.
-stack-build-test-unit: phylocomgraph.cabal stack.yaml standard-build
-	stack build phylocomgraph:test:unit-tests
+stack-build-test-unit: phylogenetic-component-graph.cabal stack.yaml standard-build
+	stack build phylogenetic-component-graph:test:unit-tests
 
 # Builds tests and re-runs those that failed
-stack-build-test-failures: phylocomgraph.cabal stack.yaml
+stack-build-test-failures: phylogenetic-component-graph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=failures"
 
 # Builds tests and runs those that are not in the log
-stack-build-test-new: phylocomgraph.cabal stack.yaml
+stack-build-test-new: phylogenetic-component-graph.cabal stack.yaml
 	stack build --test --ta "--rerun-filter=new"
 
 # Builds only integration tests and generates new golden files
-stack-build-test-golden-new: phylocomgraph.cabal stack.yaml
-	stack build phylocomgraph:test:integration-tests --ta "--accept"
+stack-build-test-golden-new: phylogenetic-component-graph.cabal stack.yaml
+	stack build phylogenetic-component-graph:test:integration-tests --ta "--accept"
 
 
 # Builds haddock documentation searchable by locally hosted hoogle
-stack-hoogle-server:  phylocomgraph.cabal stack.yaml
+stack-hoogle-server:  phylogenetic-component-graph.cabal stack.yaml
 	stack hoogle --server
 
 
@@ -147,6 +148,9 @@ cabal-standard-build: cabal-setup
 	cabal new-build
 	$(copy-executable)
 
+cabal-refresh:
+	   rm -rf dist-newstyle && cabal new-clean  && cabal new-configur && cabal new-build
+
 # Builds with all useful options for package power users
 cabal-full-build: clean cabal-setup cabal-build-prof
 
@@ -154,24 +158,25 @@ cabal-full-build: clean cabal-setup cabal-build-prof
 install-cabal:
 	(cabal new-update && cabal new-install cabal-install)
 
-cabal-setup: phylocomgraph.cabal cabal.project
+
+cabal-setup: phylogenetic-component-graph.cabal cabal.project
 	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests
 
 # Builds with no extra generated features and no optimizations
-cabal-build-quick: phylocomgraph.cabal cabal.project
+cabal-build-quick: phylogenetic-component-graph.cabal cabal.project
 	cabal new-build --ghc-options="-O0"
 
 # Builds with profiling enabled
-cabal-build-profiling: phylocomgraph.cabal cabal.project
+cabal-build-profiling: phylogenetic-component-graph.cabal cabal.project
 	cabal new-build --enable-profiling --profiling-detail=all-functions --ghc-options="-O0 -fprof-cafs -rtsopts=all"
 	$(copy-executable)
 
 # Builds outputting simplified core files (without newtype coercions)
-cabal-build-core: phylocomgraph.cabal cabal.project
+cabal-build-core: phylogenetic-component-graph.cabal cabal.project
 	cabal new-build --ghc-options="-ddump-simpl -dsupress-coercions"
 
 # Builds with the llvm backend
-cabal-build-llvm: phylocomgraph.cabal cabal.project
+cabal-build-llvm: phylogenetic-component-graph.cabal cabal.project
 	cabal new-build --ghc-options="-fllvm"
 
 # Note: --test-option will be reimplemented in cabal new in cabal 3.0
@@ -179,40 +184,46 @@ cabal-build-llvm: phylocomgraph.cabal cabal.project
 # when we upgrade to the next cabal.
 
 # Builds tests and updates log of tests that have been run
-cabal-test: phylocomgraph.cabal cabal.project cabal-test-unit cabal-test-integration
-	cabal new-run test:unit-tests -- "--rerun-update"
+cabal-test: phylogenetic-component-graph.cabal cabal.project cabal-test-unit cabal-test-integration
+	cabal new-run test:unit-tests                  --enable-tests -- "--rerun-update"
+	cabal new-run test:pcg-utility-test-suite      --enable-tests -- "--rerun-update"
+	cabal new-run test:pcg-file-parsers-unit-tests --enable-tests -- "--rerun-update"
+	cabal new-run test:alphabet-test-suite         --enable-tests -- "--rerun-update"
+	cabal new-run test:evaluation-test-suite       --enable-tests -- "--rerun-update"
+	cabal new-run test:tcm-test-suite              --enable-tests -- "--rerun-update"
+	cabal new-run test:integration-tests           --enable-tests -- "--rerun-update"
 
 # Builds and runs integration tests after a standard build.
-cabal-test-integration: phylocomgraph.cabal cabal.project
+cabal-test-integration: phylogenetic-component-graph.cabal cabal.project
 	cabal new-run test:integration-tests -- "--rerun-update"
 
 # Builds and runs unit tests after a standard build.
-cabal-test-unit: phylocomgraph.cabal cabal.project
+cabal-test-unit: phylogenetic-component-graph.cabal cabal.project
 	cabal new-run test:unit-tests -- "--rerun-update"
 #	cabal new-run test:unit-tests --enable-profiling --enable-executable-profiling --ghc-options="-O0 -fprof-cafs -rtsopts=all" "+RTS -xc -RTS"
 
 # Builds tests and re-runs those that failed
-cabal-test-failures: phylocomgraph.cabal cabal.project
+cabal-test-failures: phylogenetic-component-graph.cabal cabal.project
 	cabal new-run test:unit-tests -- "--rerun-filter=failures"
 	cabal new-run test:integration-tests -- "--rerun-filter=failures"
 
 
 # Builds tests and runs those that are not in the log
-cabal-test-new: phylocomgraph.cabal cabal.project
+cabal-test-new: phylogenetic-component-graph.cabal cabal.project
 	cabal new-run test:unit-tests -- "--rerun-filter=new"
 	cabal new-run test:integration-tests -- "--rerun-filter=new"
 
 
 # Builds only integration tests and generates new golden files
-cabal-test-golden-new: phylocomgraph.cabal cabal.project
+cabal-test-golden-new: phylogenetic-component-graph cabal.project
 	cabal new-run test:integration-tests -- "--accept"
 
 
 # Builds haddock documentation searchable by locally hosted hoogle
-cabal-hoogle-server:  phylocomgraph.cabal cabal.project
+cabal-hoogle-server:  phylogenetic-component-graph.cabal cabal.project
 	hoogle server --local
 
-cabal-build-hoogle: phylocomgraph.cabal cabal.project install-hoogle
+cabal-build-hoogle: phylogenetic-component-graph.cabal cabal.project install-hoogle
 	cabal new-haddock --haddock-hoogle
 	hoogle generate --local="."
 	hoogle server --local
@@ -239,21 +250,28 @@ install-weeder:
 	which weeder          || (stack install weeder          --resolver=lts)
 
 format-code: install-stylish-haskell
-	(./stylish.sh)
+	@echo -n "[?] Formatting code..."
+	@find $(code-dirs) -type f -name "*.hs" | while read fname; do \
+	  stylish-haskell -i "$$fname"; \
+	done
+	@echo -n -e "\33[2K\r"
+	@echo "[✓] Formatting complete!"
 
-run-linter: install-hlint install-weeder format-code
-	hlint app ffi lib src test utils
-	weeder . --build
+run-linter: install-hlint install-weeder format-code run-hlint
+#	weeder . --build
+
+run-hlint: 
+	hlint --no-exit-code $(code-dirs)
 
 # Copies documentation director to local scope
 copy-haddock: set-dir-variables
 	rm -rf doc/haddock/*
 	rm -f  doc/haddock.html
-	mkdir doc/haddock/phylocomgraph && cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylocomgraph doc/haddock/phylocomgraph
+	mkdir doc/haddock/phylogenetic-component-graph && cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylogenetic-component-graph doc/haddock/phylogenetic-component-graph
 	for lib in $(sub-libs); do \
 	  mkdir doc/haddock/$$lib && cp -r lib/$$lib/.stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/$$lib doc/haddock/$$lib; \
 	done
-	ln -s haddock/phylocomgraph/phylocomgraph/index.html doc/haddock.html
+	ln -s haddock/phylogenetic-component-graph/phylogenetic-component-graph/index.html doc/haddock.html
 
 # Sets up variables of path names that are subject to change.
 # Finds the most recently modified file in the directory
@@ -263,10 +281,11 @@ set-dir-variables:
 	@true
 
 # Cleans up artefact files after a build
-clean: phylocomgraph.cabal stack.yaml
+clean: phylogenetic-component-graph.cabal stack.yaml
 	stack clean
 	cabal new-clean
-	for dir in $(code-dirs); do \
+	@echo -n "[X] Cleaning directories of junk files..."
+	@for dir in $(code-dirs); do \
 	  find $$dir -type f -name '*.o'           -delete; \
 	  find $$dir -type f -name '*.hi'          -delete; \
 	  find $$dir -type f -name '*.*~'          -delete; \
@@ -276,11 +295,20 @@ clean: phylocomgraph.cabal stack.yaml
 	  find $$dir -type f -name '*dump\-hi*'    -delete; \
 	  find $$dir -type f -name '*dump\-simpl*' -delete; \
 	done
+	@echo -n -e "\33[2K\r"
+	@echo "[✓] Cleaning complete!"
 
 # Calls other make files to pre-process FFI files
 ffi-code-cleaning: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
 	$(MAKE) -C ffi/Analysis/Parsimony/Binary/SequentialAlign
 
+# Legacy cabal build option
+cabal-build: phylogenetic-component-graph.cabal
+	cabal install --dependencies-only && cabal configure --enable-tests --enable-profiling && cabal build && cabal haddock --executables --html --hyperlink-source && cabal test
+
+# Legacy cabal build option
+cabal-sandbox: phylogenetic-component-graph.cabal
+	cabal update && cabal sandbox delete && cabal sandbox init && cabal install --dependencies-only
 
 # command to copy executable created by cabal-new
 copy-executable = mkdir -p "bin" && cp  $(cabal-pcg-path) ./bin

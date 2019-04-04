@@ -20,11 +20,11 @@ module File.Format.Fasta.Converter
   , fastaStreamConverter
   ) where
 
+import           Data.Alphabet.IUPAC
+import qualified Data.Bimap                 as BM
 import           Data.List                  (intercalate, partition)
 import           Data.List.NonEmpty         (NonEmpty)
-import qualified Data.List.NonEmpty         as NE
 import           Data.Map                   hiding (filter, foldr, null, partition)
-import qualified Data.Map                   as M (fromList)
 import qualified Data.Vector                as V (fromList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
@@ -44,7 +44,30 @@ data  FastaSequenceType
 -- |
 -- Define and convert a 'FastaParseResult' to the expected sequence type
 fastaStreamConverter :: MonadParsec e s m => FastaSequenceType -> FastaParseResult -> m TaxonSequenceMap
-fastaStreamConverter seqType = fmap (colate seqType) . validateStreamConversion seqType
+fastaStreamConverter seqType =
+    fmap (colate seqType) . validateStreamConversion seqType . processedChars seqType
+
+
+-- |
+-- Since Bimap's are bijective, and there are some elements of the range that are
+-- not surjectively mapped to from the domain
+-- (ie, more than one element on the left side goes to an element on the right side),
+-- this means that we must preprocess these element so that there is a bijective mapping.
+processedChars :: FastaSequenceType -> FastaParseResult -> FastaParseResult
+processedChars seqType = fmap processElement
+  where
+    processElement :: FastaSequence -> FastaSequence
+    processElement (FastaSequence name chars) = FastaSequence name $ replaceSymbol chars
+
+    replaceSymbol :: String -> String
+    replaceSymbol =
+        case seqType of
+          AminoAcid -> replace 'U' 'C' . replace '.' '-'
+          DNA       -> replace 'n' '?' . replace '.' '-'
+          RNA       -> replace 'n' '?' . replace '.' '-'
+
+    replace :: (Functor f, Eq b) => b -> b -> f b -> f b
+    replace a b = fmap $ \x -> if a == x then b else x
 
 
 -- |
@@ -57,21 +80,28 @@ validateStreamConversion seqType xs =
   where
     result = containsIncorrectChars <$> xs
     hasErrors = not . null . snd
-    containsIncorrectChars (FastaSequence name seq') = (name, f seq')
-    f = g seqType
-    g AminoAcid = filter (not . (`elem` iupacAminoAcidChars ))
-    g DNA       = filter (not . (`elem` iupacNucleotideChars))
-    g RNA       = filter (not . (`elem` iupacRNAChars       ))
-    errorMessage (name,badChars) = concat
-     [ "In the sequence for taxon: '"
-     , name
-     , "' the following invalid characters were found: "
-     , intercalate ", " $ (\c -> '\'':c:"'") <$> badChars
-     ]
+    containsIncorrectChars (FastaSequence name chars) = (name, f chars)
+
+    f = filter ((`notElem` s) . pure . pure)
+      where
+        s  = keysSet $ BM.toMap bm
+        bm = case seqType of
+               AminoAcid -> iupacToAminoAcid
+               DNA       -> iupacToDna
+               RNA       -> iupacToRna
+
+    errorMessage (name, badChars) = concat
+        [ "In the sequence for taxon: '"
+        , name
+        , "' the following invalid characters were found: "
+        , intercalate ", " $ enquote <$> badChars
+        ]
+
+    enquote c = '\'' : c : "'"
 
 
 -- |
--- Interprets and converts an entire 'FastaParseResult according to the given 'FatsaSequenceType' .
+-- Interprets and converts an entire 'FastaParseResult according to the given 'FatsaSequenceType'.
 colate :: FastaSequenceType -> FastaParseResult -> TaxonSequenceMap
 colate seqType = foldr f empty
   where
@@ -82,80 +112,11 @@ colate seqType = foldr f empty
 -- Interprets and converts an ambiguous sequence according to the given 'FatsaSequenceType'
 -- from the ambiguous form to a 'CharacterSequence' based on IUPAC codes.
 seqCharMapping :: FastaSequenceType -> String -> CharacterSequence
-seqCharMapping seqType = V.fromList . fmap (f seqType)
+seqCharMapping seqType = V.fromList . fmap (f seqType . pure . pure)
   where
-    f AminoAcid = (!) iupacAminoAcidSubstitutions
-    f DNA       = (!) iupacNucleotideSubstitutions
-    f RNA       = (!) iupacRNASubstitutions
-
-
--- |
--- Substitutions for converting to a DNA sequence based on IUPAC codes.
-iupacAminoAcidSubstitutions :: Map Char (NonEmpty String)
-iupacAminoAcidSubstitutions = fmap pure . NE.fromList <$> M.fromList
-    [ ('A', "A")
-    , ('B', "DN")
-    , ('C', "C")
-    , ('D', "D")
-    , ('E', "E")
-    , ('F', "F")
-    , ('G', "G")
-    , ('H', "H")
-    , ('I', "I")
-    , ('K', "K")
-    , ('L', "L")
-    , ('M', "M")
-    , ('N', "N")
-    , ('P', "P")
-    , ('Q', "Q")
-    , ('R', "R")
-    , ('S', "S")
-    , ('T', "T")
-    , ('U', "C")
-    , ('V', "V")
-    , ('W', "W")
-    , ('X', "ACDEFGHIKLMNPQRSTVWY")
-    , ('Y', "Y")
-    , ('Z', "EQ")
-    , ('-', "-")
-    , ('.', "-")
-    , ('#', "#")
-    , ('?', "ACDEFGHIKLMNPQRSTVWY-")
-    ]
-
-
--- |
--- Substitutions for converting to a DNA sequence based on IUPAC codes.
-iupacNucleotideSubstitutions :: Map Char (NonEmpty String)
-iupacNucleotideSubstitutions = fmap pure . NE.fromList <$> M.fromList
-    [ ('A', "A")
-    , ('C', "C")
-    , ('G', "G")
-    , ('T', "T")
-    , ('R', "AG")
-    , ('Y', "CT")
-    , ('S', "CG")
-    , ('W', "AT")
-    , ('K', "GT")
-    , ('M', "AC")
-    , ('B', "CGT")
-    , ('D', "AGT")
-    , ('H', "ACT")
-    , ('V', "ACG")
-    , ('N', "ACGT")
-    , ('-', "-")
-    , ('.', "-")
-    , ('?', "ACGT-")
-    , ('#', "#")
-    ]
-
-
--- |
--- Substitutions for converting to an RNA sequence based on IUPAC codes.
-iupacRNASubstitutions :: Map Char (NonEmpty String)
-iupacRNASubstitutions = insert 'U' (pure "U") . delete 'T' $ f <$> iupacNucleotideSubstitutions
-  where
-    f :: NonEmpty String -> NonEmpty String
-    f = NE.fromList . foldr g []
-    g "T" xs = "U":xs
-    g   x xs =   x:xs
+    f :: FastaSequenceType -> NonEmpty String -> NonEmpty String
+    f t = let bm = case t of
+                     AminoAcid -> iupacToAminoAcid
+                     DNA       -> iupacToDna
+                     RNA       -> iupacToRna
+          in (bm BM.!)

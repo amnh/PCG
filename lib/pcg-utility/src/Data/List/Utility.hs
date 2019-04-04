@@ -16,12 +16,14 @@
 module Data.List.Utility where
 
 import Data.Foldable
-import Data.Key           (Zip (..))
-import Data.List          (sort, sortBy)
-import Data.List.NonEmpty (NonEmpty (..))
-import Data.Map           (assocs, empty, insertWith)
-import Data.Ord           (comparing)
-import Data.Set           (insert, intersection)
+import Data.Key                (Zip (..))
+import Data.List               (sort, sortBy)
+import Data.List.NonEmpty      (NonEmpty (..), nonEmpty)
+import Data.Map                (assocs, empty, insertWith)
+import Data.Maybe              (catMaybes, maybe)
+import Data.Ord                (comparing)
+import Data.Semigroup.Foldable
+import Data.Set                (insert, intersection)
 
 
 -- |
@@ -89,6 +91,44 @@ isSingleton = f . toList
 
 
 -- |
+-- \( \mathcal{O} \left( n \) where \( n\) is the length of the prefix
+--
+-- Prepend the foldable structure to the non-empty list.
+--
+-- ==_Example==
+--
+-- >>> [] `prepend` xs
+-- xs
+--
+-- >>> [42] `prepend` (1 :| [1,2,3,5])
+-- (42 :| [1,1,2,3,5])
+prepend :: Foldable f => f a -> NonEmpty a -> NonEmpty a
+prepend p ne =
+    case toList p of
+      []   -> ne
+      x:xs -> x :| (xs <> toList ne)
+
+
+-- |
+-- \( \mathcal{O} \left( n \)
+--
+-- Collect all the 'Just' values of a 'Foldable1' non-empty structure.
+--
+-- ==== __Examples__
+--
+-- >>> catMaybes $ Just 1 :| [Nothing, Just 3]
+-- Just (1:|[3])
+--
+-- >>> catMaybes $ Nothing :| [Nothing]
+-- Nothing
+catMaybes1 :: Foldable1 f => f (Maybe a) -> Maybe (NonEmpty a)
+catMaybes1 v =
+   let x:|xs = toNonEmpty v
+       as    = catMaybes xs
+   in  maybe (nonEmpty as) (Just . (:|as)) x
+
+
+-- |
 -- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Returns the list of elements which are not unique in the input list.
@@ -125,6 +165,9 @@ duplicates = duplicates' . sort . toList
 --
 -- >>> mostCommon "AABCDDDEFGGT"
 -- Just 'D'
+--
+-- >>> mostCommon []
+-- Nothing
 mostCommon :: (Foldable t, Ord a) => t a -> Maybe a
 mostCommon xs
   | null xs   = Nothing
@@ -148,7 +191,7 @@ mostCommon xs
 --
 -- >>> occurances "AABCDDDEFGGT"
 -- [('D',3),('A',2),('G',2),('B',1),('C',1),('E',1),('F',1),('T',1)]
-occurances :: (Foldable t, Ord a) => t a -> [(a,Int)]
+occurances :: (Foldable t, Ord a) => t a -> [(a, Word)]
 occurances = collateOccuranceMap . buildOccuranceMap
   where
     buildOccuranceMap = foldr occurance empty
@@ -222,7 +265,8 @@ equalityOf f xs =
   case toList xs of
     []   -> True
     [_]  -> True
-    y:ys -> all (\e -> f y == f e) ys
+    y:ys -> let v = f y
+            in  all (\e -> v == f e) ys
 
 
 -- |

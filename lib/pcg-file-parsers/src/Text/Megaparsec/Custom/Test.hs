@@ -10,14 +10,14 @@ module Text.Megaparsec.Custom.Test
 -- This function can be combined with other testSuites definitions from other
 -- Test modules to form a giant test suite to run
 
-import Data.Either.Combinators
-import Data.List               (nub, sort)
+import Data.Either
+import Data.List              (nub, sort)
 import Data.Proxy
 import Data.Void
-import Safe                    (readMay)
+import Safe                   (readMay)
 import Test.Custom.Parse
-import Test.SmallCheck.Series  ()
-import Test.Tasty              (TestTree, testGroup)
+import Test.SmallCheck.Series ()
+import Test.Tasty             (TestTree, testGroup)
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 import Text.Megaparsec
