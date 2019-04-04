@@ -29,7 +29,6 @@ import Data.Functor             (($>))
 import PCG.Syntax.Combinators
 
 
-
 -- |
 -- The \"SAVE\" command specifies PCG to serialize the current state of the
 -- computation to disk. The file path to which the save state is serialized
@@ -38,6 +37,7 @@ import PCG.Syntax.Combinators
 data SaveCommand = SaveCommand !FilePath !SerialType
   deriving Show
 
+
 -- |
 -- Type of serialisation formats
 data SerialType
@@ -45,12 +45,16 @@ data SerialType
   | Binary
   deriving Show
 
+
 -- |
 -- Defines the semantics of interpreting a valid \"SAVE\" command from the PCG
 -- scripting language syntax.
 saveCommandSpecification :: CommandSpecification SaveCommand
 saveCommandSpecification = command "save" . argList $ SaveCommand <$> (text `withDefault` defaultSaveFilePath) <*> (serialType `withDefault` defaultFormat)
 
+
+-- |
+-- Defines the serialization options.
 serialType :: Ap SyntacticArgument SerialType
 serialType = choiceFrom [saveCompact , saveBinary] `withDefault` defaultFormat
   where
@@ -63,6 +67,7 @@ serialType = choiceFrom [saveCompact , saveBinary] `withDefault` defaultFormat
 -- by the user.
 defaultSaveFilePath :: FilePath
 defaultSaveFilePath = ".pcg.save"
+
 
 -- |
 -- The default format to serialise to disk.

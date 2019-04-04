@@ -1,5 +1,3 @@
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Binary.Utility
@@ -15,6 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module Data.Binary.Utility
   ( getFieldFromBinary
   )
@@ -24,17 +25,15 @@ import Control.Lens.Operators ((^.))
 import Data.Binary            (Binary, decodeFile)
 import System.Directory       (doesFileExist, makeAbsolute)
 
+
+-- |
+-- Deserialized a binary file and applies a getter to the resulting value.
 getFieldFromBinary
   :: forall s a . (Binary s)
   => FilePath -> Getter s a -> IO a
-getFieldFromBinary filePath getter =
-  do
+getFieldFromBinary filePath getter = do
     fileExist   <- doesFileExist filePath
     absFilePath <- makeAbsolute filePath
     case fileExist of
-      False -> error $
-                    "No file found with the specified filepath:\n"
-                 <> absFilePath
-      True -> do
-                (decodeS :: s) <- decodeFile filePath
-                pure $ decodeS ^. getter
+      False -> error $ "No file found with the specified filepath:\n" <> absFilePath
+      True  -> (^. getter) <$> (decodeFile filePath :: IO s)
