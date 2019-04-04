@@ -328,8 +328,6 @@ makePectinateTree depth = go depth (singletonRefDAG mempty)
     go 0 subtree = subtree
     go n subtree = go (n - 1) (makeBranchedNetwork (singletonRefDAG mempty) subtree)
    
-=======
->>>>>>> 04210c8a19d506bfb543fe2a502ef01e8ff54e13:lib/pcg-core/pcg-data-structures/src/Bio/Graph/ReferenceDAG/Utility.hs
 
 -- |
 -- Generate a random binary tree of some depth.
