@@ -69,17 +69,21 @@ evaluate :: ReadCommand -> SearchState
 evaluate (ReadCommand fileSpecs) = do
     when (null fileSpecs) $ fail "No files specified in 'read()' command"
     -- TODO: use Validation here.
-    result <- liftIO . runExceptT . eitherTValidation $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
---    liftIO $ print result
-    case result of
-      Left pErr -> fail $ show pErr   -- Report structural errors here.
-      Right xs ->
-        case toEither . decoration . unifyPartialInputs $ transformation <$> fold1 xs of
-          Left uErr -> fail $ show uErr -- Report unification errors here.
-           -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Right g   -> liftIO $ compact g
-                       -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
-                       -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
+    readResult  <- liftIO $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
+    case readResult of
+      Failure rErr -> failWithPhase Reading rErr
+      Success rRes -> do
+        parseResult <- liftIO $ parmap rpar (fmap removeGaps . parseSpecifiedFile) rRes
+        case parseResult of
+          Failure pErr -> failWithPhase Parsing pErr
+          Success pRes ->
+            case decoration . unifyPartialInputs $ transformation <$> fold1 pRes of
+              Failure uErr -> failWithPhase Unifying uErr   -- Report structural errors here.
+              Success g -> do
+                  -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
+                  Right g   -> liftIO $ compact g
+                         -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
+                         -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)  
                          -- (liftIO . putStrLn $ show g) $> g
   where
     transformation = id -- expandIUPAC

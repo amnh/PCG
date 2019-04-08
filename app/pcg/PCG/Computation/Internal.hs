@@ -10,6 +10,7 @@ module PCG.Computation.Internal
 
 import           Bio.Graph
 import           Control.Evaluation
+import           Data.Bits
 import           Data.Char                   (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty          (NonEmpty (..))
@@ -69,8 +70,40 @@ renderSearchState eval = (unlines renderedNotifications <>) <$> evaluation err v
 
     trimR = reverse . dropWhile isSpace . reverse
 
-    err errMsg = (ExitFailure 5, "[✘] Error: "<> trimR errMsg       )
-    val _      = (ExitSuccess  , "[✔] Computation complete!"        )
+    err errPhase errMsg = (errorPhaseToCode errPhase, "[✘] Error: "<> trimR errMsg)
+
+    val _ = (ExitSuccess, "[✔] Computation complete!")
+
+
+-- |
+-- Get the error code associated with the phase in which the error occurred.
+--
+-- The error code will have one or more bits set in the range [2, 5].
+-- The bits are set progressively as successive phases are passed.
+--
+-- If a failure occured in the first phase, reading data from the file system,
+-- then the first bit (index 2) in the range will be set.
+--
+-- If the failure occured in the second phase, after data was successfully read
+-- from the disk but could not be successfully parsed, then the first and second
+-- bits (indices 2 & 3) in the range will be set.
+--
+-- If the failure occured in the third phase, after data was read from the disk
+-- and the streams were successfully parsed but the collection of data was not
+-- consistent and could not be unified, then the first through third bits
+-- (indices 2, 3 & 4) in the range will be set.
+--
+-- If the failure occured after reading data from disk, parsing the data streams,
+-- and unifying the input data, but an error occured during the phylogenetic
+-- search, then the first through fourth bits (indices 2, 3, 4 & 5) in the range
+-- will be set.
+errorPhaseToCode :: ErrorPhase -> ExitCode
+errorPhaseToCode = ExitFailure . foldl' ((.|.) . bit) zeroBits .
+    \case
+      Reading   -> [2..2]
+      Parsing   -> [2..3]
+      Unifying  -> [2..4]
+      Computing -> [2..5]
 
 
 getGlobalSettings :: IO GlobalSettings

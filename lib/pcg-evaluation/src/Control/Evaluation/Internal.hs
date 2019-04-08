@@ -19,8 +19,10 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Control.Evaluation.Internal
-  ( Evaluation(..)
+  ( ErrorPhase(..)
+  , Evaluation(..)
   , Notification(..)
+  , failWithPhase
   , notifications
   , prependNotifications
   ) where
@@ -42,6 +44,7 @@ import           Data.Functor.Apply          (Apply (..))
 import           Data.Functor.Bind           (Bind (..))
 import           Data.Functor.Classes        (Eq1 (..), Ord1 (..), Show1 (..))
 import           Data.List.NonEmpty          (NonEmpty (..))
+import           Data.Semigroup.Foldable
 import           GHC.Exts                    (IsList (fromList))
 import           GHC.Generics                hiding (Prefix)
 import           Test.QuickCheck
@@ -348,15 +351,15 @@ instance Traversable Evaluation where
 
 
 -- |
--- Retrieve the ordered list of contextual 'Notification's from the 'Evaluation'.
-notifications :: Evaluation a -> [Notification]
-notifications (Evaluation ms _) = toList ms
+-- Fail and indicate the phase in which the failure occured.
+failWithPhase :: Foldable1 f => ErrorPhase -> f Char -> Evaluation a
+failWithPhase p = Evaluation mempty . evalUnitWithPhase p
 
 
 -- |
--- Retrieve the result state from the 'Evaluation'.
-getEvalUnit :: Evaluation a -> EvalUnit a
-getEvalUnit (Evaluation _ x) = x
+-- Retrieve the ordered list of contextual 'Notification's from the 'Evaluation'.
+notifications :: Evaluation a -> [Notification]
+notifications (Evaluation ms _) = toList ms
 
 
 -- |
@@ -364,6 +367,12 @@ getEvalUnit (Evaluation _ x) = x
 -- internally.
 prependNotifications :: Evaluation a -> DList Notification -> Evaluation a
 prependNotifications (Evaluation ms x) ns = Evaluation (ns <> ms) x
+
+
+-- |
+-- Retrieve the result state from the 'Evaluation'.
+getEvalUnit :: Evaluation a -> EvalUnit a
+getEvalUnit (Evaluation _ x) = x
 
 
 {-# INLINE apply #-}
