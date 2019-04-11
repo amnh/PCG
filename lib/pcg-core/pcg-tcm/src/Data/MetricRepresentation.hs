@@ -24,6 +24,8 @@ module Data.MetricRepresentation
   , retreiveSCM
   , retreivePairwiseTCM
   , retreiveThreewayTCM
+  , discreteMetricPairwiseLogic
+  , firstLinearNormPairwiseLogic
   ) where
 
 import Control.DeepSeq
