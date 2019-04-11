@@ -166,7 +166,7 @@ type  UnifiedBlock =
 
 
 -- |
--- A character block resulting fro the READ command.
+-- A character block resulting from the READ command.
 type  UnifiedCharacterBlock
     = CharacterBlock
         UnifiedContinuousCharacter
@@ -178,7 +178,7 @@ type  UnifiedCharacterBlock
 
 
 -- |
--- A metadata block resulting fro the READ command.
+-- A metadata block resulting from the READ command.
 type  UnifiedMetadataBlock = MetadataBlock ()
 
 
@@ -197,7 +197,7 @@ type  UnifiedSequences =
 
 
 -- |
--- A character sequence resulting fro the READ command.
+-- A character sequence resulting from the READ command.
 type  UnifiedCharacterSequence
     = CharacterSequence
         UnifiedContinuousCharacter
@@ -209,7 +209,7 @@ type  UnifiedCharacterSequence
 
 
 -- |
--- A metadata sequence resulting fro the READ command.
+-- A metadata sequence resulting from the READ command.
 type  UnifiedMetadataSequence = MetadataSequence ()
 
 
