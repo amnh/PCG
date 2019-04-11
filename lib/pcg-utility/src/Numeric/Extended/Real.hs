@@ -20,7 +20,7 @@
 
 
 module Numeric.Extended.Real
-  ( ExtendedReal()
+  ( ExtendedReal(Cost)
   , ExtendedNumber(..)
   , Finite
   , (~==)
