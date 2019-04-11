@@ -34,12 +34,14 @@ module Bio.Sequence.Block
   , staticCost
   -- * Transformations
   , toMissingCharacters
+  , hexFold
   , hexmap
   , hexTranspose
   , hexZipMeta
   , hexZipWith
   , hexZipWith3
   , hexZipWithMeta
+  , hexZip2WithMeta
   ) where
 
 import Bio.Character.Decoration.Continuous
@@ -55,6 +57,7 @@ import Data.Key
 import Data.Monoid                         (Sum (..))
 import Data.Vector.Instances               ()
 import Prelude                             hiding (zip)
+import Data.Foldable
 
 
 -- |
@@ -164,6 +167,19 @@ staticCost mBlock cBlock = nestedSum $
       where
         cost   = c ^. characterCost
         weight = m ^. characterWeight
+
+hexFold :: Monoid m => CharacterBlock m m m m m m -> m
+hexFold cBlock =
+  fold
+    (
+    [ fold $ (^.  continuousBin) cBlock
+    , fold $ (^. nonAdditiveBin) cBlock
+    , fold $ (^.    additiveBin) cBlock
+    , fold $ (^.      metricBin) cBlock
+    , fold $ (^.   nonMetricBin) cBlock
+    ] `using` (evalList rpar)
+    )
+
 
 -- |
 -- Perform a nested sum traversing the list only once keeping

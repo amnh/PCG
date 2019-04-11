@@ -54,6 +54,7 @@ module Bio.Sequence
   , hexZipWith3
   , hexZipWithMeta
   , hexZipMeta
+  , zipWithFold
   -- * Cost quantification
   , sequenceCost
   , sequenceRootCost
@@ -84,6 +85,9 @@ import           Data.Key
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Prelude                      hiding (zip)
+import qualified Data.Vector as V
+import qualified Data.Vector.Custom as V
+import Data.Coerce
 
 
 -- |
@@ -297,3 +301,18 @@ sequenceRootCost
 sequenceRootCost rootCount meta char = sum'
     . parmap rpar (uncurry (Blk.rootCost rootCount))
     . zip (meta ^. blockSequence) $ char ^. blockSequence
+
+
+
+zipWithFold
+  :: (Monoid m)
+  => (CharacterBlock u v w x y z -> CharacterBlock u v w x y z -> m)
+  -> CharacterSequence u v w x y z
+  -> CharacterSequence u v w x y z
+  -> m
+zipWithFold f charSeq1 charSeq2 =
+  let
+    charSeq1V = coerce charSeq1
+    charSeq2V = coerce charSeq2
+  in
+    coerce $ zipWithFold f charSeq1V charSeq2V

@@ -42,6 +42,7 @@ module Bio.Sequence.Block.Character
   , hexZipWith
   , hexZipWith3
   , hexZipWithMeta
+  , hexZip2WithMeta
   , toMissingCharacters
   ) where
 
@@ -536,6 +537,60 @@ hexZipMeta f1 f2 f3 f4 f5 f6 meta charBlock = CB
       , _dynamicBin
           = parZipWith rpar f6 (meta ^.     dynamicBin) (charBlock ^.     dynamicBin)
       }
+
+
+-- |
+-- Performs a zip over the two character blocks. Uses the input functions to zip
+-- the different character types in the character block.
+--
+-- Assumes that the 'CharacterBlock' values have the same number of each character
+-- type. If this assumtion is violated, the result will be truncated.
+hexZip2WithMeta
+  :: (ContinuousCharacterMetadataDec                         -> u -> u' -> u'')
+  -> (DiscreteCharacterMetadataDec                           -> v -> v' -> v'')
+  -> (DiscreteCharacterMetadataDec                           -> w -> w' -> w'')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> x -> x' -> x'')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> y -> y' -> y'')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> z -> z' -> z'')
+  -> MetadataBlock m
+  -> CharacterBlock u   v   w   x   y   z
+  -> CharacterBlock u'  v'  w'  x'  y'  z'
+  -> CharacterBlock u'' v'' w'' x'' y'' z''
+hexZip2WithMeta f1 f2 f3 f4 f5 f6 meta charBlock1 charBlock2 = CB
+    Block
+      { _continuousBin
+          = parZipWith3 rpar f1
+            (meta ^.  continuousBin)
+            (charBlock1 ^.  continuousBin)
+            (charBlock2 ^.  continuousBin)
+      , _nonAdditiveBin
+          = parZipWith3 rpar f2
+            (meta ^. nonAdditiveBin)
+            (charBlock1 ^. nonAdditiveBin)
+            (charBlock2 ^. nonAdditiveBin)
+      , _additiveBin
+          = parZipWith3 rpar f3
+            (meta ^.    additiveBin)
+            (charBlock1 ^.    additiveBin)
+            (charBlock2 ^.    additiveBin)            
+      , _metricBin
+          = parZipWith3 rpar f4
+            (meta ^.      metricBin)
+            (charBlock1 ^.      metricBin)
+            (charBlock2 ^.      metricBin)            
+      , _nonMetricBin
+          = parZipWith3 rpar f5
+            (meta ^.   nonMetricBin)
+            (charBlock1 ^.   nonMetricBin)
+            (charBlock2 ^.   nonMetricBin)            
+      , _dynamicBin
+          = parZipWith3 rpar f6
+            (meta ^.     dynamicBin)
+            (charBlock1 ^.     dynamicBin)
+            (charBlock2 ^.     dynamicBin)            
+      }
+
+
 
 -- |
 -- Convert all characters contained in the block to thier missing value.
