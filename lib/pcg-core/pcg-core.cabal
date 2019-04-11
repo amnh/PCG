@@ -192,6 +192,7 @@ library pcg-analysis
     pcg-utility,
     pcg-tcm,
     pcg-tcm-memo,
+    clustering               >= 0.4       && < 0.5,
     -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 0.7,
     data-default             >= 0.5.2     && < 0.8,
@@ -209,6 +210,7 @@ library pcg-analysis
     vector-instances         >= 3.4       && < 3.5,
 
   exposed-modules:
+    Analysis.Clustering
     Analysis.Parsimony.Additive
     Analysis.Parsimony.Dynamic.DirectOptimization
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
@@ -218,6 +220,7 @@ library pcg-analysis
     Analysis.TotalEdgeCost
 
   other-modules:
+    Analysis.Clustering.Hierarchical
     Analysis.Parsimony.Additive.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
