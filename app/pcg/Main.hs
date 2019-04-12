@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main (main) where
 
@@ -8,13 +9,16 @@ import Control.Monad.Trans.Reader
 import Data.Char                  (toUpper)
 import Data.Maybe
 import Data.Semigroup             ((<>))
+import Data.Text                  (Text, pack)
+import Data.Text.IO               (putStrLn, writeFile)
 import Data.Void
 import PCG.CommandLineOptions
 import PCG.Computation.Internal
 import PCG.Syntax                 (computationalStreamParser)
+import Prelude             hiding (putStrLn, writeFile)
 import System.Environment
 import System.Exit
-import System.IO
+import System.IO           hiding (putStrLn, writeFile)
 import Text.Megaparsec            (ParseErrorBundle, Parsec, errorBundlePretty, parse)
 
 
@@ -45,7 +49,7 @@ main = do
          Left errorMessage -> putStrLn errorMessage
          Right inputStream -> do
              (code, outputStream) <- case parse' computationalStreamParser (inputFile opts) inputStream of
-                                       Left  err -> pure (ExitFailure 4, errorBundlePretty err)
+                                       Left  err -> pure (ExitFailure 4, pack $ errorBundlePretty err)
                                        Right val -> fmap renderSearchState . (`runReaderT` globalSettings) . runEvaluation . evaluate $ optimizeComputation val
              let  outputPath = outputFile opts
              if   (toUpper <$> outputPath) == "STDOUT"
@@ -67,7 +71,7 @@ main = do
 -- stream was intentionally choosen as the input stream and an error message
 -- noting that the stream is empty is returned along with the program's usage
 -- menu.
-retreiveInputStream :: FilePath -> IO (Either String String)
+retreiveInputStream :: FilePath -> IO (Either Text String)
 retreiveInputStream path
   | (toUpper <$> path) /= "STDIN" = Right <$> readFile path
   | otherwise = do
@@ -77,5 +81,5 @@ retreiveInputStream path
       else do
            args <- getArgs
            if   null args
-           then Left <$> parserHelpMessage
-           else Left . ("Error: STDIN is empty\n\n" <>) <$> parserHelpMessage
+           then Left . pack <$> parserHelpMessage
+           else Left . (\x -> "Error: STDIN is empty\n\n" <> pack x) <$> parserHelpMessage

@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase       #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module PCG.Computation.Internal
   ( evaluate
@@ -14,6 +15,8 @@ import           Data.Bits
 import           Data.Char                   (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty          (NonEmpty (..))
+import           Data.Text                   (Text)
+import qualified Data.Text                   as T
 import qualified PCG.Command.Build.Evaluate  as Build
 import qualified PCG.Command.Echo.Evaluate   as Echo
 import qualified PCG.Command.Load.Evaluate   as Load
@@ -59,20 +62,20 @@ evaluate (Computation (x:|xs)) = foldl' f z xs
              SAVE   c -> s >>=   Save.evaluate c
 
 
-renderSearchState :: Evaluation a -> (ExitCode, String)
-renderSearchState eval = (unlines renderedNotifications <>) <$> evaluation err val eval
+renderSearchState :: Evaluation a -> (ExitCode, Text)
+renderSearchState eval = (T.unlines renderedNotifications <>) <$> evaluation err val eval
   where
     renderedNotifications = f <$> notifications eval
       where
-        f :: Notification -> String
-        f (Information s) = "[-] " <> toList s
-        f (Warning     s) = "[!] " <> toList s
-
-    trimR = reverse . dropWhile isSpace . reverse
+        f :: Notification -> Text
+        f (Information s) = "[-] " <> s
+        f (Warning     s) = "[!] " <> s
 
     err errPhase errMsg = (errorPhaseToCode errPhase, "[✘] Error: "<> trimR errMsg)
 
     val _ = (ExitSuccess, "[✔] Computation complete!")
+
+    trimR = T.dropWhileEnd isSpace
 
 
 -- |
@@ -100,10 +103,11 @@ renderSearchState eval = (unlines renderedNotifications <>) <$> evaluation err v
 errorPhaseToCode :: ErrorPhase -> ExitCode
 errorPhaseToCode = ExitFailure . foldl' ((.|.) . bit) zeroBits .
     \case
-      Reading   -> [2..2]
-      Parsing   -> [2..3]
-      Unifying  -> [2..4]
-      Computing -> [2..5]
+      Inputing  -> [2..2]
+      Parsing   -> [3..3]
+      Unifying  -> [2..3]
+      Computing -> [4..4]
+      Outputing -> [5..5]
 
 
 getGlobalSettings :: IO GlobalSettings

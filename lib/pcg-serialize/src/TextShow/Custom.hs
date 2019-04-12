@@ -12,15 +12,13 @@
 --
 -----------------------------------------------------------------------------
 
-
 module TextShow.Custom
   ( intercalateB
   ) where
 
-
-import Data.Foldable (Foldable (fold))
+import Data.Foldable
 import Data.List     (intersperse)
 import TextShow      (Builder)
 
-intercalateB :: Builder -> [Builder] -> Builder
-intercalateB sep bss = fold (intersperse sep bss)
+intercalateB :: Foldable f => Builder -> f Builder -> Builder
+intercalateB sep = fold . intersperse sep . toList

@@ -18,6 +18,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module Control.Evaluation.Unit where
 
@@ -31,17 +33,29 @@ import           Data.Functor.Alt          (Alt (..))
 import           Data.Functor.Apply        (Apply (..))
 import           Data.Functor.Bind         (Bind (..))
 import           Data.Functor.Classes      (Eq1, Ord1 (..), Show1)
-import           Data.List.NonEmpty        (NonEmpty (..))
-import           Data.Semigroup.Foldable
+import           Data.Text                 (Text, pack)
 import           GHC.Generics
+import           TextShow
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances ()
 
 
 -- |
 -- The internal state of the computation. A short-circuiting evaluation unit
--- which returns a value, and error, or indicated that no work was done
-newtype EvalUnit a = EU { runEvalUnit :: Either (ErrorPhase, NonEmpty Char) a }
+-- which returns either an error that occured preventing the evaluation for being
+-- completed or a value of the evaluation or 
+--
+-- In the case that an error occured, an 'ErrorPhase' is stored along with a
+-- 'Text' value describing the error.
+--
+-- Note that multiple errors can be aggregated before calling 'fail' or
+-- 'evalUnitWithPhase' using another 'Applicative' or 'Monad' locally. We will
+-- use the @Validation@ type to collect many error of the same "phase" before
+-- failing in the 'Evaluation' monad. Consequently, the textual error message can
+-- be quite long, representing the entire list of aggregated failures. We use
+-- 'Text' instead of 'String' to store the error message to save space and
+-- efficient rendering.
+newtype EvalUnit a = EU { runEvalUnit :: Either (ErrorPhase, Text) a }
    deriving ( Applicative
             , Apply
             , Data
@@ -64,10 +78,11 @@ newtype EvalUnit a = EU { runEvalUnit :: Either (ErrorPhase, NonEmpty Char) a }
 --
 -- This allows use to use custom exit codes.
 data  ErrorPhase
-    = Reading
+    = Inputing
     | Parsing
     | Unifying
     | Computing
+    | Outputing
     deriving (Data, Eq, Generic, Ord, Read, Show)
 
 
@@ -85,7 +100,7 @@ instance Arbitrary ErrorPhase where
 
     {-# INLINE arbitrary #-}
 
-    arbitrary = elements [ Reading, Parsing, Unifying, Computing ]
+    arbitrary = elements [ Inputing, Parsing, Unifying, Computing, Outputing ]
 
 
 instance Arbitrary a => Arbitrary (EvalUnit a) where
@@ -102,8 +117,11 @@ instance Arbitrary1 EvalUnit where
     liftArbitrary g = do
         n <- choose (0, 9) :: Gen Word -- 1/10 chance of 'error' value
         case n of
-          0 -> (\phase -> evalUnitWithPhase phase $ 'E':|"rror Description") <$> arbitrary
+          0 -> (`evalUnitWithPhase` errorMessage) <$> arbitrary
           _ -> pure <$> g
+      where
+        errorMessage :: Text
+        errorMessage = "Error Description"
 
 
 instance CoArbitrary a => CoArbitrary (EvalUnit a) where
@@ -158,8 +176,8 @@ instance MonadFail EvalUnit where
 
     fail = EU . Left . (\x -> (Computing, x)) .
         \case
-           []   -> 'U':|"nspecified error."
-           x:xs ->   x:|xs
+           []   -> "Unspecified error."
+           x:xs -> pack $ x:xs
 
 
 instance MonadZip EvalUnit where
@@ -202,5 +220,10 @@ instance Ord1 EvalUnit where
           (Right x, Right y) -> x `cmp` y
 
 
-evalUnitWithPhase :: Foldable1 f => ErrorPhase -> f Char -> EvalUnit a
-evalUnitWithPhase p s = EU $ Left (p, toNonEmpty s)
+{-# INLINE[1] evalUnitWithPhase #-}
+evalUnitWithPhase :: TextShow s => ErrorPhase -> s -> EvalUnit a
+evalUnitWithPhase p s = EU $ Left (p, showt s)
+{-# RULES
+"evalUnitWithPhase/Text" forall p (s :: Text). evalUnitWithPhase p s = EU $ Left (p, s)
+  #-}
+    

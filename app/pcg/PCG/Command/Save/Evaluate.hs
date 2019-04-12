@@ -9,18 +9,18 @@ import Data.Binary            (encodeFile)
 import Data.Compact           (getCompact)
 import Data.Compact.Serialize (writeCompact)
 import Data.Functor           (($>))
+import Data.MonoTraversable
 import PCG.Command.Save
 
 
 evaluate :: SaveCommand -> GraphState -> SearchState
-evaluate (SaveCommand filePath serial) g =
-  case serial of
-    Compact -> liftIO $ writeCompact filePath g $> g
-    Binary  -> do
-        let graph  = getCompact g
-        let refDAG = extractReferenceDAG graph
-        liftIO $ encodeFile filePath refDAG
-        pure g
+evaluate (SaveCommand fileSource serial) g =
+  let path = otoList fileSource
+  in  case serial of
+        Compact -> liftIO $ writeCompact path g $> g
+        Binary  -> let graph  = getCompact g
+                       refDAG = extractReferenceDAG graph
+                   in liftIO $ encodeFile path refDAG $> g
 
 
 
