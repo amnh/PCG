@@ -26,6 +26,8 @@ import qualified PCG.Command.Save.Evaluate   as Save
 import           PCG.Syntax
 import           System.Exit
 
+import Debug.Trace
+
 
 optimizeComputation :: Computation -> Computation
 optimizeComputation (Computation commands) = Computation $ collapseReadCommands commands
@@ -101,13 +103,13 @@ renderSearchState eval = (T.unlines renderedNotifications <>) <$> evaluation err
 -- search, then the first through fourth bits (indices 2, 3, 4 & 5) in the range
 -- will be set.
 errorPhaseToCode :: ErrorPhase -> ExitCode
-errorPhaseToCode = ExitFailure . foldl' ((.|.) . bit) zeroBits .
+errorPhaseToCode = traceShowId . ExitFailure .
     \case
-      Inputing  -> [2..2]
-      Parsing   -> [3..3]
-      Unifying  -> [2..3]
-      Computing -> [4..4]
-      Outputing -> [5..5]
+      Inputing  -> bit 2
+      Parsing   -> bit 3
+      Unifying  -> bit 2 .|. bit 3
+      Computing -> bit 4
+      Outputing -> bit 5
 
 
 getGlobalSettings :: IO GlobalSettings

@@ -55,6 +55,7 @@ main = do
              if   (toUpper <$> outputPath) == "STDOUT"
              then hSetBuffering stdout NoBuffering >> putStrLn outputStream
              else writeFile outputPath outputStream
+             print code
              exitWith code
 
 

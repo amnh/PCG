@@ -32,6 +32,9 @@ data  ScriptContext
     }
 
 
+binaryDirectory :: FilePath
+binaryDirectory = "./bin/pcg"
+
 testDirectory :: FilePath
 testDirectory = "test" </> "data-sets"
 
@@ -63,18 +66,20 @@ constructProcess
   :: FilePath -- ^ Relative path to the PCG script
   -> IO ScriptContext
 constructProcess scriptStr = do
-    prefix <- makeAbsolute scriptDirectory
+    prefix      <- makeAbsolute scriptDirectory
+    binFilePath <- makeAbsolute binaryDirectory
     let outFilePath = prefix </> outLogFileName
     let errFilePath = prefix </> errLogFileName
     let commandStr  = unwords
-                    [ "stack exec pcg -- --input"
+                    [ binFilePath
+                    , "--input"
                     , scriptFileName
                     , "--output"
                     , outFilePath
                     , "2>"
                     , errFilePath
                     ]
-
+    
     -- Delete log files if they exist
     _ <- deleteFileIfExists outFilePath
     _ <- deleteFileIfExists errFilePath

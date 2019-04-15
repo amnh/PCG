@@ -15,6 +15,7 @@ import Bio.Graph.ReferenceDAG  (_dagCost, _graphData)
 import Control.Lens            (Getter, (^.))
 import Control.Monad.Except    (ExceptT (..), runExceptT)
 import Data.Binary             (decodeOrFail)
+import Data.Bits
 import Data.ByteString.Lazy    (ByteString)
 import Data.Either
 import Data.Foldable
@@ -249,14 +250,15 @@ costTestSuite = testGroup "Cost Analysis"
 -- as input due to inconsistencies.
 failureTestSuite :: TestTree
 failureTestSuite = testGroup "Expected Failures"
-  [ scriptFailure "failure/unmatched-leaf-taxon/test.pcg"
-  , scriptFailure "failure/unmatched-tree-taxon/test.pcg"
-  , scriptFailure "failure/duplicate-leaf-taxon/test.pcg"
+  [ scriptUnifyError "failure/unmatched-leaf-taxon/test.pcg"
+  , scriptUnifyError "failure/unmatched-tree-taxon/test.pcg"
+--  , scriptUnifyError "failure/duplicate-leaf-taxon/test.pcg"
+  , scriptUnifyError "failure/duplicate-leaf-taxon/test.pcg"
 -- We omit this test because the DAG.unfoldr function in the ParsedForest call
 -- will ensure that there is only one leaf in the graph. It may have multiple
 -- parents however.
 --  , scriptFailure "duplicate-tree-taxon/test.pcg"
-  , scriptFailure "failure/no-data-in-graph/test.pcg"
+  , scriptUnifyError "failure/no-data-in-graph/test.pcg"
   ]
 
 
@@ -368,6 +370,39 @@ scriptFailure :: String -> TestTree
 scriptFailure scriptPath = testCase scriptPath $ do
     v <- runScripts (scriptPath:|[]) []
     assertBool "Expected script failure, but script was successful..." $ isLeft v
+
+
+-- |
+-- Expects the PCG script to return an input error exitcode.
+scriptInputError :: String -> TestTree
+scriptInputError = scriptWithExitCode (bit 2) "an input error"
+
+
+-- |
+-- Expects the PCG script to return a parse error exitcode.
+scriptParseError :: String -> TestTree
+scriptParseError = scriptWithExitCode (bit 3) "a parse error"
+
+
+-- |
+-- Expects the PCG script to return a unifcation error exitcode.
+scriptUnifyError :: String -> TestTree
+scriptUnifyError = scriptWithExitCode (bit 2 .|. bit 3) "a unification error"
+
+
+-- |
+-- Build for 'TestTree' that expects a specific exitcode.
+scriptWithExitCode :: Int -> String -> String -> TestTree
+scriptWithExitCode expVal description scriptPath = testCase scriptPath $ do
+    v <- runScripts (scriptPath:|[]) []
+    case v of
+      Right {}     -> assertFailure "Expected script failure, but script was successful..."
+      Left  (_,ec) -> let errMsg = fold [ "Expected exitcode (", show expVal, ") indicating "
+                                        , description, ", but instead exitcode (", show ec,") was found"
+                                        ]
+                      in  assertBool errMsg $ ec == expVal
+  where
+    
 
 
 -- |

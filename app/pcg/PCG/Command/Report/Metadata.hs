@@ -35,7 +35,7 @@ import           Control.Lens.Operators     ((^.))
 import qualified Data.ByteString.Lazy       as BS
 import           Data.Csv
 import           Data.FileSource
-import           Data.Text.Short            (ShortText, toByteString)
+import           Data.Text.Short            (toByteString)
 
 
 data  CharacterReportMetadata
@@ -43,7 +43,7 @@ data  CharacterReportMetadata
     { characterNameRM  :: String
     , charsourceFileRM :: FileSource
     , characterTypeRM  :: CharacterType
-    , tcmSourceFile    :: ShortText
+    , tcmSourceFile    :: FileSource
     }
 
 
@@ -71,8 +71,8 @@ instance ToField FileSource where
     toField = toByteString . toShortText
 
 
-
--- | Wrapper function to output a metadata csv as a 'ByteString'
+-- |
+-- Wrapper function to output a metadata csv as a 'ByteString'
 outputMetadata :: DecoratedCharacterResult -> BS.ByteString
 outputMetadata =
   encodeDefaultOrderedByName . characterMetadataOutput
@@ -96,7 +96,6 @@ getCharacterReportMetadata =
       metricMeta
       nonMetricMeta
       dynamicBin
-
   where
     charName :: HasCharacterName s CharacterName => s -> String
     charName = show . (^. characterName)
@@ -104,11 +103,11 @@ getCharacterReportMetadata =
     charSourceFilePath :: HasCharacterName s CharacterName => s -> FileSource
     charSourceFilePath = sourceFile . (^. characterName)
 
-    tcmSourceFilePath :: HasTcmSourceFile s ShortText => s -> ShortText
+    tcmSourceFilePath :: HasTcmSourceFile s FileSource => s -> FileSource
     tcmSourceFilePath = (^. _tcmSourceFile)
 
 
-    f :: (HasCharacterName s CharacterName, HasTcmSourceFile s ShortText)
+    f :: (HasCharacterName s CharacterName, HasTcmSourceFile s FileSource)
       => CharacterType
       -> s
       -> CharacterReportMetadata
@@ -124,6 +123,3 @@ getCharacterReportMetadata =
     metricMeta      = pure . f Metric
     nonMetricMeta   = pure . f NonMetric
     dynamicBin      = pure . f Dynamic
-
-
-
