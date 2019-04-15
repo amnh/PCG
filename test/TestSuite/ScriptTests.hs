@@ -250,7 +250,9 @@ costTestSuite = testGroup "Cost Analysis"
 -- as input due to inconsistencies.
 failureTestSuite :: TestTree
 failureTestSuite = testGroup "Expected Failures"
-  [ scriptUnifyError "failure/unmatched-leaf-taxon/test.pcg"
+  [ scriptInputError "failure/file-not-found/test.pcg"
+  , scriptParseError "failure/file-unparsable/test.pcg"
+  , scriptUnifyError "failure/unmatched-leaf-taxon/test.pcg"
   , scriptUnifyError "failure/unmatched-tree-taxon/test.pcg"
 --  , scriptUnifyError "failure/duplicate-leaf-taxon/test.pcg"
   , scriptUnifyError "failure/duplicate-leaf-taxon/test.pcg"

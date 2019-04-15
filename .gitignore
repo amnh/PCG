@@ -77,3 +77,4 @@ doc/haddock*
 *log.err
 *log.out
 *.bin
+*.save
