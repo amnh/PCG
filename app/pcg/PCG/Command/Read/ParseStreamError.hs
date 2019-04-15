@@ -16,9 +16,11 @@ import Control.DeepSeq           (NFData)
 import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty hiding (toList)
+import Data.String
+import Data.Text                 (Text)
 import GHC.Generics              (Generic)
 import Text.Megaparsec
-import TextShow
+import TextShow           hiding (fromString)
 import TextShow.Custom
 
 
@@ -34,7 +36,7 @@ newtype ParseStreamError = ParseStreamError (NonEmpty ParseStreamErrorMessage)
 
 
 data  ParseStreamErrorMessage
-    = FileUnparsable    FileSource String
+    = FileUnparsable    FileSource Text
     | InvalidPrealigned FileSource (NonEmpty Word)
     deriving (Generic, NFData, Show)
    
@@ -52,11 +54,11 @@ instance TextShow ParseStreamError where
           where
             preamble =
                 case fst <$> pErrors of
-                  []   -> ""
-                  [x]  -> "Could not parse file " <> showb x <> "\n"
-                  x:xs -> unlinesB $ showb <$> ("Could not parse the following files:":x:xs)
+                  []  -> ""
+                  [x] -> "Could not parse file '" <> showb x <> "'\n"
+                  xs  -> unlinesB . ("Could not parse the following files:":) $ showbIndent xs
 
-            errorMessages = unlinesB $ showb . snd <$> pErrors
+            errorMessages = unlinesB $ fromText . snd <$> pErrors
 
         showUnaligned aErrors =
             case aErrors of
@@ -65,7 +67,7 @@ instance TextShow ParseStreamError where
               xs  -> unlinesB $ [ "The following files were specified as prealigned,", "but not all characters had the same length:"] <> (showInvalidPrealigned <$> xs)
           where
             showInvalidPrealigned :: (FileSource, NonEmpty Word) -> Builder
-            showInvalidPrealigned (path, cols) = fold ["'", showb path, "', has characters of lengths ", intercalateB ", " $ showb <$> cols]
+            showInvalidPrealigned (path, cols) = fold ["  ", showb path, ", has characters of lengths ", intercalateB ", " $ showb <$> cols]
 
         partitionParseStreamErrors = foldr f ([],[])
           where
@@ -78,8 +80,12 @@ instance TextShow ParseStreamError where
 -- |
 -- Remark that a parsing error occured when reading the file. Note that the 'ParseError' should contain the 'FileSource' information.
 makeUnparsableFile :: (ShowErrorComponent e, Stream s) => FileSource -> ParseErrorBundle s e -> ParseStreamError
-makeUnparsableFile path pErr = ParseStreamError . pure . FileUnparsable path $ errorBundlePretty pErr
+makeUnparsableFile path pErr = ParseStreamError . pure . FileUnparsable path . fromString $ errorBundlePretty pErr
 
 
 makeInvalidPrealigned :: Integral i => FileSource -> NonEmpty i -> ParseStreamError
 makeInvalidPrealigned path = ParseStreamError . pure . InvalidPrealigned path . fmap (fromIntegral . abs)
+
+
+showbIndent :: (Functor f, TextShow s) => f s -> f Builder
+showbIndent = fmap (\x -> showbSpace <> showbSpace <> showb x)

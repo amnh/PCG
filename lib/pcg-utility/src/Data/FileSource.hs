@@ -205,7 +205,7 @@ instance MonoTraversableWithKey FileSource where
 
 instance TextShow FileSource where
 
-    showb = showb . TS.toShortByteString . toShortText
+    showb = fromText . TS.toText . toShortText
 
 
 -- |

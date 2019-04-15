@@ -1,2 +1,3 @@
-read ("newick.tree")
 read ("data.fasta")
+read ("newick-1.tree")
+read ("newick-2.tree")
