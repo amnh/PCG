@@ -4,6 +4,8 @@ compiler: ghc-8.6.5
 
 compiler-check: match-exact
 
+copy-bins: true
+
 extra-deps:
   - bv-little-1.0.0
   - compact-0.1.0.1
@@ -33,6 +35,7 @@ packages:
   - lib/pcg-core
   - lib/pcg-data-normalization
   - lib/pcg-data-unification
+  - lib/pcg-error-phase
   - lib/pcg-evaluation
   - lib/pcg-exportable
   - lib/pcg-file-parsers
