@@ -74,19 +74,6 @@ newtype EvalUnit a = EU { runEvalUnit :: Either (ErrorPhase, Text) a }
             , Traversable
             )
 
--- |
--- Keep track of which phase of the evaluation th error occured in.
---
--- This allows use to use custom exit codes.
-data  ErrorPhase
-    = Inputing
-    | Parsing
-    | Unifying
-    | Computing
-    | Outputing
-    deriving (Data, Eq, Generic, Ord, Read, Show)
-
-
 instance Alt EvalUnit where
 
     {-# INLINEABLE (<!>) #-}
@@ -95,13 +82,6 @@ instance Alt EvalUnit where
         case runEvalUnit lhs of
           Right _ -> lhs
           _       -> rhs
-
-
-instance Arbitrary ErrorPhase where
-
-    {-# INLINE arbitrary #-}
-
-    arbitrary = elements [ Inputing, Parsing, Unifying, Computing, Outputing ]
 
 
 instance Arbitrary a => Arbitrary (EvalUnit a) where
@@ -126,13 +106,6 @@ instance Arbitrary1 EvalUnit where
 
 
 instance CoArbitrary a => CoArbitrary (EvalUnit a) where
-
-    {-# INLINE coarbitrary #-}
-
-    coarbitrary = genericCoarbitrary
-
-
-instance CoArbitrary ErrorPhase where
 
     {-# INLINE coarbitrary #-}
 
@@ -195,11 +168,6 @@ instance MonadZip EvalUnit where
         case runEvalUnit x of
           Left  s     -> (EU $ Left s, EU $ Left s)
           Right (a,b) -> (pure a, pure b)
-
-
-instance NFData ErrorPhase where
-
-    rnf x = x `seq` ()
 
 
 instance Ord a => Ord (EvalUnit a) where

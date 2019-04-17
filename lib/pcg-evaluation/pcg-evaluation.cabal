@@ -96,6 +96,7 @@ library
     src
 
   build-depends:
+    pcg-error-phase,
     dlist                    >= 0.8       && < 1.0,
     quickcheck-instances     >= 0.3.17    && < 1.0,
     text                     >= 1.2       && < 2.0,

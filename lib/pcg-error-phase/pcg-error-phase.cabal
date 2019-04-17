@@ -126,10 +126,10 @@ test-suite test-suite
     -threaded
 
   build-depends:
-    pcg-evaluation,
+    pcg-error-phase,
     tasty                    >= 1.2       && < 2.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
 
   other-modules:
-    Control.Evaluation.Test
+    System.ErrorPhase.Test
