@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Control.Evaluation.Unit
+-- Module      :  System.ErrorPhase
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,7 +8,10 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- The core monoidal state of an 'Evaluation' monad.
+-- Defines the different phases in which an error can occur.
+--
+-- Each 'ErrorPhase' can be uniquely translated to an 'ExitCode'.
+--
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveDataTypeable         #-}
@@ -39,9 +42,9 @@ import           System.Exit
 
 
 -- |
--- Keep track of which phase of the evaluation th error occured in.
+-- Define which phase of a computation the error occured in.
 --
--- This allows use to use custom exit codes.
+-- Combining this with another "error" monand allows the use of custom exit codes.
 data  ErrorPhase
     = Inputing
     | Parsing
@@ -81,6 +84,37 @@ instance TextShow ErrorPhase where
            Outputing -> "Outputing"
 
 
+-- |
+-- Definition of the unique mapping between 'ErrorPhase' and 'ExitCode'.
+--
+-- The 'ExitCode' returned from this function will return an 8 bit value.
+-- 'ExitCode' exposes a 'Int', and not a 'Word8' or 'Int8' as described, however
+-- we limit the range of the resulting 'ExitCode'.
+--
+-- The resulting 8-bit exit code value will have the two least significant bits
+-- cleared and the two most significant bits cleared. These are reserved for
+-- future use.
+--
+-- In the case of an input error, the third least significant bit will be set:
+--
+-- * @00000100 = 4@
+--
+-- In the case of a parse error, the fourth least significant bit will be set:
+--
+-- * @00001000 = 8@
+--
+-- In the case of a unification error, the third and fourth least significant bit
+-- will be set:
+--
+-- * @00001100 = 12@
+--
+-- In the case of a computation error, the fifth least significant bit will be set:
+--
+-- * @00010000 = 16@
+--
+-- In the case of an output error, the sixth least significant bit will be set:
+--
+-- * @00100000 = 32@
 errorPhaseToExitCode :: Bimap ErrorPhase ExitCode
 errorPhaseToExitCode = fromAscPairList . force $ second buildExitCode <$>
     [ ( Inputing, [2]  )

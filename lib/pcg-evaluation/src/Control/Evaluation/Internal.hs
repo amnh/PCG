@@ -47,6 +47,7 @@ import           Data.String
 import           Data.Text                   (Text)
 import           GHC.Exts                    (IsList (fromList))
 import           GHC.Generics                hiding (Prefix)
+import           System.ErrorPhase
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances   ()
 import           TextShow                    (TextShow)
