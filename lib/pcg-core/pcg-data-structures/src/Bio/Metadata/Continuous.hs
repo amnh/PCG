@@ -26,10 +26,13 @@ module Bio.Metadata.Continuous
 
 import Bio.Metadata.CharacterName
 import Bio.Metadata.General
+import Bio.Metadata.Metric
 import Control.DeepSeq
 import Control.Lens
-import GHC.Generics
+import GHC.Generics hiding (to)
 import Text.XML
+import Data.Range
+import Data.MetricRepresentation
 
 
 -- |
@@ -43,6 +46,14 @@ instance GeneralCharacterMetadata ContinuousCharacterMetadataDec where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata (CCM x) = x
+
+-- | (✔)
+instance (Ranged c, Bound c ~ d, Ord d) =>
+  GetPairwiseTransitionCostMatrix ContinuousCharacterMetadataDec c d where
+
+    pairwiseTransitionCostMatrix = to $ const firstLinearNormPairwiseLogic
+  
+  
 
 
 -- | (✔)

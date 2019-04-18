@@ -132,6 +132,7 @@ library
     Bio.Character.Decoration.Additive,
     Bio.Character.Decoration.Continuous,
     Bio.Character.Decoration.Discrete,
+    Bio.Character.Decoration.Discrete.Class,
     Bio.Character.Decoration.Dynamic,
     Bio.Character.Decoration.Fitch,
     Bio.Character.Decoration.Metric,
@@ -145,10 +146,12 @@ library
     Bio.Metadata.Discrete,
     Bio.Metadata.DiscreteWithTCM,
     Bio.Metadata.Dynamic,
+    Bio.Metadata.Metric,
     Bio.Sequence,
     Bio.Sequence.Block,
     Bio.Sequence.Character,
     Bio.Sequence.Metadata,
+    Bio.Sequence.Metric,
     Bio.Graph,
     Bio.Graph.Component,
     Bio.Graph.Constructions,
@@ -292,6 +295,7 @@ library pcg-data-structures
     Bio.Character.Decoration.Additive
     Bio.Character.Decoration.Continuous
     Bio.Character.Decoration.Discrete
+    Bio.Character.Decoration.Discrete.Class
     Bio.Character.Decoration.Dynamic
     Bio.Character.Decoration.Fitch
     Bio.Character.Decoration.Metric
@@ -305,10 +309,12 @@ library pcg-data-structures
     Bio.Metadata.Discrete
     Bio.Metadata.DiscreteWithTCM
     Bio.Metadata.Dynamic
+    Bio.Metadata.Metric
     Bio.Sequence
     Bio.Sequence.Block
     Bio.Sequence.Character
     Bio.Sequence.Metadata
+    Bio.Sequence.Metric
     Bio.Graph
     Bio.Graph.Component
     Bio.Graph.Constructions
@@ -361,6 +367,8 @@ library pcg-data-structures
     Bio.Metadata.DiscreteWithTCM.Internal
     Bio.Metadata.Dynamic.Class
     Bio.Metadata.Dynamic.Internal
+    Bio.Metadata.Metric.Class
+    Bio.Metadata.Metric.Internal
     Bio.Graph.BinaryRenderingTree
     Bio.Graph.Forest
     Bio.Graph.Node.Internal

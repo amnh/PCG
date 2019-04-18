@@ -35,8 +35,11 @@ import Control.Lens
 import Data.Alphabet
 import Data.List                   (intercalate)
 import Data.Text.Short             (ShortText)
-import GHC.Generics
+import GHC.Generics hiding (to)
 import Text.XML
+import Bio.Metadata.Metric
+import Data.Bits
+import Data.MetricRepresentation
 
 
 -- |
@@ -92,6 +95,12 @@ instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = generalData
+
+-- | (✔)
+instance (Bits c, Num b) =>
+  GetPairwiseTransitionCostMatrix DiscreteCharacterMetadataDec c b where
+
+    pairwiseTransitionCostMatrix = to $ const discreteMetricPairwiseLogic 
 
 
 -- | (✔)

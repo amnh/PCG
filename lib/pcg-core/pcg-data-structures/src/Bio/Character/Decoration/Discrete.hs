@@ -16,13 +16,15 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving  #-}
+{-# LANGUAGE DerivingStrategies     #-}
 
 -- For derived instance of PossiblyMissingCharacter
 {-# LANGUAGE UndecidableInstances   #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Decoration.Discrete
-  ( DiscreteDecoration()
+  ( DiscreteDecoration(DiscreteDec)
   , DiscreteCharacterDecoration()
   , DiscreteCharacterMetadata()
   , GeneralCharacterMetadata()
@@ -48,33 +50,16 @@ import GHC.Generics
 import Numeric.Extended
 import Text.XML
 import TextShow                        (TextShow (showb))
-
+import Data.Bits
+import Bio.Character.Decoration.Discrete.Class
 
 -- |
+
 -- General, concrete type for 'Discrete' characters.
 newtype DiscreteDecoration c = DiscreteDec { discreteDecorationCharacter :: c }
-    deriving (Generic, NFData)
-
--- |
--- A 'Lens' for the 'discreteCharacter' field
-class HasDiscreteCharacter s a | s -> a where
-
-    discreteCharacter :: Lens' s a
-    {-# MINIMAL discreteCharacter #-}
-
-
--- | (✔)
-class ( HasDiscreteCharacter s a
-      , EncodableStaticCharacter a
-      ) => DiscreteCharacterDecoration s a | s -> a where
-
-
--- | (✔)
-class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a | s -> a where
-
-    toDiscreteCharacterDecoration :: (x -> a) -> x -> s
-    {-# MINIMAL toDiscreteCharacterDecoration #-}
-
+    deriving newtype  Bits
+    deriving stock    (Eq, Generic)
+    deriving anyclass  NFData
 
 
 instance Show c => Show (DiscreteDecoration c) where

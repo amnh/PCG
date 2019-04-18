@@ -10,13 +10,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Bio.Character.Decoration.Continuous.Internal
   ( ContinuousDecorationInitial(..)
@@ -44,7 +45,7 @@ import TextShow                          (TextShow (showb), unlinesB)
 newtype ContinuousDecorationInitial c
     = ContinuousDecorationInitial
     { continuousDecorationInitialCharacter :: c
-    } deriving (Generic)
+    } deriving (Generic, Ranged)
 
 
 -- |
@@ -92,6 +93,8 @@ lensCPostD f g = lens (getterCPostD f) (setterCPostD g)
     getterCPostD h (CPostD e)   = e ^. h
     setterCPostD h (CPostD e) x = CPostD $ e & h .~ x
 
+
+type instance Bound (ContinuousDecorationInitial c) = Bound c
 
 -- | (✔)
 instance (Finite (Bound a) ~ c) => HasCharacterCost (ContinuousOptimizationDecoration a) c where

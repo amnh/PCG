@@ -85,8 +85,6 @@ import           Data.Key
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Prelude                      hiding (zip)
-import qualified Data.Vector as V
-import qualified Data.Vector.Custom as V
 import Data.Coerce
 
 

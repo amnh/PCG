@@ -73,7 +73,7 @@ retreivePairwiseTCM
   -> c
   -> (c, Word)
 retreivePairwiseTCM f (ExplicitLayout a b) = f a b
-retreivePairwiseTCM _ DiscreteMetric       =  discreteMetricPairwiseLogic
+retreivePairwiseTCM _ DiscreteMetric       = discreteMetricPairwiseLogic
 retreivePairwiseTCM _ LinearNorm           = firstLinearNormPairwiseLogic
 
 

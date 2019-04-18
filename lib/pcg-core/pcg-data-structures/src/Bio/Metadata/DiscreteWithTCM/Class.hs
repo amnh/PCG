@@ -27,7 +27,7 @@ module Bio.Metadata.DiscreteWithTCM.Class
 
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
-import Control.Lens
+import Bio.Metadata.Metric
 
 
 -- |
@@ -36,29 +36,5 @@ import Control.Lens
 class ( DiscreteCharacterMetadata     s
       , EncodableStreamElement        c
       , GetSymbolChangeMatrix         s (Word -> Word -> Word)
-      , GetPairwiseTransitionCostMatrix       s (c -> c -> (c, Word))
+      , GetPairwiseTransitionCostMatrix       s c Word
       ) => DiscreteWithTcmCharacterMetadata s c | s -> c where
-
-
--- |
--- A 'Getter' for the 'symbolChangeMatrix' field
-class GetSymbolChangeMatrix s a | s -> a where
-
-    {-# MINIMAL symbolChangeMatrix #-}
-    symbolChangeMatrix :: Getter s a
-
-
--- |
--- A 'Getter' for the 'pairwiseTransitionCostMatrix' field
-class GetPairwiseTransitionCostMatrix s a | s -> a where
-
-    {-# MINIMAL pairwiseTransitionCostMatrix #-}
-    pairwiseTransitionCostMatrix  :: Getter s a
-
-
--- |
--- A 'Getter' for the 'denseTransitionCostMatrix' field
-class GetSparseTransitionCostMatrix s a | s -> a where
-
-    {-# MINIMAL sparseTransitionCostMatrix #-}
-    sparseTransitionCostMatrix  :: Getter s a

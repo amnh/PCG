@@ -24,7 +24,7 @@ import Data.Coerce
 import Control.Lens.Operators
 import Numeric.Extended.Real
 import Bio.Character
-import Bio.Graph
+import Bio.Graph 
 import Bio.Character.Decoration.Continuous
 import Bio.Character.Decoration.Dynamic
 import Bio.Graph.LeafSet

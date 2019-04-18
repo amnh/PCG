@@ -118,7 +118,7 @@ data DynamicCharacterMetadataDec c
 class ( DiscreteWithTcmCharacterMetadata s c
       , GetDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
       , GetSparseTransitionCostMatrix    s (Maybe MemoizedCostMatrix)
-      , GetPairwiseTransitionCostMatrix  s (     c -> c -> (c, Word))
+      , GetPairwiseTransitionCostMatrix  s c Word
       , GetThreewayTransitionCostMatrix  s (c -> c -> c -> (c, Word))
       , HasTraversalFoci                 s (Maybe TraversalFoci)
       ) => DynamicCharacterMetadata s c | s -> c where
@@ -173,6 +173,7 @@ instance GeneralCharacterMetadata (DynamicCharacterMetadataDec c) where
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
 
 
+
 -- | (✔)
 instance HasCharacterAlphabet (DynamicCharacterMetadataDec c) (Alphabet String) where
 
@@ -222,7 +223,7 @@ instance GetSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> 
 
 -- | (✔)
 instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
-    => GetPairwiseTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> (c, Word)) where
+    => GetPairwiseTransitionCostMatrix (DynamicCharacterMetadataDec c) c Word where
 
     pairwiseTransitionCostMatrix = to extractPairwiseTransitionCostMatrix
 

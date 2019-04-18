@@ -23,7 +23,7 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Bio.Character.Encodable.Static.Internal
-  ( StaticCharacter()
+  ( StaticCharacter(SC)
   , StaticCharacterBlock()
   ) where
 
