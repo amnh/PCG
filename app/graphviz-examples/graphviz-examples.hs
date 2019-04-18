@@ -1,4 +1,5 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Main where
 
@@ -9,6 +10,9 @@ import qualified Data.Text.Lazy                    as TL
 import qualified Data.Text.Lazy.IO                 as TL
 import           System.Directory                  (createDirectoryIfMissing, setCurrentDirectory)
 import           System.FilePath.Posix             ((<.>))
+import Algebra.Graph
+import Algebra.Graph.Export.Dot
+import Data.String
 
 
 main :: IO ()
@@ -16,7 +20,8 @@ main = do
     putStrLn "Graph"
     createDirectoryIfMissing False "graphviz-examples"
     setCurrentDirectory "graphviz-examples"
-    traverse_ makeDotFile networks
+--    traverse_ makeDotFile networks
+    traverse_ writeToDotFile graphFiles
 
 
 makeDotFile :: (Network, FilePath) -> IO ()
@@ -387,6 +392,7 @@ networks = [ (baseNetwork                   , "baseNetwork"                   )
 --                         ]
 
 
+                            
 
 networkGraphParameters
  :: G.GraphvizParams
@@ -446,3 +452,73 @@ templateNodes = fold
         , newN        <$> ["newSrc", "newTgt"]
         , contextualN <$> ["b (src1)", "g (src2)", "e (tgt1)", "k (tgt2)"]
         ]
+
+
+
+instance  {-# OVERLAPPING #-} Num (Graph String) where
+    fromInteger = Vertex . show
+    (+)         = Overlay
+    (*)         = Connect
+    signum      = const Empty
+    abs         = id
+    negate      = id
+
+v :: a -> Graph a
+v = Vertex
+
+--renderExampleNetwork :: String
+--renderExampleNetwork = unlines
+--                         [ "                        root"
+--                         , "                      /     \
+--                         , "                     a       b
+--                         , "                   /  \     /  \
+--                         , "                  c    \   /    e
+--                         , "                         d     /  \
+--                         , "                         |    g    \
+--                         , "                         f   / \    \
+--                                                    / \  k  l    \
+--                         ,                         i   j          h
+--                                                                 / \
+--                                                                m   n
+--                                                                 \ /
+--                                                                  o
+--                                                                  |
+--                                                                  p
+--
+--
+--                         ]
+
+baseGraph :: Graph String
+baseGraph = v "root" * (acdfij + bdfijegklhmnop)
+  where
+    acdfij = v "a" * (v "c" + dfij)
+    bdfijegklhmnop = v "b" * (dfij + egklhmnop)
+    egklhmnop = v "e" * (gkl + hmnop)
+    dfij = v "d" * (v "f" * (v "i" + v "j"))
+    hmnop = v "h" * ((v "m" * op) + (v "n" * op))
+    op = (v "o") * (v "p")
+    gkl = v "g" * (v "k" + v "l")
+                                                          
+                                                          
+
+exportToDot :: Graph String -> String
+exportToDot = export (defaultStyle id)
+
+
+writeToDotFile :: (FilePath, Graph String) -> IO ()
+writeToDotFile (fp, graph) = writeFile fp (exportToDot graph)
+
+graphFiles = [("base-graph.dot", baseGraph)]
+
+
+redEdge :: String -> String -> Style String String
+redEdge node1 node2 =
+  (defaultStyle id){edgeAttributes = \x y -> ["color" := "red" | x == node1, y == node2]}
+
+greenEdge :: String -> String -> Style String String
+greenEdge node1 node2 =
+  (defaultStyle id){edgeAttributes = \x y -> ["color" := "green" | x == node1, y == node2]}
+
+blueEdge :: String -> String -> Style String String
+blueEdge node1 node2 =
+  (defaultStyle id){edgeAttributes = \x y -> ["color" := "blue" | x == node1, y == node2]}
