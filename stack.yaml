@@ -4,8 +4,6 @@ compiler: ghc-8.6.5
 
 compiler-check: match-exact
 
-copy-bins: true
-
 extra-deps:
   - bv-little-1.0.0
   - compact-0.1.0.1
@@ -38,6 +36,7 @@ packages:
   - lib/pcg-evaluation
   - lib/pcg-exportable
   - lib/pcg-file-parsers
+  - lib/pcg-file-source
   - lib/pcg-language
   - lib/pcg-serialize
   - lib/pcg-tcm-memo

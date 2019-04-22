@@ -82,7 +82,7 @@ library
     src
 
   build-depends:
-    pcg-utility,
+    pcg-file-source,
     base                     >= 4.11      && < 5.0,
     case-insensitive         >= 1.2.0     && < 1.3,
     -- >=0.5.8 Required for Data.Map.restrictKeys

@@ -14,31 +14,29 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE DeriveTraversable          #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE LambdaCase            #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module System.ErrorPhase
   ( ErrorPhase(..)
   , errorPhaseToExitCode
   ) where
 
-import           Control.DeepSeq
-import           Data.Bifunctor            (second)
-import           Data.Bimap
-import           Data.Bits
-import           Data.Data
-import           GHC.Generics
-import           TextShow
-import           Test.QuickCheck
-import           Test.QuickCheck.Instances ()
-import           System.Exit
+import Control.DeepSeq
+import Data.Bifunctor            (second)
+import Data.Bimap
+import Data.Bits
+import Data.Data
+import GHC.Generics
+import System.Exit
+import Test.QuickCheck
+import Test.QuickCheck.Instances ()
+import TextShow
 
 
 -- |

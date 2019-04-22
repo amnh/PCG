@@ -1,10 +1,24 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.FileSource.InputStreamError
+-- Copyright   :  (c) 2015-2018 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Exposes several useful disk utility related functionality.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE OverloadedStrings  #-}
 
-module PCG.Command.Read.InputStreamError
+module Data.FileSource.InputStreamError
   ( InputStreamError()
   , makeAmbiguousFiles
   , makeFileNotFound
@@ -12,8 +26,9 @@ module PCG.Command.Read.InputStreamError
   ) where
 
 import Control.DeepSeq         (NFData)
---import Data.Data                 (Data)
-import Data.FileSource         (FileSource)
+--import           Data.Coerce               (Coercible, coerce)
+--import           Data.Data                 (Data)
+import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty      hiding (toList)
 import Data.Maybe              (catMaybes)

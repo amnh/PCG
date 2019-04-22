@@ -97,7 +97,7 @@ safelyMoveFile fs = do
         renameFile fp newName
   where
     fp = otoList fs
-    
+
     getFilePathPrefixes = fmap (drop (length fp)) . filter (fp `isPrefixOf`)
 
     getNumericSuffixes  = fmap tail . filter hasDotThenNumberSuffix . fmap takeExtension

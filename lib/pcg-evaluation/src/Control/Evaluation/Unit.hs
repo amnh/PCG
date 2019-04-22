@@ -36,15 +36,15 @@ import           Data.Functor.Classes      (Eq1, Ord1 (..), Show1)
 import           Data.Text                 (Text, pack)
 import           GHC.Generics
 import           System.ErrorPhase
-import           TextShow
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances ()
+import           TextShow
 
 
 -- |
 -- The internal state of the computation. A short-circuiting evaluation unit
 -- which returns either an error that occured preventing the evaluation for being
--- completed or a value of the evaluation or 
+-- completed or a value of the evaluation or
 --
 -- In the case that an error occured, an 'ErrorPhase' is stored along with a
 -- 'Text' value describing the error.
@@ -195,4 +195,4 @@ evalUnitWithPhase p s = EU $ Left (p, showt s)
 {-# RULES
 "evalUnitWithPhase/Text" forall p (s :: Text). evalUnitWithPhase p s = EU $ Left (p, s)
   #-}
-    
+

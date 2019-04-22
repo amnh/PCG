@@ -55,8 +55,8 @@ import           Data.Proxy
 import           Data.Scientific            hiding (scientific)
 import           Data.Set                   (Set)
 import qualified Data.Set                   as S
-import           Data.Time.Clock            (DiffTime, secondsToDiffTime)
 import           Data.Text.Short            (ShortText, pack)
+import           Data.Time.Clock            (DiffTime, secondsToDiffTime)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer (decimal, scientific, signed)

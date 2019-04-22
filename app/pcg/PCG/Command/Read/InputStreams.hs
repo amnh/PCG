@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 
@@ -17,22 +16,23 @@ module PCG.Command.Read.InputStreams
   , invalid
   ) where
 
-import           Control.DeepSeq
-import           Control.Monad.IO.Class
-import           Data.FileSource
-import           Data.Functor
-import           Data.List.NonEmpty                        (NonEmpty (..))
-import           Data.MonoTraversable
-import           Data.Semigroup
-import           Data.Semigroup.Foldable
-import           Data.Text                                 (Text)
-import           Data.Text.IO                              (readFile)
-import           Data.Validation
-import           PCG.Command.Read
-import           PCG.Command.Read.ReadCommandError
-import           Prelude                                   hiding (readFile)
-import           System.Directory
-import           System.FilePath.Glob
+import Control.DeepSeq
+import Control.Monad.IO.Class
+import Control.Monad.Trans.Validation
+import Data.FileSource
+import Data.Functor
+import Data.List.NonEmpty                (NonEmpty (..))
+import Data.MonoTraversable
+import Data.Semigroup
+import Data.Semigroup.Foldable
+import Data.Text                         (Text)
+import Data.Text.IO                      (readFile)
+import Data.Validation
+import PCG.Command.Read
+import PCG.Command.Read.ReadCommandError
+import Prelude                           hiding (readFile)
+import System.Directory
+import System.FilePath.Glob
 
 
 -- |
@@ -46,7 +46,7 @@ data  DataContent
     = DataContent
     { dataFile :: !FileResult
     , tcmFile  :: !(Maybe FileResult)
-    } deriving (Eq) 
+    } deriving (Eq)
 
 
 -- |
@@ -57,39 +57,6 @@ type  FileContent  = Text
 -- |
 -- The context of reading a file along with the path the content originated from.
 type  FileResult   = (FileSource, FileContent)
-
-
-{-
--- |
--- An optional reference to a TCM file.
-type  TcmReference = FileSource
--}
-
-
-{-
-evaluate :: ReadCommand -> SearchState
-evaluate (ReadCommand fileSpecs) = do
-    when (null fileSpecs) $ fail "No files specified in 'read()' command"
-    -- TODO: use Validation here.
-    readResult <- liftIO $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
-    case readResult of
-      Failure rErr -> failWithPhase Reading rErr
-      Success rRes -> do
-        parseResult <- liftIO $ parmap rpar (fmap removeGaps . parseSpecifiedFile) rRes
-        case parseResult of
-          Failure pErr -> failWithPhase Parsing pErr
-          Success pRes ->
-            case decoration . unifyPartialInputs $ transformation <$> fold1 pRes of
-              Failure uErr -> failWithPhase Unifying uErr   -- Report structural errors here.
-              -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-              Success g ->  liftIO $ compact g
-                         -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
-                         -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)  
-                         -- (liftIO . putStrLn $ show g) $> g
-  where
-    transformation = id -- expandIUPAC
-    decoration     = fmap (fmap initializeDecorations2)
--}
 
 
 getSpecifiedContent :: FileSpecification -> ValidationT ReadCommandError IO FileSpecificationContent
@@ -103,31 +70,13 @@ getSpecifiedContent (PrealignedFile     fs    ) = getSpecifiedContent fs
 getSpecifiedContent (WithSpecifiedTCM   fs tcm) = do
     SpecContent fs'  <- getSpecifiedContent fs
     tcm'             <- getSpecifiedTcm tcm
-    pure . SpecContent $ (DataContent <$> dataFile <*> const (Just tcm')) <$> fs'    
-{-    
-    fs'  <- getSpecifiedContent fs
-    tcm' <- getSpecifiedTcm tcm    
-    pure $ fs' `bindValidation` (\(SpecContent fs'') ->
-               tcm' `bindValidation` (\tcm'' ->
-                   pure . SpecContent $ (DataContent <$> dataFile <*> const (Just tcm'')) <$> fs''
-                                     )
-                                )
--}
+    pure . SpecContent $ (DataContent <$> dataFile <*> const (Just tcm')) <$> fs'
 getSpecifiedContent (CustomAlphabetFile xs tcm) = do
     xs'  <- getSpecifiedFileContents xs
     tcm' <- getSpecifiedTcm tcm
     pure . SpecContent $ (`DataContent` Just tcm') <$> xs'
-{-
-    xs'  <- getSpecifiedFileContents xs
-    tcm' <- getSpecifiedTcm tcm
-    pure $ xs' `bindValidation` (\xs'' ->
-               tcm' `bindValidation` (\tcm'' ->
-                   pure . SpecContent $ (`DataContent` Just tcm'') <$> xs''
-                                     )
-                                )
--}
 
-  
+
 getSpecifiedTcm :: FileSource -> ValidationT ReadCommandError IO FileResult
 getSpecifiedTcm tcmPath = getFileContents tcmPath >>= f
   where
@@ -173,48 +122,3 @@ getFileContents path = do
         else do
             content <- liftIO $ readFile foundPath
             pure (path, content)
-
-{-
-traverseValidationT
-  :: (Applicative f, Semigroup e, Traversable t)
-  => (a -> ValidationT e f b)
-  -> t a
-  -> ValidationT e f (t b)
-traverseValidationT f = ValidationT . fmap sequenceA . traverse f
--}
-
-
-data  ValidationT e m a
-    = ValidationT { runValidationT :: m (Validation e a) }
-
-
-instance Functor m => Functor (ValidationT e m) where
-
-    fmap f = ValidationT . fmap (fmap f). runValidationT
-
-
-instance (Applicative m, Semigroup e) => Applicative (ValidationT e m) where
-
-    pure = ValidationT . pure . Success
-
-    (<*>) f v = ValidationT $ ((<*>) <$> runValidationT f) <*> runValidationT v
-
-
-instance (Monad m, Semigroup e) => Monad (ValidationT e m) where
-
-    return = pure
-
-    (>>=) v f = ValidationT $ do
-        x <- runValidationT v
-        case x of
-          Failure e -> pure $ Failure e
-          Success a -> runValidationT $ f a
-
-
-instance Semigroup e => MonadIO (ValidationT e IO) where
-
-    liftIO = ValidationT . fmap Success
-
-
-invalid :: Applicative f => e -> ValidationT e f a
-invalid = ValidationT . pure . Failure

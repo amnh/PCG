@@ -26,7 +26,7 @@ import qualified PCG.Command.Save.Evaluate   as Save
 import           PCG.Syntax
 import           System.Exit
 
-import Debug.Trace
+import           Debug.Trace
 
 
 optimizeComputation :: Computation -> Computation

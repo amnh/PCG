@@ -25,8 +25,8 @@ module PCG.Command.Save
   ) where
 
 import Control.Applicative.Free (Ap)
-import Data.Functor             (($>))
 import Data.FileSource
+import Data.Functor             (($>))
 import PCG.Syntax.Combinators
 
 

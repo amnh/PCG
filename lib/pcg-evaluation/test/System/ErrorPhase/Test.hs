@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
-{-# LANGUAGE ViewPatterns        #-}
 
 
 module System.ErrorPhase.Test
@@ -12,8 +11,8 @@ module System.ErrorPhase.Test
 
 import Control.DeepSeq
 import System.ErrorPhase
-import Test.Tasty               (TestTree, testGroup)
-import Test.Tasty.QuickCheck    hiding ((=/=))
+import Test.Tasty            (TestTree, testGroup)
+import Test.Tasty.QuickCheck hiding ((=/=))
 
 
 testSuite :: TestTree
@@ -142,4 +141,4 @@ infix 4 =/=
 infix 3 -=>
 (-=>) :: Bool -> Bool -> Property
 (-=>) x y = not x .||. y
-  
+
