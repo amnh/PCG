@@ -1,6 +1,6 @@
 module Main where
 
-import qualified System.ErrorPhase.Test      as ErrorPhase
+import qualified Control.Monad.Trans.Validation.Test as ValidationT
 import           Test.Tasty
 import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 
@@ -13,6 +13,6 @@ main =
   testSuite
 
 testSuite :: TestTree
-testSuite = testGroup "ErrorPhase Tests"
-    [ ErrorPhase.testSuite
+testSuite = testGroup "ValidationT test-suite"
+    [ ValidationT.testSuite
     ]

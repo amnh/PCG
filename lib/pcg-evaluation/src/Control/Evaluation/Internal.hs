@@ -343,7 +343,7 @@ instance Show1 Evaluation where
       where
         prefix v = unwords
           [ "Evaluation"
-          , "[" <> show (length  $ toList ms) <> "]"
+          , "[" <> show (length $ toList ms) <> "]"
           , show $ toList ms
           , v
           ]

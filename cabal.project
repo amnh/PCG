@@ -3,7 +3,6 @@ packages: .
           lib/pcg-core
           lib/pcg-data-normalization
           lib/pcg-data-unification
-          lib/pcg-error-phase
           lib/pcg-evaluation
           lib/pcg-exportable
           lib/pcg-file-parsers
@@ -11,3 +10,4 @@ packages: .
           lib/pcg-serialize
           lib/pcg-tcm-memo
           lib/pcg-utility
+          lib/pcg-validation-transformer
