@@ -403,8 +403,6 @@ scriptWithExitCode expVal description scriptPath = testCase scriptPath $ do
                                         , description, ", but instead exitcode (", show ec,") was found"
                                         ]
                       in  assertBool errMsg $ ec == expVal
-  where
-    
 
 
 -- |

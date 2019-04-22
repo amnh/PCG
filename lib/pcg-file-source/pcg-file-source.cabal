@@ -1,7 +1,7 @@
 cabal-version:      2.2
 Category:           Biology
 build-type:         Simple
-name:               pcg-utility
+name:               pcg-file-source
 version:            0.2.0
 
 author:             Ward Wheeler
@@ -9,11 +9,10 @@ maintainer:         wheeler@amnh.org
 license:            BSD-3-Clause
 license-file:       LICENSE
 
-synopsis:           Collection of utility functions and data structures
+synopsis:           Library for interacting with file paths in a type-safe manner.
                     
-description:        Defines custom data structures for special use cases,
-                    more abstract functions that base provides, and re-exported
-                    correcting to deficient libraries.
+description:        Exposes a well-typed file path type and functionality for
+                    interacting with the file system through with this type.
 
         
 common dependencies
@@ -87,6 +86,7 @@ library
     src
 
   build-depends:
+    pcg-validation-transformer,
     binary                   >= 0.6       && < 1.0,
     bv-little                >= 1.0       && < 2.0,
     -- >=0.5.8 Required for Data.Map.restrictKeys
@@ -119,101 +119,40 @@ library
     vector-instances         >= 3.4       && < 3.5,
 
   exposed-modules:
-    Control.Parallel.Custom
-    Data.BitMatrix
-    Data.Binary.Utility
-    Data.Either.Custom
-    Data.Foldable.Custom
-    Data.List.Utility
-    Data.Matrix.NotStupid
-    Data.MutualExclusionSet
-    Data.Range
-    Data.Render.Utility
-    Data.ShortText.Custom
-    Data.TextShow.Custom
-    Data.Tuple.Utility
-    Data.UnionSet
-    Data.Vector.Custom
-    Data.Vector.Memo
-    Data.Vector.NonEmpty
-    Numeric.Extended
-    Numeric.Extended.Natural
-    Numeric.Extended.Real
-    Numeric.NonNegativeAverage
-    Test.HUnit.Custom
-    Test.QuickCheck.Arbitrary.Instances
+    Data.FileSource
+    Data.FileSource.IO
 
-  other-modules:
-    Data.BitMatrix.Internal
-    Data.MutualExclusionSet.Internal
-    Numeric.Extended.Internal
+  other-modules:              
+    Data.FileSource.InputStreamError
+    Data.FileSource.OutputStreamError
 
+--test-suite test-suite
 
-test-suite test-suite
+--  import:
+--    dependencies,
+--    ghc-flags,
+--    language-spec     
 
-  import:
-    dependencies,
-    ghc-flags,
-    language-spec     
+--  main-is:          
+--    TestSuite.hs
 
-  main-is:          
-    TestSuite.hs
+--  type:             
+--    exitcode-stdio-1.0
 
-  type:             
-    exitcode-stdio-1.0
+--  hs-source-dirs:
+--    test
 
-  hs-source-dirs:
-    test
-
-  build-depends:
-    pcg-utility,
-    bv-little                >= 1.0       && < 2.0,
-    integer-gmp              >= 1.0       && < 2.0,
-    mono-traversable         >= 1.0       && < 2.0,
-    parallel                 >= 3.2       && < 4.0,
-    QuickCheck               >= 2.12      && < 3.0,
-    tasty                    >= 1.2       && < 2.0,
-    tasty-hunit              >= 0.10      && < 1.0,
-    tasty-quickcheck         >= 0.9       && < 1.0,
-    tasty-rerun              >= 1.1.14    && < 2.0,
+--  build-depends:
+--    pcg-utility,
+--    bv-little                >= 1.0       && < 2.0,
+--    integer-gmp              >= 1.0       && < 2.0,
+--    mono-traversable         >= 1.0       && < 2.0,
+--    parallel                 >= 3.2       && < 4.0,
+--    QuickCheck               >= 2.12      && < 3.0,
+--    tasty                    >= 1.2       && < 2.0,
+--    tasty-hunit              >= 0.10      && < 1.0,
+--    tasty-quickcheck         >= 0.9       && < 1.0,
+--    tasty-rerun              >= 1.1.14    && < 2.0,
                     
-  other-modules:
-    Control.Parallel.Test
-    Data.BitMatrix.Test
-    Data.MutualExclusionSet.Test
-    Numeric.Extended.Natural.Test
-    Numeric.Extended.Real.Test
-    Numeric.NonNegativeAverage.Test
-    Data.List.Test
-
-
-benchmark benchmark-suite
-
-  import:
-    dependencies,
-    ghc-flags,
-    language-spec     
-
-  main-is:          
-    Benchmarks.hs
-
-  type:             
-    exitcode-stdio-1.0
-
-  hs-source-dirs: 
-    bench
-
-  build-depends:
-    pcg-utility,
-    criterion                >= 1.5       && < 2.0,
-
-  ghc-options:
-    -fdicts-cheap
-    -fmax-simplifier-iterations=10
-    -fspec-constr-count=6
-    -threaded
-                    
-  other-modules:
-    Data.MutualExclusionSet.Bench
-    Numeric.Extended.Natural.Bench
-
+--  other-modules:
+--    Data.FileSource.Test

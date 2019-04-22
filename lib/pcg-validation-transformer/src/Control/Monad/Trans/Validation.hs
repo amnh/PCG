@@ -29,20 +29,20 @@ module Control.Monad.Trans.Validation
 
 import           Control.Applicative
 import           Control.DeepSeq
-import           Control.Monad.Fail          (MonadFail)
-import qualified Control.Monad.Fail          as F
-import           Control.Monad.Fix           (MonadFix (..))
+import           Control.Monad.Fail        (MonadFail)
+import qualified Control.Monad.Fail        as F
+import           Control.Monad.Fix         (MonadFix (..))
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Class
-import           Control.Monad.Zip           (MonadZip (..))
-import           Data.Functor.Alt            (Alt (..))
-import           Data.Functor.Apply          (Apply (..))
-import           Data.Functor.Bind           (Bind (..))
-import           Data.Functor.Classes        (Eq1 (..), Ord1 (..), Show1 (..))
+import           Control.Monad.Zip         (MonadZip (..))
+import           Data.Functor.Alt          (Alt (..))
+import           Data.Functor.Apply        (Apply (..))
+import           Data.Functor.Bind         (Bind (..))
+import           Data.Functor.Classes      (Eq1 (..), Ord1 (..), Show1 (..))
 import           Data.String
 import           Data.Validation
 import           GHC.Generics
-import           Test.QuickCheck      hiding (Failure, Success)
+import           Test.QuickCheck           hiding (Failure, Success)
 
 
 -- |
@@ -58,7 +58,7 @@ instance Alt m => Alt (ValidationT e m)  where
 
     {-# INLINEABLE (<!>) #-}
 
-    (<!>) x y = ValidationT $ (runValidationT x) <!> (runValidationT y)
+    (<!>) x y = ValidationT $ runValidationT x <!> runValidationT y
 
 
 instance  (Monad m, Semigroup e) => Apply (ValidationT e m)  where

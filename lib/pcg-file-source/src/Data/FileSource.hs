@@ -29,22 +29,22 @@ module Data.FileSource
   )
   where
 
-import           Control.DeepSeq       (NFData)
+import           Control.DeepSeq           (NFData)
+import           Data.Bifunctor            (first)
 import           Data.Binary
-import           Data.Bifunctor        (first)
 --import           Data.Coerce           (Coercible, coerce)
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Key
-import           Data.Maybe            (fromMaybe, isJust, maybe)
+import           Data.Maybe                (fromMaybe, isJust, maybe)
 import           Data.MonoTraversable
 import           Data.MonoTraversable.Keys
 import           Data.String
-import           Data.Text.Short       (ShortText, pack, unpack)
-import qualified Data.Text.Short as TS
-import           GHC.Generics          (Generic)
-import           Test.QuickCheck       (Arbitrary(..), CoArbitrary(..))
-import           Text.Printf           (PrintfArg)
+import           Data.Text.Short           (ShortText, pack, unpack)
+import qualified Data.Text.Short           as TS
+import           GHC.Generics              (Generic)
+import           Test.QuickCheck           (Arbitrary (..), CoArbitrary (..))
+import           Text.Printf               (PrintfArg)
 import           TextShow
 
 
@@ -177,7 +177,7 @@ instance MonoIndexable FileSource where
 instance MonoKeyed FileSource where
 
     {-# INLINE omapWithKey #-}
-  
+
     omapWithKey f = FileSource . pack . omapWithKey (f . toEnum) . unpack . toShortText
 
 
@@ -185,7 +185,7 @@ instance MonoLookup FileSource where
 
     -- | /O(1)/
     {-# INLINE olookup #-}
-    olookup k fs = TS.indexMaybe (toShortText fs) (fromEnum k) 
+    olookup k fs = TS.indexMaybe (toShortText fs) (fromEnum k)
 
 
 -- | (✔)
@@ -210,9 +210,9 @@ instance TextShow FileSource where
 
 -- |
 -- /O(n)/
--- 
+--
 -- Takes a structure that container of 'Char's and creates a 'FileSource'.
-{-# INLINE toFileSource #-}
+{-# INLINE[1] toFileSource #-}
 toFileSource :: (MonoFoldable s, Element s ~ Char) => s -> FileSource
 toFileSource = FileSource . pack . otoList
 

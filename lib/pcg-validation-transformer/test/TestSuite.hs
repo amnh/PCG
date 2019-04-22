@@ -2,7 +2,7 @@ module Main where
 
 import qualified Control.Monad.Trans.Validation.Test as ValidationT
 import           Test.Tasty
-import           Test.Tasty.Ingredients.Rerun (rerunningTests)
+import           Test.Tasty.Ingredients.Rerun        (rerunningTests)
 
 
 

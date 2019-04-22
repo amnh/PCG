@@ -13,7 +13,7 @@ module Control.Monad.Trans.Validation.Test
 import Control.Arrow                  ((***))
 import Control.DeepSeq
 import Control.Monad                  (void)
-import Control.Monad.Fail             (MonadFail(..))
+import Control.Monad.Fail             (MonadFail (..))
 import Control.Monad.Trans            (MonadTrans (..))
 import Control.Monad.Trans.Validation
 import Control.Monad.Zip              (MonadZip (..))
@@ -24,10 +24,10 @@ import Data.Functor.Bind              (Bind (..))
 import Data.Functor.Compose
 import Data.Functor.Identity
 import Data.Semigroup
+import Prelude                        hiding (fail)
 import Test.QuickCheck.Function
 import Test.Tasty                     (TestTree, testGroup)
-import Test.Tasty.QuickCheck   hiding ((=/=))
-import Prelude hiding (fail)
+import Test.Tasty.QuickCheck          hiding ((=/=))
 
 -- |
 -- This alias exists for brevity in type signature
