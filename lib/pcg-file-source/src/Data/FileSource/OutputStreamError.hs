@@ -20,6 +20,11 @@
 
 module Data.FileSource.OutputStreamError
   ( OutputStreamError()
+  , makeFileInUseOnWrite
+  , makeFileNoWritePermissions
+  , makeFileUnwritable
+  , makePathDoesNotExist
+  , makeNotEnoughSpace
   ) where
 
 import Control.DeepSeq    (NFData)
@@ -39,16 +44,17 @@ newtype OutputStreamError = OutputStreamError (NonEmpty OutputStreamErrorMessage
 
 
 data  OutputStreamErrorMessage
-    = FileUnwritable FileSource
-    | FileLocked     FileSource
-    | NotEnoughSpace FileSource
+    = FileUnwritable   FileSource
+    | FileAlreadyInUse FileSource
+    | PathDoesNotExist FileSource
+    | NoPermissions    FileSource
+    | NotEnoughSpace   FileSource
     deriving (Generic, NFData, Show)
 
 
 instance Semigroup OutputStreamError where
 
     (OutputStreamError lhs) <> (OutputStreamError rhs) = OutputStreamError $ lhs <> rhs
-
 
 
 instance TextShow OutputStreamError where
@@ -84,13 +90,33 @@ instance TextShow OutputStreamError where
           -> ([OutputStreamErrorMessage],[OutputStreamErrorMessage], [OutputStreamErrorMessage])
         partitionOutputStreamErrorMessages = foldr f ([],[],[])
           where
-            f e@FileUnwritable {} (u,v,x) = (e:u,   v,   x)
-            f e@FileLocked     {} (u,v,x) = (  u, e:v,   x)
-            f e@NotEnoughSpace {} (u,v,x) = (  u,   v, e:x)
+            f e@FileUnwritable  {} (u,v,x) = (e:u,   v,   x)
+            f e@FileAlreadyInUse{} (u,v,x) = (  u, e:v,   x)
+            f e@NotEnoughSpace  {} (u,v,x) = (  u,   v, e:x)
 
 
 instance TextShow OutputStreamErrorMessage where
 
-    showb (FileUnwritable path) = "'" <> showb path <> "'"
-    showb (FileLocked     path) = "'" <> showb path <> "'"
-    showb (NotEnoughSpace path) = "'" <> showb path <> "'"
+    showb (FileUnwritable   path) = "'" <> showb path <> "'"
+    showb (FileAlreadyInUse path) = "'" <> showb path <> "'"
+    showb (NotEnoughSpace   path) = "'" <> showb path <> "'"
+
+
+makeFileInUseOnWrite :: FileSource -> OutputStreamError
+makeFileInUseOnWrite = OutputStreamError . pure . FileAlreadyInUse
+
+
+makeFileNoWritePermissions :: FileSource -> OutputStreamError
+makeFileNoWritePermissions = OutputStreamError . pure . NoPermissions
+
+
+makeFileUnwritable :: FileSource -> OutputStreamError
+makeFileUnwritable = OutputStreamError . pure . FileUnwritable
+
+
+makePathDoesNotExist :: FileSource -> OutputStreamError
+makePathDoesNotExist = OutputStreamError . pure . PathDoesNotExist
+
+
+makeNotEnoughSpace :: FileSource -> OutputStreamError
+makeNotEnoughSpace = OutputStreamError . pure . NotEnoughSpace
