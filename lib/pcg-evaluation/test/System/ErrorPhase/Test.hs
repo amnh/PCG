@@ -21,7 +21,6 @@ testSuite = testGroup "ErrorPhase type"
     [ equalityLaws       @ErrorPhase
     , normalFormDataLaws @ErrorPhase
     , orderingLaws       @ErrorPhase
---    , semigroupLaws      @ErrorPhase
     , showProperties     @ErrorPhase
     ]
 
@@ -103,25 +102,6 @@ orderingLaws = testGroup "Ordering Laws"
         (x > y && y > z) -=> x > z
 
 
-{-
-semigroupLaws
-  :: forall a.
-     ( Arbitrary a
-     , Eq a
-     , Semigroup a
-     , Show a
-     )
-  => TestTree
-semigroupLaws = testGroup "Semigroup Laws"
-    [ testLaw semigroupAssociativity "Associativity" "x <> (y <> z) === (x <> y) <> z"
-    ]
-  where
-    semigroupAssociativity :: a -> a -> a -> Property
-    semigroupAssociativity x y z =
-        (x <> (y <> z)) === ((x <> y) <> z)
--}
-
-
 showProperties
   :: forall a.
      ( Arbitrary a
@@ -139,24 +119,27 @@ showProperties = testGroup "Show Laws"
 
     nonNullString :: a -> Property
     nonNullString =
-       isNonEmpty . show
+        isNonEmpty . show
 
 
 testLaw :: Testable a => a -> String -> String -> TestTree
 testLaw f lawName lawExpression = testGroup lawName [testProperty lawExpression f ]
 
 
-isNonEmpty :: (Eq a, Monoid a, Show a) => a -> Property 
+isNonEmpty :: (Eq a, Monoid a, Show a) => a -> Property
 isNonEmpty x = counterexample (show x <> " == mempty") (x /= mempty)
 
 
--- | Like '/=', but prints a counterexample when it fails.
+-- |
+-- Like '/=', but prints a counterexample when it fails.
 infix 4 =/=
 (=/=) :: (Eq a, Show a) => a -> a -> Property
 (=/=) x y = counterexample (show x <> " == " <> show y) (x /= y)
 
 
--- | Like '==>' but for case where the left-hand side is hard to generate.
+-- |
+-- Like '==>' but for case where the left-hand side is hard to generate.
 infix 3 -=>
 (-=>) :: Bool -> Bool -> Property
 (-=>) x y = not x .||. y
+  

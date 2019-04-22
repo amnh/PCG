@@ -96,7 +96,7 @@ library
     src
 
   build-depends:
-    pcg-error-phase,
+    bimap                    >= 0.3       && < 0.4,            
     dlist                    >= 0.8       && < 1.0,
     quickcheck-instances     >= 0.3.17    && < 1.0,
     text                     >= 1.2       && < 2.0,
@@ -106,6 +106,7 @@ library
     Control.Evaluation
     Control.Evaluation.Unit
     Control.Monad.Logger
+    System.ErrorPhase
 
   other-modules:
     Control.Evaluation.Internal
@@ -139,3 +140,4 @@ test-suite test-suite
 
   other-modules:
     Control.Evaluation.Test
+    System.ErrorPhase.Test
