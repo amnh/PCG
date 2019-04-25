@@ -19,11 +19,14 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 
 module Bio.Graph.LeafSet
   ( LeafSet(..)
   , HasLeafSet (..)
+  , fromLeafSet
   ) where
 
 
@@ -31,6 +34,8 @@ import Control.Lens
 import Data.List       (union)
 --import Text.Newick.Class ()
 import Text.XML.Custom ()
+import Data.Vector
+import Data.Coerce
 
 
 -- |
@@ -44,7 +49,7 @@ newtype LeafSet n = LeafSet [n]
 class HasLeafSet s a | s -> a where
 
     {-# MINIMAL leafSet #-}
-    leafSet :: Getter s a
+    leafSet :: Lens' s a
 
 
 -- | (✔)
@@ -53,6 +58,8 @@ instance Eq n => Semigroup (LeafSet n) where
     (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ union lhs rhs
 
 
+fromLeafSet :: forall n .  LeafSet n -> Vector n
+fromLeafSet = coerce $ fromList @n
 {--
 instance ToXML (LeafSet (Maybe String)) where
 

@@ -79,7 +79,7 @@ selectDynamicMetric
   :: ( EncodableDynamicCharacter c
      , Exportable c
      , GetDenseTransitionCostMatrix    dec (Maybe DenseTransitionCostMatrix)
-     , GetPairwiseTransitionCostMatrix dec (OverlapFunction (Element c))
+     , GetPairwiseTransitionCostMatrix dec (Element c) Word -- (OverlapFunction (Element c))
      , Ord (Element c)
      )
   => dec

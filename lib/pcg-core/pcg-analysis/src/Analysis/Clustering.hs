@@ -12,6 +12,7 @@
 
 module Analysis.Clustering where
 
-import Analysis.Clustering.Hierarchical as H
+--import Analysis.Clustering.Hierarchical as H
 
-cluster = H.cluster
+cluster :: Int
+cluster = undefined

@@ -20,6 +20,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 module Bio.Graph.Node.Internal
   ( EdgeSet
@@ -31,6 +33,7 @@ module Bio.Graph.Node.Internal
   , ResolutionMetadata(..)
   , HasNodeDecorationDatum(..)
   , HasResolutions(..)
+  , HasSequenceDecoration(..)
   , HasTotalSubtreeCost(..)
   , HasLocalSequenceCost(..)
   , HasLeafSetRepresentation(..)
@@ -48,7 +51,7 @@ module Bio.Graph.Node.Internal
 
 
 import Control.DeepSeq
-import Control.Lens
+import Control.Lens hiding (_head)
 import Control.Lens.Lens           (Lens)
 import Data.EdgeSet
 import Data.Foldable
@@ -62,6 +65,7 @@ import GHC.Generics
 import Text.Newick.Class
 import Text.XML
 import TextShow                    (TextShow (showb, showt), toString, unlinesB)
+import Data.List.Utility (HasHead(..))
 
 
 -- |
@@ -100,6 +104,14 @@ class HasNodeDecorationDatum s t a b | s -> a, b s -> t where
     _nodeDecorationDatum :: Lens s t a b
 
 
+-- |
+-- A 'Lens' for the 'sequenceDecoration' field.
+{-# SPECIALISE _sequenceDecoration :: Lens (PhylogeneticNode s n) (PhylogeneticNode s' n) s s' #-}
+class HasSequenceDecoration s a | s -> a where
+
+    _sequenceDecoration :: Lens' s a
+
+
 instance HasResolutions (PhylogeneticNode s n) (PhylogeneticNode s' n) (ResolutionCache s) (ResolutionCache s') where
 
     {-# INLINE _resolutions #-}
@@ -110,6 +122,20 @@ instance HasNodeDecorationDatum (PhylogeneticNode s n) (PhylogeneticNode s n') n
 
     {-# INLINE _nodeDecorationDatum #-}
     _nodeDecorationDatum = lens nodeDecorationDatum2 (\p n -> p {nodeDecorationDatum2 = n})
+
+
+instance HasSequenceDecoration (PhylogeneticFreeNode n s) s where
+
+    {-# INLINE _sequenceDecoration #-}
+    _sequenceDecoration = lens sequenceDecoration (\p s -> p {sequenceDecoration = s})
+
+
+instance forall s n . HasSequenceDecoration (PhylogeneticNode s n) s where
+
+    {-# INLINE _sequenceDecoration #-}
+    _sequenceDecoration = _resolutions @_ @_ @(ResolutionCache s) @(ResolutionCache s)
+                        . _head @(ResolutionCache s) @(ResolutionInformation s)
+                        . _characterSequence
 
 
 -- |

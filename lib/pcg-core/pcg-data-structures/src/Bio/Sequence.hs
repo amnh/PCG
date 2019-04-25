@@ -46,6 +46,8 @@ module Bio.Sequence
   , nonExistantBlock
   -- * CharacterBlock transformations
   , toMissingCharacters
+  , foldZipWithMeta
+  , hexFold
   , hexmap
   , hexTranspose
   , hexZip
@@ -54,7 +56,7 @@ module Bio.Sequence
   , hexZipWith3
   , hexZipWithMeta
   , hexZipMeta
-  , zipWithFold
+
   -- * Cost quantification
   , sequenceCost
   , sequenceRootCost
@@ -62,6 +64,7 @@ module Bio.Sequence
   , staticCost
   ) where
 
+import Data.List.Utility
 import           Bio.Character.Encodable
 import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
@@ -85,7 +88,6 @@ import           Data.Key
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Prelude                      hiding (zip)
-import Data.Coerce
 
 
 -- |
@@ -302,15 +304,17 @@ sequenceRootCost rootCount meta char = sum'
 
 
 
-zipWithFold
-  :: (Monoid m)
-  => (CharacterBlock u v w x y z -> CharacterBlock u v w x y z -> m)
+foldZipWithMeta
+  :: (Monoid a)
+  => (MetadataBlock m -> CharacterBlock u v w x y z -> CharacterBlock u v w x y z -> a)
+  -> MetadataSequence m
   -> CharacterSequence u v w x y z
   -> CharacterSequence u v w x y z
-  -> m
-zipWithFold f charSeq1 charSeq2 =
+  -> a
+foldZipWithMeta f meta charSeq1 charSeq2 =
   let
-    charSeq1V = coerce charSeq1
-    charSeq2V = coerce charSeq2
+    metaV     = otoList meta
+    charSeq1V = otoList charSeq1
+    charSeq2V = otoList charSeq2
   in
-    coerce $ zipWithFold f charSeq1V charSeq2V
+    foldZipWith3 f metaV charSeq1V charSeq2V

@@ -224,6 +224,7 @@ library pcg-analysis
 
   other-modules:
     Analysis.Clustering.Hierarchical
+    Analysis.Clustering.Metric
     Analysis.Parsimony.Additive.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal

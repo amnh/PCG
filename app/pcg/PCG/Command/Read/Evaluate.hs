@@ -8,6 +8,9 @@ module PCG.Command.Read.Evaluate
   ) where
 
 import           Bio.Graph
+import           Bio.Graph.LeafSet
+import Bio.Graph.Node
+import Control.Lens.Operators ((%~), (&))
 import           Control.Monad                             (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
@@ -74,7 +77,7 @@ evaluate (ReadCommand fileSpecs) = do
     case result of
       Left pErr -> fail $ show pErr   -- Report structural errors here.
       Right xs ->
-        case toEither . decoration . unifyPartialInputs $ transformation <$> fold1 xs of
+        case toEither . decoration . unifyPartialInputs $ transformation   <$> fold1 xs of
           Left uErr -> fail $ show uErr -- Report unification errors here.
            -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
           Right g   -> liftIO $ compact g
@@ -83,7 +86,24 @@ evaluate (ReadCommand fileSpecs) = do
                          -- (liftIO . putStrLn $ show g) $> g
   where
     transformation = id -- expandIUPAC
-    decoration     = fmap (fmap initializeDecorations2)
+
+    decoration
+      :: Validation UnificationError (Either TopologicalResult CharacterResult)
+      -> Validation UnificationError
+           (Either
+              TopologicalResult (PhylogeneticSolution FinalDecorationDAG))
+    decoration     = fmapCharDAG initializeDecorations2
+
+    transformInputLeaves
+     :: Validation UnificationError (Either TopologicalResult CharacterResult)
+     -> Validation UnificationError (Either TopologicalResult CharacterResult)
+    transformInputLeaves = fmapCharDAG transformLeaves
+
+    transformLeaves :: CharacterResult -> CharacterResult
+    transformLeaves sol = sol & leafSet %~ id
+
+    fmapCharDAG = fmap . fmap
+
 
 
 removeGaps :: Functor f => f PartialInputData -> f PartialInputData

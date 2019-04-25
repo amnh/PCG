@@ -17,6 +17,7 @@
 module Bio.Graph.Constructions
   ( CharacterResult
   , CharacterDAG
+  , CharacterNode
   , DecoratedCharacterResult
   , FinalDecorationDAG
   , GlobalSettings
@@ -31,6 +32,7 @@ module Bio.Graph.Constructions
   , UnifiedBlock
   , UnifiedSequences
   , UnifiedCharacterBlock
+  , UnifiedCharacterNode
   , UnifiedCharacterSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
@@ -78,6 +80,12 @@ type CharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
+
+
+-- |
+-- A Phylogenetic Node within a 'CharacterDAG'.
+type CharacterNode = PhylogeneticNode UnifiedCharacterSequence NodeLabel
+
 
 -- |
 -- A context type for global settings during evaluation
@@ -211,6 +219,12 @@ type  UnifiedCharacterSequence
 -- |
 -- A metadata sequence resulting from the READ command.
 type  UnifiedMetadataSequence = MetadataSequence ()
+
+
+-- |
+-- A Phylogenetic Node within a unified character DAG.
+
+type UnifiedCharacterNode = PhylogeneticFreeNode NodeLabel UnifiedCharacterSequence
 
 
 -- |

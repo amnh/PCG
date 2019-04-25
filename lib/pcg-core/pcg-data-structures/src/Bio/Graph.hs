@@ -17,6 +17,7 @@
 module Bio.Graph
   ( CharacterResult
   , CharacterDAG
+  , CharacterNode
   , DecoratedCharacterResult
   , FinalDecorationDAG
   , GlobalSettings
