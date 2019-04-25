@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Render.Utility
@@ -14,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module Data.Render.Utility
   ( writeFileT
@@ -32,9 +32,10 @@ import System.IO              (IOMode, hClose, openFile)
 -- instance.
 writeFileT :: IOMode -> FilePath -> Text -> IO ()
 writeFileT mode fp text = do
-  h <- openFile fp mode
-  runEffect $ for (textProducer text) (liftIO . hPutStr h)
-  hClose h
+    h <- openFile fp mode
+    runEffect $ for (textProducer text) (liftIO . hPutStr h)
+    hClose h
+
 
 -- |
 -- Efficiently yield text from a 'Builder' type.

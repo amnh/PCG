@@ -23,8 +23,6 @@ module Data.FileSource.InputStreamError
   , makeAmbiguousFiles
   , makeEmptyFileStream
   , makeFileInUseOnRead
-  , makeFileDeserializeErrorInBinaryEncoding
-  , makeFileDeserializeErrorInCompactRegion
   , makeFileNoReadPermissions
   , makeFileNotFound
   ) where
@@ -37,7 +35,7 @@ import Data.Foldable
 import Data.List.NonEmpty      hiding (toList)
 import Data.Maybe              (catMaybes)
 import Data.Semigroup.Foldable
-import Data.Text.Short         (ShortText)
+import Data.Text.Short         (ShortText, toShortByteString)
 import GHC.Generics            (Generic)
 import TextShow
 
@@ -77,36 +75,49 @@ instance Semigroup InputStreamError where
 instance TextShow InputStreamError where
 
     showb (InputStreamError errors) = unlinesB $ catMaybes
-        [ emptyStreamsMessage
-        , unfindableMessage
-        , unopenableMessage
+        [ unfindableMessage
         , ambiguousMessage
+        , unopenableMessage
+        , alreadInUseMessage
+        , emptyStreamsMessage
+        , deserializationFailureMessage
         ]
       where
-        (emptyStreams, unfindables, unopenables, ambiguity) = partitionInputStreamErrorMessages $ toList errors
+        (inUseFiles, ambiguity, deserialize, badPermissions, emptyStreams, unfindables) = partitionInputStreamErrorMessages $ toList errors
+
+        alreadInUseMessage =
+          case inUseFiles of
+            []  -> Nothing
+            [x] -> Just $ "The file " <> showb x <> " is already in use"
+            xs  -> Just $ "The following files were already in use:\n" <> unlinesB (showb <$> xs)
+
+        ambiguousMessage =
+          case ambiguity of
+            [] -> Nothing
+            xs -> Just . unlinesB $ showb <$> xs
+
+        deserializationFailureMessage =
+          case deserialize of
+            [] -> Nothing
+            xs -> Just . unlinesB $ showb <$> xs
 
         emptyStreamsMessage =
           case emptyStreams of
             []  -> Nothing
             [x] -> Just $ "The file " <> showb x <> " was empty"
-            xs  -> Just $ "The following files were empty: \n" <> unlinesB (showb <$> xs)
+            xs  -> Just $ "The following files were empty:\n" <> unlinesB (showb <$> xs)
 
         unfindableMessage =
           case unfindables of
             []  -> Nothing
             [x] -> Just $ "The file " <> showb x <> " does not exist"
-            xs  -> Just $ "The following files do not exists: \n" <> unlinesB (showb <$> xs)
+            xs  -> Just $ "The following files do not exists:\n" <> unlinesB (showb <$> xs)
 
         unopenableMessage =
-          case unopenables of
+          case badPermissions of
             []  -> Nothing
-            [x] -> Just $ "The file " <> showb x <> " can not be opened"
-            xs  -> Just $ "The following files could not be opened: \n" <> unlinesB (showb <$> xs)
-
-        ambiguousMessage  =
-          case ambiguity of
-            [] -> Nothing
-            xs -> Just . unlinesB $ showb <$> xs
+            [x] -> Just $ "The file " <> showb x <> " had premissions which prevent it from being opened"
+            xs  -> Just $ "The following files have permissions which prevent them from being opened:\n" <> unlinesB (showb <$> xs)
 
         partitionInputStreamErrorMessages
           :: [InputStreamErrorMessage]
@@ -114,13 +125,17 @@ instance TextShow InputStreamError where
              , [InputStreamErrorMessage]
              , [InputStreamErrorMessage]
              , [InputStreamErrorMessage]
+             , [InputStreamErrorMessage]
+             , [InputStreamErrorMessage]
              )
-        partitionInputStreamErrorMessages = foldr f ([],[],[],[])
+        partitionInputStreamErrorMessages = foldr f ([],[],[],[],[],[])
           where
-            f e@FileEmptyStream   {} (w,x,y,z) = (e:w,   x,   y,   z)
-            f e@FileUnfindable    {} (w,x,y,z) = (  w, e:x,   y,   z)
-            f e@FileBadPermissions{} (w,x,y,z) = (  w,   x, e:y,   z)
-            f e@FileAmbiguous     {} (w,x,y,z) = (  w,   x,   y, e:z)
+            f e@FileAlreadyInUse   {} (u,v,w,x,y,z) = (e:u,   v,   w,   x,   y,   z)
+            f e@FileAmbiguous      {} (u,v,w,x,y,z) = (  u, e:v,   w,   x,   y,   z)
+            f e@FileBadDeserialize {} (u,v,w,x,y,z) = (  u,   v, e:w,   x,   y,   z)
+            f e@FileBadPermissions {} (u,v,w,x,y,z) = (  u,   v,   w, e:x,   y,   z)
+            f e@FileEmptyStream    {} (u,v,w,x,y,z) = (  u,   v,   w,   x, e:y,   z)
+            f e@FileUnfindable     {} (u,v,w,x,y,z) = (  u,   v,   w,   x,   y, e:z)
 
 
 instance TextShow InputStreamErrorMessage where
@@ -128,6 +143,7 @@ instance TextShow InputStreamErrorMessage where
     showb (FileEmptyStream    path        ) = "'" <> showb path <> "'"
     showb (FileUnfindable     path        ) = "'" <> showb path <> "'"
     showb (FileBadPermissions path        ) = "'" <> showb path <> "'"
+    showb (FileBadDeserialize path format msg) = "'" <> showb path <> "' [" <> fromString (show format) <> "]: " <> showb (toShortByteString msg)
     showb (FileAmbiguous      path matches) = message
       where
         files   = toList matches
@@ -156,17 +172,6 @@ makeAmbiguousFiles path matches = InputStreamError . pure $ FileAmbiguous path (
 -- Remark that the specified file has no data.
 makeEmptyFileStream :: FileSource -> InputStreamError
 makeEmptyFileStream = InputStreamError . pure . FileEmptyStream
-
-
--- |
--- Remark that the file has could not be deserialized.
-makeFileDeserializeErrorInBinaryEncoding :: FileSource -> ShortText -> InputStreamError
-makeFileDeserializeErrorInBinaryEncoding path = InputStreamError . pure . FileBadDeserialize path BinaryFormat
-
--- |
--- Remark that the file has could not be deserialized.
-makeFileDeserializeErrorInCompactRegion :: FileSource -> ShortText -> InputStreamError
-makeFileDeserializeErrorInCompactRegion path = InputStreamError . pure . FileBadDeserialize path CompactFormat
 
 
 -- |

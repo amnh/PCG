@@ -13,6 +13,7 @@ module PCG.CommandLineOptions
 
 import Data.Foldable
 import Data.Semigroup                 ((<>))
+import Data.String
 import Options.Applicative            hiding (ParseError)
 import PCG.CommandLineOptions.Display
 import PCG.CommandLineOptions.Types
@@ -52,7 +53,7 @@ parserInformation = info (helper <*> commandLineOptions) description
           <*> switch  (fold [long "credits", help "Display project contributions"])
           <*> (validateVerbosity <$> option auto verbositySpec)
 
-    fileSpec c s d h = strOption $ fold
+    fileSpec c s d h = fmap fromString . strOption $ fold
         [ short c
         , long  s
         , value d

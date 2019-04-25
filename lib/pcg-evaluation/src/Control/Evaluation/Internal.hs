@@ -44,7 +44,7 @@ import           Data.Functor.Apply          (Apply (..))
 import           Data.Functor.Bind           (Bind (..))
 import           Data.Functor.Classes        (Eq1 (..), Ord1 (..), Show1 (..))
 import           Data.String
-import           Data.Text                   (Text)
+import           Data.Text.Lazy              (Text)
 import           GHC.Exts                    (IsList (fromList))
 import           GHC.Generics                hiding (Prefix)
 import           System.ErrorPhase

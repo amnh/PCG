@@ -18,8 +18,8 @@ import Data.FileSource                   (FileSource)
 import Data.List.NonEmpty                (NonEmpty (..))
 import Data.Semigroup.Foldable
 import Data.Unification
-import PCG.Command.Read.InputStreamError
-import PCG.Command.Read.ParseStreamError
+import Data.FileSource.InputStreamError
+import Data.FileSource.ParseStreamError
 import Text.Megaparsec
 import TextShow
 
@@ -60,9 +60,9 @@ instance Semigroup ReadCommandError where
 
 instance TextShow ReadCommandError where
 
-    showb (InputError v) = showb v
-    showb (ParseError v) = showb v
-    showb (UnifyError v) = showb v
+    showb (InputError v) = fromText $ showt v
+    showb (ParseError v) = fromText $ showt v
+    showb (UnifyError v) = fromText $ showt v
 
 
 ambiguous :: Foldable1 f => FileSource -> f FileSource -> ReadCommandError
@@ -78,7 +78,7 @@ unfindable = InputError . makeFileNotFound
 
 
 unopenable :: FileSource -> ReadCommandError
-unopenable = InputError . makeFileNotOpenable
+unopenable = InputError . makeFileNoReadPermissions
 
 
 unparsable :: (ShowErrorComponent e, Stream s) => FileSource -> ParseErrorBundle s e -> ReadCommandError

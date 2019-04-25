@@ -7,6 +7,7 @@ module PCG.CommandLineOptions.Types
   ) where
 
 import Control.DeepSeq
+import Data.FileSource
 import GHC.Generics
 
 
@@ -14,8 +15,8 @@ import GHC.Generics
 -- Valid command line options
 data  CommandLineOptions
     = CommandLineOptions
-    { inputFile    :: FilePath
-    , outputFile   :: FilePath
+    { inputFile    :: FileSource
+    , outputFile   :: FileSource
     , printVersion :: Bool
     , printSplash  :: Bool
     , printCredits :: Bool

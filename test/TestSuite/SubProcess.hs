@@ -18,7 +18,7 @@ import Data.Foldable
 import Prelude               hiding (readFile)
 import System.Directory
 import System.FilePath.Posix
-import System.IO             (hClose)
+import System.IO             (IOMode(..), openFile, withFile, hClose, hPutStrLn, hFlush)
 import System.Process
 
 
@@ -68,12 +68,13 @@ constructProcess
 constructProcess scriptStr = do
     prefix      <- makeAbsolute scriptDirectory
     binFilePath <- makeAbsolute binaryDirectory
+    let runFilePath = prefix </> scriptFileName
     let outFilePath = prefix </> outLogFileName
     let errFilePath = prefix </> errLogFileName
     let commandStr  = unwords
                     [ binFilePath
                     , "--input"
-                    , scriptFileName
+                    , runFilePath
                     , "--output"
                     , outFilePath
                     , "2>"
