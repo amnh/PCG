@@ -33,7 +33,7 @@ import           Data.Functor.Alt          (Alt (..))
 import           Data.Functor.Apply        (Apply (..))
 import           Data.Functor.Bind         (Bind (..))
 import           Data.Functor.Classes      (Eq1, Ord1 (..), Show1)
-import           Data.Text                 (Text, pack)
+import           Data.Text.Lazy            (Text, pack)
 import           GHC.Generics
 import           System.ErrorPhase
 import           Test.QuickCheck
@@ -191,7 +191,7 @@ instance Ord1 EvalUnit where
 
 {-# INLINE[1] evalUnitWithPhase #-}
 evalUnitWithPhase :: TextShow s => ErrorPhase -> s -> EvalUnit a
-evalUnitWithPhase p s = EU $ Left (p, showt s)
+evalUnitWithPhase p s = EU $ Left (p, showtl s)
 {-# RULES
 "evalUnitWithPhase/Text" forall p (s :: Text). evalUnitWithPhase p s = EU $ Left (p, s)
   #-}

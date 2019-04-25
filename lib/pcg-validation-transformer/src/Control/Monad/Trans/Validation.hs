@@ -24,6 +24,7 @@
 
 module Control.Monad.Trans.Validation
   ( ValidationT(..)
+  , emap
   , invalid
   ) where
 
@@ -35,6 +36,7 @@ import           Control.Monad.Fix         (MonadFix (..))
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Class
 import           Control.Monad.Zip         (MonadZip (..))
+import           Data.Bifunctor
 import           Data.Functor.Alt          (Alt (..))
 import           Data.Functor.Apply        (Apply (..))
 import           Data.Functor.Bind         (Bind (..))
@@ -252,5 +254,9 @@ instance Traversable m => Traversable (ValidationT e m) where
     traverse f = fmap ValidationT . traverse (traverse f) . runValidationT
 
 
+emap :: Functor f => (e -> b) -> ValidationT e f a -> ValidationT b f a
+emap f = ValidationT . fmap (first f) . runValidationT
+
+  
 invalid :: Applicative f => e -> ValidationT e f a
 invalid = ValidationT . pure . Failure
