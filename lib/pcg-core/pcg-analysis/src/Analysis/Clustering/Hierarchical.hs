@@ -35,7 +35,8 @@ import Bio.Graph.PhylogeneticDAG
 
 
 clusterLeaves
-  :: CharacterDAG
+  :: constraint ???
+  => ???
   -> Linkage
   -> LeafSet CharacterNode
 clusterLeaves dag opt =
@@ -46,7 +47,7 @@ clusterLeaves dag opt =
     clusterShuffle meta leaves opt
 
 clusterShuffle
-  :: MetadataSequence ()
+  :: MetadataSequence m
   -> LeafSet CharacterNode
   -> Linkage
   -> LeafSet CharacterNode

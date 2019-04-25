@@ -80,7 +80,7 @@ blockDistance meta block1 block2
       unifiedCharacterDistance
       unifiedCharacterDistance
       unifiedCharacterDistance
-      unifiedDiscreteWithTCMDistance
+      unifiedCharacterDistance -- unifiedDiscreteWithTCMDistance
       mempty
       unifiedDynamicCharacterDistance
       meta
@@ -156,13 +156,21 @@ unifiedDynamicCharacterDistance' meta d1 d2 =  pr5_1 $ selectDynamicMetric meta 
 
 
 unifiedDiscreteWithTCMDistance
-  :: Fractional a
+  :: forall s c n n'
+   . ( Real n
+     , Real n'
+     , Fractional n'
+     , GetPairwiseTransitionCostMatrix s c n
+     , HasCharacterWeight s n'
+     )
+  => s -> Maybe c -> Maybe c -> Sum n'
   => DiscreteWithTCMCharacterMetadataDec StaticCharacter
   -> UnifiedDiscreteCharacter
   -> UnifiedDiscreteCharacter
   -> Sum a
 unifiedDiscreteWithTCMDistance meta dc1 dc2 =
   (fmap (fromRational . toRational)) $ unifiedDiscreteWithTCMDistance' meta dc1 dc2
+
 
 unifiedDiscreteWithTCMDistance'
   :: DiscreteWithTCMCharacterMetadataDec StaticCharacter
