@@ -35,8 +35,7 @@ import Bio.Graph.PhylogeneticDAG
 
 
 clusterLeaves
-  :: constraint ???
-  => ???
+  :: CharacterDAG
   -> Linkage
   -> LeafSet CharacterNode
 clusterLeaves dag opt =

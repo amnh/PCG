@@ -57,7 +57,6 @@ import Bio.Character.Decoration.Discrete.Class
 
 -- General, concrete type for 'Discrete' characters.
 newtype DiscreteDecoration c = DiscreteDec { discreteDecorationCharacter :: c }
-    deriving newtype  Bits
     deriving stock    (Eq, Generic)
     deriving anyclass  NFData
 

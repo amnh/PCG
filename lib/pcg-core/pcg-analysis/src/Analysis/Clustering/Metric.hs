@@ -15,6 +15,8 @@
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
+{-# LANGUAGE NoMonoLocalBinds #-}
+
 module Analysis.Clustering.Metric (
   characterSequenceDistance
   ) where
@@ -35,8 +37,10 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Continuous
 import Bio.Graph.Constructions
 import qualified Bio.Sequence.Block as Blk
-
-
+import Numeric.Extended.Real
+import Data.Range
+import Data.MonoTraversable
+import Bio.Character
 
 
 --type  UnifiedCharacterSequence
@@ -77,10 +81,12 @@ blockDistance :: UnifiedMetadataBlock -> UnifiedCharacterBlock -> UnifiedCharact
 blockDistance meta block1 block2
   = hexFold $
     Blk.hexZipWithMeta
-      unifiedCharacterDistance
-      unifiedCharacterDistance
-      unifiedCharacterDistance
-      unifiedCharacterDistance -- unifiedDiscreteWithTCMDistance
+      ((unifiedCharacterDistance @ExtendedReal) (^. (intervalCharacter)))
+      ((unifiedCharacterDistance @Word        ) (^.   discreteCharacter))
+      ((unifiedCharacterDistance @Word        ) (^.   discreteCharacter))
+      ((unifiedCharacterDistance @Word        ) (^.   discreteCharacter))
+--      (unifiedCharacterDistance @(DiscreteWithTCMCharacterMetadataDec StaticCharacter) @StaticCharacter @Word @Double)
+      --  unifiedDiscreteWithTCMDistance
       mempty
       unifiedDynamicCharacterDistance
       meta
@@ -106,31 +112,44 @@ blockDistance meta block1 block2
 
 -- Monoid m => (Element mono -> Element mono -> m) -> (mono -> mono -> m)
 unifiedCharacterDistance
-  :: forall s c n n'
+  :: forall n m c d n'
    . ( Real n
      , Real n'
      , Fractional n'
-     , GetPairwiseTransitionCostMatrix s c n
-     , HasCharacterWeight s n'
+     , GetPairwiseTransitionCostMatrix m c n
+     , HasCharacterWeight m n'
      )
-  => s -> Maybe c -> Maybe c -> Sum n'
-unifiedCharacterDistance s
-  = \c1 c2 -> fold $ liftA2 (getPairwiseWeightedTransitionCost @s @c @n s) c1 c2 
+  => (d -> c) -> m -> Maybe d -> Maybe d -> Sum n'
+unifiedCharacterDistance f m c1 c2 = fold $
+    liftA2 (getPairwiseWeightedTransitionCost @m @c @n m) (f <$> c1) (f <$> c2)
+
 
 unifiedDynamicCharacterDistance
-  :: DynamicCharacterMetadataDec DynamicCharacterElement
-  -> UnifiedDynamicCharacter
-  -> UnifiedDynamicCharacter
-  -> Sum Double
+  :: forall m d c
+   . ( DynamicCharacterDecoration d c
+     , Exportable c
+     , GetDenseTransitionCostMatrix m (Maybe DenseTransitionCostMatrix)
+     , GetPairwiseTransitionCostMatrix m (Element c) Word
+     , HasCharacterWeight m Double
+     , Ord (Element c)
+     )
+  => m -> Maybe d -> Maybe d -> Sum Double
 unifiedDynamicCharacterDistance meta c1 c2
-  = foldMap (Sum . fromIntegral) $ liftA2 (unifiedDynamicCharacterDistance' meta) c1 c2
-  
+  = foldMap (Sum . (weight *) . fromIntegral) $ liftA2 (unifiedDynamicCharacterDistance' meta) c1 c2
+  where
+    weight = meta ^. characterWeight
+
+
 unifiedDynamicCharacterDistance'
-  :: DynamicCharacterMetadataDec DynamicCharacterElement
-  -> DynamicDecorationInitial DynamicCharacter
-  -> DynamicDecorationInitial DynamicCharacter
-  -> Word
-unifiedDynamicCharacterDistance' meta d1 d2 =  pr5_1 $ selectDynamicMetric meta c1 c2
+  :: forall m d c
+   . ( DynamicCharacterDecoration d c
+     , Exportable c
+     , GetDenseTransitionCostMatrix m (Maybe DenseTransitionCostMatrix)
+     , GetPairwiseTransitionCostMatrix m (Element c) Word
+     , Ord (Element c)
+     )
+  => m -> d -> d -> Word
+unifiedDynamicCharacterDistance' meta d1 d2 = pr5_1 $ selectDynamicMetric meta c1 c2
   where
     c1 = d1 ^. encoded
     c2 = d2 ^. encoded
@@ -139,6 +158,7 @@ unifiedDynamicCharacterDistance' meta d1 d2 =  pr5_1 $ selectDynamicMetric meta 
     adaptiveDirectOptimizationPostorderPairwise _ = directOptimizationPostorderPairwise pairwiseAlignmentFunction
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
+
 -- 
   --zipWithFold blockDistance charSeq1 charSeq2
 --  :: forall n
@@ -154,23 +174,15 @@ unifiedDynamicCharacterDistance' meta d1 d2 =  pr5_1 $ selectDynamicMetric meta 
 --    dynDec2 = d2 ^. encoded
 ---- d
 
-
+{-
 unifiedDiscreteWithTCMDistance
-  :: forall s c n n'
-   . ( Real n
-     , Real n'
-     , Fractional n'
-     , GetPairwiseTransitionCostMatrix s c n
-     , HasCharacterWeight s n'
-     )
-  => s -> Maybe c -> Maybe c -> Sum n'
+  :: Fractional a
   => DiscreteWithTCMCharacterMetadataDec StaticCharacter
   -> UnifiedDiscreteCharacter
   -> UnifiedDiscreteCharacter
   -> Sum a
 unifiedDiscreteWithTCMDistance meta dc1 dc2 =
   (fmap (fromRational . toRational)) $ unifiedDiscreteWithTCMDistance' meta dc1 dc2
-
 
 unifiedDiscreteWithTCMDistance'
   :: DiscreteWithTCMCharacterMetadataDec StaticCharacter
@@ -179,3 +191,4 @@ unifiedDiscreteWithTCMDistance'
   -> Sum Double
 unifiedDiscreteWithTCMDistance' = coerce
   $ unifiedCharacterDistance @(DiscreteWithTCMCharacterMetadataDec StaticCharacter) @StaticCharacter @Word @Double
+-}

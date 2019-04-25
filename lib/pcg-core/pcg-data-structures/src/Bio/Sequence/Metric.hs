@@ -16,7 +16,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Bio.Sequence.Metric (
-  characterSequenceDistance
+--  characterSequenceDistance
   ) where
 
 import Bio.Graph.Constructions
@@ -35,7 +35,7 @@ import Bio.Metadata.DiscreteWithTCM
 import Bio.Character.Encodable.Static
 import Bio.Character.Decoration.Discrete
 
-
+{-
 characterSequenceDistance ::
   UnifiedMetadataSequence -> UnifiedCharacterSequence -> UnifiedCharacterSequence -> Sum Double
 characterSequenceDistance meta charSeq1 charSeq2 = undefined
@@ -82,6 +82,7 @@ unifiedCharacterDistance
   => s -> (Maybe c -> Maybe c -> Sum n')
 unifiedCharacterDistance s
   = \c1 c2 -> fold $  liftA2 (getPairwiseWeightedTransitionCost @s @c @n s) c1 c2 
+-}
 
 unifiedDynamicCharacterDistance = undefined
 --  :: forall n

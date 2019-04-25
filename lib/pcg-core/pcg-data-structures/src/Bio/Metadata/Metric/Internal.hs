@@ -26,21 +26,21 @@ import Control.Lens
 import Data.Monoid
 
 
-
 getPairwiseTransitionCost
   :: forall s c n . GetPairwiseTransitionCostMatrix s c n
   => s -> (c -> c -> n)
 getPairwiseTransitionCost s = \c1 c2 -> 
   snd $ (s ^. pairwiseTransitionCostMatrix) c1 c2
 
+
 getPairwiseWeightedTransitionCost
-  :: forall s c n n'.
+  :: forall m c n n'.
      ( Real n
      , Real n'
      , Fractional n'
-     , GetPairwiseTransitionCostMatrix s c n
-     , HasCharacterWeight s n'
+     , GetPairwiseTransitionCostMatrix m c n
+     , HasCharacterWeight m n'
      )
-  => s -> (c -> c -> Sum n')
-getPairwiseWeightedTransitionCost s = \c1 c2 -> 
-  Sum $ (s ^. characterWeight) * (realToFrac $ getPairwiseTransitionCost @_ @_ @n s c1 c2)
+  => m -> (c -> c -> Sum n')
+getPairwiseWeightedTransitionCost m = \c1 c2 -> 
+  Sum $ (m ^. characterWeight) * (realToFrac $ getPairwiseTransitionCost @_ @_ @n m c1 c2)
