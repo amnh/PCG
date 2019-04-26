@@ -24,13 +24,11 @@ import Bio.Graph.Constructions
 import AI.Clustering.Hierarchical
 import Data.DList (DList)
 import Data.Vector
-import qualified Data.List.NonEmpty as NE
 import qualified Data.DList as DL (toList)
 import Analysis.Clustering.Metric
 import Control.Lens
 import Data.Coerce
 import Data.Monoid (Sum(..))
-import Data.NodeLabel
 import Bio.Graph.PhylogeneticDAG
 
 
@@ -50,11 +48,11 @@ clusterShuffle
   -> LeafSet CharacterNode
   -> Linkage
   -> LeafSet CharacterNode
-clusterShuffle meta leafSet opt = clusteredLeafSet
+clusterShuffle meta leaves opt = clusteredLeafSet
 
   where
     leafSetVector :: Vector CharacterNode
-    leafSetVector = fromLeafSet leafSet
+    leafSetVector = fromLeafSet leaves
 
     distance :: CharacterNode -> CharacterNode -> Double
     distance node1 node2 =
