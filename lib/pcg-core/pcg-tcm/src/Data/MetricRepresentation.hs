@@ -18,6 +18,8 @@
 {-# LANGUAGE StrictData       #-}
 {-# LANGUAGE TypeFamilies     #-}
 {-# LANGUAGE UnboxedSums      #-}
+{-# LANGUAGE ExplicitForAll   #-}
+
 
 module Data.MetricRepresentation
   ( MetricRepresentation(..)
@@ -135,7 +137,8 @@ discreteMetricThreewayLogic x y z
 
 
 firstLinearNormPairwiseLogic
-  :: ( Ord (Bound a)
+  :: forall a b c
+  .  ( Ord (Bound a)
      , Ranged a
      , Ranged b
      , Ranged c

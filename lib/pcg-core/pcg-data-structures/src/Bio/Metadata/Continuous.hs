@@ -14,6 +14,8 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module Bio.Metadata.Continuous
   ( ContinuousCharacterMetadataDec()
@@ -48,10 +50,10 @@ instance GeneralCharacterMetadata ContinuousCharacterMetadataDec where
     extractGeneralCharacterMetadata (CCM x) = x
 
 -- | (✔)
-instance (Ranged c, Bound c ~ d, Ord d) =>
+instance forall c d . (Ranged c, Bound c ~ d, Ord d) =>
   GetPairwiseTransitionCostMatrix ContinuousCharacterMetadataDec c d where
 
-    pairwiseTransitionCostMatrix = to $ const firstLinearNormPairwiseLogic
+    pairwiseTransitionCostMatrix = to $ (const (firstLinearNormPairwiseLogic @c @c @c))
   
   
 
