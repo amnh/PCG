@@ -8,9 +8,6 @@ module PCG.Command.Read.Evaluate
   ) where
 
 import           Bio.Graph
-import           Bio.Graph.LeafSet
-import Bio.Graph.Node
-import Control.Lens.Operators ((%~), (&))
 import           Control.Monad                             (when)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Except
@@ -93,14 +90,6 @@ evaluate (ReadCommand fileSpecs) = do
            (Either
               TopologicalResult (PhylogeneticSolution FinalDecorationDAG))
     decoration     = fmapCharDAG initializeDecorations2
-
-    transformInputLeaves
-     :: Validation UnificationError (Either TopologicalResult CharacterResult)
-     -> Validation UnificationError (Either TopologicalResult CharacterResult)
-    transformInputLeaves = fmapCharDAG transformLeaves
-
-    transformLeaves :: CharacterResult -> CharacterResult
-    transformLeaves sol = sol & leafSet %~ id
 
     fmapCharDAG = fmap . fmap
 
