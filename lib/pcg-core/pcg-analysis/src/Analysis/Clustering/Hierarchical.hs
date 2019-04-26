@@ -30,6 +30,9 @@ import Control.Lens
 import Data.Coerce
 import Data.Monoid (Sum(..))
 import Bio.Graph.PhylogeneticDAG
+import qualified Data.Vector.Mutable as MV
+import Data.Vector.Mutable (STVector)
+import Control.Monad.ST
 
 
 clusterLeaves
@@ -75,3 +78,57 @@ dendroToList :: Dendrogram a -> DList a
 dendroToList = \case
   Leaf a -> pure a
   Branch _ _ l r -> dendroToList l <> dendroToList r
+
+
+dendroToVector
+  :: Dendrogram a
+  -> Vector a
+dendroToVector dendro = create $ dendroToMVector dendro
+
+
+dendroToMVector
+  :: forall a s
+  .  Dendrogram a
+  -> ST s (STVector s a)
+dendroToMVector =
+  \case
+    Leaf a ->
+      do
+        m <- MV.new 1
+        MV.write m 0 a
+        pure m            
+
+    Branch tot _ left right ->
+        do
+          let sl = size left
+          leftM  <- dendroToMVector left
+          rightM <- dendroToMVector right
+          unsafeAppendMVector tot sl leftM rightM
+
+
+appendMVector :: STVector s a -> STVector s a -> ST s (STVector s a)
+appendMVector v1 v2 =
+    do
+      let l1 = MV.length v1
+          l2 = MV.length v2
+      result <- MV.new (l1 + l2)
+      MV.copy (MV.take l1 result) v1
+      MV.copy (MV.drop l1 result) v2
+      pure result
+
+
+unsafeAppendMVector
+  :: Int  -- ^ total size
+  -> Int  -- ^ size of left vector
+  -> STVector s a
+  -> STVector s a
+  -> ST s (STVector s a)
+unsafeAppendMVector tot sl v1 v2 =
+  do
+    result <- MV.new tot
+    MV.copy (MV.take sl result) v1
+    MV.copy (MV.drop sl result) v2
+    pure result
+          
+          
+    
