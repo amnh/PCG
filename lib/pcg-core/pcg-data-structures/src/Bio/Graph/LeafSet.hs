@@ -19,8 +19,8 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+{-# LANGUAGE TypeApplications       #-}
 
 
 module Bio.Graph.LeafSet
@@ -31,16 +31,13 @@ module Bio.Graph.LeafSet
 
 
 import Control.Lens
-import Data.List       (union)
---import Text.Newick.Class ()
-import Text.XML.Custom ()
-import Data.Vector
 import Data.Coerce
-
+import Data.Vector
+import Text.XML.Custom ()
 
 -- |
 -- Set of unique leaf labels.
-newtype LeafSet n = LeafSet [n]
+newtype LeafSet n = LeafSet (Vector n)
     deriving (Foldable, Functor, Show)
 
 
@@ -55,11 +52,11 @@ class HasLeafSet s a | s -> a where
 -- | (✔)
 instance Eq n => Semigroup (LeafSet n) where
 
-    (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ union lhs rhs
+    (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ (<>) lhs rhs
 
 
 fromLeafSet :: forall n .  LeafSet n -> Vector n
-fromLeafSet = coerce $ fromList @n
+fromLeafSet = coerce
 {--
 instance ToXML (LeafSet (Maybe String)) where
 
