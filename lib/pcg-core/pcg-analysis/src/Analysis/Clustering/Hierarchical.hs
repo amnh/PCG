@@ -10,29 +10,27 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE RecordWildCards  #-}
-{-# LANGUAGE LambdaCase       #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Analysis.Clustering.Hierarchical where
 
-import Bio.Sequence
-import Bio.Graph.LeafSet
-import Bio.Graph.Node
-import Bio.Graph.Constructions
-import AI.Clustering.Hierarchical
-import Data.DList (DList)
-import Data.Vector
-import qualified Data.DList as DL (toList)
-import Analysis.Clustering.Metric
-import Control.Lens
-import Data.Coerce
-import Data.Monoid (Sum(..))
-import Bio.Graph.PhylogeneticDAG
-import qualified Data.Vector.Mutable as MV
-import Data.Vector.Mutable (STVector)
-import Control.Monad.ST
+import           AI.Clustering.Hierarchical
+import           Analysis.Clustering.Metric
+import           Bio.Graph.Constructions
+import           Bio.Graph.LeafSet
+import           Bio.Graph.Node
+import           Bio.Graph.PhylogeneticDAG
+import           Bio.Sequence
+import           Control.Lens
+import           Control.Monad.ST
+import           Data.Coerce
+import           Data.DList                 (DList)
+import qualified Data.DList                 as DL (toList)
+import           Data.Monoid                (Sum (..))
+import           Data.Vector
+import           Data.Vector.Mutable        (STVector)
+import qualified Data.Vector.Mutable        as MV
 
 
 clusterLeaves
@@ -64,13 +62,13 @@ clusterShuffle meta leaves opt = clusteredLeafSet
         charSeq2 = node2 ^. _sequenceDecoration
       in
         coerce $ characterSequenceDistance meta charSeq1 charSeq2
-        
+
 
     dendro :: Dendrogram CharacterNode
     dendro = hclust opt leafSetVector distance
 
     clusteredLeafSet :: LeafSet CharacterNode
-    clusteredLeafSet = coerce . DL.toList $ dendroToList dendro
+    clusteredLeafSet = coerce $ dendroToVector dendro
 
 
 
@@ -85,6 +83,21 @@ dendroToVector
   -> Vector a
 dendroToVector dendro = create $ dendroToMVector dendro
 
+dendroToVectorClusters
+  :: Dendrogram a
+  -> Int
+  -> Vector (Vector a)
+dendroToVectorClusters d n = case d of
+    Leaf a -> pure $ pure a
+    b@(Branch tot _ left right) ->
+      case n of
+        1 -> pure $ dendroToVector b
+        k ->
+          let
+            leftAmount = (floor (fromIntegral tot / fromIntegral (size left))) * k
+            rightAmount = k - leftAmount
+          in
+            (dendroToVectorClusters left leftAmount) <> (dendroToVectorClusters right rightAmount)
 
 dendroToMVector
   :: forall a s
@@ -96,7 +109,7 @@ dendroToMVector =
       do
         m <- MV.new 1
         MV.write m 0 a
-        pure m            
+        pure m
 
     Branch tot _ left right ->
         do
@@ -129,6 +142,6 @@ unsafeAppendMVector tot sl v1 v2 =
     MV.copy (MV.take sl result) v1
     MV.copy (MV.drop sl result) v2
     pure result
-          
-          
-    
+
+
+
