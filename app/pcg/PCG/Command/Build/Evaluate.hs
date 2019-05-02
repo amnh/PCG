@@ -45,6 +45,7 @@ import           Data.Ord                                      (comparing)
 import           Data.Semigroup.Foldable
 import           PCG.Command.Build
 import           System.Random.Shuffle
+import Data.Vector (Vector)
 
 
 type DatNode =
@@ -154,6 +155,9 @@ naiveWagnerBuild metaSeq ns =
   where
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
+
+clusterBuild :: Vector (FinalDecorationDAG) -> FinalDecorationDAG
+clusterBuild = undefined
 
 iterativeBuild :: FinalDecorationDAG -> DatNode -> FinalDecorationDAG
 iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
