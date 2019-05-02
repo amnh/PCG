@@ -30,16 +30,16 @@ module Bio.Metadata.Discrete.Internal
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete.Class
 import Bio.Metadata.General
+import Bio.Metadata.Metric
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
-import Data.List                   (intercalate)
-import Data.Text.Short             (ShortText)
-import GHC.Generics hiding (to)
-import Text.XML
-import Bio.Metadata.Metric
 import Data.Bits
+import Data.List                   (intercalate)
 import Data.MetricRepresentation
+import Data.Text.Short             (ShortText)
+import GHC.Generics                hiding (to)
+import Text.XML
 
 
 -- |
@@ -100,7 +100,7 @@ instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
 instance (Bits c, Num b) =>
   GetPairwiseTransitionCostMatrix DiscreteCharacterMetadataDec c b where
 
-    pairwiseTransitionCostMatrix = to $ const discreteMetricPairwiseLogic 
+    pairwiseTransitionCostMatrix = to $ const discreteMetricPairwiseLogic
 
 
 -- | (✔)

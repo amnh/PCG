@@ -14,11 +14,11 @@
 {-# LANGUAGE DeriveFoldable   #-}
 {-# LANGUAGE DeriveFunctor    #-}
 {-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE ExplicitForAll   #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StrictData       #-}
 {-# LANGUAGE TypeFamilies     #-}
 {-# LANGUAGE UnboxedSums      #-}
-{-# LANGUAGE ExplicitForAll   #-}
 
 
 module Data.MetricRepresentation

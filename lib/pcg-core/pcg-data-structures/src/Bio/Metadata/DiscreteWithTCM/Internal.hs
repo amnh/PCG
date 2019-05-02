@@ -39,15 +39,14 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
-import Data.List                          (intercalate)
+import Data.List                               (intercalate)
 import Data.MetricRepresentation
 import Data.Range
-import Data.TCM                           as TCM
+import Data.TCM                                as TCM
 import Data.TCM.Memoized
-import Data.Text.Short                    (ShortText)
-import GHC.Generics                       hiding (to)
+import Data.Text.Short                         (ShortText)
+import GHC.Generics                            hiding (to)
 import Text.XML
-import Bio.Character.Decoration.Discrete.Class
 
 
 -- |

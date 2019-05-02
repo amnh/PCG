@@ -64,7 +64,6 @@ module Bio.Sequence
   , staticCost
   ) where
 
-import Data.List.Utility
 import           Bio.Character.Encodable
 import           Bio.Metadata.Continuous
 import           Bio.Metadata.Discrete
@@ -85,6 +84,7 @@ import           Data.DList                   hiding (toList)
 import           Data.Foldable
 import           Data.Foldable.Custom
 import           Data.Key
+import           Data.List.Utility
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Prelude                      hiding (zip)

@@ -13,9 +13,9 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Metadata.Continuous
   ( ContinuousCharacterMetadataDec()
@@ -31,10 +31,10 @@ import Bio.Metadata.General
 import Bio.Metadata.Metric
 import Control.DeepSeq
 import Control.Lens
-import GHC.Generics hiding (to)
-import Text.XML
-import Data.Range
 import Data.MetricRepresentation
+import Data.Range
+import GHC.Generics               hiding (to)
+import Text.XML
 
 
 -- |
@@ -54,8 +54,8 @@ instance forall c d . (Ranged c, Bound c ~ d, Ord d) =>
   GetPairwiseTransitionCostMatrix ContinuousCharacterMetadataDec c d where
 
     pairwiseTransitionCostMatrix = to $ (const (firstLinearNormPairwiseLogic @c @c @c))
-  
-  
+
+
 
 
 -- | (✔)

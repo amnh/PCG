@@ -572,22 +572,22 @@ hexZip2WithMeta f1 f2 f3 f4 f5 f6 meta charBlock1 charBlock2 = CB
           = parZipWith3 rpar f3
             (meta ^.    additiveBin)
             (charBlock1 ^.    additiveBin)
-            (charBlock2 ^.    additiveBin)            
+            (charBlock2 ^.    additiveBin)
       , _metricBin
           = parZipWith3 rpar f4
             (meta ^.      metricBin)
             (charBlock1 ^.      metricBin)
-            (charBlock2 ^.      metricBin)            
+            (charBlock2 ^.      metricBin)
       , _nonMetricBin
           = parZipWith3 rpar f5
             (meta ^.   nonMetricBin)
             (charBlock1 ^.   nonMetricBin)
-            (charBlock2 ^.   nonMetricBin)            
+            (charBlock2 ^.   nonMetricBin)
       , _dynamicBin
           = parZipWith3 rpar f6
             (meta ^.     dynamicBin)
             (charBlock1 ^.     dynamicBin)
-            (charBlock2 ^.     dynamicBin)            
+            (charBlock2 ^.     dynamicBin)
       }
 
 

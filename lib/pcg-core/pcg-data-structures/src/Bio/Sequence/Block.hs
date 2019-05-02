@@ -52,12 +52,12 @@ import Control.Arrow                       ((***))
 import Control.Lens
 import Control.Parallel.Custom
 import Control.Parallel.Strategies
+import Data.Foldable
 import Data.Foldable.Custom                (foldMap')
 import Data.Key
 import Data.Monoid                         (Sum (..))
 import Data.Vector.Instances               ()
 import Prelude                             hiding (zip)
-import Data.Foldable
 
 
 -- |

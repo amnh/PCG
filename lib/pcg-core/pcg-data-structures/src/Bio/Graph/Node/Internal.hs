@@ -20,8 +20,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
-{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
 
 module Bio.Graph.Node.Internal
   ( EdgeSet
@@ -51,12 +51,13 @@ module Bio.Graph.Node.Internal
 
 
 import Control.DeepSeq
-import Control.Lens hiding (_head)
+import Control.Lens                hiding (_head)
 import Control.Lens.Lens           (Lens)
 import Data.EdgeSet
 import Data.Foldable
 import Data.Functor.Apply
 import Data.List.NonEmpty          (NonEmpty (..))
+import Data.List.Utility           (HasHead (..))
 import Data.Ord                    (comparing)
 import Data.Text.Lazy              (Text, pack)
 import Data.TopologyRepresentation
@@ -65,7 +66,6 @@ import GHC.Generics
 import Text.Newick.Class
 import Text.XML
 import TextShow                    (TextShow (showb, showt), toString, unlinesB)
-import Data.List.Utility (HasHead(..))
 
 
 -- |

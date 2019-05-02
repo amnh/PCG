@@ -10,9 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TypeApplications    #-}
 
 module Bio.Metadata.Metric.Internal
@@ -29,7 +29,7 @@ import Data.Monoid
 getPairwiseTransitionCost
   :: forall s c n . GetPairwiseTransitionCostMatrix s c n
   => s -> (c -> c -> n)
-getPairwiseTransitionCost s = \c1 c2 -> 
+getPairwiseTransitionCost s = \c1 c2 ->
   snd $ (s ^. pairwiseTransitionCostMatrix) c1 c2
 
 
@@ -42,5 +42,5 @@ getPairwiseWeightedTransitionCost
      , HasCharacterWeight m n'
      )
   => m -> (c -> c -> Sum n')
-getPairwiseWeightedTransitionCost m = \c1 c2 -> 
+getPairwiseWeightedTransitionCost m = \c1 c2 ->
   Sum $ (m ^. characterWeight) * (realToFrac $ getPairwiseTransitionCost @_ @_ @n m c1 c2)
