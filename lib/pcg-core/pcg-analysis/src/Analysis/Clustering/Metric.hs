@@ -10,35 +10,34 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE GADTs               #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE GADTs #-}
 
-
-{-# LANGUAGE NoMonoLocalBinds #-}
+{-# LANGUAGE NoMonoLocalBinds    #-}
 
 module Analysis.Clustering.Metric (
   characterSequenceDistance
   ) where
 
-import Analysis.Parsimony.Dynamic.DirectOptimization                                       
-import Bio.Sequence
-import Bio.Metadata.Metric
-import Data.Monoid
-import Bio.Metadata
-import Control.Applicative
-import Data.Foldable
-import Bio.Character.Encodable
-import Control.Lens
-import Bio.Character.Decoration.Dynamic
-import Bio.Character.Decoration.Discrete
-import Bio.Character.Decoration.Continuous
-import qualified Bio.Sequence.Block as Blk
-import Numeric.Extended.Real
-import Data.MonoTraversable
-import Bio.Character
+import           Analysis.Parsimony.Dynamic.DirectOptimization
+import           Bio.Character
+import           Bio.Character.Decoration.Continuous
+import           Bio.Character.Decoration.Discrete
+import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Encodable
+import           Bio.Metadata
+import           Bio.Metadata.Metric
+import           Bio.Sequence
+import qualified Bio.Sequence.Block                            as Blk
+import           Control.Applicative
+import           Control.Lens
+import           Data.Foldable
+import           Data.Monoid
+import           Data.MonoTraversable
+import           Numeric.Extended.Real
 
 
 characterSequenceDistance
@@ -53,7 +52,7 @@ characterSequenceDistance
   -> CharacterSequence (Maybe u) (Maybe v) (Maybe  w) (Maybe x) (Maybe y) (Maybe z)
   -> CharacterSequence (Maybe u) (Maybe v) (Maybe  w) (Maybe x) (Maybe y) (Maybe z)
   -> Sum Double
-characterSequenceDistance = 
+characterSequenceDistance =
   foldZipWithMeta blockDistance
 
 
@@ -72,10 +71,10 @@ blockDistance
 blockDistance meta block1 block2
   = hexFold $
     Blk.hexZipWithMeta
-      ((characterDistance @ExtendedReal) (^. (intervalCharacter @u)))
-      ((characterDistance @Word        ) (^.   discreteCharacter))
-      ((characterDistance @Word        ) (^.   discreteCharacter))
-      ((characterDistance @Word        ) (^.   discreteCharacter))
+      (characterDistance @ExtendedReal (^. (intervalCharacter @u)))
+      (characterDistance @Word         (^.   discreteCharacter))
+      (characterDistance @Word         (^.   discreteCharacter))
+      (characterDistance @Word        (^.   discreteCharacter))
       mempty
       dynamicCharacterDistance
       meta
@@ -83,7 +82,7 @@ blockDistance meta block1 block2
       block2
 
 
-    
+
 characterDistance
   :: forall n m c d
    . ( Real n
@@ -120,8 +119,7 @@ dynamicCharacterDistance'
      , Ord (Element c)
      )
   => m -> d -> d -> Word
-dynamicCharacterDistance' meta d1 d2 = pr5_1 $ selectDynamicMetric meta c1 c2
+dynamicCharacterDistance' meta d1 d2 = (^. _1) $ selectDynamicMetric meta c1 c2
   where
     c1 = d1 ^. encoded
     c2 = d2 ^. encoded
-    pr5_1 = \(w,_,_,_,_) -> w
