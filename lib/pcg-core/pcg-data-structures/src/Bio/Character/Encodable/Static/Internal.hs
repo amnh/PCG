@@ -31,8 +31,8 @@ import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Static.Class
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable
-import Control.Lens
 import           Control.DeepSeq
+import           Control.Lens
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                           as B

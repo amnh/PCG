@@ -19,8 +19,8 @@ module Bio.Character.Decoration.Discrete.Class
   , SimpleDiscreteCharacterDecoration(..)
   ) where
 
-import Control.Lens
 import Bio.Character.Encodable
+import Control.Lens
 
 
 -- |

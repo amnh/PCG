@@ -10,17 +10,17 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass         #-}
-{-# LANGUAGE DeriveGeneric          #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving  #-}
-{-# LANGUAGE DerivingStrategies     #-}
+{-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 -- For derived instance of PossiblyMissingCharacter
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE UndecidableInstances       #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Decoration.Discrete
@@ -39,6 +39,7 @@ module Bio.Character.Decoration.Discrete
   ) where
 
 
+import Bio.Character.Decoration.Discrete.Class
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
@@ -49,9 +50,7 @@ import Data.Range
 import GHC.Generics
 import Numeric.Extended
 import Text.XML
-import TextShow                        (TextShow (showb))
-import Data.Bits
-import Bio.Character.Decoration.Discrete.Class
+import TextShow                                (TextShow (showb))
 
 -- |
 
