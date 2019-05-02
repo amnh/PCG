@@ -180,8 +180,9 @@ validateUserInput userInput =
       <*> (pure . inputRootLength ) userInput
       <*> (pure . inputAlignedData) userInput
   where
-    validProbability x = 0 <= x && x < 1
-
+    validProbability p
+      | 0 <= p && p < 1 = Just p
+      | otherwise       = Nothing
 
 generateRandomSequence
   :: Set String             -- ^ Alphabet
