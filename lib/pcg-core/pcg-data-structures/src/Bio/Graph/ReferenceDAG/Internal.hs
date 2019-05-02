@@ -374,7 +374,7 @@ instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
             getter :: ReferenceDAG d e n -> LeafSet n
             getter (ReferenceDAG v _ _) = LeafSet $ foldMap f v
 
-            f e | null (childRefs e) = [nodeDecoration e]
+            f e | null (childRefs e) = pure $ nodeDecoration e
                 | otherwise          = mempty
 
 
