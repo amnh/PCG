@@ -151,7 +151,6 @@ library
     Bio.Sequence.Block,
     Bio.Sequence.Character,
     Bio.Sequence.Metadata,
-    Bio.Sequence.Metric,
     Bio.Graph,
     Bio.Graph.Component,
     Bio.Graph.Constructions,
@@ -315,7 +314,6 @@ library pcg-data-structures
     Bio.Sequence.Block
     Bio.Sequence.Character
     Bio.Sequence.Metadata
-    Bio.Sequence.Metric
     Bio.Graph
     Bio.Graph.Component
     Bio.Graph.Constructions
