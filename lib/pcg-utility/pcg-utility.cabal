@@ -130,7 +130,6 @@ library
     Data.Render.Utility
     Data.ShortText.Custom
     Data.TextShow.Custom
-    Data.Tuple.Utility
     Data.UnionSet
     Data.Vector.Custom
     Data.Vector.Memo

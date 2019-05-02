@@ -1,7 +1,7 @@
-{-# LANGUAGE BangPatterns      #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies#-}
+{-# LANGUAGE BangPatterns           #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.List.Utility
@@ -18,18 +18,18 @@
 
 module Data.List.Utility where
 
-import Data.Foldable
-import Data.Key                (Zip (..))
-import Data.List               (sort, sortBy)
-import Data.List.NonEmpty      (NonEmpty (..), nonEmpty)
-import Data.Map                (assocs, empty, insertWith)
-import Data.Maybe              (catMaybes, maybe)
-import Data.Ord                (comparing)
-import Data.Semigroup.Foldable
-import Data.Set                (insert, intersection)
-import Prelude hiding (zipWith)
-import qualified Data.List.NonEmpty as NE
-import Control.Lens (lens, Lens')
+import           Control.Lens            (Lens', lens)
+import           Data.Foldable
+import           Data.Key                (Zip (..))
+import           Data.List               (sort, sortBy)
+import           Data.List.NonEmpty      (NonEmpty (..), nonEmpty)
+import qualified Data.List.NonEmpty      as NE
+import           Data.Map                (assocs, empty, insertWith)
+import           Data.Maybe              (catMaybes, maybe)
+import           Data.Ord                (comparing)
+import           Data.Semigroup.Foldable
+import           Data.Set                (insert, intersection)
+import           Prelude                 hiding (zipWith)
 
 
 -- |
