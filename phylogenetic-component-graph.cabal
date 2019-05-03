@@ -125,6 +125,7 @@ executable pcg
     megaparsec               >= 7.0       && < 7.1,
     mmark                    >= 0.0.6     && < 1.0,
     modern-uri               >= 0.3       && < 1.0,
+    mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
     optparse-applicative     >= 0.14      && < 0.15,
     parallel                 >= 3.2       && < 4.0,
@@ -149,7 +150,11 @@ executable pcg
     PCG.Command.Load.Evaluate
     PCG.Command.Read.DecorationInitialization
     PCG.Command.Read.Evaluate
-    PCG.Command.Read.ReadError
+    PCG.Command.Read.InputStreams
+    PCG.Command.Read.InputStreamError
+    PCG.Command.Read.ParseStreams
+    PCG.Command.Read.ParseStreamError
+    PCG.Command.Read.ReadCommandError
     PCG.Command.Report.Evaluate
     PCG.Command.Report.GraphViz
     PCG.Command.Report.Metadata

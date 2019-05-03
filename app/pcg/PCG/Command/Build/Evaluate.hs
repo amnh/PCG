@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module PCG.Command.Build.Evaluate
   ( evaluate
@@ -28,7 +29,7 @@ import           Control.Arrow                                 ((&&&))
 import           Control.DeepSeq
 import           Control.Evaluation
 import           Control.Lens
-import           Control.Monad                                 (replicateM)
+import           Control.Monad (replicateM)
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader                          (ReaderT)
 import           Control.Parallel.Custom
@@ -44,8 +45,11 @@ import           Data.NodeLabel
 import           Data.Ord                                      (comparing)
 import           Data.Semigroup.Foldable
 import           PCG.Command.Build
-import           System.Random.Shuffle
+import           Immutable.Shuffle (shuffleM)
 import Data.Vector (Vector)
+import Data.Vector.NonEmpty (unsafeFromVector)
+import qualified Data.Vector.NonEmpty as NE
+
 
 
 type DatNode =
@@ -75,6 +79,7 @@ evaluate (BuildCommand trajectoryCount buildType) cpctInState =
                            WheelerForest  -> forestBuildLogic
         bestNetwork <- buildLogic v trajectoryCount
         liftIO . compact . Right $ toSolution bestNetwork
+  
   where
     toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
@@ -85,17 +90,28 @@ wagnerBuildLogic
   -> Int
   -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
 wagnerBuildLogic v count =
-    case toList $ v ^. leafSet of
-      []   -> fail "There are no nodes with which to build a tree."
-      y:ys ->
-        if count < 1
-        then fail "A non-positive number was supplied to the number of BUILD trajectories."
-        else let (PDAG2 _ m) = NE.head . toNonEmpty . NE.head $ phylogeneticForests v
-             in  do trajectories <- case count of
-                                      1 -> pure $ (y:|ys):|[]
-                                      n -> liftIO . fmap (NE.fromList . fmap NE.fromList)
-                                             $ replicateM n (shuffleM (y:ys))
+    let
+      leaves = fromLeafSet $ v ^. leafSet
+    in
+      if null leaves
+        then fail "There are no nodes with which to build a tree."
+        else
+          if count < 1
+          then fail "A non-positive number was supplied to the number of BUILD trajectories."
+          else
+            let
+              (PDAG2 _ m) = NE.head . toNonEmpty . NE.head $ phylogeneticForests v
+              leavesNE = unsafeFromVector leaves
+            in
+              do
+                    trajectories <- case count of
+                                       1 -> pure $ leavesNE :| []
+                                       n -> liftIO . convert  $ replicateM n (shuffleM leaves)
                     pure $ naiveWagnerParallelBuild m trajectories
+  where
+    convert :: IO [Vector a] -> IO (NonEmpty (NE.Vector a))
+    convert = fmap (NE.fromList . fmap unsafeFromVector)
+    
 
 
 networkBuildLogic
@@ -120,7 +136,7 @@ naiveWagnerParallelBuild
   :: ( Foldable1 f
      , Traversable t
      )
-  => MetadataSequence m --(TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+  => MetadataSequence m
   -> t (f DatNode)
   -> t FinalDecorationDAG
 naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)

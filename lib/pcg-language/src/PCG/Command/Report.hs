@@ -26,6 +26,7 @@ module PCG.Command.Report
 
 import Control.Applicative.Free
 import Data.Functor             (($>))
+import Data.FileSource
 import PCG.Syntax.Combinators
 
 
@@ -60,7 +61,7 @@ data  OutputFormat
 -- Where the output stream should be directed.
 data  OutputTarget
     = OutputToStdout
-    | OutputToFile !FilePath !FileWriteMethod
+    | OutputToFile !FileSource !FileWriteMethod
     deriving (Show)
 
 
@@ -94,9 +95,11 @@ outputTarget = choiceFrom [ stdout, toFile ] `withDefault` OutputToStdout
   where
     stdout = value "stdout" $> OutputToStdout
     toFile = choiceFrom
-        [ argList $ OutputToFile <$> text <*> fileWriteMethod
-        ,           OutputToFile <$> text <*> pure Move
+        [ argList $ OutputToFile <$> filePath <*> fileWriteMethod
+        ,           OutputToFile <$> filePath <*> pure Move
         ]
+    filePath :: Ap SyntacticArgument FileSource
+    filePath = FileSource <$> text
 
 
 fileWriteMethod :: Ap SyntacticArgument FileWriteMethod

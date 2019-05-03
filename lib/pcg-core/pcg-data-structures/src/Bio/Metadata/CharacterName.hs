@@ -54,6 +54,7 @@ module Bio.Metadata.CharacterName
 
 import Control.DeepSeq
 import Control.Monad.State.Lazy
+import Data.FileSource
 import Data.Map                 hiding (null)
 import Data.Monoid
 import Data.String
@@ -70,8 +71,8 @@ import TextShow.Data.List       (showbListWith)
 -- |
 -- Represents the name of a character in a type-safe manner which resolves namespace ambiguities.
 data CharacterName
-   = UserDefined !ShortText !ShortText
-   | Default     !ShortText {-# UNPACK #-} !Word
+   = UserDefined !FileSource !ShortText
+   | Default     !FileSource {-# UNPACK #-} !Word
    deriving (Eq, Generic)
 
 
@@ -109,7 +110,7 @@ instance Ord CharacterName where
         GT -> LT
         EQ -> EQ
   lhs@(UserDefined _ name) `compare` rhs@(Default path _index)
-    | (path <> ":") `isPrefixOf` name = LT
+    | toShortText (path <> ":") `isPrefixOf` name = LT
     | otherwise = strCmp lhs rhs
   lhs `compare` rhs = strCmp lhs rhs
 
@@ -128,7 +129,7 @@ isUserDefined _             = False
 
 -- |
 -- Determine the source file for the character.
-sourceFile :: CharacterName -> ShortText
+sourceFile :: CharacterName -> FileSource
 sourceFile (UserDefined x _) = x
 sourceFile (Default     x _) = x
 
@@ -186,7 +187,7 @@ sourceFile (Default     x _) = x
 -- >>> makeCharacterNames [("foo.txt", Nothing), ("foo.txt", Just ""), ("foo.txt", Nothing)]
 -- ["foo.txt:0","foo.txt:1","foo.txt:2"]
 --
-makeCharacterNames :: Traversable t => t (ShortText, Maybe ShortText) -> t CharacterName
+makeCharacterNames :: Traversable t => t (FileSource, Maybe ShortText) -> t CharacterName
 makeCharacterNames = (`evalState` mempty) . traverse (uncurry assignName)
 
 
@@ -195,7 +196,7 @@ assignCharacterNames
      , Traversable g
      , Traversable h
      )
-  => (a -> (ShortText, g (h (Maybe ShortText, b))))
+  => (a -> (FileSource, g (h (Maybe ShortText, b))))
   -> f a
   -> f (g (h (CharacterName, b)))
 assignCharacterNames f = (`evalState` mempty) . traverse (g . f)
@@ -218,8 +219,8 @@ validName name =
 
 
 assignName
-  :: MonadState (Map ShortText Word) f
-  => ShortText
+  :: MonadState (Map FileSource Word) f
+  => FileSource
   -> Maybe ShortText
   -> f CharacterName
 assignName path may =

@@ -16,9 +16,11 @@ module Control.Evaluation
   ( EvaluationT()
   , Evaluation()
   , Notification(..)
+  , ErrorPhase(..)
   , evalEither
   , evalIO
   , evaluation
+  , failWithPhase
   , impure
   , notifications
   , runEvaluation
@@ -29,7 +31,7 @@ module Control.Evaluation
 import Control.Evaluation.Internal
 import Control.Evaluation.Trans
 import Control.Evaluation.Unit
-import Data.Foldable
+import Data.Text
 
 
 -- |
@@ -48,11 +50,11 @@ evalEither (Right x) = pure x
 -- |
 -- Elimination function for the 'Evaluation' type.
 evaluation
-  :: (String -> b) -- ^ How to consume the error message when an error has occured
-  -> (a -> b)      -- ^ How to transform the stored value
+  :: (ErrorPhase -> Text -> b) -- ^ How to consume the error message when an error has occured
+  -> (a -> b)                  -- ^ How to transform the stored value
   -> Evaluation a
   -> b
 evaluation err val (Evaluation _ x) =
     case runEvalUnit x of
-      Left  s -> err $ toList s
-      Right v -> val v
+      Left  (p,s) -> err p s
+      Right v     -> val v

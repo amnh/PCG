@@ -18,6 +18,7 @@ module Data.TextShow.Custom
   ( intercalateB
   ) where
 
+import Data.Foldable
 import TextShow (Builder)
 
 -- |
@@ -25,8 +26,8 @@ import TextShow (Builder)
 -- the result.
 --
 -- TextShow builder equivelent of 'Data.List.intercalate'.
-intercalateB :: Builder -> [Builder] -> Builder
-intercalateB sep = go sep mempty
+intercalateB :: Foldable f => Builder -> f Builder -> Builder
+intercalateB sep = go sep mempty . toList
     where
       go s a = \case
         []    -> a

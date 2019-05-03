@@ -71,6 +71,7 @@ import           Data.List.NonEmpty               (NonEmpty (..), some1)
 import           Data.Proxy
 import           Data.String                      (IsString (..))
 import           Data.Time.Clock                  (DiffTime)
+import           Data.Text.Short                  (ShortText)
 import           PCG.Syntax.Primitive             (PrimitiveValue, parsePrimitive, whitespace)
 import qualified PCG.Syntax.Primitive             as P
 import           Text.Megaparsec                  hiding (many)
@@ -144,7 +145,7 @@ real = primitive P.real
 
 -- |
 -- Define a textual value as part of a command specification.
-text :: Ap SyntacticArgument String
+text :: Ap SyntacticArgument ShortText
 text = primitive P.text
 
 

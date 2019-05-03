@@ -56,6 +56,7 @@ import           Data.Scientific            hiding (scientific)
 import           Data.Set                   (Set)
 import qualified Data.Set                   as S
 import           Data.Time.Clock            (DiffTime, secondsToDiffTime)
+import           Data.Text.Short            (ShortText, pack)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Char.Lexer (decimal, scientific, signed)
@@ -66,7 +67,7 @@ data  PrimitiveParseResult
     = ResultBool                 !Bool
     | ResultInt   {-# UNPACK #-} !Int
     | ResultReal  {-# UNPACK #-} !Double
-    | ResultText                 !String
+    | ResultText                 !ShortText
     | ResultTime                 !DiffTime
     | ResultValue                !String
     deriving (Show)
@@ -85,12 +86,12 @@ data  PrimitiveType
 -- |
 -- A primitive value in the PCG scripting language.
 data PrimitiveValue a
-   = PInt            (Int      -> a)
-   | PReal           (Double   -> a)
-   | PBool           (Bool     -> a)
-   | PText           (String   -> a)
-   | PTime           (DiffTime -> a)
-   | PValue !String  (()       -> a)
+   = PInt            (Int       -> a)
+   | PReal           (Double    -> a)
+   | PBool           (Bool      -> a)
+   | PText           (ShortText -> a)
+   | PTime           (DiffTime  -> a)
+   | PValue !String  (()        -> a)
    deriving (Functor)
 
 
@@ -164,7 +165,7 @@ real = liftF $ PReal id
 
 -- |
 -- A text value embedded in a Free computational context
-text :: MonadFree PrimitiveValue m => m String
+text :: MonadFree PrimitiveValue m => m ShortText
 text = liftF $ PText id
 
 
@@ -273,8 +274,8 @@ realValue = label (getPrimitiveName TypeOfReal)
 
 textValue
   :: forall e s m. (MonadParsec e s m, Token s ~ Char)
-  => m String -- (Tokens s)
-textValue = openQuote *> many (escaped <|> nonEscaped) <* closeQuote
+  => m ShortText -- (Tokens s)
+textValue = fmap pack $ openQuote *> many (escaped <|> nonEscaped) <* closeQuote
   where
     -- These characters must be escaped!
     -- Requiring '(' & ')' to be escapsed in textual strings allows for

@@ -34,11 +34,9 @@ import Bio.Metadata.Metric
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
-import Data.Bits
+import Data.FileSource
 import Data.List                   (intercalate)
-import Data.MetricRepresentation
-import Data.Text.Short             (ShortText)
-import GHC.Generics                hiding (to)
+import GHC.Generics
 import Text.XML
 
 
@@ -49,7 +47,7 @@ data DiscreteCharacterMetadataDec
    = DiscreteCharacterMetadataDec
    { alphabet      :: {-# UNPACK #-} !(Alphabet String)
    , generalData   :: {-# UNPACK #-} !GeneralCharacterMetadataDec
-   , tcmSourceFile :: {-# UNPACK #-} !ShortText
+   , tcmSourceFile :: {-# UNPACK #-} !FileSource
    } deriving (Generic)
 
 
@@ -123,7 +121,7 @@ instance HasCharacterWeight DiscreteCharacterMetadataDec Double where
                     $ \e x -> e { generalData = generalData e & characterWeight .~ x }
 
 -- | (✔)
-instance HasTcmSourceFile DiscreteCharacterMetadataDec ShortText where
+instance HasTcmSourceFile DiscreteCharacterMetadataDec FileSource where
 
     _tcmSourceFile = lens tcmSourceFile $ \d s -> d { tcmSourceFile = s }
 
@@ -140,7 +138,7 @@ instance ToXML DiscreteCharacterMetadataDec where
 
 -- |
 -- Construct a concrete typed 'DiscreteCharacterMetadataDec' value from the supplied inputs.
-discreteMetadata :: CharacterName -> Double -> Alphabet String -> ShortText -> DiscreteCharacterMetadataDec
+discreteMetadata :: CharacterName -> Double -> Alphabet String -> FileSource -> DiscreteCharacterMetadataDec
 discreteMetadata name weight alpha tcmSource =
     DiscreteCharacterMetadataDec
     { alphabet       = alpha

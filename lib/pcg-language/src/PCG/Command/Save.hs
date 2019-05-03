@@ -26,6 +26,7 @@ module PCG.Command.Save
 
 import Control.Applicative.Free (Ap)
 import Data.Functor             (($>))
+import Data.FileSource
 import PCG.Syntax.Combinators
 
 
@@ -34,23 +35,26 @@ import PCG.Syntax.Combinators
 -- computation to disk. The file path to which the save state is serialized
 -- may be user specified. A default, hidden file path exists if no file path is
 -- specified by the user.
-data SaveCommand = SaveCommand !FilePath !SerialType
-  deriving Show
+data SaveCommand = SaveCommand !FileSource !SerialType
+    deriving Show
 
 
 -- |
 -- Type of serialisation formats
-data SerialType
-  = Compact
-  | Binary
-  deriving Show
+data  SerialType
+    = Compact
+    | Binary
+    deriving Show
 
 
 -- |
 -- Defines the semantics of interpreting a valid \"SAVE\" command from the PCG
 -- scripting language syntax.
 saveCommandSpecification :: CommandSpecification SaveCommand
-saveCommandSpecification = command "save" . argList $ SaveCommand <$> (text `withDefault` defaultSaveFilePath) <*> (serialType `withDefault` defaultFormat)
+saveCommandSpecification = command "save" . argList $ SaveCommand <$> filePath <*> serialization
+  where
+    filePath = (FileSource <$> text) `withDefault` defaultSaveFilePath
+    serialization = serialType `withDefault` defaultFormat
 
 
 -- |
@@ -65,8 +69,8 @@ serialType = choiceFrom [saveCompact , saveBinary] `withDefault` defaultFormat
 -- |
 -- The default file path to serialize save states to when no path is specified
 -- by the user.
-defaultSaveFilePath :: FilePath
-defaultSaveFilePath = ".pcg.save"
+defaultSaveFilePath :: FileSource
+defaultSaveFilePath = toFileSource ".pcg.save"
 
 
 -- |

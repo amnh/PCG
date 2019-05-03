@@ -39,13 +39,14 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
-import Data.List                               (intercalate)
+import Data.FileSource
+import Data.List                          (intercalate)
 import Data.MetricRepresentation
 import Data.Range
 import Data.TCM                                as TCM
 import Data.TCM.Memoized
 import Data.Text.Short                         (ShortText)
-import GHC.Generics                            hiding (to)
+import GHC.Generics                       hiding (to)
 import Text.XML
 
 
@@ -164,7 +165,7 @@ instance HasCharacterWeight (DiscreteWithTCMCharacterMetadataDec c) Double where
                     $ \e x -> e { discreteData = discreteData e & characterWeight .~ x }
 
 -- | (✔)
-instance HasTcmSourceFile (DiscreteWithTCMCharacterMetadataDec c) ShortText where
+instance HasTcmSourceFile (DiscreteWithTCMCharacterMetadataDec c) FileSource where
 
     _tcmSourceFile = lens (\s -> discreteData s ^. _tcmSourceFile)
                    $ \d s -> d { discreteData = discreteData d & _tcmSourceFile .~ s }
@@ -231,7 +232,7 @@ discreteMetadataFromTCM
   :: CharacterName
   -> Double
   -> Alphabet String
-  -> ShortText
+  -> FileSource
   -> TCM
   -> DiscreteWithTCMCharacterMetadataDec c
 discreteMetadataFromTCM name weight alpha tcmSource tcm =
@@ -258,7 +259,7 @@ discreteMetadataWithTCM
   :: CharacterName
   -> Double
   -> Alphabet String
-  -> ShortText
+  -> FileSource
   -> (Word -> Word -> Word)
   -> DiscreteWithTCMCharacterMetadataDec c
 discreteMetadataWithTCM name weight alpha tcmSource scm = discreteMetadataFromTCM name weight alpha tcmSource tcm

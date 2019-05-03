@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE LambdaCase       #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module PCG.Computation.Internal
   ( evaluate
@@ -10,9 +11,12 @@ module PCG.Computation.Internal
 
 import           Bio.Graph
 import           Control.Evaluation
+import           Data.Bits
 import           Data.Char                   (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty          (NonEmpty (..))
+import           Data.Text                   (Text)
+import qualified Data.Text                   as T
 import qualified PCG.Command.Build.Evaluate  as Build
 import qualified PCG.Command.Echo.Evaluate   as Echo
 import qualified PCG.Command.Load.Evaluate   as Load
@@ -21,6 +25,8 @@ import qualified PCG.Command.Report.Evaluate as Report
 import qualified PCG.Command.Save.Evaluate   as Save
 import           PCG.Syntax
 import           System.Exit
+
+import Debug.Trace
 
 
 optimizeComputation :: Computation -> Computation
@@ -58,19 +64,52 @@ evaluate (Computation (x:|xs)) = foldl' f z xs
              SAVE   c -> s >>=   Save.evaluate c
 
 
-renderSearchState :: Evaluation a -> (ExitCode, String)
-renderSearchState eval = (unlines renderedNotifications <>) <$> evaluation err val eval
+renderSearchState :: Evaluation a -> (ExitCode, Text)
+renderSearchState eval = (T.unlines renderedNotifications <>) <$> evaluation err val eval
   where
     renderedNotifications = f <$> notifications eval
       where
-        f :: Notification -> String
-        f (Information s) = "[-] " <> toList s
-        f (Warning     s) = "[!] " <> toList s
+        f :: Notification -> Text
+        f (Information s) = "[-] " <> s
+        f (Warning     s) = "[!] " <> s
 
-    trimR = reverse . dropWhile isSpace . reverse
+    err errPhase errMsg = (errorPhaseToCode errPhase, "[✘] Error: "<> trimR errMsg)
 
-    err errMsg = (ExitFailure 5, "[✘] Error: "<> trimR errMsg       )
-    val _      = (ExitSuccess  , "[✔] Computation complete!"        )
+    val _ = (ExitSuccess, "[✔] Computation complete!")
+
+    trimR = T.dropWhileEnd isSpace
+
+
+-- |
+-- Get the error code associated with the phase in which the error occurred.
+--
+-- The error code will have one or more bits set in the range [2, 5].
+-- The bits are set progressively as successive phases are passed.
+--
+-- If a failure occured in the first phase, reading data from the file system,
+-- then the first bit (index 2) in the range will be set.
+--
+-- If the failure occured in the second phase, after data was successfully read
+-- from the disk but could not be successfully parsed, then the first and second
+-- bits (indices 2 & 3) in the range will be set.
+--
+-- If the failure occured in the third phase, after data was read from the disk
+-- and the streams were successfully parsed but the collection of data was not
+-- consistent and could not be unified, then the first through third bits
+-- (indices 2, 3 & 4) in the range will be set.
+--
+-- If the failure occured after reading data from disk, parsing the data streams,
+-- and unifying the input data, but an error occured during the phylogenetic
+-- search, then the first through fourth bits (indices 2, 3, 4 & 5) in the range
+-- will be set.
+errorPhaseToCode :: ErrorPhase -> ExitCode
+errorPhaseToCode = traceShowId . ExitFailure .
+    \case
+      Inputing  -> bit 2
+      Parsing   -> bit 3
+      Unifying  -> bit 2 .|. bit 3
+      Computing -> bit 4
+      Outputing -> bit 5
 
 
 getGlobalSettings :: IO GlobalSettings

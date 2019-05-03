@@ -13,10 +13,12 @@ import           Control.Monad.IO.Class
 import qualified Data.ByteString.Lazy        as BS
 import           Data.Char
 import           Data.Compact                (getCompact)
+import           Data.FileSource             (FileSource)
 import           Data.Foldable               (traverse_)
 import           Data.Functor                (($>))
 import           Data.List                   (isPrefixOf)
 import           Data.List.NonEmpty          (NonEmpty (..))
+import           Data.MonoTraversable
 import           Data.Render.Utility         (writeFileT)
 import           Data.String                 (IsString (fromString))
 import qualified Data.Text.Lazy              as Lazy
@@ -38,7 +40,7 @@ data  FileContent
 data FileStreamContext
    = ErrorCase    String
    | SingleStream FileContent
-   | MultiStream  (NonEmpty (FilePath, FileContent))
+   | MultiStream  (NonEmpty (FileSource, FileContent))
 
 
 printFileContent :: FileContent -> IO ()
@@ -46,13 +48,13 @@ printFileContent (T s) = printT s
 printFileContent (B s) = BS.putStr s
 
 
-writeFileContent :: FilePath -> FileContent -> IO ()
-writeFileContent f (T s) = writeFileT WriteMode f s
-writeFileContent f (B s) = BS.writeFile f s
+writeFileContent :: FileSource -> FileContent -> IO ()
+writeFileContent f (T s) = writeFileT WriteMode (otoList f) s
+writeFileContent f (B s) = BS.writeFile (otoList f) s
 
-appendFileContent :: FilePath -> FileContent -> IO ()
-appendFileContent f (T s) = writeFileT AppendMode f s
-appendFileContent f (B s) = BS.appendFile f s
+appendFileContent :: FileSource -> FileContent -> IO ()
+appendFileContent f (T s) = writeFileT AppendMode (otoList f) s
+appendFileContent f (B s) = BS.appendFile (otoList f) s
 
 
 evaluate :: ReportCommand -> GraphState -> SearchState
@@ -82,8 +84,8 @@ evaluate (ReportCommand format target) stateValue = reportStreams $> stateValue
 -- function will try to rename the existing file path by adding the suffix ".0",
 -- however if that filepath also exists, it will add ".1", ".2", ".3", ",.4", etc.
 -- The suffix added will be one greater than the highest existing numeric suffix.
-safelyMoveFile :: FilePath -> IO ()
-safelyMoveFile fp = do
+safelyMoveFile :: FileSource -> IO ()
+safelyMoveFile fs = do
     exists <- doesFileExist fp
     when exists $ do
         allFiles <- getCurrentDirectory >>= getDirectoryContents
@@ -94,6 +96,8 @@ safelyMoveFile fp = do
         let newName  = fp <> "." <> show nextNum
         renameFile fp newName
   where
+    fp = otoList fs
+    
     getFilePathPrefixes = fmap (drop (length fp)) . filter (fp `isPrefixOf`)
 
     getNumericSuffixes  = fmap tail . filter hasDotThenNumberSuffix . fmap takeExtension

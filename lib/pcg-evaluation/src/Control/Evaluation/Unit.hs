@@ -18,6 +18,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module Control.Evaluation.Unit where
 
@@ -31,16 +33,29 @@ import           Data.Functor.Alt          (Alt (..))
 import           Data.Functor.Apply        (Apply (..))
 import           Data.Functor.Bind         (Bind (..))
 import           Data.Functor.Classes      (Eq1, Ord1 (..), Show1)
-import           Data.List.NonEmpty        (NonEmpty (..))
+import           Data.Text                 (Text, pack)
 import           GHC.Generics
+import           TextShow
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances ()
 
 
 -- |
 -- The internal state of the computation. A short-circuiting evaluation unit
--- which returns a value, and error, or indicated that no work was done
-newtype EvalUnit a = EU { runEvalUnit :: Either (NonEmpty Char) a }
+-- which returns either an error that occured preventing the evaluation for being
+-- completed or a value of the evaluation or 
+--
+-- In the case that an error occured, an 'ErrorPhase' is stored along with a
+-- 'Text' value describing the error.
+--
+-- Note that multiple errors can be aggregated before calling 'fail' or
+-- 'evalUnitWithPhase' using another 'Applicative' or 'Monad' locally. We will
+-- use the @Validation@ type to collect many error of the same "phase" before
+-- failing in the 'Evaluation' monad. Consequently, the textual error message can
+-- be quite long, representing the entire list of aggregated failures. We use
+-- 'Text' instead of 'String' to store the error message to save space and
+-- efficient rendering.
+newtype EvalUnit a = EU { runEvalUnit :: Either (ErrorPhase, Text) a }
    deriving ( Applicative
             , Apply
             , Data
@@ -58,6 +73,18 @@ newtype EvalUnit a = EU { runEvalUnit :: Either (NonEmpty Char) a }
             , Traversable
             )
 
+-- |
+-- Keep track of which phase of the evaluation th error occured in.
+--
+-- This allows use to use custom exit codes.
+data  ErrorPhase
+    = Inputing
+    | Parsing
+    | Unifying
+    | Computing
+    | Outputing
+    deriving (Data, Eq, Generic, Ord, Read, Show)
+
 
 instance Alt EvalUnit where
 
@@ -67,6 +94,13 @@ instance Alt EvalUnit where
         case runEvalUnit lhs of
           Right _ -> lhs
           _       -> rhs
+
+
+instance Arbitrary ErrorPhase where
+
+    {-# INLINE arbitrary #-}
+
+    arbitrary = elements [ Inputing, Parsing, Unifying, Computing, Outputing ]
 
 
 instance Arbitrary a => Arbitrary (EvalUnit a) where
@@ -83,11 +117,21 @@ instance Arbitrary1 EvalUnit where
     liftArbitrary g = do
         n <- choose (0, 9) :: Gen Word -- 1/10 chance of 'error' value
         case n of
-          0 -> pure $ fail "Error Description"
+          0 -> (`evalUnitWithPhase` errorMessage) <$> arbitrary
           _ -> pure <$> g
+      where
+        errorMessage :: Text
+        errorMessage = "Error Description"
 
 
 instance CoArbitrary a => CoArbitrary (EvalUnit a) where
+
+    {-# INLINE coarbitrary #-}
+
+    coarbitrary = genericCoarbitrary
+
+
+instance CoArbitrary ErrorPhase where
 
     {-# INLINE coarbitrary #-}
 
@@ -130,10 +174,10 @@ instance MonadFail EvalUnit where
 
     {-# INLINE fail #-}
 
-    fail = EU . Left .
+    fail = EU . Left . (\x -> (Computing, x)) .
         \case
-           []   -> 'U':|"nspecified error."
-           x:xs ->   x:|xs
+           []   -> "Unspecified error."
+           x:xs -> pack $ x:xs
 
 
 instance MonadZip EvalUnit where
@@ -150,6 +194,11 @@ instance MonadZip EvalUnit where
         case runEvalUnit x of
           Left  s     -> (EU $ Left s, EU $ Left s)
           Right (a,b) -> (pure a, pure b)
+
+
+instance NFData ErrorPhase where
+
+    rnf x = x `seq` ()
 
 
 instance Ord a => Ord (EvalUnit a) where
@@ -169,3 +218,12 @@ instance Ord1 EvalUnit where
           (Left  _, Right _) -> GT
           (Right _, Left  _) -> LT
           (Right x, Right y) -> x `cmp` y
+
+
+{-# INLINE[1] evalUnitWithPhase #-}
+evalUnitWithPhase :: TextShow s => ErrorPhase -> s -> EvalUnit a
+evalUnitWithPhase p s = EU $ Left (p, showt s)
+{-# RULES
+"evalUnitWithPhase/Text" forall p (s :: Text). evalUnitWithPhase p s = EU $ Left (p, s)
+  #-}
+    

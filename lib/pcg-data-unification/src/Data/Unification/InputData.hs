@@ -34,6 +34,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor               (first)
 import           Data.Coerce                  (coerce)
+import           Data.FileSource
 import           Data.Foldable
 import           Data.Functor
 import           Data.List.NonEmpty           (NonEmpty (..), nonEmpty)
@@ -68,7 +69,7 @@ data  PartialInputData
      , parsedMetas   :: Maybe (Vector NormalizedMetadata)
      , parsedForests :: NormalizedForestSet
      , relatedTcm    :: Maybe (TCM, TCMStructure)
-     , sourceFile    :: FilePath
+     , sourceFile    :: FileSource
      }
 
 
@@ -149,7 +150,7 @@ getUnificationErrors v@InputData{..} = foldr1 (<~>) possibleUnificationErrors $>
 
     validateInputWith
       :: Foldable f
-      => (FilePath -> NonEmpty Identifier -> UnificationError)
+      => (FileSource -> NonEmpty Identifier -> UnificationError)
       -> (NonEmpty Identifier -> f Identifier)
       -> Validation UnificationError ()
     validateInputWith c f =
@@ -175,13 +176,13 @@ expandForestErrors = fmap f
 
 colateErrors
   :: (Foldable t, Foldable t')
-  => (FilePath -> NonEmpty Identifier -> UnificationError)
+  => (FileSource -> NonEmpty Identifier -> UnificationError)
   -> t (t' Identifier, PartialInputData)
   -> Validation UnificationError ()
 colateErrors f xs =
-  case toList xs of
-    []   -> Success ()
-    y:ys -> Failure . foldMap1 transformPID $ y:|ys
+    case toList xs of
+      []   -> Success ()
+      y:ys -> Failure . foldMap1 transformPID $ y:|ys
   where
     transformPID (x,y) = f (sourceFile y) . NE.fromList $ toList x
 

@@ -71,9 +71,10 @@ TAGS
 *.txt
 *.xml
 .*
-production/bin
-production/doc/haddock/*
-production/doc/haddock*
+bin
+doc/haddock/*
+doc/haddock*
 *log.err
 *log.out
 *.bin
+*.save
