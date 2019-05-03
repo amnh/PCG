@@ -57,14 +57,3 @@ instance Eq n => Semigroup (LeafSet n) where
 
 fromLeafSet :: forall n .  LeafSet n -> Vector n
 fromLeafSet = coerce
-{--
-instance ToXML (LeafSet (Maybe String)) where
-
-    toXML (LeafSet lst) = xmlElement "Leaf_set" attrs contents
-        where
-            attrs    = []
-            contents = [Left ("Leaves", foldr leafStr "" lst)]
-
-            leafStr input accum = case input of Just item -> item <> ", " <> accum
-                                                Nothing   -> accum
---}
