@@ -28,6 +28,7 @@ module Data.Vector.NonEmpty
   -- * Conversion
   , toVector
   , fromVector
+  , unsafeFromVector
   -- * Deconstruction
   , uncons
   ) where
@@ -206,11 +207,24 @@ toVector = unwrap
 -- |
 -- /O(1)/
 --
--- Attempt to conver a 'V.Vector' to a non-empty 'Vector'.
+-- Attempt to convert a 'V.Vector' to a non-empty 'Vector'.
 fromVector :: V.Vector a -> Maybe (Vector a)
 fromVector v
   | V.null v  = Nothing
   | otherwise = Just $ NEV v
+
+
+-- |
+-- /O(1)/
+--
+-- Attempt to convert a 'V.Vector' to a non-empty 'Vector' throwing an
+-- error if the vector received is empty.
+unsafeFromVector :: V.Vector a -> Vector a
+unsafeFromVector v
+  | V.null v  = error "NonEmpty.unsafeFromVector: empty vector"
+  | otherwise = NEV v
+
+
 
 
 -- | /O(n)/
