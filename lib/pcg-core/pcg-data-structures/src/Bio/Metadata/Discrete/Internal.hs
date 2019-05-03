@@ -36,9 +36,10 @@ import Control.Lens
 import Data.Alphabet
 import Data.FileSource
 import Data.List                   (intercalate)
-import GHC.Generics
+import GHC.Generics hiding (to)
 import Text.XML
-
+import Data.Bits
+import Data.MetricRepresentation
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
