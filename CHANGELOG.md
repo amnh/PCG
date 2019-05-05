@@ -10,7 +10,7 @@ Releases are available [on GitHub][2].
 * Using semantic versioning
 * Modularized sub-libraries
 * Reorganized build process
-* Updated to GHC-8.6.4
+* Updated to GHC-8.6.5
 * Updated to Cabal-2.4
 * Updated build command to add network edges to input graphs rather than wagner build a new tree first.
 * Updated read command grammar to allow for more specific TCM specification
