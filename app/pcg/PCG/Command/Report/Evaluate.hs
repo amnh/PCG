@@ -7,25 +7,25 @@ module PCG.Command.Report.Evaluate
   ) where
 
 
-import           Bio.Graph
-import           Control.Evaluation
-import           Control.Monad.IO.Class
-import           Control.Monad.Reader
-import           Control.Monad.Trans.Validation
-import           Data.Compact                (getCompact)
-import           Data.FileSource             (FileSource)
-import           Data.FileSource.IO
-import           Data.Foldable               (traverse_)
-import           Data.Functor                (($>))
-import           Data.List.NonEmpty          (NonEmpty (..))
-import           Data.String                 (IsString (fromString))
-import           Data.Validation
-import           PCG.Command.Report
-import           PCG.Command.Report.GraphViz
-import           PCG.Command.Report.Metadata
-import           Prelude                     hiding (appendFile, getContents, readFile, writeFile)
-import           Text.XML
-import           TextShow                    (TextShow (showtl))
+import Bio.Graph
+import Control.Evaluation
+import Control.Monad.IO.Class
+import Control.Monad.Reader
+import Control.Monad.Trans.Validation
+import Data.Compact                   (getCompact)
+import Data.FileSource                (FileSource)
+import Data.FileSource.IO
+import Data.Foldable                  (traverse_)
+import Data.Functor                   (($>))
+import Data.List.NonEmpty             (NonEmpty (..))
+import Data.String                    (IsString (fromString))
+import Data.Validation
+import PCG.Command.Report
+import PCG.Command.Report.GraphViz
+import PCG.Command.Report.Metadata
+import Prelude                        hiding (appendFile, getContents, readFile, writeFile)
+import Text.XML
+import TextShow                       (TextShow (showtl))
 
 
 data FileStreamContext
@@ -49,7 +49,7 @@ renderMultiStream = runOutputStream . traverse_ (uncurry writeFile)
 
 
 renderSingleStream :: OutputTarget -> FileStream -> EvaluationT (ReaderT GlobalSettings IO) ()
-renderSingleStream target output = runOutputStream $ 
+renderSingleStream target output = runOutputStream $
     case target of
       OutputToStdout   -> writeSTDOUT output
       OutputToFile f w ->

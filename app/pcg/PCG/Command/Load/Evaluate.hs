@@ -5,7 +5,7 @@ module PCG.Command.Load.Evaluate
 
 import Bio.Graph
 import Control.Evaluation
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.Class         (liftIO)
 import Control.Monad.Trans.Validation
 import Data.FileSource.IO
 import Data.Validation

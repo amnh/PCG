@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Command.Read.ReadCommandError
+-- Copyright   :  (c) 2015-2018 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Composable error type representing one or more failures in the READ command.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
@@ -6,20 +20,18 @@ module PCG.Command.Read.ReadCommandError
   ( ReadCommandError(..)
   , ambiguous
   , unaligned
-  , unfindable
-  , unopenable
   , unparsable
   ) where
 
-import Control.DeepSeq                   (NFData)
-import GHC.Generics                      (Generic)
+import Control.DeepSeq                  (NFData)
+import GHC.Generics                     (Generic)
 --import Data.Data
-import Data.FileSource                   (FileSource)
-import Data.List.NonEmpty                (NonEmpty (..))
-import Data.Semigroup.Foldable
-import Data.Unification
+import Data.FileSource                  (FileSource)
 import Data.FileSource.InputStreamError
 import Data.FileSource.ParseStreamError
+import Data.List.NonEmpty               (NonEmpty (..))
+import Data.Semigroup.Foldable
+import Data.Unification
 import Text.Megaparsec
 import TextShow
 
@@ -60,26 +72,27 @@ instance Semigroup ReadCommandError where
 
 instance TextShow ReadCommandError where
 
-    showb (InputError v) = fromText $ showt v
-    showb (ParseError v) = fromText $ showt v
-    showb (UnifyError v) = fromText $ showt v
+    showb (InputError v) = showb v
+    showb (ParseError v) = showb v
+    showb (UnifyError v) = showb v
 
 
+-- |
+-- Create a 'ReadCommandError' representing an ambiguous file source when an
+-- unambiguous file source was expected.
 ambiguous :: Foldable1 f => FileSource -> f FileSource -> ReadCommandError
 ambiguous path = InputError . makeAmbiguousFiles path
 
 
+-- |
+-- Create a 'ReadCommandError' representing unaligned file content when a file
+-- source was marks as having pre-aligned content.
 unaligned :: Integral i => FileSource -> NonEmpty i -> ReadCommandError
 unaligned path = ParseError . makeInvalidPrealigned path
 
 
-unfindable :: FileSource -> ReadCommandError
-unfindable = InputError . makeFileNotFound
-
-
-unopenable :: FileSource -> ReadCommandError
-unopenable = InputError . makeFileNoReadPermissions
-
-
+-- |
+-- Create a 'ReadCommandError' representing that a file's contents could not be
+-- parsed.
 unparsable :: (ShowErrorComponent e, Stream s) => FileSource -> ParseErrorBundle s e -> ReadCommandError
 unparsable path = ParseError . makeUnparsableFile path

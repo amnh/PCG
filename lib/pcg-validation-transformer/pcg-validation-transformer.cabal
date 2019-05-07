@@ -95,7 +95,6 @@ library
     src
 
   build-depends:
-    quickcheck-instances     >= 0.3.17    && < 1.0,
     validation               >= 1         && < 2.0,
 
   exposed-modules:

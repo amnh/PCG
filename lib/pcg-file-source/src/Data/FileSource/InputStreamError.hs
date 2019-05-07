@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Exposes several useful disk utility related functionality.
+-- Composable error type representing failure to reterive an input data stream.
 --
 -----------------------------------------------------------------------------
 
@@ -35,18 +35,22 @@ import Data.Foldable
 import Data.List.NonEmpty      hiding (toList)
 import Data.Maybe              (catMaybes)
 import Data.Semigroup.Foldable
-import Data.Text.Short         (ShortText, toShortByteString)
 import GHC.Generics            (Generic)
 import TextShow
 
 
 -- |
--- The various ways in which a 'Read' 'Command' from a POY script can fail.
--- A single 'Read' 'Command' can fail in multiple ways simultaneously.
+-- The various ways in which reading input data into PCG can fail.
+--
+-- A single file can fail at inputing data in multiple ways, /sometimes simultaneously/.
 -- To account for this the 'InputStreamError' type is a composable 'Semigroup' to allow
--- for the collection of possible sub errors to be coalesced into a single
--- 'InputStreamError' value. The `show` definition will render the 'Read Error' as a
--- human legible collection of errors that occured within the 'Read' 'Command'.
+-- for the collection of many possible inputing errors to be coalesced into a single
+-- 'InputStreamError' value.
+--
+-- The 'TextShow' instance should be used to render the 'InputStreamError' as a human legible
+-- collection of input errors that occured while attempting to input data into PCG.
+--
+-- The 'Show' instance should only be used for debugging purposes.
 newtype InputStreamError = InputStreamError (NonEmpty InputStreamErrorMessage)
     deriving (Generic, NFData, Show)
 
@@ -54,16 +58,9 @@ newtype InputStreamError = InputStreamError (NonEmpty InputStreamErrorMessage)
 data  InputStreamErrorMessage
     = FileAlreadyInUse   FileSource
     | FileAmbiguous      FileSource (NonEmpty FileSource)
-    | FileBadDeserialize FileSource DataSerializationFormat ShortText
     | FileBadPermissions FileSource
     | FileEmptyStream    FileSource
     | FileUnfindable     FileSource
-    deriving (Generic, NFData, Show)
-
-
-data  DataSerializationFormat
-    = BinaryFormat
-    | CompactFormat
     deriving (Generic, NFData, Show)
 
 
@@ -80,10 +77,9 @@ instance TextShow InputStreamError where
         , unopenableMessage
         , alreadInUseMessage
         , emptyStreamsMessage
-        , deserializationFailureMessage
         ]
       where
-        (inUseFiles, ambiguity, deserialize, badPermissions, emptyStreams, unfindables) = partitionInputStreamErrorMessages $ toList errors
+        (inUseFiles, ambiguity, badPermissions, emptyStreams, unfindables) = partitionInputStreamErrorMessages $ toList errors
 
         alreadInUseMessage =
           case inUseFiles of
@@ -93,11 +89,6 @@ instance TextShow InputStreamError where
 
         ambiguousMessage =
           case ambiguity of
-            [] -> Nothing
-            xs -> Just . unlinesB $ showb <$> xs
-
-        deserializationFailureMessage =
-          case deserialize of
             [] -> Nothing
             xs -> Just . unlinesB $ showb <$> xs
 
@@ -126,24 +117,22 @@ instance TextShow InputStreamError where
              , [InputStreamErrorMessage]
              , [InputStreamErrorMessage]
              , [InputStreamErrorMessage]
-             , [InputStreamErrorMessage]
              )
-        partitionInputStreamErrorMessages = foldr f ([],[],[],[],[],[])
+        partitionInputStreamErrorMessages = foldr f ([],[],[],[],[])
           where
-            f e@FileAlreadyInUse   {} (u,v,w,x,y,z) = (e:u,   v,   w,   x,   y,   z)
-            f e@FileAmbiguous      {} (u,v,w,x,y,z) = (  u, e:v,   w,   x,   y,   z)
-            f e@FileBadDeserialize {} (u,v,w,x,y,z) = (  u,   v, e:w,   x,   y,   z)
-            f e@FileBadPermissions {} (u,v,w,x,y,z) = (  u,   v,   w, e:x,   y,   z)
-            f e@FileEmptyStream    {} (u,v,w,x,y,z) = (  u,   v,   w,   x, e:y,   z)
-            f e@FileUnfindable     {} (u,v,w,x,y,z) = (  u,   v,   w,   x,   y, e:z)
+            f e@FileAlreadyInUse   {} (v,w,x,y,z) = (e:v,   w,   x,   y,   z)
+            f e@FileAmbiguous      {} (v,w,x,y,z) = (  v, e:w,   x,   y,   z)
+            f e@FileBadPermissions {} (v,w,x,y,z) = (  v,   w, e:x,   y,   z)
+            f e@FileEmptyStream    {} (v,w,x,y,z) = (  v,   w,   x, e:y,   z)
+            f e@FileUnfindable     {} (v,w,x,y,z) = (  v,   w,   x,   y, e:z)
 
 
 instance TextShow InputStreamErrorMessage where
 
+    showb (FileAlreadyInUse   path        ) = "'" <> showb path <> "'"
     showb (FileEmptyStream    path        ) = "'" <> showb path <> "'"
     showb (FileUnfindable     path        ) = "'" <> showb path <> "'"
     showb (FileBadPermissions path        ) = "'" <> showb path <> "'"
-    showb (FileBadDeserialize path format msg) = "'" <> showb path <> "' [" <> fromString (show format) <> "]: " <> showb (toShortByteString msg)
     showb (FileAmbiguous      path matches) = message
       where
         files   = toList matches
@@ -154,6 +143,7 @@ instance TextShow InputStreamErrorMessage where
           , unlinesB $ (\x -> "'" <> showb x <> "'") <$> files
           ]
 -- "Failed to deserialize compact region with error: \n"
+
 
 -- |
 -- Remark that the specified file path matches many possible files.

@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.FileSource.ParseStreamError
+-- Copyright   :  (c) 2015-2018 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Composable error type representing failure to parse an input stream.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
@@ -12,13 +26,12 @@ module Data.FileSource.ParseStreamError
   , makeUnparsableFile
   ) where
 
-import Control.Arrow
 import Control.DeepSeq    (NFData)
 --import Data.Data
 import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty hiding (toList)
-import Data.Maybe                (catMaybes)
+import Data.Maybe         (catMaybes)
 import Data.String
 import Data.Text          (Text)
 import Data.Text.Short    (ShortText, toShortByteString)
@@ -40,9 +53,9 @@ newtype ParseStreamError = ParseStreamError (NonEmpty ParseStreamErrorMessage)
 
 
 data  ParseStreamErrorMessage
-    = FileUnparsable    FileSource Text
-    | InvalidPrealigned FileSource (NonEmpty Word)
-    | FileBadDeserialize FileSource DataSerializationFormat ShortText    
+    = FileUnparsable     FileSource Text
+    | InvalidPrealigned  FileSource (NonEmpty Word)
+    | FileBadDeserialize FileSource DataSerializationFormat ShortText
     deriving (Generic, NFData, Show)
 
 
@@ -63,7 +76,7 @@ instance TextShow ParseStreamError where
         [ showUnparsable
         , showUnaligned
         , showDeserializationFailures
-        ]      
+        ]
       where
         (pErrors, aErrors, dErrors) = partitionParseStreamErrors errors
 
@@ -80,7 +93,7 @@ instance TextShow ParseStreamError where
                   [] -> "Could not parse file '" <> showb x <> "'\n"
                   _  -> unlinesB . ("Could not parse the following files:":) $ showbIndent xs
 
-            errorMessages = unlinesB . toList . fmap fromText
+            errorMessages = intercalateB "\n" . fmap fromText
 
         showUnaligned =
             case aErrors of
@@ -103,16 +116,26 @@ instance TextShow ParseStreamError where
                 FileUnparsable     a b   -> ((a,b):x,       y,         z)
                 InvalidPrealigned  a b   -> (      x, (a,b):y,         z)
                 FileBadDeserialize a b c -> (      x,       y, (a,b,c):z)
-                    
+
 
 -- |
 -- Remark that a parsing error occured when reading the file. Note that the 'ParseError' should contain the 'FileSource' information.
-makeUnparsableFile :: (ShowErrorComponent e, Stream s) => FileSource -> ParseErrorBundle s e -> ParseStreamError
-makeUnparsableFile path pErr = ParseStreamError . pure . FileUnparsable path . fromString $ errorBundlePretty pErr
+makeUnparsableFile
+  :: ( ShowErrorComponent e
+     , Stream s
+     )
+  => FileSource
+  -> ParseErrorBundle s e
+  -> ParseStreamError
+makeUnparsableFile path =
+    ParseStreamError . pure . FileUnparsable path . fromString . errorBundlePretty
 
 
+-- |
+-- Remark that the file was marked as prealigned but the data within was not aligned.
 makeInvalidPrealigned :: Integral i => FileSource -> NonEmpty i -> ParseStreamError
-makeInvalidPrealigned path = ParseStreamError . pure . InvalidPrealigned path . fmap (fromIntegral . abs)
+makeInvalidPrealigned path =
+    ParseStreamError . pure . InvalidPrealigned path . fmap (fromIntegral . abs)
 
 
 -- |
@@ -124,12 +147,13 @@ makeDeserializeErrorInBinaryEncoding path = ParseStreamError . pure . FileBadDes
 -- |
 -- Remark that the file has could not be deserialized.
 makeDeserializeErrorInCompactRegion :: FileSource -> ShortText -> ParseStreamError
-makeDeserializeErrorInCompactRegion path = ParseStreamError . pure . FileBadDeserialize path CompactFormat 
+makeDeserializeErrorInCompactRegion path = ParseStreamError . pure . FileBadDeserialize path CompactFormat
 
 
+showBadDeserialize :: (TextShow a, Show b) => (a, b, ShortText) -> Builder
 showBadDeserialize (path, format, msg) =
     "'" <> showb path <> "' [" <> fromString (show format) <> "]: " <> showb (toShortByteString msg)
-    
+
 
 showbIndent :: (Functor f, TextShow s) => f s -> f Builder
 showbIndent = fmap (\x -> showbSpace <> showbSpace <> showb x)

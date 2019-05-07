@@ -18,7 +18,7 @@ import Data.Foldable
 import Prelude               hiding (readFile)
 import System.Directory
 import System.FilePath.Posix
-import System.IO             (IOMode(..), openFile, withFile, hClose, hPutStrLn, hFlush)
+import System.IO             (IOMode (..), hClose, hFlush, hPutStrLn, openFile, withFile)
 import System.Process
 
 

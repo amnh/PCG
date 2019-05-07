@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Exposes several useful disk utility related functionality.
+-- Composable error type representing failure to reterive an input data stream.
 --
 -----------------------------------------------------------------------------
 
@@ -28,7 +28,6 @@ module Data.FileSource.OutputStreamError
   ) where
 
 import Control.DeepSeq    (NFData)
-import Data.Bifunctor     (first)
 --import           Data.Coerce               (Coercible, coerce)
 --import           Data.Data                 (Data)
 import Data.FileSource
@@ -39,6 +38,18 @@ import GHC.Generics       (Generic)
 import TextShow
 
 
+-- |
+-- The various ways in which writing output data from PCG can fail.
+--
+-- A single file can fail at outputing data in multiple ways, /sometimes simultaneously/.
+-- To account for this the 'OutputStreamError' type is a composable 'Semigroup' to allow
+-- for the collection of many possible outputing errors to be coalesced into a single
+-- 'OutputStreamError' value.
+--
+-- The 'TextShow' instance should be used to render the 'OutputStreamError' as a human legible
+-- collection of output errors that occured while attempting to output data from PCG.
+--
+-- The 'Show' instance should only be used for debugging purposes.
 newtype OutputStreamError = OutputStreamError (NonEmpty OutputStreamErrorMessage)
     deriving (Generic, NFData, Show)
 
@@ -65,7 +76,7 @@ instance TextShow OutputStreamError where
         , noSpaceMessage
         ]
       where
-        (unwritables, lockedFiles, noSpaceErrors) = partitionOutputStreamErrorMessages $ toList errors
+        (unwritables, lockedFiles, _, _, noSpaceErrors) = partitionOutputStreamErrorMessages $ toList errors
 
         unwritableMessage =
           case unwritables of
@@ -87,36 +98,55 @@ instance TextShow OutputStreamError where
 
         partitionOutputStreamErrorMessages
           ::  [OutputStreamErrorMessage]
-          -> ([OutputStreamErrorMessage],[OutputStreamErrorMessage], [OutputStreamErrorMessage])
-        partitionOutputStreamErrorMessages = foldr f ([],[],[])
+          -> ([OutputStreamErrorMessage]
+             ,[OutputStreamErrorMessage]
+             ,[OutputStreamErrorMessage]
+             ,[OutputStreamErrorMessage]
+             ,[OutputStreamErrorMessage]
+             )
+        partitionOutputStreamErrorMessages = foldr f ([],[],[],[],[])
           where
-            f e@FileUnwritable  {} (u,v,x) = (e:u,   v,   x)
-            f e@FileAlreadyInUse{} (u,v,x) = (  u, e:v,   x)
-            f e@NotEnoughSpace  {} (u,v,x) = (  u,   v, e:x)
+            f e@FileUnwritable  {} (u,v,x,y,z) = (e:u,   v,   x,   y,   z)
+            f e@FileAlreadyInUse{} (u,v,x,y,z) = (  u, e:v,   x,   y,   z)
+            f e@PathDoesNotExist{} (u,v,x,y,z) = (  u,   v, e:x,   y,   z)
+            f e@NoPermissions   {} (u,v,x,y,z) = (  u,   v,   x, e:y,   z)
+            f e@NotEnoughSpace  {} (u,v,x,y,z) = (  u,   v,   x,   y, e:z)
 
 
 instance TextShow OutputStreamErrorMessage where
 
     showb (FileUnwritable   path) = "'" <> showb path <> "'"
     showb (FileAlreadyInUse path) = "'" <> showb path <> "'"
+    showb (PathDoesNotExist path) = "'" <> showb path <> "'"
+    showb (NoPermissions    path) = "'" <> showb path <> "'"
     showb (NotEnoughSpace   path) = "'" <> showb path <> "'"
 
 
+-- |
+-- Remark that the file is in use when attempting to write output.
 makeFileInUseOnWrite :: FileSource -> OutputStreamError
 makeFileInUseOnWrite = OutputStreamError . pure . FileAlreadyInUse
 
 
+-- |
+-- Remark that the file permissions do not allow output data to be written to the file.
 makeFileNoWritePermissions :: FileSource -> OutputStreamError
 makeFileNoWritePermissions = OutputStreamError . pure . NoPermissions
 
 
+-- |
+-- Remark that the file is not writable for some reason.
 makeFileUnwritable :: FileSource -> OutputStreamError
 makeFileUnwritable = OutputStreamError . pure . FileUnwritable
 
 
+-- |
+-- Remark that the file path does not exist.
 makePathDoesNotExist :: FileSource -> OutputStreamError
 makePathDoesNotExist = OutputStreamError . pure . PathDoesNotExist
 
 
+-- |
+-- Remark that there is not a space on disk when outputing data the file.
 makeNotEnoughSpace :: FileSource -> OutputStreamError
 makeNotEnoughSpace = OutputStreamError . pure . NotEnoughSpace

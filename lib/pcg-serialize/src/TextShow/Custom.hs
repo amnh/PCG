@@ -20,5 +20,9 @@ import Data.Foldable
 import Data.List     (intersperse)
 import TextShow      (Builder)
 
+
+-- |
+-- Place a copy of the builder element in between each element in the foldable
+-- structure and treuct the new builder. 
 intercalateB :: Foldable f => Builder -> f Builder -> Builder
 intercalateB sep = fold . intersperse sep . toList

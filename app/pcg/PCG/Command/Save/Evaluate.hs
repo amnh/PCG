@@ -5,13 +5,13 @@ module PCG.Command.Save.Evaluate
 
 import Bio.Graph
 import Control.Evaluation
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.IO.Class         (liftIO)
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Validation
-import Data.Compact           (getCompact)
-import Data.FileSource        (FileSource)
+import Data.Compact                   (getCompact)
+import Data.FileSource                (FileSource)
 import Data.FileSource.IO
-import Data.Functor           (($>))
+import Data.Functor                   (($>))
 import Data.Validation
 import PCG.Command.Save
 
@@ -21,7 +21,7 @@ evaluate (SaveCommand fileSource serial) g =
     case serial of
       Binary  -> writeOutBinaryEncoding fileSource g $> g
       Compact -> writeOutCompactRegion  fileSource g $> g
-                   
+
 
 writeOutBinaryEncoding :: FileSource -> GraphState -> EvaluationT (ReaderT GlobalSettings IO) ()
 writeOutBinaryEncoding path g = do
