@@ -6,7 +6,6 @@ module PCG.Computation.Internal
   ( evaluate
   , getGlobalSettings
   , optimizeComputation
-  , renderError
   , renderSearchState
   ) where
 

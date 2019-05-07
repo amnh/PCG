@@ -23,7 +23,6 @@ module Control.Evaluation
   , failWithPhase
   , impure
   , notifications
-  , runEvaluation
   , state
   , showRun
   ) where

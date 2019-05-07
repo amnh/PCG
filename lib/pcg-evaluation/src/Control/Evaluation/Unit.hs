@@ -189,6 +189,9 @@ instance Ord1 EvalUnit where
           (Right x, Right y) -> x `cmp` y
 
 
+-- |
+-- Produce a failure state while additionally indicating the phase in which the
+-- failure occurred.
 {-# INLINE[1] evalUnitWithPhase #-}
 evalUnitWithPhase :: TextShow s => ErrorPhase -> s -> EvalUnit a
 evalUnitWithPhase p s = EU $ Left (p, showtl s)

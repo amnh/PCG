@@ -13,26 +13,17 @@ module PCG.Command.Read.InputStreams
   , ValidationT(..)
   , getSpecifiedContent
   , getSpecifiedTcm
-  , invalid
+--  , invalid
   ) where
 
-import Control.DeepSeq
-import Control.Monad.IO.Class
 import Control.Monad.Trans.Validation
 import Data.FileSource
 import Data.FileSource.IO
-import Data.Functor
 import Data.List.NonEmpty                (NonEmpty (..))
-import Data.MonoTraversable
-import Data.Semigroup
 import Data.Semigroup.Foldable
 import Data.Text.Lazy                    (Text)
-import Data.Validation
 import PCG.Command.Read
 import PCG.Command.Read.ReadCommandError
-import Prelude                           hiding (readFile)
-import System.Directory
-import System.FilePath.Glob
 
 
 -- |
@@ -59,6 +50,9 @@ type  FileContent  = Text
 type  FileResult   = (FileSource, FileContent)
 
 
+-- |
+-- Read in a file specification, returning it's file contents and tagging the
+-- file source the content was retrieved from.
 getSpecifiedContent :: FileSpecification -> ValidationT ReadCommandError IO FileSpecificationContent
 getSpecifiedContent (UnspecifiedFile    xs    ) = getSpecifiedContentSimple xs
 getSpecifiedContent (AminoAcidFile      xs    ) = getSpecifiedContentSimple xs
@@ -77,6 +71,9 @@ getSpecifiedContent (CustomAlphabetFile xs tcm) = do
     pure . SpecContent $ (`DataContent` Just tcm') <$> xs'
 
 
+-- |
+-- Read a TCM file specification's contents and return the file contents tagged
+-- with the file source the content was retrieved from.
 getSpecifiedTcm :: FileSource -> ValidationT ReadCommandError IO FileResult
 getSpecifiedTcm tcmPath = getFileContents tcmPath >>= f
   where

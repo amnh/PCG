@@ -254,9 +254,13 @@ instance Traversable m => Traversable (ValidationT e m) where
     traverse f = fmap ValidationT . traverse (traverse f) . runValidationT
 
 
+-- |
+-- Map over the error value.
 emap :: Functor f => (e -> b) -> ValidationT e f a -> ValidationT b f a
 emap f = ValidationT . fmap (first f) . runValidationT
 
-  
+
+-- |
+-- Place an error value into the Monad transformer.
 invalid :: Applicative f => e -> ValidationT e f a
 invalid = ValidationT . pure . Failure

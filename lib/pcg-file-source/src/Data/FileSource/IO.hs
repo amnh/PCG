@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Exposes several useful disk utility related functionality.
+-- Exposes data input utility which more granualarly controls I/O.
 --
 -----------------------------------------------------------------------------
 
@@ -47,24 +47,24 @@ import           Control.Monad.Trans.Validation
 import           Data.Bifunctor
 import           Data.Binary                       (Binary, decodeFileOrFail, encode)
 import           Data.ByteString.Lazy              (ByteString)
-import qualified Data.ByteString.Lazy        as BS
+import qualified Data.ByteString.Lazy              as BS
 import           Data.Char                         (isNumber)
 import           Data.Compact                      (Compact)
 import           Data.Compact.Serialize            (hPutCompact, unsafeReadCompact)
 import           Data.FileSource
 import           Data.FileSource.InputStreamError
-import           Data.FileSource.ParseStreamError
 import           Data.FileSource.OutputStreamError
+import           Data.FileSource.ParseStreamError
 import           Data.Foldable
 import           Data.List                         (isPrefixOf)
 import           Data.List.NonEmpty                (NonEmpty (..))
 import           Data.MonoTraversable
 import           Data.String
 import           Data.Text.Lazy                    (Text)
-import qualified Data.Text.Lazy.IO           as T
+import qualified Data.Text.Lazy.IO                 as T
 import           Data.Typeable                     (Typeable)
 import           Data.Validation
-import           Pipes                             ((>~), await, for, runEffect, yield)
+import           Pipes                             (await, for, runEffect, yield, (>~))
 import           Prelude                           hiding (appendFile, getContents, readFile, writeFile)
 import           System.Directory
 import           System.FilePath.Glob
@@ -125,7 +125,7 @@ readSTDIN = do
 
 -- |
 -- Represents a stream of data, either textual or of raw byte data.
--- 
+--
 -- A 'FileStream' will be lazily rendered to it's output source in constant memory.
 --
 -- Create a 'FileStream' with
@@ -142,7 +142,7 @@ readSTDIN = do
 --
 data  FileStream
     = T Text
-    | B ByteString 
+    | B ByteString
 
 
 -- |

@@ -3,36 +3,33 @@
 
 module Main (main) where
 
-import Bio.Graph.Constructions
 import Control.DeepSeq
 import Control.Evaluation
-import Control.Exception          (catch, ioError)
+import Control.Exception              (catch, ioError)
 import Control.Monad
+import Control.Monad.IO.Class
 import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Validation
-import Control.Monad.IO.Class
-import Data.Char                  (toUpper)
-import Data.FileSource            (FileSource)
+import Data.Char                      (toUpper)
+import Data.FileSource                (FileSource)
 import Data.FileSource.IO
 import Data.Maybe
 import Data.MonoTraversable
-import Data.Semigroup             ((<>))
+import Data.Semigroup                 ((<>))
 import Data.String
-import Data.Text.Lazy             (Text, pack)
-import Data.Text.Lazy.IO          (putStrLn)
+import Data.Text.Lazy                 (Text)
+import Data.Text.Lazy.IO              (putStrLn)
 import Data.Validation
 import Data.Void
 import PCG.CommandLineOptions
 import PCG.Computation.Internal
-import PCG.Syntax                 (Computation, computationalStreamParser)
-import Prelude                    hiding (putStrLn, readFile, writeFile)
+import PCG.Syntax                     (Computation, computationalStreamParser)
+import Prelude                        hiding (putStrLn, readFile, writeFile)
 import System.Environment
 import System.Exit
-import System.IO                  hiding (putStrLn, readFile, writeFile)
+import System.IO                      hiding (putStrLn, readFile, writeFile)
 import System.IO.Error
-import Text.Megaparsec            (ParseErrorBundle, Parsec, errorBundlePretty, parse)
-
-import Control.Concurrent
+import Text.Megaparsec                (ParseErrorBundle, Parsec, errorBundlePretty, parse)
 
 
 -- |
@@ -99,7 +96,7 @@ renderOutputStream filePath outputStream = do
 
 
 parseInputStream :: FileSource -> Text -> EvaluationT IO Computation
-parseInputStream path inputStream = 
+parseInputStream path inputStream =
    case parse' computationalStreamParser (otoList path) inputStream of
      Left  err -> state . failWithPhase Parsing $ errorBundlePretty err
      Right val -> pure $ optimizeComputation val
@@ -135,7 +132,7 @@ retreiveInputStream filePath = do
           Just  v -> pure v
           Nothing -> do
               msg <- liftIO parserHelpMessage
-              state . failWithPhase Inputing $ "Error: STDIN is empty\n\n" <> msg 
+              state . failWithPhase Inputing $ "Error: STDIN is empty\n\n" <> msg
   where
     getInputStream :: FileSource -> ValidationT InputStreamError IO (Maybe Text)
     getInputStream path
