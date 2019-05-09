@@ -12,7 +12,7 @@ Releases are available [on GitHub][2].
 * Reorganized build process
 * Updated to GHC-8.6.5
 * Updated to Cabal-2.4
-* Updated build command to add network edges to input graphs rather than wagner build a new tree first.
+* Updated build command to add network edges to input graphs rather than wagner build a new tree first
 * Updated read command grammar to allow for more specific TCM specification
 * Improved efficiency and consistency of character metadata representation
 * Improved efficiency of Wagner build from _O(n^3)_ to _O(n^2)_
@@ -29,16 +29,22 @@ Releases are available [on GitHub][2].
 * Enhanced FASTA file parser to better interpret accept amino acid input files
 * Enhanced REPORT command to move files by default if new output would overwrite an old file
 * Enhanced Evaluation monad to disallow NoOp state
+* Enhanced I/O stream input to consistently use "file-globs" when locating an input file source
+* Enhanced I/O stream input and output to consistently indicate failures in a well-type manner
+* Enhanced I/O stream parsing to consistently report parse errors and deserialization errors
+* Enhanced I/O stream output to consistently write data in constant memory (theoretically)
 * Added Travis CI build script
 * Added integration test suite
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
 * Added support for compact regions of phylogenetic solutions
 * Added save and load commands by serialising compact regions
 * Added echo command for printing progress information
-* Added module for stricter fold functions
 * Added lenses for many graph and node accessors
 * Added makefile commands for outputting core, building with llvm backend, various test options and building a local hoogle database
+* Added module for stricter fold functions
 * Added module for memoized vector computation abstracting the method used in pre/postorder
+* Added Validation monad transformer (for error handling)
+* Added specific exit codes to indicate in which phase of the runtime failure(s) occured
 * Streamlined build experience on MacOS
 * Corrected defect in handling of prealigned input data
 * Corrected defect in FFI resulting in a space leak
