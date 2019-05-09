@@ -193,7 +193,7 @@ writeFileWithMove filePath str = liftIO (safelyMoveFile filePath) *> writeFile f
 -- Render the stream to STDIN.
 writeSTDOUT :: FileStream -> ValidationT OutputStreamError IO ()
 writeSTDOUT = liftIO . \case
-    T s -> printT s
+    T s -> T.putStr s
     B s -> BS.putStr s
 
 

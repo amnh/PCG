@@ -63,7 +63,7 @@ evaluate (Computation (x:|xs)) = foldl' f z xs
 
 
 renderSearchState :: Evaluation a -> (ExitCode, Text)
-renderSearchState = either id val . renderError
+renderSearchState = fmap (<>"\n") . either id val . renderError
   where
     val _ = (ExitSuccess, "[✔] Computation complete!")
 
