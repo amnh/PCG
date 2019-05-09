@@ -15,12 +15,13 @@ import GHC.Generics
 -- Valid command line options
 data  CommandLineOptions
     = CommandLineOptions
-    { inputFile    :: FileSource
-    , outputFile   :: FileSource
-    , printVersion :: Bool
-    , printSplash  :: Bool
-    , printCredits :: Bool
-    , verbosity    :: Verbosity
+    { inputFile      :: FileSource
+    , outputFile     :: FileSource
+    , printVersion   :: Bool
+    , printSplash    :: Bool
+    , printCredits   :: Bool
+    , printExitCodes :: Bool
+    , verbosity      :: Verbosity
     } deriving (Generic)
 
 

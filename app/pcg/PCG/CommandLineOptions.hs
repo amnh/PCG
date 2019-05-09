@@ -48,9 +48,10 @@ parserInformation = info (helper <*> commandLineOptions) description
         CommandLineOptions
           <$> fileSpec 'i' "input"  "STDIN"  "Input PCG script file"
           <*> fileSpec 'o' "output" "STDOUT" "Output file"
-          <*> switch  (fold [long "version", help "Display version number"])
-          <*> switch  (fold [long "splash" , help "Display splash image"])
-          <*> switch  (fold [long "credits", help "Display project contributions"])
+          <*> switch  (fold [long "version"   , help "Display version number"])
+          <*> switch  (fold [long "splash"    , help "Display splash image"])
+          <*> switch  (fold [long "credits"   , help "Display project contributions"])
+          <*> switch  (fold [long "exit-codes", help "Display project contributions"])
           <*> (validateVerbosity <$> option auto verbositySpec)
 
     fileSpec c s d h = fmap fromString . strOption $ fold
