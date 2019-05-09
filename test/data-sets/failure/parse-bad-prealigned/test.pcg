@@ -1,0 +1,2 @@
+read(prealigned:nucleotide:"not-aligned.fasta")
+

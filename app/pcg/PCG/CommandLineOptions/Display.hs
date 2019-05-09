@@ -14,12 +14,12 @@ import Data.Key
 import Data.List                    (intersperse)
 import Data.MonoTraversable
 import Data.Semigroup               ((<>))
-import Data.Text             hiding (filter, intersperse, replicate)
+import Data.Text                    hiding (filter, intersperse, replicate)
 import Data.Text.IO
 import PCG.CommandLineOptions.Types
 import PCG.Software.Credits
 import PCG.Software.Metadata
-import Prelude               hiding (putStrLn, unlines, unwords)
+import Prelude                      hiding (putStrLn, unlines, unwords)
 import System.ErrorPhase
 import System.Exit
 import TextShow
@@ -106,7 +106,7 @@ printFunderList = putStrLn $ renderedHeaderLines <> renderedFundingSources
 printExitCodeDocumentation :: IO ()
 printExitCodeDocumentation = putStrLn . intercalate "\n" . (preamble:) . foldMapWithKey f
                            $ toMap errorPhaseToExitCode
-  where    
+  where
     f :: ErrorPhase -> ExitCode -> [Text]
     f ep ec = pure $ unlines
         [ errorPhaseTag

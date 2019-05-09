@@ -63,7 +63,7 @@ evaluationTLaws = testGroup "ValidationT"
 -- Data structures
     , equalityLaws       @(ValidationT S M W)
     , normalFormDataLaws @(ValidationT S M W)
---    , orderingLaws       @(ValidationT S M W)
+    , orderingLaws       @(ValidationT S M W)
     , semigroupLaws      @(ValidationT S M W)
     , showProperties     @(ValidationT S M W)
     ]

@@ -71,7 +71,6 @@ import           System.FilePath.Glob
 import           System.FilePath.Posix             (takeDirectory, takeExtension)
 import           System.IO                         hiding (appendFile, putStrLn, readFile, writeFile)
 import           System.IO.Error
-import           TextShow                          (printT)
 
 
 -- |

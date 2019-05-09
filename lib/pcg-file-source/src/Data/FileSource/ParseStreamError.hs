@@ -17,6 +17,7 @@
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module Data.FileSource.ParseStreamError
   ( ParseStreamError()
@@ -53,9 +54,9 @@ newtype ParseStreamError = ParseStreamError (NonEmpty ParseStreamErrorMessage)
 
 
 data  ParseStreamErrorMessage
-    = FileUnparsable     FileSource Text
-    | InvalidPrealigned  FileSource (NonEmpty Word)
-    | FileBadDeserialize FileSource DataSerializationFormat ShortText
+    = FileUnparsable     {-# UNPACK #-} !FileSource {-# UNPACK #-} ! Text
+    | InvalidPrealigned  {-# UNPACK #-} !FileSource {-# UNPACK #-} !(NonEmpty Word)
+    | FileBadDeserialize {-# UNPACK #-} !FileSource !DataSerializationFormat {-# UNPACK #-} !ShortText
     deriving (Generic, NFData, Show)
 
 
@@ -141,13 +142,15 @@ makeInvalidPrealigned path =
 -- |
 -- Remark that the file has could not be deserialized.
 makeDeserializeErrorInBinaryEncoding :: FileSource -> ShortText -> ParseStreamError
-makeDeserializeErrorInBinaryEncoding path = ParseStreamError . pure . FileBadDeserialize path BinaryFormat
+makeDeserializeErrorInBinaryEncoding path =
+    ParseStreamError . pure . FileBadDeserialize path BinaryFormat
 
 
 -- |
 -- Remark that the file has could not be deserialized.
 makeDeserializeErrorInCompactRegion :: FileSource -> ShortText -> ParseStreamError
-makeDeserializeErrorInCompactRegion path = ParseStreamError . pure . FileBadDeserialize path CompactFormat
+makeDeserializeErrorInCompactRegion path =
+    ParseStreamError . pure . FileBadDeserialize path CompactFormat
 
 
 showBadDeserialize :: (TextShow a, Show b) => (a, b, ShortText) -> Builder

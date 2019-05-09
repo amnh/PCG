@@ -5,12 +5,11 @@ module PCG.Software.Credits
 
 import qualified Control.Foldl              as L
 import           Control.Monad
-import           Data.Bifunctor
 import           Data.Foldable
 import           Data.List.NonEmpty         (NonEmpty (..))
-import           Data.Text                  (Text, unpack)
+import           Data.Text                  (Text)
 import           Data.Text.IO               (readFile)
-import           Instances.TH.Lift          () -- Exposes instance (Lift Text)
+import           Instances.TH.Lift          ()
 import           Language.Haskell.TH        hiding (Inline)
 import           Language.Haskell.TH.Syntax hiding (Inline)
 import           Prelude                    hiding (readFile)
