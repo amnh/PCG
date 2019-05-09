@@ -105,7 +105,7 @@ instance TextShow UnificationErrorMessage where
         ]
 
     showb (VacuousInput files) = fold
-       [ "There was niether any character sequences nor any trees found in any of the supplied input files:\n"
+       [ "There was neither any character sequences nor any trees found in any of the supplied input files:\n"
        , (\x -> "  ["<>x<>"]") . intercalateB ", " $ showb <$> toList files
        ]
 

@@ -17,6 +17,7 @@
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module Data.FileSource.InputStreamError
   ( InputStreamError()
@@ -56,11 +57,11 @@ newtype InputStreamError = InputStreamError (NonEmpty InputStreamErrorMessage)
 
 
 data  InputStreamErrorMessage
-    = FileAlreadyInUse   FileSource
-    | FileAmbiguous      FileSource (NonEmpty FileSource)
-    | FileBadPermissions FileSource
-    | FileEmptyStream    FileSource
-    | FileUnfindable     FileSource
+    = FileAlreadyInUse   {-# UNPACK #-} !FileSource
+    | FileAmbiguous      {-# UNPACK #-} !FileSource {-# UNPACK #-} !(NonEmpty FileSource)
+    | FileBadPermissions {-# UNPACK #-} !FileSource
+    | FileEmptyStream    {-# UNPACK #-} !FileSource
+    | FileUnfindable     {-# UNPACK #-} !FileSource
     deriving (Generic, NFData, Show)
 
 

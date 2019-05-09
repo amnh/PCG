@@ -7,12 +7,9 @@ module PCG.Software.Metadata
   , fullVersionInformation
   ) where
 
-import Data.List.NonEmpty                 (NonEmpty(..))
-import Data.Foldable
---import Data.Semigroup                     ((<>))
+import Data.List.NonEmpty                 (NonEmpty (..))
 import Data.Semigroup.Foldable
 import Data.String
-import Data.Text                          (Text, pack, unpack)
 import Data.Version                       (showVersion)
 import Development.GitRev                 (gitCommitCount, gitHash)
 import Paths_phylogenetic_component_graph (version)

@@ -17,6 +17,7 @@
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module Data.FileSource.OutputStreamError
   ( OutputStreamError()
@@ -55,11 +56,11 @@ newtype OutputStreamError = OutputStreamError (NonEmpty OutputStreamErrorMessage
 
 
 data  OutputStreamErrorMessage
-    = FileUnwritable   FileSource
-    | FileAlreadyInUse FileSource
-    | PathDoesNotExist FileSource
-    | NoPermissions    FileSource
-    | NotEnoughSpace   FileSource
+    = FileUnwritable   {-# UNPACK #-} !FileSource
+    | FileAlreadyInUse {-# UNPACK #-} !FileSource
+    | PathDoesNotExist {-# UNPACK #-} !FileSource
+    | NoPermissions    {-# UNPACK #-} !FileSource
+    | NotEnoughSpace   {-# UNPACK #-} !FileSource
     deriving (Generic, NFData, Show)
 
 
@@ -73,22 +74,36 @@ instance TextShow OutputStreamError where
     showb (OutputStreamError errors) = unlinesB $ catMaybes
         [ unwritableMessage
         , lockedFilesMessage
+        , missingPathMessage
+        , badPermissionMessage
         , noSpaceMessage
         ]
       where
-        (unwritables, lockedFiles, _, _, noSpaceErrors) = partitionOutputStreamErrorMessages $ toList errors
+        (unwritables, lockedFiles, missingPaths, badPermissions, noSpaceErrors) = partitionOutputStreamErrorMessages $ toList errors
 
         unwritableMessage =
           case unwritables of
             []  -> Nothing
-            [x] -> Just $ "The file path" <> showb x <> " was not writable."
+            [x] -> Just $ "The file path" <> showb x <> " was not writable"
             xs  -> Just $ "The following files were not writable: \n" <> unlinesB (showb <$> xs)
 
         lockedFilesMessage =
           case lockedFiles of
             []  -> Nothing
-            [x] -> Just $ "The file " <> showb x <> " was locked."
+            [x] -> Just $ "The file " <> showb x <> " was locked"
             xs  -> Just $ "The following files were locked and could not be written to: \n" <> unlinesB (showb <$> xs)
+
+        missingPathMessage =
+          case missingPaths of
+            []  -> Nothing
+            [x] -> Just $ "The output file path " <> showb x <> " could not be found"
+            xs  -> Just $ "The following output file paths cound not be found:\n" <> unlinesB  (showb <$> xs)
+
+        badPermissionMessage =
+          case badPermissions of
+            []  -> Nothing
+            [x] -> Just $ "The file path " <> showb x <> " had premissions which prevent it from being written to"
+            xs  -> Just $ "The following file paths had premissions which prevent them from being written to:\n" <> unlinesB  (showb <$> xs)
 
         noSpaceMessage =
           case noSpaceErrors of

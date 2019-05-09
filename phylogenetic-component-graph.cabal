@@ -388,8 +388,10 @@ test-suite integration-tests
 
   build-depends:
     pcg-core,
+    pcg-evaluation,
     pcg-utility,
     base                     >= 4.11      && < 5.0,
+    bimap                    >= 0.3       && < 0.4,
     binary                   >= 0.6       && < 1.0,
     bytestring               >= 0.10.8    && < 0.11,
     -- >=0.5.8 Required for Data.Map.restrictKeys
@@ -397,6 +399,7 @@ test-suite integration-tests
     deepseq                  >= 1.4       && < 2.0,
     directory                >= 1.3       && < 2.0,
     filepath                 >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
     lens                     >= 4.17      && < 5.0,
     mtl                      >= 2.0       && < 3.0,
     process                  >= 1.6       && < 2.0,

@@ -25,6 +25,7 @@
 module System.ErrorPhase
   ( ErrorPhase(..)
   , errorPhaseToExitCode
+  , exitCodeToInt
   ) where
 
 import Control.DeepSeq
@@ -123,3 +124,12 @@ errorPhaseToExitCode = fromAscPairList . force $ second buildExitCode <$>
     ]
   where
     buildExitCode = ExitFailure . foldr ((.|.) . bit) zeroBits
+
+
+-- |
+-- Extract the 'Int' value from an 'ExitCode'.
+--
+-- Assumes that the value 'ExitSuccess' has an equivelent numeric value of @0@.
+exitCodeToInt :: ExitCode -> Int
+exitCodeToInt  ExitSuccess    = 0
+exitCodeToInt (ExitFailure i) = i

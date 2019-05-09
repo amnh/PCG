@@ -8,6 +8,7 @@ module TestSuite.SubProcess
   , collectFileContents
   , constructProcess
   ,  destructProcess
+  , testDirectory
   ) where
 
 import Control.Arrow         ((&&&))
@@ -18,7 +19,7 @@ import Data.Foldable
 import Prelude               hiding (readFile)
 import System.Directory
 import System.FilePath.Posix
-import System.IO             (IOMode (..), hClose, hFlush, hPutStrLn, openFile, withFile)
+import System.IO             (hClose)
 import System.Process
 
 

@@ -152,3 +152,7 @@
 - ignore: { name: Use <$>
           , within: Bio.Graph.ReferenceDAG.Utility
           }
+
+- ignore: { name: Use camelCase
+          , within: TestSuite.ScriptTests
+          }

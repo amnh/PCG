@@ -17,7 +17,7 @@ import Data.Maybe
 import Data.MonoTraversable
 import Data.Semigroup                 ((<>))
 import Data.String
-import Data.Text.Lazy                 (Text)
+import Data.Text.Lazy                 (Text, pack)
 import Data.Text.Lazy.IO              (putStrLn)
 import Data.Validation
 import Data.Void
@@ -98,7 +98,7 @@ renderOutputStream filePath outputStream = do
 parseInputStream :: FileSource -> Text -> EvaluationT IO Computation
 parseInputStream path inputStream =
    case parse' computationalStreamParser (otoList path) inputStream of
-     Left  err -> state . failWithPhase Parsing $ errorBundlePretty err
+     Left  err -> state . failWithPhase Parsing . pack $ '\n' : errorBundlePretty err
      Right val -> pure $ optimizeComputation val
   where
      parse'

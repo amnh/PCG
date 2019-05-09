@@ -15,6 +15,7 @@
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module PCG.Command.Read.ReadCommandError
   ( ReadCommandError(..)
@@ -51,9 +52,9 @@ import TextShow
 --
 -- The semigroup operator '(<>)' handles bundling and short circuiting.
 data  ReadCommandError
-    = InputError InputStreamError
-    | ParseError ParseStreamError
-    | UnifyError UnificationError
+    = InputError {-# UNPACK #-} !InputStreamError
+    | ParseError {-# UNPACK #-} !ParseStreamError
+    | UnifyError {-# UNPACK #-} !UnificationError
     deriving (Generic, NFData, Show)
 
 
