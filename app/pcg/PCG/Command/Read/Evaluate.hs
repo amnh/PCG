@@ -22,7 +22,6 @@ import PCG.Command.Read.DecorationInitialization
 import PCG.Command.Read.InputStreams
 import PCG.Command.Read.ParseStreams
 import PCG.Command.Read.ReadCommandError
-import TextShow
 
 
 evaluate :: ReadCommand -> SearchState
