@@ -1,0 +1,468 @@
+Solution:
+
+    Forest #0:
+    
+        Component #0:
+        
+          DAG total cost:           6.0
+          DAG network edge cost:    0.0
+          DAG mutli-rooting cost:   0.0
+          DAG character block cost: 6.0
+          
+          {0}
+            0 {}  {1,2}
+            1 {0} {}   
+            2 {0} {3,4}
+            3 {2} {}   
+            4 {2} {}   
+          
+          
+          ┌── "C"
+          ┤
+          │┌─ "B"
+          └┤
+           └─ "A"
+          
+             0   
+             |   
+           ---   
+          /   \  
+          1   2  
+              |  
+              -- 
+             /  \
+             3  4
+          
+          DAG total cost:           6.0
+          DAG network edge cost:    0.0
+          DAG mutli-rooting cost:   0.0
+          DAG character block cost: 6.0
+          
+          Sequence Summary
+          
+          Block 0
+          
+            Rooting Cost: 0.0
+            Network Cost: 0.0
+            Block   Cost: 6.0
+            Total   Cost: 6.0
+            Display Tree: ("C",("B","A"))
+          
+          
+              Name:   simple.fasta:0
+              Weight: 1.0
+              Cost:   6
+              Foci:   [(2,3),(2,4)]
+          
+          
+          
+          
+          (Network Edges of Topology: [] | [],0.0,0.0,6.0,[(2,3) :| []])
+          
+          Node {0}:
+          
+          ""
+          Resolutions: {1}
+          
+          Total Cost: 6.0
+          Local Cost: 3.0
+          Edge Set  : fromList [(0,1),(0,2),(2,3),(2,4)]
+          Leaf Set  : [3]7
+          Subtree   : "(0,(1,2))"
+          Decoration:
+          
+          [Continuous s [0]:
+          
+          Non-additive s [0]:
+          
+          Additive s [0]:
+          
+          Metric s [0]:
+          
+          NonMetric s [0]:
+          
+          Dynamic s [1]:
+            Cost                 : 6 { 3 }
+            Original Encoding    : DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+            Single Disambiguation: DC 
+            BitMatrix: 4 x 5 
+            00010
+            10000
+            01000
+            10000
+            
+            Final        Ungapped: DC 
+            BitMatrix: 4 x 5 
+            00011
+            10101
+            01000
+            10011
+            
+            Final          Gapped: DC 
+            BitMatrix: 5 x 5 
+            00011
+            10101
+            01000
+            00001
+            10011
+            
+            Preliminary  Ungapped: DC 
+            BitMatrix: 4 x 5 
+            00011
+            10101
+            01000
+            10011
+            
+            Preliminary    Gapped: DC 
+            BitMatrix: 5 x 5 
+            00011
+            10101
+            01000
+            00001
+            10011
+            
+            Left  Alignment      : DC 
+            BitMatrix: 5 x 5 
+            00001
+            10001
+            01000
+            00101
+            00011
+            
+            Right Alignment      : DC 
+            BitMatrix: 5 x 5 
+            00010
+            00100
+            01000
+            00001
+            10000
+            
+          
+          
+          ]
+          
+          
+          Node {1}:
+          
+          "C"
+          Resolutions: {1}
+          
+          Total Cost: 0.0
+          Local Cost: 0.0
+          Edge Set  : fromList []
+          Leaf Set  : [3]1
+          Subtree   : "0"
+          Decoration:
+          
+          [Continuous s [0]:
+          
+          Non-additive s [0]:
+          
+          Additive s [0]:
+          
+          Metric s [0]:
+          
+          NonMetric s [0]:
+          
+          Dynamic s [1]:
+            Cost                 : 0 { 0 }
+            Original Encoding    : DC 
+            BitMatrix: 1 x 5 
+            01000
+            
+            Single Disambiguation: DC 
+            BitMatrix: 1 x 5 
+            01000
+            
+            Final        Ungapped: DC 
+            BitMatrix: 1 x 5 
+            01000
+            
+            Final          Gapped: DC 
+            BitMatrix: 3 x 5 
+            00001
+            01000
+            00001
+            
+            Preliminary  Ungapped: DC 
+            BitMatrix: 1 x 5 
+            01000
+            
+            Preliminary    Gapped: DC 
+            BitMatrix: 1 x 5 
+            01000
+            
+            Left  Alignment      : DC 
+            BitMatrix: 1 x 5 
+            01000
+            
+            Right Alignment      : DC 
+            BitMatrix: 1 x 5 
+            01000
+            
+          
+          
+          ]
+          
+          
+          Node {2}:
+          
+          ""
+          Resolutions: {1}
+          
+          Total Cost: 4.0
+          Local Cost: 4.0
+          Edge Set  : fromList [(2,3),(2,4)]
+          Leaf Set  : [3]6
+          Subtree   : "(1,2)"
+          Decoration:
+          
+          [Continuous s [0]:
+          
+          Non-additive s [0]:
+          
+          Additive s [0]:
+          
+          Metric s [0]:
+          
+          NonMetric s [0]:
+          
+          Dynamic s [1]:
+            Cost                 : 3 { 3 }
+            Original Encoding    : DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+            Single Disambiguation: DC 
+            BitMatrix: 3 x 5 
+            10000
+            01000
+            10000
+            
+            Final        Ungapped: DC 
+            BitMatrix: 3 x 5 
+            10001
+            01000
+            00011
+            
+            Final          Gapped: DC 
+            BitMatrix: 5 x 5 
+            00001
+            10001
+            01000
+            00001
+            00011
+            
+            Preliminary  Ungapped: DC 
+            BitMatrix: 4 x 5 
+            10001
+            01000
+            00101
+            00011
+            
+            Preliminary    Gapped: DC 
+            BitMatrix: 4 x 5 
+            10001
+            01000
+            00101
+            00011
+            
+            Left  Alignment      : DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+            Right Alignment      : DC 
+            BitMatrix: 4 x 5 
+            00001
+            01000
+            00001
+            00001
+            
+          
+          
+          ]
+          
+          
+          Node {3}:
+          
+          "B"
+          Resolutions: {1}
+          
+          Total Cost: 0.0
+          Local Cost: 0.0
+          Edge Set  : fromList []
+          Leaf Set  : [3]2
+          Subtree   : "1"
+          Decoration:
+          
+          [Continuous s [0]:
+          
+          Non-additive s [0]:
+          
+          Additive s [0]:
+          
+          Metric s [0]:
+          
+          NonMetric s [0]:
+          
+          Dynamic s [1]:
+            Cost                 : 0 { 0 }
+            Original Encoding    : DC 
+            BitMatrix: 4 x 5 
+            00010
+            00100
+            01000
+            10000
+            
+            Single Disambiguation: DC 
+            BitMatrix: 4 x 5 
+            00010
+            00100
+            01000
+            10000
+            
+            Final        Ungapped: DC 
+            BitMatrix: 4 x 5 
+            00010
+            00100
+            01000
+            10000
+            
+            Final          Gapped: DC 
+            BitMatrix: 4 x 5 
+            00010
+            00100
+            01000
+            10000
+            
+            Preliminary  Ungapped: DC 
+            BitMatrix: 4 x 5 
+            00010
+            00100
+            01000
+            10000
+            
+            Preliminary    Gapped: DC 
+            BitMatrix: 4 x 5 
+            00010
+            00100
+            01000
+            10000
+            
+            Left  Alignment      : DC 
+            BitMatrix: 4 x 5 
+            00010
+            00100
+            01000
+            10000
+            
+            Right Alignment      : DC 
+            BitMatrix: 4 x 5 
+            00010
+            00100
+            01000
+            10000
+            
+          
+          
+          ]
+          
+          
+          Node {4}:
+          
+          "A"
+          Resolutions: {1}
+          
+          Total Cost: 0.0
+          Local Cost: 0.0
+          Edge Set  : fromList []
+          Leaf Set  : [3]4
+          Subtree   : "2"
+          Decoration:
+          
+          [Continuous s [0]:
+          
+          Non-additive s [0]:
+          
+          Additive s [0]:
+          
+          Metric s [0]:
+          
+          NonMetric s [0]:
+          
+          Dynamic s [1]:
+            Cost                 : 0 { 0 }
+            Original Encoding    : DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+            Single Disambiguation: DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+            Final        Ungapped: DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+            Final          Gapped: DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+            Preliminary  Ungapped: DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+            Preliminary    Gapped: DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+            Left  Alignment      : DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+            Right Alignment      : DC 
+            BitMatrix: 4 x 5 
+            10000
+            01000
+            00100
+            00010
+            
+          
+          
+          ]
+          
+          
+          

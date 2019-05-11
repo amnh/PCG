@@ -8,6 +8,7 @@ module TestSuite.SubProcess
   , collectFileContents
   , constructProcess
   ,  destructProcess
+  , testDirectory
   ) where
 
 import Control.Arrow         ((&&&))
@@ -31,6 +32,9 @@ data  ScriptContext
     , errPath :: FilePath
     }
 
+
+binaryDirectory :: FilePath
+binaryDirectory = "./bin/pcg"
 
 testDirectory :: FilePath
 testDirectory = "test" </> "data-sets"
@@ -63,12 +67,15 @@ constructProcess
   :: FilePath -- ^ Relative path to the PCG script
   -> IO ScriptContext
 constructProcess scriptStr = do
-    prefix <- makeAbsolute scriptDirectory
+    prefix      <- makeAbsolute scriptDirectory
+    binFilePath <- makeAbsolute binaryDirectory
+    let runFilePath = prefix </> scriptFileName
     let outFilePath = prefix </> outLogFileName
     let errFilePath = prefix </> errLogFileName
     let commandStr  = unwords
-                    [ "stack exec pcg -- --input"
-                    , scriptFileName
+                    [ binFilePath
+                    , "--input"
+                    , runFilePath
                     , "--output"
                     , outFilePath
                     , "2>"

@@ -22,6 +22,7 @@ module PCG.Command.Load
   , loadCommandSpecification
   ) where
 
+import Data.FileSource
 import PCG.Command.Save
 import PCG.Syntax.Combinators
 
@@ -31,7 +32,7 @@ import PCG.Syntax.Combinators
 -- use that state as the new current state of the computation. The file path from
 -- which to which the save state may be user specified. A default, hidden file
 -- path will be used if no file path is specified by the user.
-newtype LoadCommand = LoadCommand FilePath
+newtype LoadCommand = LoadCommand FileSource
   deriving stock Show
 
 
@@ -39,4 +40,6 @@ newtype LoadCommand = LoadCommand FilePath
 -- Defines the semantics of interpreting a valid \"LOAD\" command from the PCG
 -- scripting language syntax.
 loadCommandSpecification :: CommandSpecification LoadCommand
-loadCommandSpecification = command "Load" . argList $  LoadCommand <$> (text `withDefault` defaultSaveFilePath)
+loadCommandSpecification = command "Load" . argList $  LoadCommand <$> filePath
+  where
+    filePath = (FileSource <$> text) `withDefault` defaultSaveFilePath

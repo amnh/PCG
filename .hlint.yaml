@@ -78,20 +78,41 @@
             , Numeric.Extended.Real.Test
             ]
           }
+- ignore: { name: Use /=
+          , within:
+            [ Control.Evaluation.Test
+            , Control.Monad.Trans.Validation.Test
+            , System.ErrorPhase.Test
+            ]
+          }
+
 - ignore: { name: Use >=>
           , within:
             [ Control.Evaluation.Test
+            , Control.Monad.Trans.Validation.Test
             ]
           }
+
 - ignore: { name: Use =<<
           , within:
             [ Control.Evaluation.Test
+            , Control.Monad.Trans.Validation.Test
             ]
           }
+
 - ignore: { name: "Functor law"
           , within:
             [ Control.Evaluation.Test
+            , Control.Monad.Trans.Validation.Test
             ]
+          }
+
+- ignore: { name: Strict sum
+          , within:
+              [ Data.MutualExclusionSet.Internal
+              , Control.Evaluation.Test
+              , Control.Monad.Trans.Validation.Test
+              ]
           }
 
 
@@ -105,14 +126,6 @@
       ]
     }
 
-# Ignore strict sum in modules defining Foldable instance
-- ignore: { name: Strict sum
-          , within:
-              [ Data.MutualExclusionSet.Internal
-              , Control.Evaluation.Test
-              ]
-          }
-
 # Ignore . re-write suggestion in PCG.Command.Unification.Master
 - ignore: { name: Use .
           , within: PCG.Command.Read.Unification.Master
@@ -123,14 +136,9 @@
           , within: Data.Binary.Utility
           }
 
+# Ignore const rename suggestion
 - ignore: { name: Use const
           , within: Bio.Metadata.Discrete.Class
-          }
-
-
-# Ignore const rename suggestion
-- ignore: { name: Use /=
-          , within: Control.Evaluation.Test
           }
 
 - ignore: { name: Reduce duplication
@@ -143,4 +151,8 @@
 
 - ignore: { name: Use <$>
           , within: Bio.Graph.ReferenceDAG.Utility
+          }
+
+- ignore: { name: Use camelCase
+          , within: TestSuite.ScriptTests
           }
