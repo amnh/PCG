@@ -33,9 +33,10 @@ import Data.Foldable   (Foldable (foldl', foldr))
 import Data.Maybe      (fromMaybe)
 import Data.Monoid     (Sum (..))
 
--- | Performs an even stricter foldl reducing the accumulator
+
+-- |
+-- Performs an even stricter foldl reducing the accumulator
 -- to normal form as opposed to weak normal form using NFData.
---
 foldl'' :: (Foldable t, NFData b) => (b -> a -> b) -> b -> t a -> b
 foldl'' f z0 xs = foldr f' id xs z0
   where
@@ -82,6 +83,8 @@ maximum' = fromMaybe (errorWithoutStackTrace "maximum: empty structure")
          . getMax . foldMap' (Max #. (Just :: a -> Maybe a))
 
 
+-- |
+-- Strictly folds over the structure and returns the minimum value.
 {-# INLINE minimumBy' #-}
 minimumBy' :: Foldable t => (a -> a -> Ordering) -> t a -> a
 minimumBy' cmp = foldl1' min'
@@ -91,6 +94,8 @@ minimumBy' cmp = foldl1' min'
                  _  -> x
 
 
+-- |
+-- Strictly folds over the structure and returns the maximim value.
 {-# INLINE maximumBy' #-}
 maximumBy' :: Foldable t => (a -> a -> Ordering) -> t a -> a
 maximumBy' cmp = foldl1' max'
@@ -103,6 +108,7 @@ maximumBy' cmp = foldl1' max'
 -- This is from Data.Functor.Utils but is internal to base (as explained there),
 -- so we reproduce it here.
 newtype Max a = Max {getMax :: Maybe a}
+
 
 newtype Min a = Min {getMin :: Maybe a}
 

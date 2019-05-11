@@ -23,7 +23,7 @@ module Bio.Metadata.Discrete.Class
 
 import Bio.Metadata.Continuous
 import Control.Lens
-import Data.Text.Short         (ShortText)
+import Data.FileSource
 
 
 -- |
@@ -43,5 +43,6 @@ class HasTcmSourceFile s a | s -> a where
 
 -- |
 -- Note: This instance simply extracts a constant string and so doesn't obey the lens laws.
-instance HasTcmSourceFile ContinuousCharacterMetadataDec ShortText where
-  _tcmSourceFile = lens (const "N/A") $ \d _ -> d
+instance HasTcmSourceFile ContinuousCharacterMetadataDec FileSource where
+
+    _tcmSourceFile = lens (const "N/A") $ \d _ -> d

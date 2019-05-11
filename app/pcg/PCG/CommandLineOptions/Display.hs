@@ -1,18 +1,28 @@
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TemplateHaskell  #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module PCG.CommandLineOptions.Display
   ( gatherDisplayInformation
   ) where
 
 import Control.Arrow                ((&&&))
+import Data.Bimap                   (toMap)
 import Data.Foldable
-import Data.List                    (intercalate, intersperse)
+import Data.Key
+import Data.List                    (intersperse)
+import Data.MonoTraversable
 import Data.Semigroup               ((<>))
+import Data.Text                    hiding (filter, intersperse, replicate)
+import Data.Text.IO
 import PCG.CommandLineOptions.Types
 import PCG.Software.Credits
 import PCG.Software.Metadata
+import Prelude                      hiding (putStrLn, unlines, unwords)
+import System.ErrorPhase
+import System.Exit
+import TextShow
 
 
 gatherDisplayInformation :: CommandLineOptions -> Maybe (IO ())
@@ -24,9 +34,10 @@ gatherDisplayInformation cmdOpts =
   where
     pNL = putStrLn ""
     printingActions = fmap fst . filter snd $
-        [ const printVersionInformation &&& printVersion
-        , const printSplashImage        &&& printSplash
-        , const printContributions      &&& printCredits
+        [ const printVersionInformation    &&& printVersion
+        , const printSplashImage           &&& printSplash
+        , const printContributions         &&& printCredits
+        , const printExitCodeDocumentation &&& printExitCodes
         ] <*> [cmdOpts]
 
 
@@ -90,3 +101,48 @@ printFunderList = putStrLn $ renderedHeaderLines <> renderedFundingSources
     renderedFundingSources = (<>"\n") . intercalate "\n\n" $ renderSource <$> rawFundingSources
     rawFundingSources = $(fundingList)
     renderSource (src, url) = "    • " <> src <> maybe "" ("\n      › " <>) url
+
+
+printExitCodeDocumentation :: IO ()
+printExitCodeDocumentation = putStrLn . intercalate "\n" . (preamble:) . foldMapWithKey f
+                           $ toMap errorPhaseToExitCode
+  where
+    f :: ErrorPhase -> ExitCode -> [Text]
+    f ep ec = pure $ unlines
+        [ errorPhaseTag
+        , "       …" <> g ep
+        ]
+      where
+        errorPhaseTag = unwords
+            [ "    •"
+            , rPad 10 (showt ep <> ":")
+            , "[" <> (lPad 2 . showt $ getValue ec) <> "]"
+            ]
+
+    getValue :: ExitCode -> Word
+    getValue  ExitSuccess    = 0
+    getValue (ExitFailure i) = toEnum $ fromEnum i
+
+    lPad n txt = pack (replicate (n - len) ' ') <> txt
+      where
+        len = olength txt
+
+    rPad n txt = txt <> pack (replicate (n - len) ' ')
+      where
+        len = olength txt
+
+    g  Inputing = "PCG attempted to retrieve input streams"
+    g   Parsing = "interpreting input streams that were successfully retrieved"
+    g  Unifying = "combining multiple data sets into a coherent composite"
+    g Computing = "running PCG, please report at github.com/amnh/PCG/issues"
+    g Outputing = "outputing data streams from PCG"
+
+    preamble = intercalate "\n" $ ("  "<>) <$>
+        [ ""
+        , "PCG emits specific exit codes to indicate in which \"phase\" of the runtime the"
+        , "error(s) occured. These specific exit codes are listed below. If a different"
+        , "exit code is emitted, an error that could not be recovered from occurred."
+        , ""
+        , "Error(s) occurred while…"
+        , ""
+        ]

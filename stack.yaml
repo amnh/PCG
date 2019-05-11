@@ -1,6 +1,6 @@
 #allow-newer: true
 
-compiler: ghc-8.6.4
+compiler: ghc-8.6.5
 
 compiler-check: match-exact
 
@@ -22,7 +22,7 @@ local-bin-path: bin
 
 require-stack-version: ">=1.9.1"
 
-resolver: lts-13.14
+resolver: lts-13.20
 
 dump-logs: all
 
@@ -35,7 +35,9 @@ packages:
   - lib/pcg-evaluation
   - lib/pcg-exportable
   - lib/pcg-file-parsers
+  - lib/pcg-file-source
   - lib/pcg-language
   - lib/pcg-serialize
   - lib/pcg-tcm-memo
   - lib/pcg-utility
+  - lib/pcg-validation-transformer

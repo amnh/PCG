@@ -14,18 +14,23 @@ import Bio.Graph
 import Bio.Graph.ReferenceDAG  (_dagCost, _graphData)
 import Control.Lens            (Getter, (^.))
 import Control.Monad.Except    (ExceptT (..), runExceptT)
+import Data.Bimap              (toMap)
 import Data.Binary             (decodeOrFail)
 import Data.ByteString.Lazy    (ByteString)
 import Data.Either
 import Data.Foldable
+import Data.Key
 import Data.List               (intercalate)
 import Data.List.NonEmpty      (NonEmpty (..))
 import Data.List.Utility       (equalityOf)
 import Data.Semigroup.Foldable
 import Numeric.Extended.Real
 import Prelude                 hiding (writeFile)
+import System.Directory        (getPermissions, setOwnerReadable, setOwnerWritable, setPermissions)
+import System.ErrorPhase
 import System.Exit
-import System.FilePath.Posix   (splitFileName, takeFileName)
+import System.FilePath.Posix   (splitFileName, takeFileName, (</>))
+--import System.IO               (IOMode (..), hClose, hGetContents, openFile)
 import System.Process
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -249,15 +254,85 @@ costTestSuite = testGroup "Cost Analysis"
 -- as input due to inconsistencies.
 failureTestSuite :: TestTree
 failureTestSuite = testGroup "Expected Failures"
-  [ scriptFailure "failure/unmatched-leaf-taxon/test.pcg"
-  , scriptFailure "failure/unmatched-tree-taxon/test.pcg"
-  , scriptFailure "failure/duplicate-leaf-taxon/test.pcg"
+  [ scriptInputError  "failure/file-empty-stream/test.pcg"
+  , scriptInputError  "failure/file-path-ambiguous/test.pcg"
+  , scriptInputError  "failure/file-not-found/test.pcg"
+  , scriptInputError_NoPermissions
+-- Having trouble inducing this error
+--  , scriptInputError_FileAlreadyInUse
+  , scriptParseError  "failure/parse-bad-compact-region/test.pcg"
+  , scriptParseError  "failure/parse-bad-file-content/test.pcg"
+  , scriptParseError  "failure/parse-bad-prealigned/test.pcg"
+  , scriptUnifyError  "failure/unmatched-leaf-taxon/test.pcg"
+  , scriptUnifyError  "failure/unmatched-tree-taxon/test.pcg"
+  , scriptUnifyError  "failure/duplicate-leaf-taxon/test.pcg"
 -- We omit this test because the DAG.unfoldr function in the ParsedForest call
 -- will ensure that there is only one leaf in the graph. It may have multiple
 -- parents however.
---  , scriptFailure "duplicate-tree-taxon/test.pcg"
-  , scriptFailure "failure/no-data-in-graph/test.pcg"
+--  , scriptFailure  "duplicate-tree-taxon/test.pcg"
+  , scriptUnifyError  "failure/no-data-in-graph/test.pcg"
+  , scriptOutputError "failure/output-path-not-found/test.pcg"
+  , scriptOutputError_NoPermissions
+-- Having trouble inducing this error
+--  , scriptOutputError_FileAlreadyInUse
+  , scriptInputError "failure/input-overrides-parse/test.pcg"
+  , scriptInputError "failure/input-overrides-unify/test.pcg"
+  , scriptParseError "failure/parse-overrides-unify/test.pcg"
   ]
+
+
+-- |
+-- This test case is more involved because we need to change permisisions as
+-- part of the "set up" and "tear down" parts of the test.
+scriptInputError_NoPermissions :: TestTree
+scriptInputError_NoPermissions = withResource
+      (       makeUnreadable $ testDirectory </> "failure/file-no-permissions/bad-permissions.fasta")
+      ( \_ -> makeReadable   $ testDirectory </> "failure/file-no-permissions/bad-permissions.fasta")
+      $ \_ -> scriptInputError "failure/file-no-permissions/test.pcg"
+  where
+    makeUnreadable = setReadable False
+    makeReadable   = setReadable True
+    setReadable b fp = do
+        p <- getPermissions fp
+        setPermissions fp $ setOwnerReadable b p
+
+
+-- |
+-- This test case is more involved because we need to change permisisions as
+-- part of the "set up" and "tear down" parts of the test.
+scriptOutputError_NoPermissions :: TestTree
+scriptOutputError_NoPermissions = withResource
+      (       makeUnwritable $ testDirectory </> "failure/output-no-permissions/dir")
+      ( \_ -> makeWritable   $ testDirectory </> "failure/output-no-permissions/dir")
+      $ \_ -> scriptOutputError "failure/output-no-permissions/test.pcg"
+  where
+    makeUnwritable = setWritable False
+    makeWritable   = setWritable True
+    setWritable b fp = do
+        p <- getPermissions fp
+        setPermissions fp $ setOwnerWritable b p
+
+
+{--
+-- |
+-- This test case is more involved because we need to open the input file as
+-- part of the "set up" and "tear down" parts of the test.
+scriptInputError_FileAlreadyInUse :: TestTree
+scriptInputError_FileAlreadyInUse = withResource
+      (openFile (testDirectory </> "failure/file-already-in-use/opened.fasta") AppendMode)
+      ( \h -> hClose h)
+      $ \_ -> scriptInputError "failure/file-already-in-use/test.pcg"
+
+
+-- |
+-- This test case is more involved because we need to open the input file as
+-- part of the "set up" and "tear down" parts of the test.
+scriptOutputError_FileAlreadyInUse :: TestTree
+scriptOutputError_FileAlreadyInUse = withResource
+      ( openFile (testDirectory </> "failure/output-already-in-use/opened.fasta") ReadMode)
+      ( \h -> hClose h)
+      $ \_ -> scriptOutputError "failure/output-already-in-use/test.pcg"
+--}
 
 
 -- |
@@ -305,6 +380,7 @@ runScripts inputScripts outputPaths = do
                , absFilePath
                ]
 -}
+
 
 -- |
 -- Compare the graph cost against an expected value
@@ -368,6 +444,44 @@ scriptFailure :: String -> TestTree
 scriptFailure scriptPath = testCase scriptPath $ do
     v <- runScripts (scriptPath:|[]) []
     assertBool "Expected script failure, but script was successful..." $ isLeft v
+
+
+-- |
+-- Expects the PCG script to return an input error exitcode.
+scriptInputError :: String -> TestTree
+scriptInputError = scriptWithExitCode Inputing "an input error"
+
+
+-- |
+-- Expects the PCG script to return a parse error exitcode.
+scriptParseError :: String -> TestTree
+scriptParseError = scriptWithExitCode Parsing "a parse error"
+
+
+-- |
+-- Expects the PCG script to return a unifcation error exitcode.
+scriptUnifyError :: String -> TestTree
+scriptUnifyError = scriptWithExitCode Unifying "a unification error"
+
+
+-- |
+-- Expects the PCG script to return a unifcation error exitcode.
+scriptOutputError :: String -> TestTree
+scriptOutputError = scriptWithExitCode Outputing "an output error"
+
+
+-- |
+-- Build for 'TestTree' that expects a specific exitcode.
+scriptWithExitCode :: ErrorPhase -> String -> String -> TestTree
+scriptWithExitCode expPhase description scriptPath = testCase scriptPath $ do
+    v <- runScripts (scriptPath:|[]) []
+    case v of
+      Right {}     -> assertFailure "Expected script failure, but script was successful..."
+      Left  (_,ec) -> let expVal = exitCodeToInt $ toMap errorPhaseToExitCode ! expPhase
+                          errMsg = fold [ "Expected exitcode (", show expVal, ") indicating "
+                                        , description, ", but instead exitcode (", show ec,") was found"
+                                        ]
+                      in  assertBool errMsg $ ec == expVal
 
 
 -- |

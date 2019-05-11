@@ -15,7 +15,6 @@ import           Data.Key
 import           Data.List.NonEmpty           (NonEmpty (..))
 import qualified Data.Map                     as M
 import           Data.MemoTrie                (memo)
-import           Data.Semigroup               hiding (option)
 import           Data.Semigroup.Foldable
 import           Data.Set                     (Set)
 import qualified Data.Set                     as S

@@ -62,10 +62,14 @@ data NormalizedCharacter
    deriving (Eq, Ord, Generic, NFData, Show)
 
 
+-- |
+-- Take a single, unambiguous base and constructs a dynamic character value.
 parsedDynamicCharacterFromShortText :: ShortText -> NormalizedCharacter
 parsedDynamicCharacterFromShortText = NormalizedDynamicCharacter . pure . pure . pure
 
 
+-- |
+-- Take a sequence of characters and create a singleton collection of a dynamic character.
 convertCharacterSequenceLikeFASTA :: CharacterSequence -> NormalizedCharacterCollection
 convertCharacterSequenceLikeFASTA =
     pure . NormalizedDynamicCharacter . Just . NE.fromList . toList . fmap (fmap fromString)

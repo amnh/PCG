@@ -55,6 +55,7 @@ import           Control.Lens                      hiding (Fold)
 import           Control.Monad.State.Strict
 import           Data.Alphabet
 import           Data.Bits
+import           Data.FileSource
 import           Data.Foldable
 import           Data.Functor                             (($>))
 import           Data.Hashable
@@ -72,7 +73,6 @@ import           Data.TCM
 import qualified Data.TCM                     as TCM
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
-import           Data.Text.Short              (ShortText)
 import           Data.TopologyRepresentation
 import           GHC.Generics                             (Generic)
 import           Prelude                           hiding (lookup)
@@ -209,7 +209,7 @@ instance GetDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe Den
       $ either (Just . fst) (const Nothing) . structuralRepresentationTCM
 
 -- | (✔)
-instance HasTcmSourceFile (DynamicCharacterMetadataDec c) ShortText where
+instance HasTcmSourceFile (DynamicCharacterMetadataDec c) FileSource where
 
     _tcmSourceFile = lens (\d -> metadata d ^. _tcmSourceFile)
                    $ \d s -> d { metadata = metadata d & _tcmSourceFile .~ s }
@@ -264,7 +264,7 @@ dynamicMetadata
   :: CharacterName
   -> Double
   -> Alphabet String
-  -> ShortText
+  -> FileSource
   -> TCM
   -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
 dynamicMetadata name weight alpha tcmSource tcm denseMay =
@@ -297,7 +297,7 @@ dynamicMetadataFromTCM
   :: CharacterName
   -> Double
   -> Alphabet String
-  -> ShortText
+  -> FileSource
   -> TCM
   -> DynamicCharacterMetadataDec c
 dynamicMetadataFromTCM name weight alpha tcmSource tcm
@@ -312,7 +312,7 @@ dynamicMetadataWithTCM
   :: CharacterName
   -> Double
   -> Alphabet String
-  -> ShortText
+  -> FileSource
   -> (Word -> Word -> Word)
   -> DynamicCharacterMetadataDec c
 dynamicMetadataWithTCM name weight alpha tcmSource scm =

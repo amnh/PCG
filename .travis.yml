@@ -1,16 +1,16 @@
+dist: xenial #Required for GCC >= v5.0
 sudo: true
+
 language: haskell
-
-git:
-  depth: 5
-
 cabal: "2.4"
+
 
 cache:
   directories:
   - "$HOME/.cabal/store"
   - "$HOME/.stack"
   - "$TRAVIS_BUILD_DIR/.stack-work"
+
 
 matrix:
   include:
@@ -23,29 +23,48 @@ matrix:
   - ghc: 8.6.4
     env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
 
+
+before_install:
+
+  # Ensure that this directory exists for tool installs
+  - mkdir -p /home/travis/.local/bin
+
+  # Download and unpack the hlint executable
+  - travis_retry curl --progress-bar --location -ohlint.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/hlint/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
+  - tar -xzf hlint.tar.gz
+  - cp -r hlint-*/data  ~/.local/bin/data
+  - cp    hlint-*/hlint ~/.local/bin/hlint
+
+  # Download and unpack the weeder executable
+#  - which weeder || travis_retry curl --progress-bar --location -oweeder.tar.gz https://github.com/$(curl --silent https://github.com/ndmitchell/weeder/releases | grep -o '\"[^\"]*-x86_64-'$TRAVIS_OS_NAME'\.tar\.gz\"' | sed s/\"//g | head -n1)
+#  - which weeder || tar -xzf weeder.tar.gz
+#  - which weeder || cp weeder-*/weeder ~/.local/bin/weeder
+
 install:
+  - gcc --version
   - ghc --version
+  - hlint  --version
+#  - weeder --version
   - |
     if [ -z "$STACK_YAML" ]; then
       cabal --version
       cabal new-update
-      cabal new-build --enable-tests --enable-benchmarks
+      cabal new-build --enable-benchmarks --enable-documentation --enable-tests --haddock-all --haddock-hyperlink-source --haddock-internal
     else
       # install stack
       curl -sSL https://get.haskellstack.org/ | sh
 
       # build project with stack
       stack --version
-      stack build --system-ghc --test --bench --no-run-tests --no-run-benchmarks
+      stack build --system-ghc --bench --haddock --haddock-deps --haddock-hyperlink-source --haddock-internal --test --no-run-benchmarks --no-run-tests
     fi
 
+
 script:
-  - |
-    if [ -z "$STACK_YAML" ]; then
-      cabal new-test --enable-tests
-    else
-      stack test --system-ghc
-    fi
+  - make run-hlint
+  
+git:
+  depth: 5
 
 notifications:
   email: false
