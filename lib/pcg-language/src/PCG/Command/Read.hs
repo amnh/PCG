@@ -18,18 +18,14 @@
 
 module PCG.Command.Read
   ( FileSpecification(..)
-  , FileSpecificationContent(..)
   , ReadCommand(..)
-  , FileContent
-  , FileResult
-  , DataContent(..)
   , TcmReference
   , readCommandSpecification
   ) where
 
 import Control.Applicative.Free (Ap)
+import Data.FileSource
 import Data.List.NonEmpty       (NonEmpty)
-import Data.Text                (Text)
 import PCG.Syntax.Combinators
 
 
@@ -40,47 +36,23 @@ newtype ReadCommand = ReadCommand (NonEmpty FileSpecification)
 
 
 -- |
--- The collection of file content collected from a 'FileSpecification'.
-newtype FileSpecificationContent = SpecContent (NonEmpty DataContent)
-
-
--- |
--- Content of a single data file along with a possibly associated TCM file content.
-data  DataContent
-    = DataContent
-    { dataFile :: !FileResult
-    , tcmFile  :: !(Maybe FileResult)
-    } deriving (Eq)
-
-
--- |
 -- The specification for a file to be read.
 data  FileSpecification
-    = UnspecifiedFile    !(NonEmpty FilePath) --Try to parse them all?
-    | AminoAcidFile      !(NonEmpty FilePath)
-    | NucleotideFile     !(NonEmpty FilePath)
-    | AnnotatedFile      !(NonEmpty FilePath)
-    | ChromosomeFile     !(NonEmpty FilePath)
-    | GenomeFile         !(NonEmpty FilePath)
-    | CustomAlphabetFile !(NonEmpty FilePath) !TcmReference
+    = UnspecifiedFile    !(NonEmpty FileSource) --Try to parse them all?
+    | AminoAcidFile      !(NonEmpty FileSource)
+    | NucleotideFile     !(NonEmpty FileSource)
+    | AnnotatedFile      !(NonEmpty FileSource)
+    | ChromosomeFile     !(NonEmpty FileSource)
+    | GenomeFile         !(NonEmpty FileSource)
+    | CustomAlphabetFile !(NonEmpty FileSource) !TcmReference
     | WithSpecifiedTCM   !FileSpecification   !TcmReference
     | PrealignedFile     !FileSpecification
     deriving (Show)
 
 
 -- |
--- The content of a file.
-type  FileContent  = Text
-
-
--- |
--- The context of reading a file along with the path the content originated from.
-type  FileResult   = (FilePath, FileContent)
-
-
--- |
 -- An optional reference to a TCM file.
-type  TcmReference = FilePath
+type  TcmReference = FileSource
 
 
 instance Semigroup ReadCommand where
@@ -108,19 +80,25 @@ fileSpec = choiceFrom
     , genome
     ]
   where
-    unspecified    = UnspecifiedFile . pure <$> text
-    aminoAcids     = AminoAcidFile  <$> oneOrSomeWithIds text [ "amino_acid", "amino_acids", "aminoacid", "aminoacids", "protein", "proteins" ]
-    nucleotides    = NucleotideFile <$> oneOrSomeWithIds text [ "nucleotide", "nucleotides" ]
-    annotated      = AnnotatedFile  <$> oneOrSomeWithIds text [ "annotated" ]
-    chromosome     = ChromosomeFile <$> oneOrSomeWithIds text [ "chromosome", "chromosomes", "chromosomal" ]
-    genome         = GenomeFile     <$> oneOrSomeWithIds text [ "genome", "genomes", "genomic", "genomics" ]
+    unspecified    = UnspecifiedFile . pure <$> filePath
+    aminoAcids     = AminoAcidFile  <$> oneOrSomeWithIds filePath [ "amino_acid", "amino_acids", "aminoacid", "aminoacids", "protein", "proteins" ]
+    nucleotides    = NucleotideFile <$> oneOrSomeWithIds filePath [ "nucleotide", "nucleotides" ]
+    annotated      = AnnotatedFile  <$> oneOrSomeWithIds filePath [ "annotated" ]
+    chromosome     = ChromosomeFile <$> oneOrSomeWithIds filePath [ "chromosome", "chromosomes", "chromosomal" ]
+    genome         = GenomeFile     <$> oneOrSomeWithIds filePath [ "genome", "genomes", "genomic", "genomics" ]
     prealigned     = argId "prealigned"      . singleArgList $ PrealignedFile <$> fileSpec
-    customAlphabet = argId "custom_alphabet" . argList $ CustomAlphabetFile <$> oneOrSome text <*> tcmReference
+    customAlphabet = argId "custom_alphabet" . argList $ CustomAlphabetFile <$> oneOrSome filePath <*> tcmReference
     withSpecTCM    = argId "set_tcm" . argList $ WithSpecifiedTCM <$> fileSpec <*> tcmReference
 
 
-    tcmReference :: Ap SyntacticArgument String
-    tcmReference   = argId "tcm" text
+    tcmReference :: Ap SyntacticArgument FileSource
+    tcmReference   = argId "tcm" filePath
+
+
+-- |
+-- Definition of a 'FileSource' in the 'Free' context.
+filePath :: Ap SyntacticArgument FileSource
+filePath = FileSource <$> text
 
 
 -- |

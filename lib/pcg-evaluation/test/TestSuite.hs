@@ -1,6 +1,7 @@
 module Main where
 
 import qualified Control.Evaluation.Test      as Evaluation
+import qualified System.ErrorPhase.Test       as ErrorPhase
 import           Test.Tasty
 import           Test.Tasty.Ingredients.Rerun (rerunningTests)
 
@@ -14,5 +15,6 @@ main =
 
 testSuite :: TestTree
 testSuite = testGroup "Evaluation Tests"
-    [ Evaluation.testSuite
+    [ ErrorPhase.testSuite
+    , Evaluation.testSuite
     ]

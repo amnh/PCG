@@ -244,6 +244,7 @@ library pcg-data-structures
     pcg-alphabet,
     pcg-evaluation,
     pcg-exportable,
+    pcg-file-source,
     pcg-utility,
     pcg-serialize,
     pcg-tcm,

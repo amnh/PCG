@@ -20,6 +20,7 @@ module PCG.Command.Echo
   , echoCommandSpecification
   ) where
 
+import Data.Text.Short
 import PCG.Syntax.Combinators
 
 
@@ -28,7 +29,7 @@ import PCG.Syntax.Combinators
 -- computation to disk. The file path to which the echo state is serialized
 -- may be user specified. A default, hidden file path exists if no file path is
 -- specified by the user.
-newtype EchoCommand = EchoCommand FilePath
+newtype EchoCommand = EchoCommand ShortText
   deriving stock Show
 
 

@@ -1,0 +1,3 @@
+read("bad-input.tree")
+read("simple.fasta")
+read("simple.tree")

@@ -8,7 +8,10 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Containing the master command for unifying all input types: tree, metadata, and sequence
+-- Containing the command for unifying all input types:
+--  - Character
+--  - Metadata
+--  - Topological
 --
 -----------------------------------------------------------------------------
 
@@ -48,6 +51,7 @@ import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Coerce                         (coerce)
 import           Data.Default
+import           Data.FileSource
 import           Data.Foldable
 import           Data.Functor.Identity               (runIdentity)
 import qualified Data.IntMap                         as IM
@@ -66,7 +70,6 @@ import           Data.Normalization.Character
 import           Data.Normalization.Metadata
 import           Data.Normalization.Topology
 import           Data.Semigroup.Foldable
-import           Data.String
 import           Data.TCM                            (TCM, TCMStructure (..))
 import qualified Data.TCM                            as TCM
 import           Data.Text.Short                     (ShortText, toString)
@@ -77,7 +80,7 @@ import           Data.Validation
 import           Prelude                             hiding (lookup, zipWith)
 
 
-type FileSource = ShortText
+--type FileSource = ShortText
 
 
 type PartiallyUnififedCharacterSequence  a = (CharacterName, NormalizedCharacter, NormalizedMetadata, FileSource, a)
@@ -92,12 +95,12 @@ unifyPartialInputs
   :: Foldable1 f
   => f PartialInputData
   -> Validation UnificationError (Either TopologicalResult CharacterResult)
-unifyPartialInputs pids = collectPartialInputs pids `bindValidation` performUnification inputFilePaths
+unifyPartialInputs pids = collectPartialInputs pids `bindValidation` performUnification inputFileSources
   where
-    inputFilePaths = sourceFile <$> toNonEmpty pids
+    inputFileSources = sourceFile <$> toNonEmpty pids
 
 
-performUnification :: NonEmpty FilePath -> InputData -> Validation UnificationError (Either TopologicalResult CharacterResult)
+performUnification :: NonEmpty FileSource -> InputData -> Validation UnificationError (Either TopologicalResult CharacterResult)
 performUnification inputPaths InputData{..} = fmap reifiedSolution <$> dagForest
   where
     -- Collect the parsed forests to be merged
@@ -108,7 +111,7 @@ performUnification inputPaths InputData{..} = fmap reifiedSolution <$> dagForest
     dagForest =
         case (suppliedForests, joinSequences <$> dataSequences) of
           -- Throw a unification error here
-          (Nothing, Nothing) -> Failure . UnificationError . pure $ VacuousInput inputPaths
+          (Nothing, Nothing) -> Failure $ vacuousInputFiles inputPaths
 
           -- Build a forest of with Units () as character type parameter
           (Just someForests, Nothing) -> Success . Left  . PhylogeneticSolution $ someForests
@@ -216,18 +219,18 @@ deriveCharacterNames = inlineName . assignCharacterNames expandIndividualCharact
                 )
              )
          )
-    expandIndividualCharacterDatum pid = (inputFilePath, expandSeqence <$> parsedChars pid)
+    expandIndividualCharacterDatum pid = (inputFileSource, expandSeqence <$> parsedChars pid)
       where
-        localMetadata = foldMap toList $ parsedMetas pid
-        inputFilePath = force . fromString $ sourceFile pid
-        inputTCM      = force              $ relatedTcm pid
+        localMetadata   = foldMap toList $ parsedMetas pid
+        inputFileSource = force          $ sourceFile  pid
+        inputTCM        = force          $ relatedTcm  pid
 
         expandSeqence v = fmap pullOutName . NE.fromList $ zip5 a b c d e
           where
             a = correctName . characterName <$> localMetadata
             b = toList v
             c = localMetadata
-            d = repeat inputFilePath
+            d = repeat inputFileSource
             e = repeat inputTCM
 
     inlineName = fmap (fmap (fmap pushInName))

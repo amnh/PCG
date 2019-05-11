@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveGeneric              #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.UnionSet
@@ -13,8 +11,13 @@
 -- A newtype wrapper for the union monoid instance on sets labelled by
 -- the set {1,...,n}.
 -----------------------------------------------------------------------------
+
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+
 module Data.UnionSet
-  (UnionSet, singletonSet
+  ( UnionSet
+  , singletonSet
   )
   where
 
@@ -25,6 +28,9 @@ import GHC.Generics
 import TextShow                    (TextShow)
 
 
+-- |
+-- Represents the union of several elements with a lexical ordering over a
+-- pre-determined finite range. Represented internally as a bit-vector for efficiency.
 newtype UnionSet = Union BitVector
   deriving (Bits, Generic, Ord, TextShow)
 
@@ -59,6 +65,8 @@ instance Monoid UnionSet where
   mempty = zeroBits
 
 
+-- |
+-- Create a 'UnionSet with a single element included.
 singletonSet
   :: Int  -- ^ Set size
   -> Int  -- ^ Set index
