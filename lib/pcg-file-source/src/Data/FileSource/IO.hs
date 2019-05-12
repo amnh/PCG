@@ -355,11 +355,9 @@ outputErrorHandling filePath e
 -- The suffix added will be one greater than the highest existing numeric suffix.
 safelyMoveFile :: FileSource -> IO ()
 safelyMoveFile fs = do
-    exists <- doesFileExist fp
+    absPath <- makeAbsolute fp
+    exists  <- doesFileExist absPAth
     when exists $ do
-        absPath <- makeAbsolute fp
-        -- TODO: this logic is wrong,
-        -- The file we write to might not be in the current directory!!!
         allFiles <- getDirectoryContents $ takeDirectory absPath
         let prefixed = getFilePathPrefixes     allFiles
         let numbers  = getNumericSuffixes      prefixed
