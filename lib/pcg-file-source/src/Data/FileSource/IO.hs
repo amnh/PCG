@@ -356,7 +356,7 @@ outputErrorHandling filePath e
 safelyMoveFile :: FileSource -> IO ()
 safelyMoveFile fs = do
     absPath <- makeAbsolute fp
-    exists  <- doesFileExist absPAth
+    exists  <- doesFileExist absPath
     when exists $ do
         allFiles <- getDirectoryContents $ takeDirectory absPath
         let prefixed = getFilePathPrefixes     allFiles
