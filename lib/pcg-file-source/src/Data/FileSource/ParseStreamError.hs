@@ -31,8 +31,10 @@ import Control.DeepSeq    (NFData)
 --import Data.Data
 import Data.FileSource
 import Data.Foldable
-import Data.List.NonEmpty hiding (toList)
+import Data.List          (sortBy)
+import Data.List.NonEmpty hiding (sortBy, toList)
 import Data.Maybe         (catMaybes)
+import Data.Ord           (comparing)
 import Data.String
 import Data.Text          (Text)
 import Data.Text.Short    (ShortText, toShortByteString)
@@ -82,7 +84,7 @@ instance TextShow ParseStreamError where
         (pErrors, aErrors, dErrors) = partitionParseStreamErrors errors
 
         showUnparsable =
-            case pErrors of
+            case sortBy (comparing fst) pErrors of
               []   -> Nothing
               x:xs -> Just $ unlinesB
                   [ preamble      $ fst <$> (x:|xs)
