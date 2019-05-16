@@ -44,8 +44,6 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Custom
 
-import Debug.Trace
-
 
 -- |
 -- Pairing of taxa with an unconverted sequence
@@ -105,7 +103,7 @@ symbolSequence sym = space *> fullSequence
 {-# INLINE withinAlphabet #-}
 withinAlphabet :: Char -> Bool
 withinAlphabet =
-    let !v = traceShowId $ foldMap pure alphabet
+    let !v = foldMap pure alphabet
     in  withinVec v
 
 
