@@ -30,15 +30,16 @@ import Data.Alphabet.IUPAC
 import Data.Bimap                 (Bimap, toMap)
 import Data.Char                  (isLower, isUpper, toLower, toUpper)
 import Data.Foldable
-import Data.Key
 import Data.List                  (nub, partition)
 import Data.List.NonEmpty         (NonEmpty)
 import qualified Data.List.NonEmpty as NE
 import Data.List.Utility
 import Data.Map                   (keysSet)
 import Data.Maybe                 (fromJust)
-import Data.Set                   (Set, fromList, mapMonotonic, singleton)
-import Data.Vector                (Vector)
+import Data.Set                   (Set, mapMonotonic)
+import qualified Data.Set         as S
+import Data.Vector.Unboxed        (Vector, (!))
+import qualified Data.Vector.Unboxed as V
 import File.Format.Fasta.Internal
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -103,14 +104,18 @@ symbolSequence sym = space *> fullSequence
 {-# INLINE withinAlphabet #-}
 withinAlphabet :: Char -> Bool
 withinAlphabet =
-    let !v = foldMap pure alphabet
+    let !v = V.fromList $ toList alphabet
     in  withinVec v
 
 
 {-# INLINE withinVec #-}
 withinVec :: Vector Char -> Char -> Bool
-withinVec v e = go 0 (length v - 1)
+withinVec v e = go 0 (V.length v - 1)
   where
+    -- Perform a binary search on the unboxed vector
+    -- to determine if a character is valid.
+    --
+    -- Equally fast, and uses less memory than a Set.
     {-# INLINE go #-}
     go !lo !hi =
       if   lo > hi
@@ -131,7 +136,7 @@ extractFromBimap = mapMonotonic (head . NE.head) . keysSet . toMap
 
 alphabet, otherValidChars, iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars :: Set Char
 alphabet             = fold [iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars]
-otherValidChars      = fromList ".-?#"
+otherValidChars      = S.fromList ".-?#"
 iupacAminoAcidChars  = otherValidChars <> caseInsensitiveOptions (extractFromBimap iupacToAminoAcid)
 iupacNucleotideChars = otherValidChars <> caseInsensitiveOptions (extractFromBimap iupacToDna)
 iupacRNAChars        = otherValidChars <> caseInsensitiveOptions (extractFromBimap iupacToRna)
@@ -144,9 +149,9 @@ caseInsensitiveOptions :: Set Char -> Set Char
 caseInsensitiveOptions = foldMap f
   where
     f x
-      | isLower x = singleton x <> singleton (toUpper x)
-      | isUpper x = singleton x <> singleton (toLower x)
-      | otherwise = singleton x
+      | isLower x = S.singleton x <> S.singleton (toUpper x)
+      | isUpper x = S.singleton x <> S.singleton (toLower x)
+      | otherwise = S.singleton x
 
 
 -- |
