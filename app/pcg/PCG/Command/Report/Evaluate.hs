@@ -7,54 +7,31 @@ module PCG.Command.Report.Evaluate
   ) where
 
 
-import           Bio.Graph
-import           Control.Monad               (when)
-import           Control.Monad.IO.Class
-import qualified Data.ByteString.Lazy        as BS
-import           Data.Char
-import           Data.Compact                (getCompact)
-import           Data.FileSource             (FileSource)
-import           Data.Foldable               (traverse_)
-import           Data.Functor                (($>))
-import           Data.List                   (isPrefixOf)
-import           Data.List.NonEmpty          (NonEmpty (..))
-import           Data.MonoTraversable
-import           Data.Render.Utility         (writeFileT)
-import           Data.String                 (IsString (fromString))
-import qualified Data.Text.Lazy              as Lazy
-import           PCG.Command.Report
-import           PCG.Command.Report.GraphViz
-import           PCG.Command.Report.Metadata
-import           System.Directory
-import           System.FilePath.Posix
-import           System.IO                   (IOMode (AppendMode, WriteMode))
-import           Text.XML
-import           TextShow                    (TextShow (showtl), printT)
-
-
-data  FileContent
-    = T Lazy.Text
-    | B BS.ByteString
+import Bio.Graph
+import Control.Evaluation
+import Control.Monad.IO.Class
+import Control.Monad.Reader
+import Control.Monad.Trans.Validation
+import Data.Compact                   (getCompact)
+import Data.FileSource                (FileSource)
+import Data.FileSource.IO
+import Data.Foldable                  (traverse_)
+import Data.Functor                   (($>))
+import Data.List.NonEmpty             (NonEmpty (..))
+import Data.String                    (IsString (fromString))
+import Data.Validation
+import PCG.Command.Report
+import PCG.Command.Report.GraphViz
+import PCG.Command.Report.Metadata
+import Prelude                        hiding (appendFile, getContents, readFile, writeFile)
+import Text.XML
+import TextShow                       (TextShow (showtl))
 
 
 data FileStreamContext
    = ErrorCase    String
-   | SingleStream FileContent
-   | MultiStream  (NonEmpty (FileSource, FileContent))
-
-
-printFileContent :: FileContent -> IO ()
-printFileContent (T s) = printT s
-printFileContent (B s) = BS.putStr s
-
-
-writeFileContent :: FileSource -> FileContent -> IO ()
-writeFileContent f (T s) = writeFileT WriteMode (otoList f) s
-writeFileContent f (B s) = BS.writeFile (otoList f) s
-
-appendFileContent :: FileSource -> FileContent -> IO ()
-appendFileContent f (T s) = writeFileT AppendMode (otoList f) s
-appendFileContent f (B s) = BS.appendFile (otoList f) s
+   | SingleStream FileStream
+   | MultiStream  (NonEmpty (FileSource, FileStream))
 
 
 evaluate :: ReportCommand -> GraphState -> SearchState
@@ -62,116 +39,51 @@ evaluate (ReportCommand format target) stateValue = reportStreams $> stateValue
   where
     reportStreams =
       case generateOutput stateValue format of
-           ErrorCase    errMsg  -> fail errMsg
-           MultiStream  streams -> traverse_ (liftIO . uncurry writeFileContent) streams
-           SingleStream output  ->
-             liftIO $ case target of
-                        OutputToStdout   -> printFileContent output
-                        OutputToFile f w ->
-                          case w of
-                            Append    -> appendFileContent f output
-                            Overwrite ->  writeFileContent f output
-                            Move      -> safelyMoveFile f *> writeFileContent f output
+           ErrorCase    errMsg  -> state $ failWithPhase Outputing errMsg
+           MultiStream  streams -> renderMultiStream streams
+           SingleStream output  -> renderSingleStream target output
 
 
--- |
--- Checks to see if the supplied 'FilePath' exists.
---
--- If it does, it moves the existing file path, so that the supplied file path
--- can be written to without overwriting data.
---
--- The exisiting file path is renamed, adding a numeric suffix to the end. The
--- function will try to rename the existing file path by adding the suffix ".0",
--- however if that filepath also exists, it will add ".1", ".2", ".3", ",.4", etc.
--- The suffix added will be one greater than the highest existing numeric suffix.
-safelyMoveFile :: FileSource -> IO ()
-safelyMoveFile fs = do
-    exists <- doesFileExist fp
-    when exists $ do
-        allFiles <- getCurrentDirectory >>= getDirectoryContents
-        let prefixed = getFilePathPrefixes     allFiles
-        let numbers  = getNumericSuffixes      prefixed
-        let lastNum  = getLargestNumericSuffix numbers
-        let nextNum  = lastNum + 1 :: Word
-        let newName  = fp <> "." <> show nextNum
-        renameFile fp newName
-  where
-    fp = otoList fs
-    
-    getFilePathPrefixes = fmap (drop (length fp)) . filter (fp `isPrefixOf`)
-
-    getNumericSuffixes  = fmap tail . filter hasDotThenNumberSuffix . fmap takeExtension
-      where
-        hasDotThenNumberSuffix ('.':x:xs) = all isNumber $ x:xs
-        hasDotThenNumberSuffix _          = False
-
-    getLargestNumericSuffix    []  = -1
-    getLargestNumericSuffix (x:xs) = maximum . fmap read $ x:|xs
+renderMultiStream :: NonEmpty (FileSource, FileStream) -> EvaluationT (ReaderT GlobalSettings IO) ()
+renderMultiStream = runOutputStream . traverse_ (uncurry writeFile)
 
 
--- TODO: Redo reporting
---generateOutput :: t1 -> t -> FileStreamContext
-{-
-generateOutput :: DirectOptimizationPostOrderDecoration z a
-               => Either t (PhylogeneticSolution (PhylogeneticDAG e n u v w x y z))
-               -> OutputFormat
-               -> FileStreamContext
--}
-{-
-generateOutput :: (Show c, Show t, ToXML c)
-               => Either t c
-               -> OutputFormat
-               -> FileStreamContext
--}
+renderSingleStream :: OutputTarget -> FileStream -> EvaluationT (ReaderT GlobalSettings IO) ()
+renderSingleStream target output = runOutputStream $
+    case target of
+      OutputToStdout   -> writeSTDOUT output
+      OutputToFile f w ->
+        case w of
+          Append    -> appendFile f output
+          Overwrite ->  writeFile f output
+          Move      ->  writeFileWithMove f output
+
+
+runOutputStream :: ValidationT OutputStreamError IO () -> EvaluationT (ReaderT GlobalSettings IO) ()
+runOutputStream outputValidation = do
+    result <- liftIO $ runValidationT outputValidation
+    case result of
+      Failure errMsg -> state $ failWithPhase Outputing errMsg
+      Success _      -> pure ()
+
+
 generateOutput
   :: GraphState
   -> OutputFormat
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data     {} -> SingleStream . T $ either showtl showtl g
-    XML      {} -> SingleStream . T $ either showtl (fromString . ppTopElement . toXML) g
-    DotFile  {} -> SingleStream . T $ generateDotFile g'
+    Data     {} -> SingleStream . streamText $ either showtl showtl g
+    XML      {} -> SingleStream . streamText $ either showtl (fromString . ppTopElement . toXML) g
+    DotFile  {} -> SingleStream . streamText $ generateDotFile g'
     Metadata {} -> either
                      (const $ ErrorCase "No metadata in topological solution")
-                     (SingleStream . B . outputMetadata)
+                     (SingleStream . streamBytes . outputMetadata)
                      g
     _           -> ErrorCase "Unrecognized 'report' command"
   where
     g = getCompact g'
 
-
---generateOutput :: StandardSolution -> OutputFormat -> FileStreamContext
---generateOutput g (CrossReferences fileNames)   = SingleStream $ taxonReferenceOutput g fileNames
---generateOutput (Right g) DynamicTable               {} = SingleStream $ outputDynamicCharacterTablularData g
---generateOutput g Metadata                   {} = SingleStream $ metadataCsvOutput g
-{-
-generateOutput g ImpliedAlignmentCharacters {} =
-  case getForests g of
-    [] -> ErrorCase "The graph contains an empty forest."
-    _  ->
-      case dynamicCharacterCount g of
-        0 -> ErrorCase "There are no dynamic characters in the graph. Cannot construct an implied alignment on a graph which contains no dynamic characters."
-        _ ->
-          case iaOutput . iaSolution $ addOptimization g of
-            [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
-            zs -> MultiStream $ fromList zs
--}
-{-
-  case getForests g of
-    [] -> ErrorCase "The graph contains an empty forest."
-    _  ->
-      case dynamicCharacterCount g of
-        0 -> ErrorCase "There are no dynamic characters in the graph. Cannot construct an implied alignment on a graph which contains no dynamic characters."
-        _ ->
-          let g' = addOptimization g
-          in case iaSolution' g' of
-               [] -> ErrorCase "The result of the Implied Aligmnment returned an empty graph. (No dynamic homology characters?)"
-               ys ->
-                  case iaOutput' ys g' of
-                    [] -> ErrorCase "There were no Dynamic homology characters on which to perform an implied alignment."
-                    zs -> MultiStream $ fromList zs
--}
 
 {--
 showWithTotalEdgeCost

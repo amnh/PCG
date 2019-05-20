@@ -34,7 +34,7 @@ module Text.Megaparsec.Custom
 import           Data.CaseInsensitive
 import           Data.Char                  (isSpace)
 --import           Data.Either                       (either)
-import           Data.Functor               (($>))
+import           Data.Functor               (($>), void)
 import           Data.List.NonEmpty         (NonEmpty (..), nonEmpty)
 import           Data.Maybe                 (mapMaybe)
 import           Data.Proxy
@@ -116,7 +116,8 @@ fails = failure Nothing . S.fromList . fmap Label . mapMaybe nonEmpty
 
 -- |
 -- Consumes a whitespace character that is not a newline character.
-inlineSpaceChar :: (Enum (Token s), MonadParsec e s m) => m (Token s)
+{-# INLINE inlineSpaceChar #-}
+inlineSpaceChar :: (Token s ~ Char, MonadParsec e s m) => m (Token s)
 inlineSpaceChar = token captureToken expItem
   where
     captureToken x
@@ -125,18 +126,17 @@ inlineSpaceChar = token captureToken expItem
 
     expItem = S.singleton . Label $ 'i':|"nline space"
 
-    isInlineSpace x = and $
-        [ isSpace
-        , (/= '\n')
-        , (/= '\r')
---        , (/= '\v')
-        ] <*> [enumCoerce x]
-
 
 -- |
 -- Consumes zero or more whitespace characters that are not newline characters.
-inlineSpace :: (Enum (Token s), MonadParsec e s m) => m ()
-inlineSpace = skipMany inlineSpaceChar
+{-# INLINE inlineSpace #-}
+inlineSpace :: (Token s ~ Char, MonadParsec e s m) => m ()
+inlineSpace = void $ takeWhileP (Just "inline space") isInlineSpace
+
+
+{-# INLINE isInlineSpace #-}
+isInlineSpace :: Char -> Bool
+isInlineSpace c = isSpace c && c /= '\n' && c /= '\r'
 
 
 {-

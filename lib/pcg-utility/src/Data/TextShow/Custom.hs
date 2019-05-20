@@ -19,7 +19,7 @@ module Data.TextShow.Custom
   ) where
 
 import Data.Foldable
-import TextShow (Builder)
+import TextShow      (Builder)
 
 -- |
 -- Insert the given element in between each element the list and concatenates

@@ -13,7 +13,7 @@
 -----------------------------------------------------------------------------
 
 module Control.Evaluation
-  ( EvaluationT()
+  ( EvaluationT(..)
   , Evaluation()
   , Notification(..)
   , ErrorPhase(..)
@@ -23,7 +23,6 @@ module Control.Evaluation
   , failWithPhase
   , impure
   , notifications
-  , runEvaluation
   , state
   , showRun
   ) where
@@ -31,7 +30,7 @@ module Control.Evaluation
 import Control.Evaluation.Internal
 import Control.Evaluation.Trans
 import Control.Evaluation.Unit
-import Data.Text
+import Data.Text.Lazy
 
 
 -- |

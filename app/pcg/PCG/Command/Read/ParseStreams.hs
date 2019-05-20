@@ -1,3 +1,15 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Command.Read.ParseStreams
+-- Copyright   :  (c) 2015-2018 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -8,48 +20,49 @@ module PCG.Command.Read.ParseStreams
   , removeGaps
   ) where
 
+import           Control.Monad.Trans.Validation
 import           Data.Alphabet
-import           Data.Bifunctor                            (first)
-import           Data.Char                                 (toLower)
+import           Data.Bifunctor                    (first)
+import           Data.Char                         (toLower)
 import           Data.FileSource
 import           Data.Foldable
 import           Data.Functor
 import           Data.Key
-import           Data.List                                 (sortOn)
-import           Data.List.NonEmpty                        (NonEmpty (..))
-import qualified Data.List.NonEmpty                        as NE
-import           Data.List.Utility                         (occurances)
-import           Data.Map                                  (Map, updateLookupWithKey)
-import qualified Data.Map                                  as M
-import           Data.Maybe                                (mapMaybe)
+import           Data.List                         (sortOn)
+import           Data.List.NonEmpty                (NonEmpty (..))
+import qualified Data.List.NonEmpty                as NE
+import           Data.List.Utility                 (occurances)
+import           Data.Map                          (Map, updateLookupWithKey)
+import qualified Data.Map                          as M
+import           Data.Maybe                        (mapMaybe)
 import           Data.MonoTraversable
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata
 import           Data.Normalization.Topology
-import           Data.Ord                                  (comparing)
+import           Data.Ord                          (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.String                               (IsString (fromString))
-import           Data.TCM                                  (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
-import qualified Data.TCM                                  as TCM
+import           Data.String                       (IsString (fromString))
+import           Data.TCM                          (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
+import qualified Data.TCM                          as TCM
 import           Data.Unification
 import           Data.Validation
-import qualified Data.Vector.NonEmpty                      as VNE
+import qualified Data.Vector.NonEmpty              as VNE
 import           Data.Void
 import           File.Format.Dot
-import           File.Format.Fasta                         hiding (FastaSequenceType (..))
-import qualified File.Format.Fasta                         as Fasta (FastaSequenceType (..))
-import           File.Format.Fastc                         hiding (Identifier)
+import           File.Format.Fasta                 hiding (FastaSequenceType (..))
+import qualified File.Format.Fasta                 as Fasta (FastaSequenceType (..))
+import           File.Format.Fastc                 hiding (Identifier)
 import           File.Format.Newick
-import           File.Format.Nexus                         (nexusStreamParser)
-import           File.Format.TNT                           hiding (weight)
+import           File.Format.Nexus                 (nexusStreamParser)
+import           File.Format.TNT                   hiding (weight)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           PCG.Command.Read
 import           PCG.Command.Read.InputStreams
 import           PCG.Command.Read.ReadCommandError
-import           Prelude                                   hiding (readFile)
-import           System.FilePath                           (takeExtension, takeFileName)
+import           Prelude                           hiding (readFile)
+import           System.FilePath                   (takeExtension, takeFileName)
 import           Text.Megaparsec
 
 
@@ -57,7 +70,7 @@ import           Text.Megaparsec
 -- Used as a simplified binding of the parser action, with specific error handling.
 parse' :: Stream s => Parsec Void s a -> FileSource -> s -> Validation ReadCommandError a
 parse' parser fp = fromEither . first (unparsable fp) . runStreamParser parser fp
-    
+
 
 -- |
 -- Specify the polymorphic, custom error type as 'Void'.
@@ -68,31 +81,6 @@ runStreamParser parser fp = parse parser sourceFileName
     -- We take the "base name" and extension of the file.
     sourceFileName = takeFileName $ otoList fp
 
-
-{-
-evaluate :: ReadCommand -> SearchState
-evaluate (ReadCommand fileSpecs) = do
-    when (null fileSpecs) $ fail "No files specified in 'read()' command"
-    -- TODO: use Validation here.
-    readResult <- liftIO $ parmap rpar (fmap removeGaps . parseSpecifiedFile) fileSpecs
-    case readResult of
-      Failure rErr -> failWithPhase Reading rErr
-      Success rRes -> do
-        parseResult <- liftIO $ parmap rpar (fmap removeGaps . parseSpecifiedFile) rRes
-        case parseResult of
-          Failure pErr -> failWithPhase Parsing pErr
-          Success pRes ->
-            case decoration . unifyPartialInputs $ transformation <$> fold1 pRes of
-              Failure uErr -> failWithPhase Unifying uErr   -- Report structural errors here.
-              -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-              Success g ->  liftIO $ compact g
-                         -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
-                         -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)  
-                         -- (liftIO . putStrLn $ show g) $> g
-  where
-    transformation = id -- expandIUPAC
-    decoration     = fmap (fmap initializeDecorations2)
--}
 
 removeGaps :: Functor f => f PartialInputData -> f PartialInputData
 removeGaps = fmap removeGapsFromDynamicCharactersNotMarkedAsAligned
@@ -153,7 +141,7 @@ fastaWithValidator
   :: (FastaParseResult -> Parsec Void FileContent TaxonSequenceMap)
   -> FileSpecification
   -> ValidationT ReadCommandError IO (NonEmpty PartialInputData)
-fastaWithValidator validator spec = getSpecifiedContent spec >>= (parseSpecifiedContent parse'')
+fastaWithValidator validator spec = getSpecifiedContent spec >>= parseSpecifiedContent parse''
   where
     parse'' :: FileResult -> Validation ReadCommandError PartialInputData
     parse'' (path, content) = toFractured Nothing path <$> parseResult
@@ -316,69 +304,6 @@ toFractured tcmMat path =
         <*> const tcmMat
         <*> const path
 
-{-
-getSpecifiedContent :: FileSpecification -> ExceptT ReadCommandError IO FileSpecificationContent
-getSpecifiedContent (UnspecifiedFile    xs    ) = getSpecifiedContentSimple xs
-getSpecifiedContent (AminoAcidFile      xs    ) = getSpecifiedContentSimple xs
-getSpecifiedContent (NucleotideFile     xs    ) = getSpecifiedContentSimple xs
-getSpecifiedContent (AnnotatedFile      xs    ) = getSpecifiedContentSimple xs
-getSpecifiedContent (ChromosomeFile     xs    ) = getSpecifiedContentSimple xs
-getSpecifiedContent (GenomeFile         xs    ) = getSpecifiedContentSimple xs
-getSpecifiedContent (PrealignedFile     fs    ) = getSpecifiedContent fs
-getSpecifiedContent (WithSpecifiedTCM   fs tcm) = do
-    SpecContent fs' <- getSpecifiedContent fs
-    tcm' <- getSpecifiedTcm tcm
-    pure . SpecContent $ (DataContent <$> dataFile <*> const (Just tcm')) <$> fs'
-
-getSpecifiedContent (CustomAlphabetFile xs tcm) = do
-    xs'  <- getSpecifiedFileContents xs
-    tcm' <- getSpecifiedTcm tcm
-    pure . SpecContent $ (`DataContent` Just tcm') <$> xs'
-
-
-getSpecifiedTcm :: FileSource -> ExceptT ReadCommandError IO (FileSource, FileContent)
-getSpecifiedTcm tcmPath = do
-    tcmFiles <- getFileContents tcmPath
-    case tcmFiles of
-      x:|[] -> pure x
-      xs    -> throwE . ambiguous tcmPath $ fst <$> xs
-
-
-getSpecifiedFileContents :: Foldable1 f => f FileSource -> ExceptT ReadCommandError IO (NonEmpty FileResult)
-getSpecifiedFileContents = fmap fold1 . eitherTValidation . fmap getFileContents . toNonEmpty
-
-
-getSpecifiedContentSimple :: Foldable1 f => f FileSource -> ExceptT ReadCommandError IO FileSpecificationContent
-getSpecifiedContentSimple = fmap (SpecContent . fmap (`DataContent` Nothing)) . getSpecifiedFileContents
-
-
--- | Reads in the contents of the given FileSource, correctly interpolating glob paths
-getFileContents :: FileSource -> ExceptT ReadCommandError IO (NonEmpty (FileSource, FileContent))
-getFileContents path = do
-    -- Check if the file exists exactly as specified
-    exists <- liftIO $ doesFileExist path
-    if   exists
-    -- If it exists exactly as specified, read it in
-    then pure <$> readFileContent path
-    else do
-    -- If the file does not exists exactly as specified
-    -- try to match other files to the given path
-    -- by interpreting the path as a 'glob'
-        matches <- liftIO $ glob path
-        case matches of
-          []   -> throwE $ unfindable path
-          [x]  -> pure <$> readFileContent x
-          x:xs -> eitherTValidation $ readFileContent <$> x:|xs
-  where
-    readFileContent :: FileSource -> ExceptT ReadCommandError IO (FileSource, FileContent)
-    readFileContent foundPath = do
-        canRead <- liftIO $ readable <$> getPermissions foundPath
-        if   not canRead
-        then throwE $ unopenable foundPath
-        else do
-            content <- liftIO $ readFile foundPath
-            pure (foundPath, content)
--}
 
 setCharactersToAligned :: PartialInputData -> PartialInputData
 setCharactersToAligned pid = pid { parsedMetas = fmap setAligned <$> parsedMetas pid }

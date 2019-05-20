@@ -12,6 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 
@@ -25,10 +26,20 @@ module File.Format.Fasta.Parser
 
 import Control.Arrow              ((&&&))
 import Control.Monad              ((<=<))
+import Data.Alphabet.IUPAC
+import Data.Bimap                 (Bimap, toMap)
 import Data.Char                  (isLower, isUpper, toLower, toUpper)
+import Data.Foldable
 import Data.List                  (nub, partition)
+import Data.List.NonEmpty         (NonEmpty)
+import qualified Data.List.NonEmpty as NE
 import Data.List.Utility
+import Data.Map                   (keysSet)
 import Data.Maybe                 (fromJust)
+import Data.Set                   (Set, mapMonotonic)
+import qualified Data.Set         as S
+import Data.Vector.Unboxed        (Vector, (!))
+import qualified Data.Vector.Unboxed as V
 import File.Format.Fasta.Internal
 import Text.Megaparsec
 import Text.Megaparsec.Char
@@ -76,50 +87,71 @@ fastaTaxonName = identifierLine
 -- Consumes one or more lines from the Char stream to produce a list of Chars
 -- constrained to a valid Char alphabet representing possible character states
 fastaSequence :: (MonadParsec e s m, Token s ~ Char) => m String
-fastaSequence = symbolSequence $ oneOf alphabet
+fastaSequence = symbolSequence $ satisfy withinAlphabet
 
 
 -- |
--- Takes a symbol combinator and constructs a combinator which matches
--- many of the symbols seperated by spaces and newlines and the enitire
--- sequence ends in a new line
+-- Takes a symbol combinator and constructs a combinator which matches many of
+-- the symbols seperated by spaces and newlines and the entire sequence ends in a
+-- new line
 symbolSequence :: (MonadParsec e s m, Token s ~ Char) => m a -> m [a]
 symbolSequence sym = space *> fullSequence
   where
-    fullSequence = concat <$> some (inlineSpace *> sequenceLine)
+    fullSequence = concat <$> (inlineSpace *> some sequenceLine)
     sequenceLine = (sym <* inlineSpace) `manyTill` eol
 
 
--- |
--- Various input alphabets
-alphabet, otherValidChars, iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars :: String
-alphabet             = unionAll [iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars]
-otherValidChars      = ".-?#"
-iupacAminoAcidChars  = caseInsensitiveOptions $ "ABCDEFGHIKLMNPQRSTUVWXYZ" <> otherValidChars
-iupacNucleotideChars = caseInsensitiveOptions $ "ACGTRYSWKMBDHVN"          <> otherValidChars
-iupacRNAChars        = f <$> iupacNucleotideChars
+{-# INLINE withinAlphabet #-}
+withinAlphabet :: Char -> Bool
+withinAlphabet =
+    let !v = V.fromList $ toList alphabet
+    in  withinVec v
+
+
+{-# INLINE withinVec #-}
+withinVec :: Vector Char -> Char -> Bool
+withinVec v e = go 0 (V.length v - 1)
   where
-    f x
-      | x == 'T'  = 'U'
-      | x == 't'  = 'u'
-      | otherwise = x
+    -- Perform a binary search on the unboxed vector
+    -- to determine if a character is valid.
+    --
+    -- Equally fast, and uses less memory than a Set.
+    {-# INLINE go #-}
+    go !lo !hi =
+      if   lo > hi
+      then False
+      else let !md = (hi + lo) `div` 2
+               !z  = v ! md 
+           in  case z `compare`e of
+                 EQ -> True
+                 LT -> go    (md + 1) hi
+                 GT -> go lo (md - 1)
+
 
 -- |
--- Naively takes the union of many lists to a single list
-unionAll :: Eq a => [[a]] -> [a]
-unionAll = nub . concat
+-- Extract the keys from a 'Bimap'.
+extractFromBimap :: Bimap (NonEmpty String) a -> Set Char
+extractFromBimap = mapMonotonic (head . NE.head) . keysSet . toMap
+
+
+alphabet, otherValidChars, iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars :: Set Char
+alphabet             = fold [iupacAminoAcidChars, iupacNucleotideChars, iupacRNAChars]
+otherValidChars      = S.fromList ".-?#"
+iupacAminoAcidChars  = otherValidChars <> caseInsensitiveOptions (extractFromBimap iupacToAminoAcid)
+iupacNucleotideChars = otherValidChars <> caseInsensitiveOptions (extractFromBimap iupacToDna)
+iupacRNAChars        = otherValidChars <> caseInsensitiveOptions (extractFromBimap iupacToRna)
 
 
 -- |
 -- Adds the lowercase and uppercase Chars to string when only the upper or
 -- lower is present in the String
-caseInsensitiveOptions :: String -> String
-caseInsensitiveOptions = nub . foldr f []
+caseInsensitiveOptions :: Set Char -> Set Char
+caseInsensitiveOptions = foldMap f
   where
-    f x xs
-      | isLower x = x : toUpper x : xs
-      | isUpper x = toLower x : x : xs
-      | otherwise = x : xs
+    f x
+      | isLower x = S.singleton x <> S.singleton (toUpper x)
+      | isUpper x = S.singleton x <> S.singleton (toLower x)
+      | otherwise = S.singleton x
 
 
 -- |

@@ -10,36 +10,22 @@ Releases are available [on GitHub][2].
 * Using semantic versioning
 * Modularized sub-libraries
 * Reorganized build process
-* Updated to GHC-8.6.4
+* Streamlined build experience on MacOS
+* Updated to GHC-8.6.5
 * Updated to Cabal-2.4
-* Updated build command to add network edges to input graphs rather than wagner build a new tree first.
-* Updated read command grammar to allow for more specific TCM specification
-* Improved efficiency and consistency of character metadata representation
-* Improved efficiency of Wagner build from _O(n^3)_ to _O(n^2)_
-* Improved efficiency of Data.Vector.NonEmpty.fromNonEmpty, unfoldr, and traverse
-* Improved efficiency of three-way median and cost calculation (discrete metric, L1 norm, and small alphabet specialization)
-* Improved representation of character & metadata sequences
-* Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
-* Improved representation of character alphabet & character names
-* Improved representation of the types of postorder and preorder functions
-* Improved master postorder and preorder functions for readability
-* Improved safety of data normalization and unification
-* Enhanced file parser selection to intelligently look at the file extension
-* Enhanced DOT file parser to accept DOT labels on leaf nodes as identifiers
-* Enhanced FASTA file parser to better interpret accept amino acid input files
-* Enhanced REPORT command to move files by default if new output would overwrite an old file
-* Enhanced Evaluation monad to disallow NoOp state
+* Documentation improvements
 * Added Travis CI build script
 * Added integration test suite
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
 * Added support for compact regions of phylogenetic solutions
-* Added save and load commands by serialising compact regions
-* Added echo command for printing progress information
-* Added module for stricter fold functions
+* Added SAVE and LOAD commands by serialising compact regions
+* Added ECHO command for printing progress information
 * Added lenses for many graph and node accessors
 * Added makefile commands for outputting core, building with llvm backend, various test options and building a local hoogle database
+* Added module for stricter fold functions
 * Added module for memoized vector computation abstracting the method used in pre/postorder
-* Streamlined build experience on MacOS
+* Added Validation monad transformer (for error handling)
+* Added specific exit codes to indicate in which phase of the runtime failure(s) occured
 * Corrected defect in handling of prealigned input data
 * Corrected defect in FFI resulting in a space leak
 * Corrected defect in Data.Range value construction
@@ -48,10 +34,30 @@ Releases are available [on GitHub][2].
 * Corrected defect in headEx & lastEx of several MonoFoldable instances
 * Corrected defect in omap over missing dynamic characters
 * Corrected defect in candidateNetworkEdges to not return inconsistent edges
-* Streamlined build experience on MacOS
-* Polished command line option parsing and error reporting
-* Improved phylogeny pretty-printing
-* Documentation improvements
+* Enhanced command line option parsing and error reporting
+* Enhanced file parser selection to intelligently look at the file extension
+* Enhanced BUILD command to add network edges to input graphs rather than wagner build a new tree first
+* Enhanced DOT file parser to accept DOT labels on leaf nodes as identifiers
+* Enhanced FASTA file parser to better interpret accept amino acid input files
+* Enhanced REPORT command to move files by default if new output would overwrite an old file
+* Enhanced READ command grammar to allow for more specific TCM specification
+* Enhanced Evaluation monad to disallow NoOp state
+* Enhanced I/O stream input to consistently use "file-globs" when locating an input file source
+* Enhanced I/O stream input and output to consistently indicate failures in a well-type manner
+* Enhanced I/O stream parsing to consistently report parse errors and deserialization errors
+* Enhanced I/O stream output to consistently write data in constant memory (theoretically)
+* Improved efficiency and consistency of character metadata representation
+* Improved efficiency of Wagner build from _O(n^3)_ to _O(n^2)_
+* Improved efficiency of Data.Vector.NonEmpty.fromNonEmpty, unfoldr, and traverse
+* Improved efficiency of three-way median and cost calculation (discrete metric, L1 norm, and small alphabet specialization)
+* Improved efficiency of FASTA file parser's time & memory usage
+* Improved readability of fmaster postorder and preorder functions
+* Improved readability of phylogeny pretty-printing
+* Improved representation of character & metadata sequences
+* Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
+* Improved representation of character alphabet & character names
+* Improved representation of the types of postorder and preorder functions
+* Improved safety of data normalization and unification
 
 
 ## [v0.1.0.1][4] - 2018-03-23

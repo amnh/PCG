@@ -65,7 +65,7 @@ fastcStreamParser = NE.fromList <$> some fastcTaxonSequenceDefinition <* eof
 fastcTaxonSequenceDefinition :: (MonadParsec e s m, Token s ~ Char) => m FastcSequence
 fastcTaxonSequenceDefinition = do
     name <- identifierLine
-    seq' <- try fastcSymbolSequence <?> ("Unable to read symbol sequence for label: '" <> name <> "'")
+    seq' <- try fastcSymbolSequence -- <?> ("Unable to read symbol sequence for label: '" <> name <> "'")
     _    <- space
     pure $ FastcSequence name seq'
 

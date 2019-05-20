@@ -15,8 +15,8 @@ import           Data.Bits
 import           Data.Char                   (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty          (NonEmpty (..))
-import           Data.Text                   (Text)
-import qualified Data.Text                   as T
+import           Data.Text.Lazy              (Text)
+import qualified Data.Text.Lazy              as T
 import qualified PCG.Command.Build.Evaluate  as Build
 import qualified PCG.Command.Echo.Evaluate   as Echo
 import qualified PCG.Command.Load.Evaluate   as Load
@@ -25,8 +25,6 @@ import qualified PCG.Command.Report.Evaluate as Report
 import qualified PCG.Command.Save.Evaluate   as Save
 import           PCG.Syntax
 import           System.Exit
-
-import Debug.Trace
 
 
 optimizeComputation :: Computation -> Computation
@@ -65,7 +63,13 @@ evaluate (Computation (x:|xs)) = foldl' f z xs
 
 
 renderSearchState :: Evaluation a -> (ExitCode, Text)
-renderSearchState eval = (T.unlines renderedNotifications <>) <$> evaluation err val eval
+renderSearchState = fmap (<>"\n") . either id val . renderError
+  where
+    val _ = (ExitSuccess, "[✔] Computation complete!")
+
+
+renderError :: Evaluation a -> Either (ExitCode, Text) a
+renderError eval = evaluation (\p -> Left . err p) Right eval
   where
     renderedNotifications = f <$> notifications eval
       where
@@ -73,9 +77,8 @@ renderSearchState eval = (T.unlines renderedNotifications <>) <$> evaluation err
         f (Information s) = "[-] " <> s
         f (Warning     s) = "[!] " <> s
 
-    err errPhase errMsg = (errorPhaseToCode errPhase, "[✘] Error: "<> trimR errMsg)
-
-    val _ = (ExitSuccess, "[✔] Computation complete!")
+    err errPhase errMsg =
+      (errorPhaseToCode errPhase, T.unlines renderedNotifications <> "[✘] Error: "<> trimR errMsg)
 
     trimR = T.dropWhileEnd isSpace
 
@@ -103,7 +106,7 @@ renderSearchState eval = (T.unlines renderedNotifications <>) <$> evaluation err
 -- search, then the first through fourth bits (indices 2, 3, 4 & 5) in the range
 -- will be set.
 errorPhaseToCode :: ErrorPhase -> ExitCode
-errorPhaseToCode = traceShowId . ExitFailure .
+errorPhaseToCode = ExitFailure .
     \case
       Inputing  -> bit 2
       Parsing   -> bit 3

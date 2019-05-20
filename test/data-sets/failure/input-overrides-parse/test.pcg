@@ -1,0 +1,2 @@
+read("bad-input.tree")
+read("bad-parse.fasta")
