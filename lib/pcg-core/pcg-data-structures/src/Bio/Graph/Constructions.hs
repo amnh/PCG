@@ -20,6 +20,7 @@ module Bio.Graph.Constructions
   , CharacterNode
   , DecoratedCharacterResult
   , FinalDecorationDAG
+  , FinalCharacterNode
   , GlobalSettings
   , GraphState
   , PhylogeneticFreeDAG(..)
@@ -85,6 +86,21 @@ type CharacterDAG =
 -- |
 -- A Phylogenetic Node within a 'CharacterDAG'.
 type CharacterNode = PhylogeneticNode UnifiedCharacterSequence NodeLabel
+
+
+-- |
+-- A Phylogenetic Node within a 'FinalDecorationDAG'.
+type FinalCharacterNode =
+  PhylogeneticNode
+    (CharacterSequence
+      (ContinuousOptimizationDecoration ContinuousCharacter)
+      (FitchOptimizationDecoration   StaticCharacter)
+      (AdditiveOptimizationDecoration StaticCharacter)
+      (SankoffOptimizationDecoration StaticCharacter)
+      (SankoffOptimizationDecoration StaticCharacter)
+      (DynamicDecorationDirectOptimization DynamicCharacter)
+    )
+    NodeLabel
 
 
 -- |

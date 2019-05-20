@@ -7,6 +7,7 @@ module PCG.Command.Build.Evaluate
   ( evaluate
   ) where
 
+import           Analysis.Clustering
 import           Analysis.Parsimony.Additive
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch
@@ -21,7 +22,7 @@ import           Bio.Character.Decoration.Metric
 import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG                     (PostorderContextualData, setDefaultMetadata)
+import           Bio.Graph.PhylogeneticDAG                     (PostorderContextualData, setDefaultMetadata, HasColumnMetadata(..))
 import qualified Bio.Graph.ReferenceDAG                        as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
@@ -52,19 +53,6 @@ import qualified Data.Vector.NonEmpty as NE
 
 
 
-type DatNode =
-  PhylogeneticNode
-    (CharacterSequence
-      (ContinuousOptimizationDecoration ContinuousCharacter)
-      (FitchOptimizationDecoration   StaticCharacter)
-      (AdditiveOptimizationDecoration StaticCharacter)
-      (SankoffOptimizationDecoration StaticCharacter)
-      (SankoffOptimizationDecoration StaticCharacter)
-      (DynamicDecorationDirectOptimization DynamicCharacter)
-    )
-    NodeLabel
-
-
 evaluate
   :: BuildCommand
   -> GraphState
@@ -91,7 +79,9 @@ wagnerBuildLogic
   -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
 wagnerBuildLogic v count =
     let
+      solutionDAG = extractSolution v
       leaves = fromLeafSet $ v ^. leafSet
+      meta   = solutionDAG ^. _columnMetadata
     in
       if null leaves
         then fail "There are no nodes with which to build a tree."
@@ -101,12 +91,15 @@ wagnerBuildLogic v count =
           else
             let
               (PDAG2 _ m) = NE.head . toNonEmpty . NE.head $ phylogeneticForests v
+              leavesNE :: NE.Vector FinalCharacterNode
               leavesNE = unsafeFromVector leaves
+              
             in
               do
-                    trajectories <- case count of
-                                       1 -> pure $ leavesNE :| []
-                                       n -> liftIO . convert  $ replicateM n (shuffleM leaves)
+                    trajectories :: NonEmpty (NE.Vector FinalCharacterNode)
+                        <- case count of
+                             1 -> pure $ leavesNE :| []
+                             n -> liftIO . convert  $ replicateM n (shuffleM leaves)
                     pure $ naiveWagnerParallelBuild m trajectories
   where
     convert :: IO [Vector a] -> IO (NonEmpty (NE.Vector a))
@@ -137,7 +130,7 @@ naiveWagnerParallelBuild
      , Traversable t
      )
   => MetadataSequence m
-  -> t (f DatNode)
+  -> t (f FinalCharacterNode)
   -> t FinalDecorationDAG
 naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
 
@@ -145,7 +138,7 @@ naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
 naiveWagnerBuild
   :: Foldable1 f
   => MetadataSequence m
-  -> f DatNode
+  -> f FinalCharacterNode
   -> FinalDecorationDAG
 naiveWagnerBuild metaSeq ns =
    case toNonEmpty ns of
@@ -172,10 +165,24 @@ naiveWagnerBuild metaSeq ns =
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
 
-clusterBuild :: Vector (FinalDecorationDAG) -> FinalDecorationDAG
-clusterBuild = undefined
+clusterBuild
+  :: MetadataSequence m
+  -> NE.Vector CharacterNode
+  -> ClusterOptions
+  -> Int
+  -> FinalDecorationDAG
+clusterBuild meta leafSet option numberOfClusters = undefined
+  where
+--    leafSetV :: NE.Vector CharacterNode
+--    clusters :: NE.Vector (NE.Vector CharacterNode)
+--    -- TO DO: Add cluster options here
+--    clusters = clusterIntoGroups meta leafSet UPGMA numberOfClusters
+--
+--    parallelWagner :: NE.Vector FinalDecorationDAG
+--    parallelWagner = parmap rpar (naiveWagnerBuild meta leafSet) clusters
+    
 
-iterativeBuild :: FinalDecorationDAG -> DatNode -> FinalDecorationDAG
+iterativeBuild :: FinalDecorationDAG -> FinalCharacterNode -> FinalDecorationDAG
 iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
   where
     (PDAG2 dag _) = wipeScoring currentTree

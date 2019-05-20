@@ -20,6 +20,7 @@ module Bio.Graph
   , CharacterNode
   , DecoratedCharacterResult
   , FinalDecorationDAG
+  , FinalCharacterNode
   , GlobalSettings
   , GraphState
   , PhylogeneticFreeDAG(..)

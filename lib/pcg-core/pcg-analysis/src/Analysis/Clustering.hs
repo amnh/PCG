@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Clustering.Hierarchical
@@ -10,9 +11,19 @@
 --
 -----------------------------------------------------------------------------
 
-module Analysis.Clustering where
+module Analysis.Clustering
+  ( ClusterOptions
+  , pattern UPGMA
+  , clusterIntoGroups
+  ) where
 
---import Analysis.Clustering.Hierarchical as H
+import Analysis.Clustering.Hierarchical as H
+import           AI.Clustering.Hierarchical
+
+data ClusterOptions = ClusterOpt Linkage
+
+pattern UPGMA :: ClusterOptions
+pattern UPGMA = ClusterOpt Average
 
 cluster :: Int
 cluster = undefined

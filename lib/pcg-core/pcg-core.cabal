@@ -121,6 +121,7 @@ library
     pcg-tcm,
 
   reexported-modules:
+    Analysis.Clustering,
     Analysis.Parsimony.Additive,
     Analysis.Parsimony.Dynamic.DirectOptimization,
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise,

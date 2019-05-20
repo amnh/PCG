@@ -31,26 +31,15 @@ import           Data.Monoid                (Sum (..))
 import           Data.Vector
 import           Data.Vector.Mutable        (STVector)
 import qualified Data.Vector.Mutable        as MV
+import qualified Data.Vector.NonEmpty as NE
 
 
 clusterLeaves
-  :: CharacterDAG
-  -> Linkage
-  -> LeafSet CharacterNode
-clusterLeaves dag opt =
-  let
-    leaves = (dag ^. leafSet)
-    meta   = (dag ^. _columnMetadata)
-  in
-    clusterShuffle meta leaves opt
-
-clusterShuffle
   :: MetadataSequence m
   -> LeafSet CharacterNode
   -> Linkage
-  -> LeafSet CharacterNode
-clusterShuffle meta leaves opt = clusteredLeafSet
-
+  -> Dendrogram CharacterNode
+clusterLeaves meta leaves opt = dendro
   where
     leafSetVector :: Vector CharacterNode
     leafSetVector = fromLeafSet leaves
@@ -63,13 +52,29 @@ clusterShuffle meta leaves opt = clusteredLeafSet
       in
         coerce $ characterSequenceDistance meta charSeq1 charSeq2
 
-
     dendro :: Dendrogram CharacterNode
     dendro = hclust opt leafSetVector distance
 
-    clusteredLeafSet :: LeafSet CharacterNode
-    clusteredLeafSet = coerce $ dendroToVector dendro
 
+clusterShuffle
+  :: MetadataSequence m
+  -> LeafSet CharacterNode
+  -> Linkage
+  -> LeafSet CharacterNode
+clusterShuffle meta leaves = coerce . dendroToVector . clusterLeaves meta leaves
+  where
+--    clusteredLeafSet :: LeafSet CharacterNode
+--    clusteredLeafSet = coerce $ dendroToVector dendro
+
+clusterIntoGroups
+  :: MetadataSequence m
+  -> LeafSet CharacterNode
+  -> Linkage
+  -> Int
+  -> NE.Vector (NE.Vector CharacterNode)
+clusterIntoGroups meta leaves link = dendroToVectorClusters dendro
+  where
+    dendro = clusterLeaves meta leaves link
 
 
 dendroToList :: Dendrogram a -> DList a
@@ -83,21 +88,43 @@ dendroToVector
   -> Vector a
 dendroToVector dendro = create $ dendroToMVector dendro
 
+
+dendroToNonEmptyVector
+  :: Dendrogram a
+  -> NE.Vector a
+dendroToNonEmptyVector =
+    NE.unsafeFromVector -- This is safe to use as the clustering always uses non-empty input.
+  . dendroToVector
+
+
 dendroToVectorClusters
   :: Dendrogram a
   -> Int
-  -> Vector (Vector a)
+  -> NE.Vector (NE.Vector a)
+dendroToVectorClusters d 0 = error "Cannot return zero clusers"
 dendroToVectorClusters d n = case d of
     Leaf a -> pure $ pure a
-    b@(Branch tot _ left right) ->
+    b@(Branch total _ left right) ->
       case n of
-        1 -> pure $ dendroToVector b
+        1 -> pure $ dendroToNonEmptyVector b
         k ->
           let
-            leftAmount = (floor (fromIntegral tot / fromIntegral (size left))) * k
+            lSize, tSize, k' :: Double
+            lSize = fromIntegral (size left)
+            tSize = fromIntegral total
+            k'    = fromIntegral k
+
+            leftAmount :: Int
+            leftAmount = floor . (* k') $ lSize / tSize
+            rightAmount :: Int
             rightAmount = k - leftAmount
+
+            leftClusters  =  dendroToVectorClusters left leftAmount
+            rightClusters = dendroToVectorClusters right rightAmount
           in
-            (dendroToVectorClusters left leftAmount) <> (dendroToVectorClusters right rightAmount)
+            if rightAmount == 0
+            then leftClusters
+            else leftClusters <> rightClusters
 
 dendroToMVector
   :: forall a s
