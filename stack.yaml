@@ -5,7 +5,7 @@ compiler: ghc-8.6.5
 compiler-check: match-exact
 
 extra-deps:
-  - bv-little-1.0.0
+  - bv-little-1.0.1
   - compact-0.1.0.1
 #  - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
   - graphviz-2999.20.0.3
