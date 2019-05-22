@@ -14,6 +14,7 @@ extra-deps:
   - text-show-3.7.5
   - text-show-instances-3.7
   - mono-traversable-keys-0.1.0
+  - validation-1.1
 
 #ghc-options:
 #  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively -fexpose-all-unfoldings

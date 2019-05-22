@@ -107,7 +107,7 @@ library
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
     text-show                >= 3.0       && < 4.0,
-    validation               >= 1         && < 2.0,
+    validation               >= 1.1       && < 2.0,
 
   exposed-modules:
     Data.FileSource

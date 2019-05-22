@@ -180,7 +180,9 @@ validateUserInput userInput =
       <*> (pure . inputRootLength ) userInput
       <*> (pure . inputAlignedData) userInput
   where
-    validProbability x = 0 <= x && x < 1
+    validProbability x
+      | 0 <= x && x < 1 = Just x
+      | otherwise       = Nothing
 
 
 generateRandomSequence

@@ -95,7 +95,7 @@ library
     src
 
   build-depends:
-    validation               >= 1         && < 2.0,
+    validation               >= 1.1       && < 2.0,
 
   exposed-modules:
     Control.Monad.Trans.Validation
