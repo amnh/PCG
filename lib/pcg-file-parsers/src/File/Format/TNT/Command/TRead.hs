@@ -22,7 +22,7 @@ module File.Format.TNT.Command.TRead
   , treadTree
   ) where
 
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive     (FoldCase)
 import           Data.Char                (isSpace)
 import           Data.Functor             (($>))
 import           Data.List                (isSuffixOf)

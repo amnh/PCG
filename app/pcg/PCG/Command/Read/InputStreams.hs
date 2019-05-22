@@ -62,8 +62,8 @@ getSpecifiedContent (ChromosomeFile     xs    ) = getSpecifiedContentSimple xs
 getSpecifiedContent (GenomeFile         xs    ) = getSpecifiedContentSimple xs
 getSpecifiedContent (PrealignedFile     fs    ) = getSpecifiedContent fs
 getSpecifiedContent (WithSpecifiedTCM   fs tcm) = do
-    SpecContent fs'  <- getSpecifiedContent fs
-    tcm'             <- getSpecifiedTcm tcm
+    SpecContent fs' <- getSpecifiedContent fs
+    tcm'            <- getSpecifiedTcm tcm
     pure . SpecContent $ (DataContent <$> dataFile <*> const (Just tcm')) <$> fs'
 getSpecifiedContent (CustomAlphabetFile xs tcm) = do
     xs'  <- getSpecifiedFileContents xs

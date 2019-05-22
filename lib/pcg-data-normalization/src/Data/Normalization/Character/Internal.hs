@@ -25,14 +25,14 @@ module Data.Normalization.Character.Internal where
 import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Foldable
-import           Data.List.NonEmpty   (NonEmpty)
-import qualified Data.List.NonEmpty   as NE
-import           Data.Map             (Map)
-import qualified Data.Map             as M
-import           Data.String          (IsString (fromString))
-import           Data.Text.Short      (ShortText)
-import           Data.Vector.NonEmpty (Vector)
-import           File.Format.Fastc    (CharacterSequence)
+import           Data.List.NonEmpty      (NonEmpty)
+import qualified Data.List.NonEmpty      as NE
+import           Data.Map                (Map)
+import qualified Data.Map                as M
+import           Data.Semigroup.Foldable
+import           Data.Text.Short         (ShortText)
+import           Data.Vector.NonEmpty    (Vector)
+import           File.Format.Fastc       (CharacterSequence)
 import           GHC.Generics
 
 
@@ -72,7 +72,7 @@ parsedDynamicCharacterFromShortText = NormalizedDynamicCharacter . pure . pure .
 -- Take a sequence of characters and create a singleton collection of a dynamic character.
 convertCharacterSequenceLikeFASTA :: CharacterSequence -> NormalizedCharacterCollection
 convertCharacterSequenceLikeFASTA =
-    pure . NormalizedDynamicCharacter . Just . NE.fromList . toList . fmap (fmap fromString)
+    pure . NormalizedDynamicCharacter . Just . NE.fromList . toList . fmap toNonEmpty
 
 
 -- |

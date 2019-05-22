@@ -162,12 +162,12 @@ showStream :: EncodableStream s => Alphabet String -> s -> String
 showStream alphabet xs
   | olength xs == 0 = "<Empty Stream>"
   | otherwise       =
-      let shownElems = (showStreamElement alphabet) <$> otoList xs
+      let shownElems = showStreamElement alphabet <$> otoList xs
       in  if   any (\e -> length e > 1) shownElems
           then unwords shownElems
            -- All elements were rendered as a single character.
           else fold shownElems
-       
+
 
 
 -- |

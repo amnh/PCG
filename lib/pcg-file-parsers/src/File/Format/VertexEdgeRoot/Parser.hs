@@ -32,7 +32,7 @@ module File.Format.VertexEdgeRoot.Parser
   , edgeDefinition
   ) where
 
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive   (FoldCase)
 import           Data.Char              (isSpace)
 import           Data.Either            (partitionEithers)
 import           Data.Foldable

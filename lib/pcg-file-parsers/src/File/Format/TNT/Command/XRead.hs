@@ -27,7 +27,7 @@ module File.Format.TNT.Command.XRead
 
 import           Data.Bifunctor           (second)
 import           Data.Bits
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive     (FoldCase)
 import           Data.Char                (isSpace)
 import           Data.DList               (DList, append)
 import qualified Data.DList               as DL (concat, fromList)
