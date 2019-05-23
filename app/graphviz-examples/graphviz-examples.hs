@@ -10,9 +10,6 @@ import qualified Data.Text.Lazy                    as TL
 import qualified Data.Text.Lazy.IO                 as TL
 import           System.Directory                  (createDirectoryIfMissing, setCurrentDirectory)
 import           System.FilePath.Posix             ((<.>))
-import Algebra.Graph
-import Algebra.Graph.Export.Dot
-import Data.String
 
 
 main :: IO ()
@@ -20,8 +17,8 @@ main = do
     putStrLn "Graph"
     createDirectoryIfMissing False "graphviz-examples"
     setCurrentDirectory "graphviz-examples"
---    traverse_ makeDotFile networks
-    traverse_ writeToDotFile graphFiles
+    traverse_ makeDotFile networks
+
 
 
 makeDotFile :: (Network, FilePath) -> IO ()
@@ -66,6 +63,26 @@ newN n = (n, NewNodeLabel)
 
 type Network = ([Node], [Edge])
 
+--  Base Network:
+--
+--                         root
+--                       /     \
+--                      a       b
+--                    /  \     /  \
+--                   c    \   /    e
+--                          d     /  \
+--                          |    g    \
+--                          f   / \    \
+--                         / \  k  l    \
+--                        i   j          h
+--                                      / \
+--                                     m   n
+--                                    / \ / \
+--                                   p   o   q
+--                                       |
+--                                       r
+--
+--                         
 
 baseNetwork :: Network
 baseNetwork =
@@ -90,7 +107,8 @@ baseNetwork =
               ]
 
 
-
+-- Edge added: (b,e) -> (g, k)
+-- Problem: The edge (b,e) is ancestral to (g,k) and so this is not allowed
 e2AncestralEdgeNetwork :: Network
 e2AncestralEdgeNetwork =
     (nodes, edges)
@@ -124,6 +142,10 @@ e2AncestralEdgeNetwork =
                              ]
             ]
 
+
+-- Edge added: (h,m) -> (e, g)
+-- Problem: The edge (h,m) has e as an ancestral network node and this would
+-- go against the implied ordering
 e1HasE2SrcAncestralNodeNetwork :: Network
 e1HasE2SrcAncestralNodeNetwork =
     (nodes, edges)
@@ -157,6 +179,8 @@ e1HasE2SrcAncestralNodeNetwork =
                              ]
             ]
 
+-- Edge added: (b,e) -> (g, k)
+-- Problem: The edge (b,e) is ancestral to (g,k) and so this is not allowed
 hasE2NetworkNodeSrc :: Network
 hasE2NetworkNodeSrc =
     (nodes, edges)
@@ -190,6 +214,9 @@ hasE2NetworkNodeSrc =
                              ]
             ]
 
+-- Edge added: (h,m) -> (n, o)
+-- Problem: We cannot have a new edge into an existing network edge
+-- as this leads to a 
 hasE2NetworkNodeTgt :: Network
 hasE2NetworkNodeTgt =
     (nodes, edges)
@@ -225,7 +252,8 @@ hasE2NetworkNodeTgt =
 
 
 
-
+-- Edge added: (b,e) -> (g, k)
+-- Problem: The edge (b,e) is ancestral to (g,k) and so this is not allowed
 e1DescendantE2AncestralNetwork :: Network
 e1DescendantE2AncestralNetwork =
     (nodes, edges)
@@ -259,7 +287,8 @@ e1DescendantE2AncestralNetwork =
                              ]
             ]
 
-
+-- Edge added: (b,e) -> (g, k)
+-- Problem: The edge (b,e) is ancestral to (g,k) and so this is not allowed
 e2DescendantE1AncestralNetwork :: Network
 e2DescendantE1AncestralNetwork =
     (nodes, edges)
@@ -293,7 +322,8 @@ e2DescendantE1AncestralNetwork =
                              ]
             ]
 
-
+-- Edge added: (b,e) -> (g, k)
+-- Problem: The edge (b,e) is ancestral to (g,k) and so this is not allowed
 src2NetworkPairAncestralToE1Network :: Network
 src2NetworkPairAncestralToE1Network =
     (nodes, edges)
@@ -328,7 +358,8 @@ src2NetworkPairAncestralToE1Network =
                              ]
             ]
 
-
+-- Edge added: (b,e) -> (g, k)
+-- Problem: The edge (b,e) is ancestral to (g,k) and so this is not allowed
 e1NetworkEdgeComplementNodeAncestralToE2 :: Network
 e1NetworkEdgeComplementNodeAncestralToE2 =
     (templateNodes, edges)
@@ -356,7 +387,7 @@ e1NetworkEdgeComplementNodeAncestralToE2 =
 
 
 networks :: [(Network, FilePath)]
-networks = [ (baseNetwork                   , "baseNetwork"                   )
+networks = [ (baseNetwork                   , "base-network"                   )
            , (hasE2NetworkNodeSrc           , "hasE2NetworkNodeSrc"           )
            , (hasE2NetworkNodeTgt           , "hasE2NetworkNodeTgt"           )
            , (e2AncestralEdgeNetwork        , "e2AncestralEdgeNetwork"        )
@@ -455,17 +486,6 @@ templateNodes = fold
 
 
 
-instance  {-# OVERLAPPING #-} Num (Graph String) where
-    fromInteger = Vertex . show
-    (+)         = Overlay
-    (*)         = Connect
-    signum      = const Empty
-    abs         = id
-    negate      = id
-
-v :: a -> Graph a
-v = Vertex
-
 --renderExampleNetwork :: String
 --renderExampleNetwork = unlines
 --                         [ "                        root"
@@ -487,7 +507,7 @@ v = Vertex
 --
 --
 --                         ]
-
+{--
 baseGraph :: Graph String
 baseGraph = v "root" * (acdfij + bdfijegklhmnop)
   where
@@ -500,7 +520,6 @@ baseGraph = v "root" * (acdfij + bdfijegklhmnop)
     gkl = v "g" * (v "k" + v "l")
                                                           
                                                           
-
 exportToDot :: Graph String -> String
 exportToDot = export (defaultStyle id)
 
@@ -522,3 +541,10 @@ greenEdge node1 node2 =
 blueEdge :: String -> String -> Style String String
 blueEdge node1 node2 =
   (defaultStyle id){edgeAttributes = \x y -> ["color" := "blue" | x == node1, y == node2]}
+
+
+branch :: (String, Graph String) -> (String, Graph String) -> String -> Graph String
+branch (root1, graph1) (root2, graph2) vert = (v vert * v root1) + (v vert * v root2) + graph1 + graph2
+
+
+--}
