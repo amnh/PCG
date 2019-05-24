@@ -206,7 +206,7 @@ hasE2NetworkNodeSrc =
                   , ("m (tgt2)", "o"), ("n", "o"), ("m (tgt2)", "p"), ("n", "q")
                   , ("o", "r")
                   ]
-            , candidateE <$> [("newSrc", "newTgt")]
+            , candidateE <$> [ ("newSrc", "newTgt")]
             , newE       <$> [ ("g (src1)"  , "newSrc")
                              , ("newSrc", "l (tgt1)"  )
                              , ("h (src2)"  , "newTgt")
@@ -216,7 +216,7 @@ hasE2NetworkNodeSrc =
 
 -- Edge added: (h,m) -> (n, o)
 -- Problem: We cannot have a new edge into an existing network edge
--- as this leads to a 
+-- as this leads to having a display tree with a new leaf
 hasE2NetworkNodeTgt :: Network
 hasE2NetworkNodeTgt =
     (nodes, edges)
@@ -548,3 +548,71 @@ branch (root1, graph1) (root2, graph2) vert = (v vert * v root1) + (v vert * v r
 
 
 --}
+
+
+
+-- Inconsistent display tree
+--
+--          [...]
+--            |
+--            o
+--           / \
+--          /   \
+--         o     o
+--        / \    /\
+--       /   \  / [..]
+--      o     o
+--     / \   / 
+--  [..]  \ /   
+--         o
+--         |
+--        [..]
+
+
+--          [...]
+--            |
+--            o
+--           / \
+--          /   \
+--         o     o
+--        / \     \
+--       /   \    [..]
+--      o     o
+--     / \     
+--  [..]  \ 
+--         o
+--         |
+--        [..]
+
+data DisplayEdge =
+    KeptEdge
+  | DeletedEdge
+
+
+data NodeLabel =
+    RealNode
+  | IgnoredSubTree
+
+networkGraphParameters
+ :: G.GraphvizParams
+       String          -- vertex type
+       NodeLabel       -- vertex label type
+       DisplayEdge     -- edge label type
+       ()              -- cluster type
+       NodeLabel       -- cluster label type
+networkGraphParameters = G.defaultParams {
+    G.fmtNode  = \case
+        (_, ExistingNodeLabel  ) -> colorAttribute  black
+        (_, ContextualNodeLabel) -> colorAttribute  red
+        (_, NewNodeLabel       ) -> colorAttribute  blue,
+
+    G.fmtEdge = \case
+        (_, _, ExistingEdgeLabel)  -> colorAttribute black
+        (_, _, NewEdgeLabel     )  -> colorAttribute red
+        (_, _, CandNetEdgeLabel )  -> colorAttribute blue
+        }
+  where
+    colorAttribute color = [ G.Color $ G.toColorList [ color ] ]
+    black = G.RGB 0 0 0
+    red   = G.RGB 30 144 255
+    blue  = G.RGB 204 2 2
