@@ -24,26 +24,26 @@ module File.Format.Fasta.Parser
   , fastaSequence
   ) where
 
-import Control.Arrow              ((&&&))
-import Control.Monad              ((<=<))
-import Data.Alphabet.IUPAC
-import Data.Bimap                 (Bimap, toMap)
-import Data.Char                  (isLower, isUpper, toLower, toUpper)
-import Data.Foldable
-import Data.List                  (nub, partition)
-import Data.List.NonEmpty         (NonEmpty)
-import qualified Data.List.NonEmpty as NE
-import Data.List.Utility
-import Data.Map                   (keysSet)
-import Data.Maybe                 (fromJust)
-import Data.Set                   (Set, mapMonotonic)
-import qualified Data.Set         as S
-import Data.Vector.Unboxed        (Vector, (!))
-import qualified Data.Vector.Unboxed as V
-import File.Format.Fasta.Internal
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Custom
+import           Control.Arrow              ((&&&))
+import           Control.Monad              ((<=<))
+import           Data.Alphabet.IUPAC
+import           Data.Bimap                 (Bimap, toMap)
+import           Data.Char                  (isLower, isUpper, toLower, toUpper)
+import           Data.Foldable
+import           Data.List                  (nub, partition)
+import           Data.List.NonEmpty         (NonEmpty)
+import qualified Data.List.NonEmpty         as NE
+import           Data.List.Utility
+import           Data.Map                   (keysSet)
+import           Data.Maybe                 (fromJust)
+import           Data.Set                   (Set, mapMonotonic)
+import qualified Data.Set                   as S
+import           Data.Vector.Unboxed        (Vector, (!))
+import qualified Data.Vector.Unboxed        as V
+import           File.Format.Fasta.Internal
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+import           Text.Megaparsec.Custom
 
 
 -- |
@@ -121,7 +121,7 @@ withinVec v e = go 0 (V.length v - 1)
       if   lo > hi
       then False
       else let !md = (hi + lo) `div` 2
-               !z  = v ! md 
+               !z  = v ! md
            in  case z `compare`e of
                  EQ -> True
                  LT -> go    (md + 1) hi

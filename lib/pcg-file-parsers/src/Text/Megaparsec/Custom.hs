@@ -34,7 +34,7 @@ module Text.Megaparsec.Custom
 import           Data.CaseInsensitive
 import           Data.Char                  (isSpace)
 --import           Data.Either                       (either)
-import           Data.Functor               (($>), void)
+import           Data.Functor               (void, ($>))
 import           Data.List.NonEmpty         (NonEmpty (..), nonEmpty)
 import           Data.Maybe                 (mapMaybe)
 import           Data.Proxy
