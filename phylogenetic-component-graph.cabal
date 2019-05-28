@@ -319,6 +319,10 @@ executable graphviz-examples
   hs-source-dirs:
     app/graphviz-examples
 
+  other-modules:
+    DisplayTree
+    NetworkEdges
+
   build-depends:
     base                     >= 4.11      && < 5.0,
     directory                >= 1.3.3     && < 1.4,
