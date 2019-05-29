@@ -8,21 +8,24 @@
 
 module Main where
 
+import           Control.DeepSeq
 import           Control.Monad
-import           Control.Monad.State.Strict
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty           (NonEmpty (..))
 import qualified Data.Map                     as M
 import           Data.MemoTrie                (memo)
 import           Data.Semigroup.Foldable
+import           Data.Sequence                (Seq)
+import qualified Data.Sequence                as Seq
 import           Data.Set                     (Set)
 import qualified Data.Set                     as S
 import           Data.Validation
 import qualified Data.Vector                  as V
-import           Numeric.Natural
+import           GHC.Natural
 import           Options.Applicative
 import           System.Random
+import           System.Random.MWC
 import           System.Random.Shuffle
 import           Text.PrettyPrint.ANSI.Leijen (string)
 
@@ -61,66 +64,15 @@ data  BinaryTree b a
     deriving (Eq, Functor, Foldable, Ord, Show, Traversable)
 
 
-data Tree where
-   Leaf :: Tree
-   Node :: Tree -> Tree -> Tree
-   deriving (Show, Eq, Ord)
-
-
-data  Enumeration a = Enumeration
-    { fromNat  :: Natural -> a
-    , enumSize :: Natural
-    } deriving (Functor)
-
-
-instance Applicative Enumeration where
-
-    pure    = singleEnum
-
-    f <*> x = uncurry ($) <$> (f >< x)
-
-
-instance Monad Enumeration where
-
-    return  = pure
-
-    e >>= f = fold1 $ f <$> enumerate e
-
-
-instance Semigroup (Enumeration a) where
-
-    e1 <> e2 = Enumeration
-      (\n -> if n < enumSize e1 then fromNat e1 n else fromNat e2 (n - enumSize e1))
-      (enumSize e1 + enumSize e2)
-
-
-instance Random Natural where
-
-    random g
-      | s < 0     = (fromIntegral $ abs i, g')
-      | s > 0     = (fromIntegral i      , g')
-      | otherwise = (0                   , g')
-      where
-        (i,g') = random g
-        s      = signum (i :: Integer)
-
-    randomR (x,y) g
-      | s < 0     = (fromIntegral $ abs i, g')
-      | s > 0     = (fromIntegral i      , g')
-      | otherwise = (0                   , g')
-      where
-        (i,g') = randomR (toInteger x, toInteger y) g
-        s      = signum (i :: Integer)
-
-
 main :: IO ()
 main = do
     userInput <- parseUserInput
     case toEither $ validateUserInput userInput of
       Left errors -> putStrLn . unlines $ toList errors
       Right spec  -> do
-        labledTree    <- generateRandomTree $ specifiedLeaves spec
-        decoratedTree <- generateRandomSequence
+        png <- createSystemRandom
+        labledTree    <- generateRandomTree png $ specifiedLeaves spec
+        decoratedTree <- generateRandomSequence png
                            <$> specifiedAlphabet
                            <*> specifiedSubstitution
                            <*> getInDelContext
@@ -186,13 +138,14 @@ validateUserInput userInput =
 
 
 generateRandomSequence
-  :: Set String             -- ^ Alphabet
+  :: GenIO
+  -> Set String             -- ^ Alphabet
   -> Double                 -- ^ Substitution probablity (0,1)
   -> Maybe (Double, Double) -- ^ (Insertion, Deletion)    probablity (0,1)
   -> Word                   -- ^ Root sequence length
   -> BinaryTree a b
   -> IO (BinaryTree [String] b)
-generateRandomSequence alphabet sub indelMay rootLen tree = do
+generateRandomSequence png alphabet sub indelMay rootLen tree = do
   rootSequence <- replicateM (fromEnum rootLen) randomSymbol
   case tree of
     Terminal _ x -> pure $ Terminal rootSequence x
@@ -202,7 +155,7 @@ generateRandomSequence alphabet sub indelMay rootLen tree = do
   where
     alphaSize    = length alphabet
     alphaVec     = V.fromListN alphaSize $ toList alphabet
-    randomSymbol = (alphaVec V.!) <$> randomRIO (0, alphaSize - 1)
+    randomSymbol = (alphaVec V.!) <$> uniformR (0, alphaSize - 1) png
 
     fromParent :: [String] -> BinaryTree a b -> IO (BinaryTree [String] b)
     fromParent pStr bTree = do
@@ -222,7 +175,7 @@ generateRandomSequence alphabet sub indelMay rootLen tree = do
         mutateSymbol :: String -> IO [String]
         mutateSymbol x = do
           -- Do we substitute the symbol
-          subV <- randomRIO (0,1) :: IO Double
+          subV <- uniform png :: IO Double
           x'   <- if   subV <= sub
                   then randomSymbol
                   else pure x
@@ -231,7 +184,7 @@ generateRandomSequence alphabet sub indelMay rootLen tree = do
             Nothing        -> pure [x']
             Just (ins,del) -> do
               -- Do we delete the symbol
-              delV <- randomRIO (0,1) :: IO Double
+              delV <- uniform png :: IO Double
               let delStr = if   delV <= del
                            then []
                            else [x']
@@ -240,72 +193,25 @@ generateRandomSequence alphabet sub indelMay rootLen tree = do
 
         insertStr :: Double -> IO [String]
         insertStr ins = do
-            insV <- randomRIO (0,1) :: IO Double
+            insV <- uniform png :: IO Double
             if insV <= ins
             then (:) <$> randomSymbol <*> insertStr ins
             else pure []
 
 
-generateRandomTree :: Set String -> IO (BinaryTree () String)
-generateRandomTree leafLabels = do
-    xs        <- shuffleM $ toList leafLabels
-    treeIndex <- randomRIO (0, catalanNum leafCount - 1) :: IO Natural
-    pure $ getLabledTreeFromIndex xs treeIndex
+generateRandomTree :: GenIO -> Set String -> IO (BinaryTree () String)
+generateRandomTree png leafLabels = do
+    xs <- Seq.fromList <$> shuffleM (toList leafLabels)
+    genSubtree xs
   where
-    leafCount    = length leafLabels
-
-    catalanNum n = head . drop (n-1) $ scanl (\c x -> c*2*(2*x-1) `div` (x+1)) 1 [1..]
-
-    addLabels :: (Monoid m) => a -> State [m] m
-    addLabels = const $ do
-      x <- get
-      case x of
-        []   -> pure mempty
-        e:es -> do
-          put  es
-          pure e
-
-    getLabledTreeFromIndex :: [String] -> Natural -> BinaryTree () String
-    getLabledTreeFromIndex leaves treeIndex = labeledTree
-      where
-        treeTopology  = fromNat (enumTreesMemo (length leaves - 1)) treeIndex :: Tree
-        unlabeledTree = toBinaryTree treeTopology :: BinaryTree () ()
-        labeledTree   = (`evalState` leaves) $ traverse addLabels unlabeledTree
-
-
-
-enumerate :: Enumeration a -> NonEmpty a
-enumerate (Enumeration f n) = fmap f $ 0 :| [1 .. n-1]
-
-
-enumTreesMemo :: Int -> Enumeration Tree
-enumTreesMemo = memo enumTreesMemo'
-  where
-    enumTreesMemo' 0 = singleEnum Leaf
-    enumTreesMemo' n = fold1 $
-        ( Node <$> enumTreesMemo (n-1) <*> enumTreesMemo 0
-        ) :|
-        [ Node <$> enumTreesMemo (n-k-1) <*> enumTreesMemo k
-        | k <- [1 .. n-1]
-        ]
-
-
-singleEnum :: a -> Enumeration a
-singleEnum a = Enumeration (const a) 1
-
-
--- = fromNat (enumTreesMemo 1000) 8234587623904872309875907638475639485792863458726398487590287348957628934765
-
-
-(><) :: Enumeration a -> Enumeration b -> Enumeration (a,b)
-(><) e1 e2 = Enumeration
-    (\n -> let (l,r) = n `divMod` enumSize e2 in (fromNat e1 l, fromNat e2 r))
-    (enumSize e1 * enumSize e2)
-
-
-toBinaryTree :: Tree -> BinaryTree () ()
-toBinaryTree Leaf       = Terminal () ()
-toBinaryTree (Node l r) = Branch () (toBinaryTree l) (toBinaryTree r)
+    genSubtree :: Seq String -> IO (BinaryTree () String)
+    genSubtree leaves =
+        case length leaves of
+          1 -> pure $ Terminal () $ Seq.index leaves 0
+          leafCount -> do
+              leftSubtreeSize <- uniformR (1, leafCount - 1) png
+              let (leftLeaves, rightLeaves) = Seq.splitAt leftSubtreeSize leaves
+              Branch () <$> genSubtree leftLeaves <*> genSubtree rightLeaves
 
 
 toNewick :: BinaryTree a String -> String
@@ -322,8 +228,3 @@ toFASTA = foldMapWithKey f . buildMap
     buildMap (Branch _ l r) = buildMap l <> buildMap r
 
     f k v = fold [ ">", k, "\n", v, "\n\n" ]
-
-
-toParens :: Tree -> String
-toParens Leaf       = ""
-toParens (Node l r) = fold ["(", toParens l, ")", toParens r]
