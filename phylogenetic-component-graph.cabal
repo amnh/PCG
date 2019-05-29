@@ -266,22 +266,18 @@ executable generate-data-set
     app
 
   build-depends:             
+    pcg-alphabet,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
     -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 0.7,
     deepseq                  >= 1.4       && < 2.0,
-    integer-gmp              >= 1.0       && < 2.0,
     keys                     >= 3.0       && < 4.0,
-    MemoTrie                 >= 0.6       && < 1.0,
-    mtl                      >= 2.0       && < 3.0,
     optparse-applicative     >= 0.14      && < 0.15,
     mwc-random               >= 0.14      && < 1.0,                         
-    random                   >= 1.0       && < 2.0,
     random-shuffle           >= 0.0.4     && < 0.1,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
-    semigroupoids            >= 5.2.1     && < 5.4,
-    transformers             >= 0.5.5     && < 1.0,
+    scientific               >= 0.3.6     && < 0.4,
+    text                     >= 1.2       && < 2.0,
     validation               >= 1.1       && < 2.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
