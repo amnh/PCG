@@ -84,16 +84,12 @@ networkGraphParameters = G.defaultParams {
   where
     colorAttribute color = [ G.Color $ G.toColorList [ color ] ]
     black = G.RGB 0 0 0
-    blue   = G.RGB 30 144 255
-    green = G.RGB 0 100 0
     red  = G.RGB 204 2 2
-    purple = G.RGB 75 0 130
     teal = G.RGB 0 102 102
     dotted = [G.Style [G.SItem G.Dashed mempty]]
     noArrow = [G.ArrowHead $ G.AType [(G.noMods, G.NoArrow)]]
     emptyArrowHead = [G.ArrowHead $ G.AType [(G.noMods, G.Vee)]]
     point = [G.Shape G.PointShape]
-    box   = [G.Shape G.BoxShape] <> dotted <> [G.Area 0.5]
     order = [G.Ordering G.OutEdges]
     
 
