@@ -11,7 +11,6 @@ dump-logs: all
 extra-deps:
   - bv-little-1.0.0
   - compact-0.1.0.1
-#  - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
   - graphviz-2999.20.0.3
   - pretty-tree-0.1.0.0
   - tasty-rerun-1.1.14
@@ -40,11 +39,23 @@ packages:
   - lib/pcg-tcm-memo
   - lib/pcg-utility
   - lib/pcg-validation-transformer
+  - location:
+      git: git@github.com:haskell/cabal
+      commit: 9c31d9c760468719c881d0f137c66e62b02a1164
+  - location:
+      git: git@github.com:haskell/primitive
+      commit: 47c4341f4e0f6fbbc3c53f23ca71e588c9515e6d
+  - location:
+      git: git@github.com:nick8325/quickcheck
+      commit: c963bec774dbb92e1a49b66e21365eae70989981
+  - location:
+      git: git@github.com:GaloisInc/cereal
+      commit: 3396176a36284d7aa53ffcb34a905a91a576832c
 
 require-stack-version: ">=1.9.1"
 
-#resolver: lts-13.20
-resolver: nightly-2019-05-12
+#resolver: lts-13.23
+resolver: nightly-2019-05-30
 #resolver: ghc-8.8.0.20190424
 
 setup-info:
