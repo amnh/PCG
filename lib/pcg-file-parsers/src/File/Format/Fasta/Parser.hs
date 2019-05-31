@@ -32,6 +32,7 @@ import           Data.Alphabet.IUPAC
 import           Data.Bimap                 (Bimap, toMap)
 import           Data.Char                  (isLower, isUpper, toLower, toUpper)
 import           Data.Foldable
+import           Data.Functor
 import           Data.List                  (partition)
 import           Data.List.NonEmpty         (NonEmpty)
 import qualified Data.List.NonEmpty         as NE
@@ -95,9 +96,12 @@ fastaTaxonName = identifierLine
 fastaSequence :: forall e s m . (MonadParsec e s m, Monoid (Tokens s), Token s ~ Char) => m (Vector Char)
 fastaSequence = space *> fullSequence
   where
-    fullSequence = buildVector . mconcat <$> (some sequenceLine)
-    sequenceLine = mconcat <$> ((lineChunk <* inlineSpace) `manyTill` eol)
-    lineChunk    = takeWhileP Nothing withinAlphabet
+    fullSequence = buildVector . mconcat <$> some sequenceLine
+    sequenceLine = mconcat <$> ((lineChunk <* inlineSpace) `someTill` flexEOL)
+    lineChunk    = takeWhile1P Nothing withinAlphabet
+
+    -- Matches on the end of line or the end of the stream.
+    flexEOL = void (try eol) <|> lookAhead eof
 
     buildVector  :: Tokens s -> Vector Char
     buildVector  = V.fromList . chunkToTokens (Proxy :: Proxy s)

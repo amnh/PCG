@@ -121,11 +121,13 @@ colate seqType = foldr f empty
 seqCharMapping :: FastaSequenceType -> Vector Char -> CharacterSequence
 seqCharMapping seqType v = transformVector
   where
-    transformVector = VNE.unfoldr g $ V.length v - 1
+    transformVector = VNE.unfoldr g 0
+
+    n = V.length v
 
     g :: Int -> (VNE.Vector ShortText, Maybe Int)
     g !i = let e = force . f seqType $ v ! i
-           in  (e, if i == 0 then Nothing else Just $ i - 1)
+           in  (e, if i >= n then Nothing else Just $ i + 1)
 
     f :: FastaSequenceType -> Char -> VNE.Vector ShortText
     f t c =

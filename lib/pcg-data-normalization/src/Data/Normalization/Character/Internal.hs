@@ -72,7 +72,7 @@ parsedDynamicCharacterFromShortText = NormalizedDynamicCharacter . pure . pure .
 -- Take a sequence of characters and create a singleton collection of a dynamic character.
 convertCharacterSequenceLikeFASTA :: CharacterSequence -> NormalizedCharacterCollection
 convertCharacterSequenceLikeFASTA =
-    pure . NormalizedDynamicCharacter . Just . NE.fromList . toList . fmap toNonEmpty
+    pure . NormalizedDynamicCharacter . Just . toNonEmpty . fmap toNonEmpty
 
 
 -- |
