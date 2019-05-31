@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 \usepackage{setspace}
 \usepackage{graphicx}
+\graphicspath{{../diagrams/networks/}{../diagrams/display-trees/}}
 \usepackage{subfigure}
 \usepackage{lscape}
 \usepackage{flafter}  % Don't place floats before their definition
@@ -15,6 +16,7 @@
 \usepackage{float}
 \usepackage{fancyvrb}
 \usepackage{bera}
+\usepackage[section]{placeins}
 %\usepackage{fullpage}
 \bibliographystyle{cbe}
 \citestyle{aa}
@@ -415,11 +417,11 @@ In order for this to be the case we require the following conditions to be satis
   \[ (\mathrm{tgt1} < \mathrm{src2})\; \bigvee \; (\mathrm{tgt2} < \mathrm{src1}) \]
 
 \item \textbf{Network Incident Node Condition: } We cannot add a network node along $e_2$ if either of its nodes is a network node.
-  \[ (\mathrm{tgt1} < \mathrm{src2})\; \bigvee \; (\mathrm{tgt2} < \mathrm{src1}) \]
+ 
 
-\item \textbf{Descendent Network Node Condition: }
-Suppose that either $\mathrm{src1}$  or $\mathrm{src2}$ are the parents of the network node. We shall denote the corresponding network parent by $\mathrm{NetPar}(\mathrm{src})$. In order for the implied ordering to be compatible we must have that the following does not hold:
-  \[ (\mathrm{NetPar(src1)} < \mathrm{src2})\; \bigvee \; (\mathrm{tgt2} < \mathrm{src1}) \]
+\item \textbf{Network Node Partner Condition: }
+Suppose that either $e_1=(\mathrm{src1}, \mathrm{tgt1})$ is a network edge i.e. that $\mathrm{tfgt1}$ is a network node or that $\mathrm{src2}$ is the parent of the network node (though not necessarily $\mathrm{tgt2}$, as ths is already covered by the \textbf{Network Incident Node Condition}). We shall denote the corresponding network parent to node $\mathrm{s}$ by $\mathrm{NetPar}(\mathrm{src})$. In order for the implied ordering to be compatible we must have that the following does not hold:
+ \[ (\mathrm{NetPar(src2)} < \mathrm{tgt1})\; \bigvee \; (\mathrm{NetPar(src1)} < \mathrm{tgt2}) \]
 
 \end{itemize}
 
@@ -447,8 +449,7 @@ Suppose that either $\mathrm{src1}$  or $\mathrm{src2}$ are the parents of the n
 \caption{Descendent network condition}
 \end{figure}
 
-\newpage
-
+\newpage 
 
 \begin{algorithm}
 		\caption{CandidateNetworkEdges}
@@ -488,6 +489,89 @@ Suppose that either $\mathrm{src1}$  or $\mathrm{src2}$ are the parents of the n
 
 		\Return{$CompatibleEdgePairs$} 					
 	\end{algorithm}
+
+
+\subsection{Examples}
+In this section we provide some diagrams in order to explain the network edge conditions outlines in the previous section. Suppose we start with the following base network:
+
+\begin{figure}
+  \begin{center}
+  \includegraphics[width=30mm, height=45mm]{base-network.png}
+  \caption{Starting Network}
+  \label{fig:base-network}
+  \end{center}
+\end{figure}
+
+
+
+\begin{figure}
+\noindent The following diagram illustrates a siutation ruled out by the \textbf{Ancestral Edge Condition} wherein we try to add an edge between two edges which are ancestral to one another:
+\vspace{2mm}
+  \begin{center}
+  \includegraphics[width=30mm, height=55mm]{e2AncestralEdgeNetwork.png}
+  \caption{Ancestral Edge Condition Violation 1}
+  \label{fig:e2AncestralEdgeNetwork}
+  \end{center}
+\end{figure}
+
+\FloatBarrier
+
+
+\begin{figure}
+\noindent Obversely we show the  \textbf{Ancestral Edge Condition} wherein the target edge has a node ancestral to the source edge.
+\vspace{2mm}
+  \begin{center}
+  \includegraphics[width=30mm, height=55mm]{e1HasE2SrcDescendantNodeNetwork.png}
+  \caption{Ancestral Edge Condition Violation 2}
+  \label{fig:e1HasE2SrcDescendantNodeNetwork.png}
+  \end{center}
+\end{figure}
+
+\begin{figure}
+\noindent This diagram illustrates an attempt to add a network edge where the target edge is incident to a network node i.e. a siutation rules out by the \textbf{Network Incident Node Condition}:
+\vspace{2mm}
+  \begin{center}
+  \includegraphics[width=30mm, height=45mm]{hasE2IncidentNetworkNode.png}
+  \caption{Network Incident Node Condition Violation}
+  \label{fig:hasE2IncidentNetworkNode}
+  \end{center}
+\end{figure}
+
+
+\begin{figure}
+\noindent Finally we illustrate the \textbf{Network Node Partner Condition}:
+\vspace{2mm}
+  \begin{center}
+  \includegraphics[width=30mm, height=45mm]{e2NetworkEdgeComplementNodeAncestralToE1.png}
+  \caption{Network Node Partner Condition}
+  \label{fig:e2NetworkEdgeComplementNodeAncestralToE1}
+  \end{center}
+\end{figure}
+
+
+\begin{figure}
+\subsubsection{Network Incident Node Condition}
+It is worth explaining this condition further. Suppose we were to allow such an edge to be added as follows:
+
+  \begin{center}
+  \includegraphics[width=40mm, height=65mm]{disallowed-display-network1.png}
+  \caption{Invalid Phylogenetic Network Configuration}
+  \label{fig:disallowed-display-network1}
+  \end{center}
+\end{figure}
+
+
+\begin{figure}
+This would then have the following display tree:
+  \begin{center}
+  \includegraphics[width=40mm, height=65mm]{disallowed-display-tree1.png}
+  \caption{Invalid Phylogenetic Tree}
+  \label{fig:disallowed-display-tree1.png}
+  \end{center}
+
+Note in partiucular that we have \textit{added} a new leaf node in this diaplay tree, something we wish to rule out.
+\end{figure}
+
 \newpage
 \singlespacing
 \bibliography{/users/ward/home/biblio/ward_new}
