@@ -69,7 +69,7 @@ equalityProperties = testGroup "Equality Laws"
     refexivity :: Cost -> Property
     refexivity x =
         x === x
-        
+
 
 normalFormDataProperties :: TestTree
 normalFormDataProperties = testGroup "NFData Laws"
@@ -79,7 +79,7 @@ normalFormDataProperties = testGroup "NFData Laws"
     finiteReduction :: Cost -> Property
     finiteReduction x =
         rnf x === ()
-        
+
 
 orderingProperties :: TestTree
 orderingProperties = testGroup "Ordering Laws"
@@ -104,7 +104,7 @@ orderingProperties = testGroup "Ordering Laws"
     transitivity2 :: Cost -> Cost -> Cost -> Property
     transitivity2 x y z =
         (x > y && y > z) ==> x > z
-        
+
     infinityOrdering :: Cost -> Bool
     infinityOrdering val = val == infinity || infinity > val
 

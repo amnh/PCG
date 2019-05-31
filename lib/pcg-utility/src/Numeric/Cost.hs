@@ -164,6 +164,8 @@ renderRational num den =
 
     addOverline = (<>[c]) . intersperse c
       where
+        -- Unicode literal for the "combining overline character".
+        -- Places an overline above the character /before/ itself in the string.
         !c = '\x0305'
 
     render = foldMap (show . fst)
