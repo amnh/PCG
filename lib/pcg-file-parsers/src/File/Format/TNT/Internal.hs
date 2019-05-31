@@ -75,7 +75,7 @@ module File.Format.TNT.Internal
 
 import           Control.Monad              ((<=<))
 import           Data.Bits
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive       (FoldCase)
 import           Data.Char                  (isAlpha, isLower, isUpper, toLower, toUpper)
 import           Data.Foldable
 import           Data.Functor               (($>))
@@ -735,11 +735,13 @@ trim c = whitespace *> c <* whitespace
 
 -- |
 -- Consumes zero or more whitespace characters __including__ line breaks.
+{-# INLINE whitespace #-}
 whitespace :: (MonadParsec e s m, Token s ~ Char) => m ()
 whitespace = space
 
 
 -- |
 -- Consumes zero or more whitespace characters that are not line breaks.
+{-# INLINE whitespaceInline #-}
 whitespaceInline :: (MonadParsec e s m, Token s ~ Char) => m ()
 whitespaceInline =  inlineSpace

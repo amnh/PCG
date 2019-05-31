@@ -12,20 +12,27 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE UnboxedSums      #-}
 
 module File.Format.Fasta.Converter
   ( FastaSequenceType(..)
   , fastaStreamConverter
   ) where
 
+import           Control.DeepSeq
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                 as BM
-import           Data.List                  (intercalate, partition)
-import           Data.List.NonEmpty         (NonEmpty)
-import           Data.Map                   hiding (filter, foldr, null, partition)
-import qualified Data.Vector                as V (fromList)
+import           Data.List                  (intercalate)
+import           Data.List.NonEmpty         (NonEmpty (..))
+import           Data.Map                   hiding (filter, foldr, null, partition, (!))
+import           Data.String
+import           Data.Text.Short            (ShortText, toString)
+import qualified Data.Vector.NonEmpty       as VNE
+import           Data.Vector.Unboxed        (Vector, (!))
+import qualified Data.Vector.Unboxed        as V (filter, length, map, null, toList)
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
 import           Text.Megaparsec            (MonadParsec)
@@ -59,30 +66,30 @@ processedChars seqType = fmap processElement
     processElement :: FastaSequence -> FastaSequence
     processElement (FastaSequence name chars) = FastaSequence name $ replaceSymbol chars
 
-    replaceSymbol :: String -> String
+    replaceSymbol :: Vector Char -> Vector Char
     replaceSymbol =
         case seqType of
           AminoAcid -> replace 'U' 'C' . replace '.' '-'
           DNA       -> replace 'n' '?' . replace '.' '-'
           RNA       -> replace 'n' '?' . replace '.' '-'
 
-    replace :: (Functor f, Eq b) => b -> b -> f b -> f b
-    replace a b = fmap $ \x -> if a == x then b else x
+    replace :: Char -> Char -> Vector Char -> Vector Char
+    replace a b = V.map $ \x -> if a == x then b else x
 
 
 -- |
 -- Validates that the stream contains a 'FastaParseResult' of the given 'FastaSequenceType'.
 validateStreamConversion :: MonadParsec e s m => FastaSequenceType -> FastaParseResult -> m FastaParseResult
 validateStreamConversion seqType xs =
-  case partition hasErrors result of
-    ([] , _) -> pure xs
-    (err, _) -> fails $ errorMessage <$> err
+  case filter hasErrors result of
+    []  -> pure xs
+    err -> fails $ errorMessage <$> err
   where
     result = containsIncorrectChars <$> xs
-    hasErrors = not . null . snd
+    hasErrors = not . V.null . snd
     containsIncorrectChars (FastaSequence name chars) = (name, f chars)
 
-    f = filter ((`notElem` s) . pure . pure)
+    f = V.filter ((`notElem` s) . pure . pure)
       where
         s  = keysSet $ BM.toMap bm
         bm = case seqType of
@@ -92,16 +99,16 @@ validateStreamConversion seqType xs =
 
     errorMessage (name, badChars) = concat
         [ "In the sequence for taxon: '"
-        , name
+        , toString name
         , "' the following invalid characters were found: "
-        , intercalate ", " $ enquote <$> badChars
+        , intercalate ", " $ enquote <$> V.toList badChars
         ]
 
     enquote c = '\'' : c : "'"
 
 
 -- |
--- Interprets and converts an entire 'FastaParseResult according to the given 'FatsaSequenceType'.
+-- Interprets and converts an entire 'FastaParseResult according to the given 'FastaSequenceType'.
 colate :: FastaSequenceType -> FastaParseResult -> TaxonSequenceMap
 colate seqType = foldr f empty
   where
@@ -109,14 +116,22 @@ colate seqType = foldr f empty
 
 
 -- |
--- Interprets and converts an ambiguous sequence according to the given 'FatsaSequenceType'
+-- Interprets and converts an ambiguous sequence according to the given 'FastaSequenceType'
 -- from the ambiguous form to a 'CharacterSequence' based on IUPAC codes.
-seqCharMapping :: FastaSequenceType -> String -> CharacterSequence
-seqCharMapping seqType = V.fromList . fmap (f seqType . pure . pure)
+seqCharMapping :: FastaSequenceType -> Vector Char -> CharacterSequence
+seqCharMapping seqType v = transformVector
   where
-    f :: FastaSequenceType -> NonEmpty String -> NonEmpty String
-    f t = let bm = case t of
-                     AminoAcid -> iupacToAminoAcid
-                     DNA       -> iupacToDna
-                     RNA       -> iupacToRna
-          in (bm BM.!)
+    transformVector = VNE.unfoldr g $ V.length v - 1
+
+    g :: Int -> (VNE.Vector ShortText, Maybe Int)
+    g !i = let e = force . f seqType $ v ! i
+           in  (e, if i == 0 then Nothing else Just $ i - 1)
+
+    f :: FastaSequenceType -> Char -> VNE.Vector ShortText
+    f t c =
+        let ne = [c]:|[]
+            bm = case t of
+                   AminoAcid -> iupacToAminoAcid
+                   DNA       -> iupacToDna
+                   RNA       -> iupacToRna
+          in force . VNE.fromNonEmpty . fmap fromString $ bm BM.! ne

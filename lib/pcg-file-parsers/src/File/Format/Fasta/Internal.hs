@@ -18,9 +18,10 @@
 module File.Format.Fasta.Internal where
 
 import Data.Char              (isSpace)
-import Data.List.NonEmpty
 import Data.Map               (Map)
-import Data.Vector            (Vector)
+import Data.String
+import Data.Text.Short        (ShortText)
+import Data.Vector.NonEmpty   (Vector)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Custom
@@ -33,17 +34,17 @@ type TaxonSequenceMap  = Map Identifier CharacterSequence
 
 -- |
 -- Unique identifier for a taxa
-type Identifier        = String
+type Identifier        = ShortText
 
 
 -- |
 -- Component of a phylogenetic character
-type Symbol            = String
+type Symbol            = ShortText
 
 
 -- |
 -- Indexed sequences of 'Symbol's with possible abiguity at an index
-type CharacterSequence = Vector (NonEmpty Symbol)
+type CharacterSequence = Vector (Vector Symbol)
 
 
 -- |
@@ -57,7 +58,7 @@ identifierLine = do
     _ <- inlineSpace
     _ <- optional (try commentBody <?> commentMessage x)
     _ <- endOfLine <?> lineEndMessage x
-    pure x
+    pure $ fromString x
   where
     commentMessage x = "Invalid comment for following label: '" <> x <> "'"
     lineEndMessage x = "There is no end-of-line after label: '" <> x <> "'"
@@ -65,7 +66,7 @@ identifierLine = do
 
 -- |
 -- 'Identifier' of a sequence
-identifier :: (MonadParsec e s m, Token s ~ Char) => m Identifier
+identifier :: (MonadParsec e s m, Token s ~ Char) => m String
 identifier = some $ satisfy validIdentifierChar
 
 

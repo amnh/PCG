@@ -44,9 +44,10 @@ import           Data.Functor.Apply          (Apply (..))
 import           Data.Functor.Bind           (Bind (..))
 import           Data.Functor.Classes        (Eq1 (..), Ord1 (..), Show1 (..))
 import           Data.String
-import           Data.Text                   (Text)
+import           Data.Text.Lazy              (Text)
 import           GHC.Exts                    (IsList (fromList))
 import           GHC.Generics                hiding (Prefix)
+import           System.ErrorPhase
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances   ()
 import           TextShow                    (TextShow)
@@ -342,7 +343,7 @@ instance Show1 Evaluation where
       where
         prefix v = unwords
           [ "Evaluation"
-          , "[" <> show (length  $ toList ms) <> "]"
+          , "[" <> show (length $ toList ms) <> "]"
           , show $ toList ms
           , v
           ]

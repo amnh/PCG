@@ -45,9 +45,10 @@ import           Data.Text.Short                       (ShortText)
 --import           Data.Tree
 import           Data.Vector                           (Vector)
 --import qualified Data.Vector                      as V
+--import           Data.Vector.Instances            ()
 --import           Data.Vector.NonEmpty                  (Vector)
 import qualified Data.Vector.NonEmpty                  as VNE
---import           Data.Vector.Instances            ()
+import qualified Data.Vector.Unboxed                   as VU
 import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc                     hiding (Identifier)
@@ -99,8 +100,10 @@ instance HasNormalizedCharacters FastaParseResult where
 
     getNormalizedCharacters = foldMap f
       where
-        f (FastaSequence _ s) = M.singleton (fromString s) (convertSeq (fromString s))
+        f (FastaSequence _ s) = M.singleton (g s) (convertSeq (g s))
         convertSeq = pure . parsedDynamicCharacterFromShortText
+
+        g = fromString . VU.toList
 
 
 -- | (✔)
@@ -108,13 +111,13 @@ instance HasNormalizedCharacters FastcParseResult where
 
     getNormalizedCharacters = foldMap f
       where
-        f (FastcSequence label symbols) = M.singleton (fromString label) $ convertCharacterSequenceLikeFASTA symbols
+        f (FastcSequence label symbols) = M.singleton label $ convertCharacterSequenceLikeFASTA symbols
 
 
 -- | (✔)
 instance HasNormalizedCharacters TaxonSequenceMap where
 
-    getNormalizedCharacters = fmap convertCharacterSequenceLikeFASTA . M.mapKeysMonotonic fromString
+    getNormalizedCharacters = fmap convertCharacterSequenceLikeFASTA
 
 
 -- | (✔)

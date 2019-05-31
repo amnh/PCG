@@ -24,7 +24,7 @@ module File.Format.Nexus.Parser
   ( parseNexus
   ) where
 
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive                    (FoldCase)
 import           Data.Char                               (isSpace, toLower)
 import           Data.Functor
 import           Data.Maybe                              (fromMaybe, isJust)

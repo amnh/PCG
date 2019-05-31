@@ -24,31 +24,51 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 module Data.FileSource
-  ( FileSource(..)
+  ( FileExtension()
+  , FileSource(..)
+  , extractExtension
   , toFileSource
   )
   where
 
-import           Control.DeepSeq       (NFData)
+import           Control.DeepSeq           (NFData)
+import           Data.Bifunctor            (first)
 import           Data.Binary
-import           Data.Bifunctor        (first)
+import           Data.Char                 (toLower)
 --import           Data.Coerce           (Coercible, coerce)
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Key
-import           Data.Maybe            (fromMaybe, isJust, maybe)
+import           Data.Maybe                (fromMaybe, isJust, maybe)
 import           Data.MonoTraversable
 import           Data.MonoTraversable.Keys
 import           Data.String
-import           Data.Text.Short       (ShortText, pack, unpack)
-import qualified Data.Text.Short as TS
-import           GHC.Generics          (Generic)
-import           Test.QuickCheck       (Arbitrary(..), CoArbitrary(..))
-import           Text.Printf           (PrintfArg)
-import           TextShow
+import           Data.Text.Short           (ShortText, pack, unpack)
+import qualified Data.Text.Short           as TS
+import           GHC.Generics              (Generic)
+import           System.FilePath.Posix     (takeExtension)
+import           Test.QuickCheck           (Arbitrary (..), CoArbitrary (..))
+import           Text.Printf               (PrintfArg)
+import           TextShow                  (TextShow (..), fromText)
 
 
 newtype FileSource = FileSource { toShortText :: ShortText }
+    deriving ( Binary
+             , Eq
+             , Generic
+             , Hashable
+             , IsString
+             , Monoid
+             , NFData
+             , Ord
+             , PrintfArg
+             , Read
+             , Semigroup
+             , Show
+             )
+
+
+newtype FileExtension = FileExtension { unwrapExtension :: ShortText }
     deriving ( Binary
              , Eq
              , Generic
@@ -177,7 +197,7 @@ instance MonoIndexable FileSource where
 instance MonoKeyed FileSource where
 
     {-# INLINE omapWithKey #-}
-  
+
     omapWithKey f = FileSource . pack . omapWithKey (f . toEnum) . unpack . toShortText
 
 
@@ -185,7 +205,7 @@ instance MonoLookup FileSource where
 
     -- | /O(1)/
     {-# INLINE olookup #-}
-    olookup k fs = TS.indexMaybe (toShortText fs) (fromEnum k) 
+    olookup k fs = TS.indexMaybe (toShortText fs) (fromEnum k)
 
 
 -- | (✔)
@@ -210,12 +230,28 @@ instance TextShow FileSource where
 
 -- |
 -- /O(n)/
--- 
+--
 -- Takes a structure that container of 'Char's and creates a 'FileSource'.
-{-# INLINE toFileSource #-}
+{-# INLINE[1] toFileSource #-}
 toFileSource :: (MonoFoldable s, Element s ~ Char) => s -> FileSource
 toFileSource = FileSource . pack . otoList
 
 {-# RULES
 "toFileSource/ShortText"     forall (s :: ShortText).       toFileSource s = FileSource s
   #-}
+
+
+-- |
+-- /O(n)/
+--
+-- Get the normalizied extenstion of a FileSource.
+--
+-- The normalized form is a lower-case string with no leading '.'.
+--
+-- Returns @Nothing@ if there is no extension.
+extractExtension :: FileSource -> Maybe FileExtension
+extractExtension = fmap (FileExtension . fromString) . dropDot . fmap toLower . takeExtension . otoList
+  where
+    dropDot      []  = Nothing
+    dropDot ('.':xs) = Just xs
+    dropDot      xs  = Just xs

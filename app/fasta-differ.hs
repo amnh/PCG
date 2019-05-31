@@ -7,9 +7,11 @@ import           Control.Applicative (liftA2)
 import           Data.Bifunctor      (first)
 import           Data.Foldable
 import           Data.Key
-import           Data.Map            (Map, keys, singleton, unionWith)
+import           Data.Map            (Map, keysSet, singleton, unionWith)
 import           Data.Set            (difference, intersection)
-import qualified Data.Set            as Set (fromList)
+import           Data.Text.Short     (ShortText, toString)
+import           Data.Vector.Unboxed (Vector)
+import qualified Data.Vector.Unboxed as V
 import           Data.Void
 import           File.Format.Fasta
 import           System.Environment  (getArgs)
@@ -52,28 +54,29 @@ performFileDiff :: (FastaParseResult, FastaParseResult) -> Either String String
 performFileDiff (lhs, rhs) = maybe (Right fileDiffResult) Left errorMessage
   where
     fileDiffResult = foldMapWithKey renderTaxa sequenceUnion
-    sequenceUnion  = unionWith (\x y -> unlines [x,y]) lhsMap rhsMap
+    sequenceUnion  = unionWith (\x y -> fold [ x, V.singleton '\n', y, V.singleton '\n' ]) lhsMap rhsMap
     lhsMap         = toMap lhs
     rhsMap         = toMap rhs
-    lhsKeys        = Set.fromList $ keys lhsMap
-    rhsKeys        = Set.fromList $ keys rhsMap
+    lhsKeys        = keysSet lhsMap
+    rhsKeys        = keysSet rhsMap
 
-    toMap :: FastaParseResult -> Map String String
+    toMap :: FastaParseResult -> Map ShortText (Vector Char)
     toMap = foldMap (singleton <$> taxonName <*> taxonSequence)
 
-    renderTaxa :: String -> String -> String
-    renderTaxa taxaName taxaSequences = fold [ "> ", taxaName, "\n", taxaSequences, "\n"]
+    renderTaxa :: ShortText -> Vector Char -> String
+    renderTaxa taxaName taxaSequences = fold
+        [ "> ", toString taxaName, "\n", V.toList taxaSequences, "\n"]
 
     errorMessage
       | null lhsUnique &&
         null rhsUnique = Nothing
       | otherwise      = Just $ fold
-                              [ "The taxa from the two files do not exacly match!\n"
-                              , "Found the following unique taxa in the first file\n:"
-                              , show lhsUnique
-                              , "Found the following unique taxa in the second file:\n"
-                              , show rhsUnique
-                              ]
+          [ "The taxa from the two files do not exacly match!\n"
+          , "Found the following unique taxa in the first file\n:"
+          , show lhsUnique
+          , "Found the following unique taxa in the second file:\n"
+          , show rhsUnique
+          ]
       where
         intersected = lhsKeys `intersection` rhsKeys
         lhsUnique   = lhsKeys `difference` intersected

@@ -8,6 +8,7 @@ module TestSuite.SubProcess
   , collectFileContents
   , constructProcess
   ,  destructProcess
+  , testDirectory
   ) where
 
 import Control.Arrow         ((&&&))
@@ -68,18 +69,19 @@ constructProcess
 constructProcess scriptStr = do
     prefix      <- makeAbsolute scriptDirectory
     binFilePath <- makeAbsolute binaryDirectory
+    let runFilePath = prefix </> scriptFileName
     let outFilePath = prefix </> outLogFileName
     let errFilePath = prefix </> errLogFileName
     let commandStr  = unwords
                     [ binFilePath
                     , "--input"
-                    , scriptFileName
+                    , runFilePath
                     , "--output"
                     , outFilePath
                     , "2>"
                     , errFilePath
                     ]
-    
+
     -- Delete log files if they exist
     _ <- deleteFileIfExists outFilePath
     _ <- deleteFileIfExists errFilePath

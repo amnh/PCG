@@ -1,11 +1,11 @@
 #allow-newer: true
 
-compiler: ghc-8.6.4
+compiler: ghc-8.6.5
 
 compiler-check: match-exact
 
 extra-deps:
-  - bv-little-1.0.0
+  - bv-little-1.0.1
   - compact-0.1.0.1
 #  - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
   - graphviz-2999.20.0.3
@@ -14,6 +14,7 @@ extra-deps:
   - text-show-3.7.5
   - text-show-instances-3.7
   - mono-traversable-keys-0.1.0
+  - validation-1.1
 
 #ghc-options:
 #  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively -fexpose-all-unfoldings
@@ -23,7 +24,7 @@ local-bin-path: bin
 
 require-stack-version: ">=1.9.1"
 
-resolver: lts-13.14
+resolver: lts-13.20
 
 dump-logs: all
 
@@ -36,7 +37,9 @@ packages:
   - lib/pcg-evaluation
   - lib/pcg-exportable
   - lib/pcg-file-parsers
+  - lib/pcg-file-source
   - lib/pcg-language
   - lib/pcg-serialize
   - lib/pcg-tcm-memo
   - lib/pcg-utility
+  - lib/pcg-validation-transformer
