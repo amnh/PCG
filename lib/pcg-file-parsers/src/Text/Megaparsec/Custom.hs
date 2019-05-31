@@ -31,7 +31,7 @@ module Text.Megaparsec.Custom
 --  , parseWithDefaultErrorType
   ) where
 
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive       (FoldCase)
 import           Data.Char                  (isSpace)
 --import           Data.Either                       (either)
 import           Data.Functor               (void, ($>))

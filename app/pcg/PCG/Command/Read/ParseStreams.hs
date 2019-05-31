@@ -23,7 +23,6 @@ module PCG.Command.Read.ParseStreams
 import           Control.Monad.Trans.Validation
 import           Data.Alphabet
 import           Data.Bifunctor                    (first)
-import           Data.Char                         (toLower)
 import           Data.FileSource
 import           Data.Foldable
 import           Data.Functor
@@ -62,7 +61,7 @@ import           PCG.Command.Read
 import           PCG.Command.Read.InputStreams
 import           PCG.Command.Read.ReadCommandError
 import           Prelude                           hiding (readFile)
-import           System.FilePath                   (takeExtension, takeFileName)
+import           System.FilePath                   (takeFileName)
 import           Text.Megaparsec
 
 
@@ -111,10 +110,10 @@ transformToAligned = ValidationT . pure . traverse (expandDynamicCharactersMarke
 
 
 setTcm :: TCM -> PartialInputData -> PartialInputData
-setTcm t  pid = pid
-              { parsedMetas = fmap metadataUpdate <$> parsedMetas pid
-              , relatedTcm  = Just (resultTCM, structure)
-              }
+setTcm t pid = pid
+             { parsedMetas = fmap metadataUpdate <$> parsedMetas pid
+             , relatedTcm  = Just (resultTCM, structure)
+             }
   where
     relatedAlphabet                     = fromSymbols           $ customAlphabet  t
     (unfactoredWeight, unfactoredTCM)   = TCM.fromList . toList $ transitionCosts t
@@ -184,13 +183,18 @@ parseCustomAlphabet dataFileSources tcmPath = getSpecifiedContent spec
     parse'' :: DataContent -> Validation ReadCommandError PartialInputData
     parse'' (DataContent (path, content) _) = fracturedResult
       where
-        fracturedResult = parse' (try fastaCombinator <|> fastcCombinator) path content
-        fastcCombinator = fmap (toFractured Nothing path) fastcStreamParser
-        fastaCombinator = fmap (toFractured Nothing path) $
-                          fastaStreamParser >>=
-                          (\x -> try (fastaStreamConverter Fasta.DNA       x)
-                             <|> try (fastaStreamConverter Fasta.RNA       x)
-                             <|>      fastaStreamConverter Fasta.AminoAcid x)
+        fracturedResult = parse' jointcombinator path content
+        -- Intelligently decide which parser to try first
+        jointcombinator
+          | extractExtension path == Just "fastc" = try fastcCombinator <|> fastaCombinator
+          | otherwise                             = try fastaCombinator <|> fastcCombinator
+          where
+            fastcCombinator = fmap (toFractured Nothing path) fastcStreamParser
+            fastaCombinator = fmap (toFractured Nothing path) $
+                              fastaStreamParser >>=
+                              (\x -> try (fastaStreamConverter Fasta.DNA       x)
+                                 <|> try (fastaStreamConverter Fasta.RNA       x)
+                                 <|>      fastaStreamConverter Fasta.AminoAcid x)
 
 
 progressiveParse :: FileSource -> ValidationT ReadCommandError IO PartialInputData
@@ -198,7 +202,7 @@ progressiveParse inputPath = do
     SpecContent (fc:|_) <- getSpecifiedContent (UnspecifiedFile $ inputPath:|[])
 
     let (filePath, fileContent)   = dataFile fc
-        (preferredFound, parsers) = getParsersToTry . takeExtension $ otoList filePath
+        (preferredFound, parsers) = getParsersToTry filePath
 
     -- Use the Either Left value to short circuit on a succussful parse
     -- Otherwise collect all parse errors in the Right value
@@ -223,38 +227,39 @@ progressiveParse inputPath = do
     --
     -- Makes our parsing phase marginally more efficient.
 --  getParsersToTry
---    :: String
+--    :: FileSource
 --    -> ( Bool
 --       , NonEmpty (FileSource -> s -> Either PartialInputData (ParseError Char Void))
 --       )
-    getParsersToTry ext =
+    getParsersToTry filePath =
+        -- Attempt to extract the extension of the file to parse.
+        case extractExtension filePath of
+        -- If there was no extension, try the default order
+          Nothing -> noPreferedParser
+        -- Otherwise we attempt to interpret which parser would be best to try first.
+          Just extension ->
         -- We do this by first looking up the file extension in a list of non-empty
         -- lists of aliases for the same type of file.
-        case filter (elem extension) fileExtensions of
-          []       -> (False, NE.fromList $ toList parserMap)
+            case filter (elem extension) fileExtensions of
+              [] -> noPreferedParser
         -- If we find a non-empty list of file extensions that contains the given
         -- file extension, then we take the head of the non-empty list and use this
         -- as our representative file extension key.
-          (k:|_):_ ->
+              (k:|_):_ ->
         -- Lastly we lookup and remove the representative file extension key from a
         -- map of file parsers.
-            case  updateLookupWithKey (const (const Nothing)) k parserMap of
+                case  updateLookupWithKey (const (const Nothing)) k parserMap of
         -- This case should never be entered, but it is sensibly covered.
-              (Nothing, m) -> (False, NE.fromList $ toList m)
+                  (Nothing, m) -> (False, NE.fromList $ toList m)
         -- This returns the parser associated with the representative file extension
         -- key and the map of file parsers with the queried parser removed. With
         -- these elements in scope, we simply place the desired parser at the head of
         -- the list of all the parsers.
-              (Just  p, m) -> ( True, p :| toList m)
+                  (Just  p, m) -> ( True, p :| toList m)
       where
-        -- Convert the extension to lower case for simpler string comparisons
-        -- Also romove the leading '.' if it exists
-        extension = dropDot $ toLower <$> ext
-          where
-            dropDot ('.':xs) = xs
-            dropDot      xs  = xs
+        noPreferedParser = (False, NE.fromList $ toList parserMap)
 
-        fileExtensions :: [NonEmpty String]
+        fileExtensions :: [NonEmpty FileExtension]
         fileExtensions = foldMapWithKey (\k v -> [k :| snd v]) associationMap
 
 --      parserMap :: Map String (FileSource -> s -> Either PartialInputData (ParseError Char Void))

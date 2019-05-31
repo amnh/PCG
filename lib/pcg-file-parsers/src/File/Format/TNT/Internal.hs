@@ -75,7 +75,7 @@ module File.Format.TNT.Internal
 
 import           Control.Monad              ((<=<))
 import           Data.Bits
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive       (FoldCase)
 import           Data.Char                  (isAlpha, isLower, isUpper, toLower, toUpper)
 import           Data.Foldable
 import           Data.Functor               (($>))

@@ -21,7 +21,7 @@ module File.Format.TNT.Command.CNames
   , cnamesStateName
   ) where
 
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive     (FoldCase)
 import           Data.Foldable            (toList)
 import           Data.Functor             (($>))
 import           Data.IntMap              (insertWith)

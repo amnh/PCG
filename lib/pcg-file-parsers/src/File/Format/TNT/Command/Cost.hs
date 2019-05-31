@@ -19,8 +19,7 @@ module File.Format.TNT.Command.Cost
   ( costCommand
   ) where
 
-
-import Data.CaseInsensitive
+import Data.CaseInsensitive     (FoldCase)
 import Data.Foldable
 import Data.Functor             (($>))
 import Data.List.NonEmpty       (NonEmpty, some1)

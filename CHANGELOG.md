@@ -25,6 +25,7 @@ Releases are available [on GitHub][2].
 * Added module for stricter fold functions
 * Added module for memoized vector computation abstracting the method used in pre/postorder
 * Added Validation monad transformer (for error handling)
+* Added Cost data-type for perfect precision, non-negative rational number accumulation
 * Added specific exit codes to indicate in which phase of the runtime failure(s) occured
 * Corrected defect in handling of prealigned input data
 * Corrected defect in FFI resulting in a space leak

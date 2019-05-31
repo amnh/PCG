@@ -35,7 +35,7 @@ module File.Format.Nexus
   ) where
 
 
-import Data.CaseInsensitive
+import Data.CaseInsensitive       (FoldCase)
 import File.Format.Nexus.Data
 import File.Format.Nexus.Parser
 import File.Format.Nexus.Validate
