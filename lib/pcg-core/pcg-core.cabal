@@ -251,7 +251,7 @@ library pcg-data-structures
     pcg-tcm-memo,
     bimap                    >= 0.3       && < 0.4,
     binary                   >= 0.6       && < 1.0,
-    bv-little                >= 1.0       && < 2.0,
+    bv-little                >= 1.0.1     && < 2.0,
     cassava                  >= 0.5       && < 0.6,
     compact                  >= 0.1       && < 2.0,
     -- >=0.5.8 Required for Data.Map.restrictKeys

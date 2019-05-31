@@ -1,41 +1,55 @@
-{-# LANGUAGE DeriveFoldable    #-}
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE GADTs             #-}
-
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE DeriveFoldable      #-}
+{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE DeriveTraversable   #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Main where
 
+import           Control.Arrow
+import           Control.DeepSeq
 import           Control.Monad
-import           Control.Monad.State.Strict
+import           Control.Monad.ST
+import           Data.Alphabet
+import           Data.Bits
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty           (NonEmpty (..))
 import qualified Data.Map                     as M
-import           Data.MemoTrie                (memo)
-import           Data.Semigroup.Foldable
+import           Data.Ratio
+import           Data.Scientific
+import           Data.Sequence                (Seq)
+import qualified Data.Sequence                as Seq
 import           Data.Set                     (Set)
 import qualified Data.Set                     as S
+import           Data.String
+import           Data.Text.Lazy               (Text)
+import qualified Data.Text.Lazy               as T
+import           Data.Text.Lazy.Builder       hiding (fromString)
+import           Data.Text.Lazy.IO            (writeFile)
 import           Data.Validation
-import qualified Data.Vector                  as V
-import           Numeric.Natural
+import           Data.Vector.Unboxed          (Vector)
+import qualified Data.Vector.Unboxed          as V
+import           Data.Word
+import           Numeric
 import           Options.Applicative
-import           System.Random
+import           Prelude                      hiding (writeFile)
+import           System.Random.MWC
 import           System.Random.Shuffle
 import           Text.PrettyPrint.ANSI.Leijen (string)
 
 
 data  Specification
     = Specification
-    { specifiedAlphabet     :: Set String
-    , specifiedLeaves       :: Set String
+    { specifiedAlphabet     :: Set Text
+    , specifiedLeaves       :: Set Text
     , specifiedFASTA        :: FilePath
     , specifiedNewick       :: FilePath
-    , specifiedInsertion    :: Double
-    , specifiedDeletion     :: Double
-    , specifiedSubstitution :: Double
+    , specifiedInsertion    :: Ratio Int
+    , specifiedDeletion     :: Ratio Int
+    , specifiedSubstitution :: Ratio Int
     , specifiedRootLength   :: Word
     , specifiedAlignedData  :: Bool
     } deriving (Eq, Show)
@@ -47,70 +61,18 @@ data  UserInput
     , inputLeaves       :: [String]
     , inputFASTA        :: FilePath
     , inputNewick       :: FilePath
-    , inputInsertion    :: Double
-    , inputDeletion     :: Double
-    , inputSubstitution :: Double
+    , inputInsertion    :: Scientific
+    , inputDeletion     :: Scientific
+    , inputSubstitution :: Scientific
     , inputRootLength   :: Word
     , inputAlignedData  :: Bool
     } deriving (Eq, Show)
 
 
 data  BinaryTree b a
-    = Branch b (BinaryTree b a) (BinaryTree b a)
-    | Terminal b a
+    = Branch !(BinaryTree b a) !(BinaryTree b a)
+    | Terminal !b !a
     deriving (Eq, Functor, Foldable, Ord, Show, Traversable)
-
-
-data Tree where
-   Leaf :: Tree
-   Node :: Tree -> Tree -> Tree
-   deriving (Show, Eq, Ord)
-
-
-data  Enumeration a = Enumeration
-    { fromNat  :: Natural -> a
-    , enumSize :: Natural
-    } deriving (Functor)
-
-
-instance Applicative Enumeration where
-
-    pure    = singleEnum
-
-    f <*> x = uncurry ($) <$> (f >< x)
-
-
-instance Monad Enumeration where
-
-    return  = pure
-
-    e >>= f = fold1 $ f <$> enumerate e
-
-
-instance Semigroup (Enumeration a) where
-
-    e1 <> e2 = Enumeration
-      (\n -> if n < enumSize e1 then fromNat e1 n else fromNat e2 (n - enumSize e1))
-      (enumSize e1 + enumSize e2)
-
-
-instance Random Natural where
-
-    random g
-      | s < 0     = (fromIntegral $ abs i, g')
-      | s > 0     = (fromIntegral i      , g')
-      | otherwise = (0                   , g')
-      where
-        (i,g') = random g
-        s      = signum (i :: Integer)
-
-    randomR (x,y) g
-      | s < 0     = (fromIntegral $ abs i, g')
-      | s > 0     = (fromIntegral i      , g')
-      | otherwise = (0                   , g')
-      where
-        (i,g') = randomR (toInteger x, toInteger y) g
-        s      = signum (i :: Integer)
 
 
 main :: IO ()
@@ -119,19 +81,12 @@ main = do
     case toEither $ validateUserInput userInput of
       Left errors -> putStrLn . unlines $ toList errors
       Right spec  -> do
-        labledTree    <- generateRandomTree $ specifiedLeaves spec
-        decoratedTree <- generateRandomSequence
-                           <$> specifiedAlphabet
-                           <*> specifiedSubstitution
-                           <*> getInDelContext
-                           <*> specifiedRootLength
-                           <*> const labledTree
-                           $ spec
+        decoratedTree <- generateDecoratedTree spec
         writeFile (specifiedNewick spec) $ toNewick decoratedTree
-        writeFile (specifiedFASTA  spec) $ toFASTA  decoratedTree
+        writeFile (specifiedFASTA  spec) $ toFASTA (specifiedAlphabet spec) decoratedTree
 
 
-getInDelContext :: Specification -> Maybe (Double, Double)
+getInDelContext :: Specification -> Maybe (Ratio Int, Ratio Int)
 getInDelContext userInput
   | specifiedAlignedData userInput = Nothing
   | otherwise = Just $ ((,) <$> specifiedInsertion <*> specifiedDeletion) userInput
@@ -170,8 +125,8 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
 validateUserInput :: UserInput -> Validation (NonEmpty String) Specification
 validateUserInput userInput =
     Specification
-      <$> (pure . S.fromList . inputAlphabet) userInput
-      <*> (pure . S.fromList . inputLeaves)   userInput
+      <$> (pure . S.fromList . fmap fromString . inputAlphabet) userInput
+      <*> (pure . S.fromList . fmap fromString . inputLeaves  ) userInput
       <*> (pure . inputFASTA ) userInput
       <*> (pure . inputNewick) userInput
       <*> validate (pure "insertion probability outside range (0, 1)")    validProbability (inputInsertion    userInput)
@@ -180,148 +135,144 @@ validateUserInput userInput =
       <*> (pure . inputRootLength ) userInput
       <*> (pure . inputAlignedData) userInput
   where
-    validProbability x = 0 <= x && x < 1
+    validProbability :: Scientific -> Maybe (Ratio Int)
+    validProbability x
+      | x < 0 || 1 <= x = Nothing
+      | num >= bound    = Nothing
+      | den >= bound    = Nothing
+      | otherwise       = Just $ fromIntegral num % fromIntegral den
+      where
+        (num, den) = (numerator &&& denominator) $ toRational x
+        bound = fromIntegral (maxBound :: Int)
+
+
+generateDecoratedTree :: Specification -> IO (BinaryTree (Vector Int) Text)
+generateDecoratedTree spec = do
+    leafSequence <- fmap Seq.fromList . shuffleM . toList $ specifiedLeaves spec
+    withSystemRandom . asGenST $ \png -> do
+        labledTree <- generateRandomTree png leafSequence
+        generateRandomSequence png
+          <$> specifiedAlphabet
+          <*> specifiedSubstitution
+          <*> getInDelContext
+          <*> specifiedRootLength
+          <*> const labledTree
+          $ spec
+
+
+generateRandomTree :: forall s. GenST s -> Seq Text -> ST s (BinaryTree () Text)
+generateRandomTree png = genSubtree
+  where
+--    genSubtree :: Seq String -> GenST s (BinaryTree () String)
+    genSubtree leaves =
+        case length leaves of
+          1 -> pure . Terminal () $ Seq.index leaves 0
+          leafCount -> do
+              leftSubtreeSize <- uniformR (1, leafCount - 1) png
+              let (leftLeaves, rightLeaves) = Seq.splitAt leftSubtreeSize leaves
+              Branch <$> genSubtree leftLeaves <*> genSubtree rightLeaves
 
 
 generateRandomSequence
-  :: Set String             -- ^ Alphabet
-  -> Double                 -- ^ Substitution probablity (0,1)
-  -> Maybe (Double, Double) -- ^ (Insertion, Deletion)    probablity (0,1)
-  -> Word                   -- ^ Root sequence length
+  :: forall a b s
+  .  GenST s
+  -> Set Text                     -- ^ Alphabet
+  -> Ratio Int                    -- ^ Substitution probablity (0,1)
+  -> Maybe (Ratio Int, Ratio Int) -- ^ (Insertion, Deletion)    probablity (0,1)
+  -> Word                         -- ^ Root sequence length
   -> BinaryTree a b
-  -> IO (BinaryTree [String] b)
-generateRandomSequence alphabet sub indelMay rootLen tree = do
-  rootSequence <- replicateM (fromEnum rootLen) randomSymbol
-  case tree of
-    Terminal _ x -> pure $ Terminal rootSequence x
-    Branch _ l r -> Branch rootSequence
-                      <$> fromParent rootSequence l
-                      <*> fromParent rootSequence r
+  -> ST s (BinaryTree (Vector Int) b)
+generateRandomSequence png alphabet sub indelMay rootLen tree = do
+    let !n = fromEnum rootLen
+    rootSequence <- V.fromList <$> replicateM n randomSymbol
+    withSequence rootSequence tree
   where
-    alphaSize    = length alphabet
-    alphaVec     = V.fromListN alphaSize $ toList alphabet
-    randomSymbol = (alphaVec V.!) <$> randomRIO (0, alphaSize - 1)
+    alphaSize    = force $ length alphabet
+--    alphaVec     = force . V.fromListN alphaSize $ toList alphabet
+    randomSymbol = uniformR (0, alphaSize - 1) png
 
-    fromParent :: [String] -> BinaryTree a b -> IO (BinaryTree [String] b)
-    fromParent pStr bTree = do
-        mStr <- mutateString pStr
+    withSequence :: Vector Int -> BinaryTree a b -> ST s (BinaryTree (Vector Int) b)
+    withSequence currentStr bTree =
         case bTree of
-          Terminal _ x -> pure $ Terminal mStr x
-          Branch _ l r -> Branch mStr <$> fromParent mStr l <*> fromParent mStr r
+          Terminal _ x -> pure $ Terminal currentStr x
+          Branch   l r -> do
+            leftStr  <- force <$> mutateString currentStr
+            rightStr <- force <$> mutateString currentStr
+            Branch <$> withSequence leftStr l <*> withSequence rightStr r
 
-    mutateString :: [String] -> IO [String]
-    mutateString xs = do
-        mStr <- mapM mutateSymbol xs
+    mutateString :: Vector Int -> ST s (Vector Int)
+    mutateString inStr = do
+        mStr <- V.foldM' mutateSymbol mempty inStr
         suff <- case indelMay of
-                  Nothing      -> pure []
+                  Nothing      -> pure mempty
                   Just (ins,_) -> insertStr ins
-        pure  $ fold mStr <> suff
+        pure . force . V.fromList . reverse $ suff <> mStr
       where
-        mutateSymbol :: String -> IO [String]
-        mutateSymbol x = do
+        mutateSymbol :: [Int] -> Int -> ST s [Int]
+        mutateSymbol xs x = do
           -- Do we substitute the symbol
-          subV <- randomRIO (0,1) :: IO Double
-          x'   <- if   subV <= sub
+          subV <- uniformR (0, denominator sub - 1) png :: ST s Int
+          x'   <- if   subV < numerator sub
                   then randomSymbol
                   else pure x
           -- Check if we are insert/deleting
           case indelMay of
-            Nothing        -> pure [x']
+            Nothing        -> pure $ pure x'
             Just (ins,del) -> do
               -- Do we delete the symbol
-              delV <- randomRIO (0,1) :: IO Double
-              let delStr = if   delV <= del
-                           then []
-                           else [x']
+              delV <- uniformR (0, denominator del - 1) png :: ST s Int
+              let delStr = if   delV < numerator del
+                           then mempty
+                           else pure x'
               -- Do we add an inserted prefix string
-              (<> delStr) <$> insertStr ins
+              (<> xs <> delStr) <$> insertStr ins
 
-        insertStr :: Double -> IO [String]
+        insertStr :: Ratio Int -> ST s [Int]
         insertStr ins = do
-            insV <- randomRIO (0,1) :: IO Double
-            if insV <= ins
+            insV <- uniformR (0, denominator ins - 1) png :: ST s Int
+            if insV < numerator ins
             then (:) <$> randomSymbol <*> insertStr ins
-            else pure []
+            else pure mempty
 
 
-generateRandomTree :: Set String -> IO (BinaryTree () String)
-generateRandomTree leafLabels = do
-    xs        <- shuffleM $ toList leafLabels
-    treeIndex <- randomRIO (0, catalanNum leafCount - 1) :: IO Natural
-    pure $ getLabledTreeFromIndex xs treeIndex
-  where
-    leafCount    = length leafLabels
-
-    catalanNum n = head . drop (n-1) $ scanl (\c x -> c*2*(2*x-1) `div` (x+1)) 1 [1..]
-
-    addLabels :: (Monoid m) => a -> State [m] m
-    addLabels = const $ do
-      x <- get
-      case x of
-        []   -> pure mempty
-        e:es -> do
-          put  es
-          pure e
-
-    getLabledTreeFromIndex :: [String] -> Natural -> BinaryTree () String
-    getLabledTreeFromIndex leaves treeIndex = labeledTree
-      where
-        treeTopology  = fromNat (enumTreesMemo (length leaves - 1)) treeIndex :: Tree
-        unlabeledTree = toBinaryTree treeTopology :: BinaryTree () ()
-        labeledTree   = (`evalState` leaves) $ traverse addLabels unlabeledTree
-
-
-
-enumerate :: Enumeration a -> NonEmpty a
-enumerate (Enumeration f n) = fmap f $ 0 :| [1 .. n-1]
-
-
-enumTreesMemo :: Int -> Enumeration Tree
-enumTreesMemo = memo enumTreesMemo'
-  where
-    enumTreesMemo' 0 = singleEnum Leaf
-    enumTreesMemo' n = fold1 $
-        ( Node <$> enumTreesMemo (n-1) <*> enumTreesMemo 0
-        ) :|
-        [ Node <$> enumTreesMemo (n-k-1) <*> enumTreesMemo k
-        | k <- [1 .. n-1]
-        ]
-
-
-singleEnum :: a -> Enumeration a
-singleEnum a = Enumeration (const a) 1
-
-
--- = fromNat (enumTreesMemo 1000) 8234587623904872309875907638475639485792863458726398487590287348957628934765
-
-
-(><) :: Enumeration a -> Enumeration b -> Enumeration (a,b)
-(><) e1 e2 = Enumeration
-    (\n -> let (l,r) = n `divMod` enumSize e2 in (fromNat e1 l, fromNat e2 r))
-    (enumSize e1 * enumSize e2)
-
-
-toBinaryTree :: Tree -> BinaryTree () ()
-toBinaryTree Leaf       = Terminal () ()
-toBinaryTree (Node l r) = Branch () (toBinaryTree l) (toBinaryTree r)
-
-
-toNewick :: BinaryTree a String -> String
+toNewick :: BinaryTree a Text -> Text
 toNewick = (<>";\n") . go
   where
     go (Terminal _ x) = x
-    go (Branch _ l r) = fold ["(", go l, ",", go r, ")"]
+    go (Branch   l r) = fold ["(", go l, ",", go r, ")"]
 
 
-toFASTA :: BinaryTree [String] String -> String
-toFASTA = foldMapWithKey f . buildMap
+toFASTA :: Set Text -> BinaryTree (Vector Int) Text -> Text
+toFASTA alphabet = foldMapWithKey f . buildMap
   where
-    buildMap (Terminal s i) = M.singleton i $ unwords s
-    buildMap (Branch _ l r) = buildMap l <> buildMap r
+    buildMap (Terminal s i) = M.singleton i $ renderer s
+    buildMap (Branch   l r) = buildMap l <> buildMap r
 
     f k v = fold [ ">", k, "\n", v, "\n\n" ]
 
+    !renderer = selectSequenceRenderer alphabet
 
-toParens :: Tree -> String
-toParens Leaf       = ""
-toParens (Node l r) = fold ["(", toParens l, ")", toParens r]
+    selectSequenceRenderer :: Set Text -> Vector Int -> Text
+    selectSequenceRenderer inAlphabet
+      | anyOf specialAlphabetsAre ourAlphabet = T.pack . V.toList . V.backpermute vec
+      | otherwise                             = toLazyText . V.foldl' g mempty
+      where
+        ourAlphabet = fromSymbols inAlphabet
+
+        specialAlphabetsAre =
+            [ isAlphabetAminoAcid
+            , isAlphabetDna
+            , isAlphabetRna
+            , isAlphabetDiscrete
+            ]
+
+        vec = V.fromList . fmap T.head $ toList inAlphabet
+
+        g a i = a <> fromLazyText (ourAlphabet ! i) <> " "
+
+        anyOf :: Foldable f => f (a -> Bool) -> a -> Bool
+        anyOf fns v = go $ toList fns
+          where
+            go    []  = False
+            go (x:xs) = let !b = x v
+                        in  b || go xs

@@ -119,11 +119,12 @@ class ( EncodableStreamElement (Element s)
 -- Show an 'EncodableStreamElement' by decoding it with its corresponding alphabet.
 showStreamElement :: EncodableStreamElement e => Alphabet String -> e -> String
 showStreamElement alphabet element
-  | zeroBits == element = "<Empty Character>"
+  |   noBits == element = "<Empty Character>"
   |  allBits == element = "?"
   | otherwise           = renderAmbiguity $ toIUPAC symbols
   where
-    allBits = complement $ element `xor` element
+    noBits  = element `xor` element
+    allBits = complement noBits
     symbols = decodeElement alphabet element
     renderAmbiguity amb =
         case toList amb of
@@ -158,7 +159,15 @@ showBits b = foldMap f [0 .. finiteBitSize b - 1]
 -- |
 -- Show an 'EncodableStream' by decoding it with its corresponding alphabet.
 showStream :: EncodableStream s => Alphabet String -> s -> String
-showStream alphabet = ofoldMap (showStreamElement alphabet)
+showStream alphabet xs
+  | olength xs == 0 = "<Empty Stream>"
+  | otherwise       =
+      let shownElems = showStreamElement alphabet <$> otoList xs
+      in  if   any (\e -> length e > 1) shownElems
+          then unwords shownElems
+           -- All elements were rendered as a single character.
+          else fold shownElems
+
 
 
 -- |
