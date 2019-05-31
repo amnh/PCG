@@ -136,6 +136,7 @@ library
     Data.Vector.Custom
     Data.Vector.Memo
     Data.Vector.NonEmpty
+    Numeric.Cost
     Numeric.Extended
     Numeric.Extended.Natural
     Numeric.Extended.Real
@@ -181,6 +182,7 @@ test-suite test-suite
     Control.Parallel.Test
     Data.BitMatrix.Test
     Data.MutualExclusionSet.Test
+    Numeric.Cost.Test            
     Numeric.Extended.Natural.Test
     Numeric.Extended.Real.Test
     Numeric.NonNegativeAverage.Test

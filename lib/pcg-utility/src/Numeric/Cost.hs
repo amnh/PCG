@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Numeric.Extended.Real
+-- Module      :  Numeric.Cost
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -18,38 +18,55 @@
 --   * Perfect precision for rational numbers
 --   * Reasonable efficiency
 --   * Monoid under addition
---                     
+--
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE BangPatterns       #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 
 module Numeric.Cost
-  ( ExtendedReal()
+  ( Cost
   , ExtendedNumber(..)
   , Finite
-  , (~==)
   ) where
 
+import Control.Applicative
 import Control.DeepSeq
 import Data.Binary
+import Data.Data
+import Data.Foldable
+import Data.List                 (intersperse)
 import Data.Ratio
-import Numeric.Natural
+import Data.Sequence             hiding (intersperse, length)
+import Data.String
 import GHC.Generics
 import Numeric.Extended.Internal
+import Numeric.Natural
+import Prelude                   hiding (drop, reverse, splitAt)
 import Test.QuickCheck
 import TextShow                  (TextShow (showb))
 
 
 -- |
--- A /non-negative/, rational number extended to include infinity where:
-newtype Cost = Cost { unwrap :: Ratio Natural }
-    deriving (Eq, Generic)
+-- A /non-negative/, rational number extended to include infinity.
+data Cost = Cost !Natural !Natural
+    deriving (Data, Generic, NFData, Typeable)
 
 
-type instance Finite Cost = Ratio Natural
+-- |
+-- The finite value of a 'Cost' would be more correctly represented as 'Ratio'
+-- 'Natural'.
+--
+-- However, it is much easier to interact with the Haskell ecosystem
+-- if 'Rational' is used. If a negative number is supplied to 'fromFinite', the
+-- additive identity (zero, 'mempty') is returned instead to enforce the
+-- non-negativity constraint on 'Cost'.
+type instance Finite Cost = Rational
 
 
 instance Arbitrary Cost where
@@ -59,103 +76,107 @@ instance Arbitrary Cost where
         if n == 0
         then pure infinity
         else do
-           num <- arbitrary
-           dem <- arbitrary `suchThat` (>= 0))
-           pure . Cost $ num % dem
+           num <- arbitrary :: Gen Integer
+           dem <- arbitrary `suchThat` (> 0) :: Gen Integer
+           let num' = fromIntegral $ abs num
+           let dem' = fromIntegral dem
+           let d = gcd num' dem'
+           pure . Cost (num' `quot` d) $ dem' `quot` d
       where
         -- We generate the 'infinity' value 1 in 20 times.
         weightForInfinity = (0, 19) :: (Word, Word)
+
 
 instance Binary Cost
 
 
 instance Eq Cost where
 
-    (Cost x) == (Cost y) =
-       (0 == denominator x && 0 == denominator y) || x == y
-  
+    (Cost n1 d1) == (Cost n2 d2) =
+       d1 == d2 && (d1 == 0 || n1 == n2)
+
 
 instance ExtendedNumber Cost where
 
-    unsafeToFinite = unwrap
+    unsafeToFinite (Cost _ 0) = error "Attempting to convert an infinite Cost to a finite Rational."
+    unsafeToFinite (Cost n d) = toInteger n % toInteger d
 
-    fromFinite = Cost
+    fromFinite r
+      | numerator r < 0 = mempty
+      | otherwise = Cost <$> fromIntegral . numerator <*> fromIntegral . denominator $ r
 
-    infinity   = Cost $ 1 % 0
-
-
-instance Fractional Cost where
-
-    lhs@(Cost x) / rhs@(Cost y) =
-        case (lhs == infinity, rhs == infinity) of
-          ( True,     _) -> infinity
-          (False,  True) -> minBound
-          (False, False) -> if   y == 0
-                            then infinity
-                            else Cost $ x / y
-
-    recip (Cost x) = Cost $ recip x
-
-    fromRational = Cost . fromRational
+    infinity   = Cost 1 0
 
 
 instance Monoid Cost where
 
-    mempty = Cost $ 0 % 1
-
-
-instance NFData Cost
+    mempty = Cost 0 1
 
 
 instance Ord Cost where
 
-   (Cost x) `compare` (Cost y) =
+   (Cost n1 d1) `compare` (Cost n2 d2) =
        -- Special case the infinity values
-       case (0 == denominator x, 0 == denominator y) of
+       case (0 == d1, 0 == d2) of
          (True , True ) -> EQ
          (True , False) -> GT
          (False, True ) -> LT
-         (False, False) -> x `compare` y
+         (False, False) -> (n1 % d1) `compare` (n2 % d2)
 
 
-instance Real Cost where
+instance Semigroup Cost where
 
-    toRational (Cost x) = toRational x
+    (<>) lhs@(Cost _ 0) _ = lhs
+    (<>) _ rhs@(Cost _ 0) = rhs
+    (<>) (Cost n1 d1) (Cost n2 d2) = Cost (n' `quot` x) $ d' `quot` x
+      where
+        n' = n1*d2 + n2*d1
+        d' = d1 * d2
+        x  = gcd n' d'
 
 
-instance Semigroup where
-
-    (<>) (Cost x) (Cost y) = Cost $ x + y 
-
-
--- TODO make this nice with repeating fractions.
 instance Show Cost where
 
-    show value@(Cost x)
-      | value == infinity = "∞"
-      | otherwise         = show x
+    show = renderCost
 
 
-instance TextShow ExtendedReal where
+instance TextShow Cost where
 
-    showb value@(Cost x)
-      | value == infinity = "∞"
-      | otherwise         = showb x
+    showb = fromString . show
 
 
 renderCost :: Cost -> String
-renderCost (Cost v) 
-  | den == 0  = "∞"
-  | otherwise = renderRational den num
-  where
-    den = denominator v
-    num = numerator   v
+renderCost (Cost   _   0) = "∞"
+renderCost (Cost num den) = renderRational num den
+
 
 renderRational :: Natural -> Natural -> String
-renderRational den num = show q : "." : (show <$> go r [])
+renderRational num den =
+    case num `quotRem` den of
+      (q,0) -> show q
+      (q,r) -> fold [ show q, ".", toList (go (if q == 0 then num else r) mempty)]
   where
-    (q,r) = num `divRem` den
+    go  0 xs = foldMap (show . fst) xs
+    go !v xs =
+      case hasCycle xs of
+        Nothing                  -> let t@(_,r) = (v*10) `quotRem` den in go r (xs |> t)
+        Just (static, repeating) -> render static <> addOverline (render repeating)
 
-    go  0 xs = reverse xs
-    go !v xs = let (!q,!r) = (v*10) `divRem` den
-               in  go r (q:xs)
+    addOverline = (<>[c]) . intersperse c
+      where
+        !c = '\x0305'
+
+    render = foldMap (show . fst)
+
+    hasCycle x = foldl' f Nothing . reverse . dropEmptySeq $ tails x
+      where
+        !n = length x
+        f a e = a <|> let !m = length e
+                          !(s,r) = splitAt (n-(2*m)) x
+                      in  if r == e <> e
+                          then Just (s, e)
+                          else Nothing
+
+    dropEmptySeq :: Seq a -> Seq a
+    dropEmptySeq  xs@Empty  = xs
+    dropEmptySeq (xs :|> _) = xs
