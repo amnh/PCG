@@ -26,7 +26,8 @@ module File.Format.Fasta.Parser
   ) where
 
 import           Control.Arrow              ((&&&))
-import           Control.DeepSeq
+
+
 import           Control.Monad              ((<=<))
 import           Data.Alphabet.IUPAC
 import           Data.Bimap                 (Bimap, toMap)
@@ -52,6 +53,7 @@ import           Text.Megaparsec.Custom
 import           VectorBuilder.Builder      (Builder)
 import qualified VectorBuilder.Builder      as V
 import qualified VectorBuilder.Vector       as V
+
 
 -- |
 -- Pairing of taxa with an unconverted sequence
@@ -131,7 +133,6 @@ withinVec v e = go 0 (V.length v - 1)
                           EQ -> True
                           LT -> go    (md + 1) hi
                           GT -> go lo (md - 1)
-
 
 -- |
 -- Extract the keys from a 'Bimap'.
