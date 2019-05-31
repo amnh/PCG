@@ -353,7 +353,7 @@ Various combinations of forest, network, tree rearrangements.
 \newpage 
 
 \section{Candidate Network Edges}\label{Candidate Network Edges}
- As mentioned in \ref{Labelling of a single graph}, a PCG Network is a ``model'' phylogenetic network. This places incident degree constraints on the edges as well as ordering constraints on network edges. In order to formalise this we can think of a PCG network as having an implicit preordering  on the vertices $(N, \leq )$. 
+ As mentioned in \ref{Labelling of a single graph}, a PCG Network is a ``model'' phylogenetic network. This places incident degree constraints (see Display Tree Constraint) on the edges as well as ordering constraints on network edges. In order to formalise this we can think of a PCG network as having an implicit preordering  on the vertices $(N, \leq )$. 
 
 
 \vspace{2mm}
@@ -363,8 +363,7 @@ Various combinations of forest, network, tree rearrangements.
     \textbf{Notation:}
     \begin{itemize}
     \item We shall write $a \sim b$ if $a \leq b$ and $ b \leq a$.
-    \item We shall write $a < b$ if $a \leq b$ but $b \nleq a$
-    \end{itemize}
+    \item We shall write $a < b$ if $a \leq b$ but $b \nleq a$    \end{itemize}
     }%
 }
 \end{center}
@@ -378,28 +377,49 @@ Various combinations of forest, network, tree rearrangements.
 \vspace{2mm}
 
 
-\fbox{
-    \parbox{0.9\textwidth}{
-    \textbf{Network Ordering constraint:} If we have that $v < w$ then we cannot have a network node between $v$ and $w$.
-    }%
-}
+Given a PCG network we would like to find all the edges $e_1= (\mathrm{src}_1, \mathrm{tgt}_1)$ and $e_2 = (\mathrm{src}_2, \mathrm{tgt}_2)$ between which we could insert a new network (as depicted in figure 1) node so that we still have a valid PCG network.
+
+We say that any new network node added is compatible with the existing ordering if the new implied ordering satisfies the \textbf{Network Ordering Constraint}:
 
 \vspace{4mm}
+\fbox{
+    \parbox{0.9\textwidth}{
+    \textbf{Network Ordering constraint:} If we have that $v < w$ then we cannot have a network node child with parents $v$ and $w$.
+    }%
+}
+\vspace{4mm}
 
-Given a PCG network we would like to find all the edges $e_1= (\mathrm{src}_1, \mathrm{tgt}_1)$, $e_2 = (\mathrm{src}_2, \mathrm{tgt}_2)$ between which we could insert a new network node so that we still have a PCG network (as shown in figure 1).
+We say that any new network node has satisfies the \textbf{Display Tree Constraint} if:
 
-We say that any new network node added is compatible with the existing ordering if the new implied ordering satisfies the \textbf{Network Ordering Constraint}. In order for this to be the case we require the following conditions to be satisfied (using the notation from figure 1):
+\vspace{4mm}
+\fbox{
+    \parbox{0.9\textwidth}{
+    \textbf{Display Tree constraint:} Each associated display tree must be a Phylogenetic $\mathrm{X}-tree$ (for some \textit{fixed} X)  meaning there is a (given) bijection between $\mathrm{X}$ and the leaves $\mathrm{L}$ of the tree.
+    the incidence conditions:
+    \begin{itemize}
+      \item Each internal node is in-degree 1 and out-degree 2.
+      \item Any root node is in-degree 0 and out-degree 2.
+      \item Each leaf is in-degree 1 and out-degree 0.
+    \end{itemize}
+    }%
+}
+\vspace{4mm}
+
+\noindent We note in particular that the taxon set $X$ is fixed when a new network node has been added and so we cannot produce a network with a display tree containing \textit{new} leaf nodes.
+
+In order for this to be the case we require the following conditions to be satisfied (using the notation from figure 1):
 
 \begin{itemize}
 
-\item \textbf{Ancestral Edge Condition: }We cannot add  a descendent network node along edges which are ancestral to one another i.e. if it is the case that:
+\item \textbf{Ancestral Edge Condition: } We cannot insert a network node along edges which are ancestral to one another. In formal notation:
   \[ (\mathrm{tgt1} < \mathrm{src2})\; \bigvee \; (\mathrm{tgt2} < \mathrm{src1}) \]
 
-\item \textbf{Descendent Network Condition: }Denote by $\mathrm{DescNetNodes}(v)$ the collection of all network nodes that descend from $v$ and $\mathrm{RIA}(v)$ those nodes which are ancestral to $v$ and incident to a root node. We then write:
-\[ \mathrm{AncDescNetNodes}(v) = \bigcup_{a_{i}\in \mathrm{RIA}(v)} \mathrm{DescNetNodes} (a_i) \]
-We ask that the following two conditions are satisfied:
-\[ \mathrm{DescNetNodes}(\mathrm{src2})\; \bigcap \;\mathrm{AncDescNetNodes}(\mathrm{tgt1}) = \emptyset \]
-\[ \mathrm{DescNetNodes}(\mathrm{tgt1})\; \bigcap \;\mathrm{AncDescNetNodes}(\mathrm{tgt2}) = \emptyset  \]
+\item \textbf{Network Incident Node Condition: } We cannot add a network node along $e_2$ if either of its nodes is a network node.
+  \[ (\mathrm{tgt1} < \mathrm{src2})\; \bigvee \; (\mathrm{tgt2} < \mathrm{src1}) \]
+
+\item \textbf{Descendent Network Node Condition: }
+Suppose that either $\mathrm{src1}$  or $\mathrm{src2}$ are the parents of the network node. We shall denote the corresponding network parent by $\mathrm{NetPar}(\mathrm{src})$. In order for the implied ordering to be compatible we must have that the following does not hold:
+  \[ (\mathrm{NetPar(src1)} < \mathrm{src2})\; \bigvee \; (\mathrm{tgt2} < \mathrm{src1}) \]
 
 \end{itemize}
 
