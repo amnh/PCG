@@ -17,10 +17,10 @@ matrix:
 
   # Cabal
   - ghc: 8.4.4
-  - ghc: 8.6.4
+  - ghc: 8.6.5
 
   # Stack
-  - ghc: 8.6.4
+  - ghc: 8.6.5
     env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
 
 
@@ -56,7 +56,7 @@ install:
 
       # build project with stack
       stack --version
-      stack build --system-ghc --bench --haddock --haddock-deps --haddock-hyperlink-source --haddock-internal --test --no-run-benchmarks --no-run-tests
+      stack build --fast --system-ghc --bench --test --haddock --haddock-deps --haddock-hyperlink-source --haddock-internal --no-run-benchmarks --no-run-tests 
     fi
 
 
