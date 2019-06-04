@@ -199,6 +199,70 @@ library
     Text.Megaparsec.Custom
 
 
+benchmark bench-space
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+         
+  main-is:
+    Space.hs
+
+  type:
+    exitcode-stdio-1.0  
+    
+  ghc-options:
+    -threaded
+
+  hs-source-dirs:
+    bench
+  
+  build-depends:
+    pcg-file-parsers,
+    criterion                >= 1.5       && < 2.0,
+    deepseq                  >= 1.4       && < 2.0,
+    filepath                 >= 1.4       && < 2.0,
+    text                     >= 1.2       && < 2.0,
+    weigh                    >= 0.0.14    && < 1.0,
+
+  other-modules:
+    Benchmark.FASTA.Space
+    Benchmark.Internal
+
+
+benchmark bench-time
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+         
+  main-is:
+    Time.hs
+
+  type:
+    exitcode-stdio-1.0  
+    
+  ghc-options:
+    -threaded
+
+  hs-source-dirs:
+    bench
+  
+  build-depends:
+    pcg-file-parsers,
+    criterion                >= 1.5       && < 2.0,
+    deepseq                  >= 1.4       && < 2.0,
+    filepath                 >= 1.4       && < 2.0,
+    text                     >= 1.2       && < 2.0,
+    weigh                    >= 0.0.14    && < 1.0,
+
+  other-modules:
+    Benchmark.FASTA.Time
+    Benchmark.Internal
+
+
 executable file-tests
 
   import:

@@ -91,7 +91,7 @@ networkGraphParameters = G.defaultParams {
     emptyArrowHead = [G.ArrowHead $ G.AType [(G.noMods, G.Vee)]]
     point = [G.Shape G.PointShape]
     order = [G.Ordering G.OutEdges]
-    
+
 
 
 --------------------------------------
@@ -246,7 +246,7 @@ e1HasE2SrcAncestralNodeNetwork =
                              , ("newTgt", "g (tgt2)"  )
                              ]
             ]
-            
+
 -- Edge added: (g, l) -> (m, o)
 -- Problem: We cannot have a new edge into an edge
 -- adjacent to a network node as leads to having a display tree
@@ -342,7 +342,7 @@ e2NetworkEdgeComplementNodeAncestralToE1 =
                             , "h", "i", "j", "l", "m", "n"
                             , "o", "p", "q", "r"
                             ]
-            
+
             , newN        <$> ["newSrc", "newTgt"]
             , contextualN <$> ["g (src1)", "a (src2)", "k (tgt1)", "c (tgt2)"]
             ]

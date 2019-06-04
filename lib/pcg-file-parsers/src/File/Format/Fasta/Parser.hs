@@ -13,6 +13,9 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -26,12 +29,12 @@ module File.Format.Fasta.Parser
   ) where
 
 import           Control.Arrow              ((&&&))
-
-
+import           Control.DeepSeq            (NFData)
 import           Control.Monad              ((<=<))
 import           Data.Alphabet.IUPAC
 import           Data.Bimap                 (Bimap, toMap)
 import           Data.Char                  (isLower, isUpper, toLower, toUpper)
+--import           Data.Data                  (Data)
 import           Data.Foldable
 import           Data.Functor
 import           Data.List                  (partition)
@@ -47,6 +50,7 @@ import           Data.Text.Short            (toString)
 import           Data.Vector.Unboxed        (Unbox, Vector, (!))
 import qualified Data.Vector.Unboxed        as V
 import           File.Format.Fasta.Internal
+import           GHC.Generics               (Generic)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
@@ -61,7 +65,7 @@ data FastaSequence
    = FastaSequence
    { taxonName     :: {-# UNPACk #-} !Identifier
    , taxonSequence :: {-# UNPACK #-} !(Vector Char)
-   } deriving (Eq,Show)
+   } deriving (Eq, Generic, NFData, Show)
 
 
 -- |
