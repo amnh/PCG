@@ -118,7 +118,7 @@ readSTDIN :: ValidationT InputStreamError IO Text
 readSTDIN = do
     nonEmptyStream <- liftIO $ hReady stdin
     if   nonEmptyStream
-    then liftIO . runEffect $ liftIO T.getContents >~ await
+    then liftIO T.getContents
     else invalid $ makeEmptyFileStream "STDIN"
 
 
