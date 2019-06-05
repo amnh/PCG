@@ -24,7 +24,6 @@ module Bio.Metadata.Discrete.Class
 import Bio.Metadata.Continuous
 import Control.Lens
 import Data.FileSource
-import Data.Text.Short         (ShortText)
 
 
 -- |

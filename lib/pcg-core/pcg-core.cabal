@@ -159,6 +159,7 @@ library
     Bio.Graph.Node,
     Bio.Graph.Node.Context,
     Bio.Graph.PhylogeneticDAG,
+    Bio.Graph.PhylogeneticDAG.Substitute,
     Bio.Graph.ReferenceDAG,
     Bio.Graph.ReferenceDAG.Internal,
     Bio.Graph.ReferenceDAG.Network,
@@ -322,6 +323,7 @@ library pcg-data-structures
     Bio.Graph.Node
     Bio.Graph.Node.Context
     Bio.Graph.PhylogeneticDAG
+    Bio.Graph.PhylogeneticDAG.Substitute,
     Bio.Graph.ReferenceDAG
     Bio.Graph.ReferenceDAG.Internal
     Bio.Graph.ReferenceDAG.Network
