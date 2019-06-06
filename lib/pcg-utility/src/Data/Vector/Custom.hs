@@ -14,10 +14,10 @@
 
 module Data.Vector.Custom
   ( fromList'
+  , subAt
   ) where
 
 import qualified Control.Foldl as L
-import           Data.Foldable
 import           Data.Vector   (Vector)
 import qualified Data.Vector   as V
 
@@ -33,6 +33,5 @@ fromList' = uncurry V.fromListN . L.fold f
     f = (,) <$> L.length <*> L.list
 
 
-
-
-
+subAt :: Int -> Vector a -> Vector a -> Vector a
+subAt ind sub tot = let (l,r) = V.splitAt ind tot in l <> sub <> (V.tail r)

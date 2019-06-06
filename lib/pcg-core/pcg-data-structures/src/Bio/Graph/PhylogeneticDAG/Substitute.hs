@@ -12,6 +12,7 @@
 
 {-# LANGUAGE ScopedTypeVariables #-}
 
+
 module Bio.Graph.PhylogeneticDAG.Substitute where
 import qualified Data.Map as M
 import Control.Lens
@@ -88,13 +89,17 @@ substituteSingle namedContext (nodeName, subGraph) totalGraph =
               (\key refs -> refs & ix key . _parentRefs .~ IS.singleton incrementedInd)
               subReferences
               rootChildRefs
-        removeRootNode = undefined
+        removeRootNodeSub = deleteAtV rootInd updateParentIndsSubRef
+        newSubGraphRefs   = removeRootNodeSub
 
         incTotalRefNewChild
           = incrementedTotalRef
           & ix ind -- this is still the old index!
           . _childRefs
           .~ rootChildData
+
+        newTotalGraphRefs = incTotalRefNewChild
+        updatedReferenceVector = newSubGraphRefs <> newTotalGraphRefs
       in
         undefined
 
@@ -112,3 +117,8 @@ deleteAt i ls
     go n (x:xs) = x : go (n-1) xs
     go _ [] = []
 {-# INLINE deleteAt #-}
+
+deleteAtV :: Int -> Vector a -> Vector a
+deleteAtV i = V.fromList . deleteAt i . toList
+
+

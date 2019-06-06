@@ -191,4 +191,3 @@ hexFoldMap m1 m2 m3 m4 m5 m6 metaSeq =
      <> (foldMap m4 . (^.      metricBin) $ metaDataBlock)
      <> (foldMap m5 . (^.   nonMetricBin) $ metaDataBlock)
      <> (foldMap m6 . (^.     dynamicBin) $ metaDataBlock)
-

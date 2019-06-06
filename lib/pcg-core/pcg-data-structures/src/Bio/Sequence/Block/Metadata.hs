@@ -269,3 +269,4 @@ dynamicToMetadataBlock v = MB ()
     , _nonMetricBin   = mempty
     , _dynamicBin     = pure v
     }
+

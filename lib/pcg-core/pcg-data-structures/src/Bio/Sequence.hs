@@ -90,6 +90,7 @@ import           Data.Semigroup.Foldable
 import           Prelude                      hiding (zip)
 
 
+
 -- |
 -- Perform a six way map over the polymorphic types.
 hexmap
