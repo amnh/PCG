@@ -63,7 +63,7 @@ import qualified VectorBuilder.Vector       as V
 -- Pairing of taxa with an unconverted sequence
 data FastaSequence
    = FastaSequence
-   { taxonName     :: {-# UNPACk #-} !Identifier
+   { taxonName     :: {-# UNPACK #-} !Identifier
    , taxonSequence :: {-# UNPACK #-} !(Vector Char)
    } deriving (Eq, Generic, NFData, Show)
 
@@ -102,12 +102,24 @@ fastaTaxonName = identifierLine
 fastaSequence :: forall e s m . (MonadParsec e s m, Monoid (Tokens s), Token s ~ Char) => m (Vector Char)
 fastaSequence = space *> fullSequence
   where
-    fullSequence = buildVector . mconcat <$> some sequenceLine
-    sequenceLine = mconcat <$> ((lineChunk <* inlineSpace) `someTill` flexEOL)
-    lineChunk    = takeWhile1P Nothing withinAlphabet
+    fullSequence = buildVector . mconcat <$> some taxonContentLine
+
+    -- A line in the "taxon contents" can start with zero or more "inline whitespace" characters.
+    -- After all leading whitespace has been consumed on the line, what remains must be either:
+    --
+    --   * A newline, signifying the end of the line
+    --
+    --   * One or more sequence data symbools, possibly seperated by spaces,
+    --       followed by a newline or the end of the file.
+    taxonContentLine = inlineSpace *> (sequenceLine <|> (endOfLine $> mempty))
+
+    -- Defines the contents of a taxon line which contains sequence data
+    sequenceLine = mconcat <$> ((seqChunk <* inlineSpace) `someTill` flexEOL)
+      where
+        seqChunk = takeWhile1P Nothing withinAlphabet
 
     -- Matches on the end of line or the end of the stream.
-    flexEOL = void (try eol) <|> lookAhead eof
+    flexEOL      = void (try endOfLine) <|> lookAhead eof
 
     buildVector  :: Tokens s -> Vector Char
     buildVector  = V.fromList . chunkToTokens (Proxy :: Proxy s)

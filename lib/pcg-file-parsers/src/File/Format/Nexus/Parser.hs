@@ -371,7 +371,7 @@ seqMatrixDefinition = do
     _         <- symbol $ char ';'
     pure $ filter (/= "") goodStuff
     where
-        c = whitespaceNoNewlines *> (char ';' <|> endOfLine) <* whitespace
+        c = whitespaceNoNewlines *> (void (char ';') <|> endOfLine) <* whitespace
 
 
 -- |

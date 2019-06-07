@@ -25,6 +25,7 @@ module Text.Megaparsec.Custom
   , fails
   , inlineSpaceChar
   , inlineSpace
+  , isInlineSpace
   , somethingTill
   , string''
 --  , runParserOnFile
@@ -99,8 +100,8 @@ double = try real <|> fromIntegral <$> int
 -- |
 -- Custom 'eol' combinator to account for /very/ old Mac file formats ending
 -- lines in a single @\'\\r\'@.
-endOfLine :: (Enum (Token s), MonadParsec e s m) => m (Token s)
-endOfLine = choice (try <$> [ nl, cr *> nl, cr ]) $> newLineChar
+endOfLine :: (Enum (Token s), MonadParsec e s m) => m ()
+endOfLine = choice [ nl, try (cr *> nl), cr ] $> ()
   where
     newLineChar  = enumCoerce '\n'
     carriageChar = enumCoerce '\r'
