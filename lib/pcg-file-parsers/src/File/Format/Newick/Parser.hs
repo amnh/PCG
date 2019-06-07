@@ -12,6 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE ApplicativeDo       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -48,6 +49,7 @@ import Text.Megaparsec.Custom
 
 -- |
 -- Parses a stream producing a standard Newick tree
+{-# INLINEABLE newickStandardDefinition #-}
 newickStandardDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickStandardDefinition = whitespace *> newickNodeDefinition <* symbol (char ';')
 
@@ -55,12 +57,14 @@ newickStandardDefinition = whitespace *> newickNodeDefinition <* symbol (char ';
 -- |
 -- Parses a stream producing an extended Newick tree.
 -- Directed cycles in extended Newick trees are not permitted.
+{-# INLINEABLE newickExtendedDefinition #-}
 newickExtendedDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickExtendedDefinition = newickStandardDefinition >>= joinNonUniqueLabeledNodes
 
 
 -- |
 -- Parses a stream producing a forest of extended Newick trees.
+{-# INLINEABLE newickForestDefinition #-}
 newickForestDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
 newickForestDefinition = whitespace *> symbol (char '<') *> some1 newickExtendedDefinition <* symbol (char '>')
 
@@ -69,6 +73,7 @@ newickForestDefinition = whitespace *> symbol (char '<') *> some1 newickExtended
 -- Definition of a serialized Newick node consisiting of the node's descendants,
 -- optional label, and optional branch length. Mutually recursive with
 -- 'subtreeDefinition '.
+{-# INLINEABLE newickNodeDefinition #-}
 newickNodeDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickNodeDefinition = do
     descendants'  <- descendantListDefinition
@@ -80,6 +85,7 @@ newickNodeDefinition = do
 -- |
 -- Parses one or more subtrees consisting of a single node or a further
 -- descendant list.
+{-# INLINEABLE descendantListDefinition #-}
 descendantListDefinition :: (MonadParsec e s m, Token s ~ Char) => m [NewickNode]
 descendantListDefinition = char '(' *> trimmed subtreeDefinition `sepBy1` char ',' <* char ')' <* whitespace
 
@@ -87,6 +93,7 @@ descendantListDefinition = char '(' *> trimmed subtreeDefinition `sepBy1` char '
 -- |
 -- Definition of a Newick subtree consisting of either a single leaf node or a
 -- greater subtree. Mutually recursive with 'newickNodeDefinition'.
+{-# INLINEABLE subtreeDefinition #-}
 subtreeDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 subtreeDefinition = newickNodeDefinition <|> newickLeafDefinition
 
@@ -94,6 +101,7 @@ subtreeDefinition = newickNodeDefinition <|> newickLeafDefinition
 -- |
 -- Definition of a sigle leaf node in a Newick tree. Must contain a node label.
 -- Has no descendants be definition.
+{-# INLINEABLE newickLeafDefinition #-}
 newickLeafDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickLeafDefinition = do
     label'        <- newickLabelDefinition
@@ -103,6 +111,7 @@ newickLeafDefinition = do
 
 -- |
 -- Defines the label for a 'NewickNode' which can be either quoted or unquoted.
+{-# INLINEABLE newickLabelDefinition #-}
 newickLabelDefinition :: (MonadParsec e s m, Token s ~ Char) => m String
 newickLabelDefinition = (quotedLabel <|> unquotedLabel) <* whitespace
 
@@ -111,6 +120,7 @@ newickLabelDefinition = (quotedLabel <|> unquotedLabel) <* whitespace
 -- We use a recursive parsing technique to handle the quoted escape sequence
 -- of two single quotes ("''") to denote an escaped quotation character
 -- in the quoted label rather than signifying the end of the quoted label
+{-# INLINEABLE quotedLabel #-}
 quotedLabel :: (MonadParsec e s m, Token s ~ Char) => m String
 quotedLabel = do
     _ <- char '\''
@@ -139,12 +149,14 @@ quotedLabel = do
 -- interpretation of the standard Newick format and the Extended Newick
 -- format. However, if a user really want to put '<' & '>' characters in
 -- a node label, they can always put such characters in a quoted label.
+{-# INLINEABLE unquotedLabel #-}
 unquotedLabel :: (MonadParsec e s m, Token s ~ Char) => m String
 unquotedLabel = some $ noneOf invalidUnquotedLabelChars
 
 
 -- |
 -- Characters which can ontly appear in a quoted 'NewickNode' label.
+{-# INLINE requiresQuotedLabelChars #-}
 requiresQuotedLabelChars :: String
 requiresQuotedLabelChars = " ':;,()[]<>"
 
@@ -152,6 +164,7 @@ requiresQuotedLabelChars = " ':;,()[]<>"
 -- |
 -- List of chacracters which __cannot__ appear in an /quoted/ label of a
 -- 'NewickNode'.
+{-# INLINE invalidQuotedLabelChars #-}
 invalidQuotedLabelChars :: String
 invalidQuotedLabelChars = "\r\n\t\f\v\b"
 
@@ -159,6 +172,7 @@ invalidQuotedLabelChars = "\r\n\t\f\v\b"
 -- |
 -- List of chacracters which __cannot__ appear in an /unquoted/ label of a
 -- 'NewickNode'. A superset of 'invalidQuotedLabelChars'.
+{-# INLINE invalidUnquotedLabelChars #-}
 invalidUnquotedLabelChars :: String
 invalidUnquotedLabelChars = invalidQuotedLabelChars <> requiresQuotedLabelChars
 
@@ -169,6 +183,7 @@ invalidUnquotedLabelChars = invalidQuotedLabelChars <> requiresQuotedLabelChars
 -- the 'branchLength' of a given 'NewickNode' is the branch length itself and
 -- it's parent. Becomes non-sensical with extended Newick trees that have nodes
 -- with "in-degree" greater than one.
+{-# INLINEABLE branchLengthDefinition #-}
 branchLengthDefinition :: (MonadParsec e s m, Token s ~ Char) => m Double
 branchLengthDefinition = symbol (char ':') *> symbol double
 
@@ -176,12 +191,14 @@ branchLengthDefinition = symbol (char ':') *> symbol double
 -- |
 -- Convinience combinator for stripping /leading and trailing/ whitespace from a
 -- combinator.
+{-# INLINE trimmed #-}
 trimmed :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
 
 -- |
 -- Convinience combinator for stripping /trailing/ whitespace from a combinator.
+{-# INLINE symbol #-}
 symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol x = x <* whitespace
 
@@ -189,6 +206,7 @@ symbol x = x <* whitespace
 -- |
 -- Definition of space between tokens which can be discarded. This includes
 -- spaces /and/ comments.
+{-# INLINE whitespace #-}
 whitespace :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ()
 whitespace = skipMany $ choice [ hidden spChar, hidden block ]
   where
@@ -210,6 +228,7 @@ whitespace = try commentDefinition <|> space
 -- |
 -- Joins the nodes of an extended Newick tree which share the same label.
 -- Directed cycles from the tree's implicit root will result in a 'ParseError'.
+{-# INLINE joinNonUniqueLabeledNodes #-}
 joinNonUniqueLabeledNodes :: (MonadParsec e s m, Token s ~ Char) => NewickNode -> m NewickNode
 joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
   where

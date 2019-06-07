@@ -58,17 +58,21 @@ import Text.Megaparsec
 
 -- |
 -- Parses an entire stream into zero or more 'NewickForest's.
+{-# INLINEABLE newickStreamParser #-}
 newickStreamParser :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty NewickForest)
 newickStreamParser = some1 forestDefinitions <* eof
 
 
+{-# INLINE forestDefinitions #-}
 forestDefinitions :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
 forestDefinitions = explicitForest <|> implicitForest
 
 
+{-# INLINE explicitForest #-}
 explicitForest :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
 explicitForest = try newickForestDefinition
 
 
+{-# INLINE implicitForest #-}
 implicitForest :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
 implicitForest = pure <$> newickExtendedDefinition

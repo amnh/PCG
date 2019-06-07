@@ -12,6 +12,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module File.Format.Newick.Internal
@@ -24,11 +27,13 @@ module File.Format.Newick.Internal
   ) where
 
 
+import Control.DeepSeq    (NFData)
 import Data.List.NonEmpty (NonEmpty, toList)
 import Data.Maybe
 import Data.String        (IsString (fromString))
 import Data.Text.Short    (ShortText)
 import Data.Tree
+import GHC.Generics       (Generic)
 
 
 {----
@@ -58,6 +63,7 @@ import Data.Tree
 type NewickForest = NonEmpty NewickNode
 
 
+-- TODO: No String, only ShortText
 -- |
 -- A node in a "Phylogenetic Forest"
 data NewickNode
@@ -65,7 +71,7 @@ data NewickNode
    { descendants  :: [NewickNode] -- ^ List of node's children, leaf nodes are empty lists
    , newickLabel  :: Maybe String -- ^ The node's possibly included label, leaf nodes will always be Just-valued
    , branchLength :: Maybe Double -- ^ The node's possibly included branch length
-   } deriving (Eq,Ord)
+   } deriving (Eq, Generic, NFData, Ord)
 
 
 instance Show NewickNode where
@@ -90,6 +96,7 @@ instance Semigroup NewickNode where
 -- Renders the 'NewickForest' to a 'String'. If the forest contains a DAG with
 -- in-degree  greater than one, then the shared subtree in a DAG will be rendered
 -- multiple times.
+{-# INLINEABLE renderNewickForest #-}
 renderNewickForest :: NewickForest -> String
 renderNewickForest = drawForest . unfoldForest f . toList
   where
@@ -100,6 +107,7 @@ renderNewickForest = drawForest . unfoldForest f . toList
 -- Smart constructor for a 'NewickNode' preseriving the invariant:
 --
 -- > null nodes ==> isJust . label
+{-# INLINEABLE newickNode #-}
 newickNode :: [NewickNode] -> Maybe String -> Maybe Double -> Maybe NewickNode
 newickNode nodes label length'
   | null nodes && isNothing label = Nothing
@@ -108,6 +116,7 @@ newickNode nodes label length'
 
 -- |
 -- Determines whether a given 'NewickNode' is a leaf node in the tree.
+{-# INLINEABLE isLeaf #-}
 isLeaf :: NewickNode -> Bool
 isLeaf node = (null . descendants) node && (isJust . newickLabel) node
 
