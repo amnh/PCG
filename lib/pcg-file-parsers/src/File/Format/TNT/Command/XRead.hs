@@ -300,7 +300,7 @@ discreteToProtein character = foldl (.|.) zeroBits <$> mapM f flags
 -- |
 -- Represents the terminal character sequence for a chatacter sequence.
 -- Nomenclature ambiguities /are fun!/
-segmentTerminal :: (MonadParsec e s m, Token s ~ Char) => m Char
+segmentTerminal :: (MonadParsec e s m, Token s ~ Char) => m ()
 segmentTerminal = whitespaceInline *> endOfLine <* whitespace
 
 
