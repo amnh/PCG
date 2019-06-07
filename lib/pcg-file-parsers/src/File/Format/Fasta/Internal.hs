@@ -50,6 +50,7 @@ type CharacterSequence = Vector (Vector Symbol)
 -- |
 -- Parses a line containing the sequence identifier along with an
 -- optional conmment which is discarded.
+{-# INLINE identifierLine #-}
 identifierLine :: (MonadParsec e s m, Token s ~ Char) => m Identifier
 identifierLine = do
     _ <- char '>'
@@ -66,18 +67,21 @@ identifierLine = do
 
 -- |
 -- 'Identifier' of a sequence
+{-# INLINE identifier #-}
 identifier :: (MonadParsec e s m, Token s ~ Char) => m String
 identifier = some $ satisfy validIdentifierChar
 
 
 -- |
 -- Defines if a 'Char' is valid to be contained within a sequence 'Identifier'
+{-# INLINE validIdentifierChar #-}
 validIdentifierChar :: Char -> Bool
 validIdentifierChar c = (not . isSpace) c && c /= '$' && c /= ';'
 
 
 -- |
 -- Defines the comment format which can be expected after an identifier
+{-# INLINE commentBody #-}
 commentBody :: (MonadParsec e s m, Token s ~ Char) => m String
 commentBody  = do
     _       <- inlineSpace

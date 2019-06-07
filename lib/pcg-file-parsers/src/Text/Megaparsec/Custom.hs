@@ -49,6 +49,7 @@ import qualified Text.Megaparsec.Char.Lexer as LEX
 -- |
 -- Prepend a single combinator result element to the combinator result of a list
 -- of elements.
+{-# INLINE (<:>) #-}
 (<:>)  :: Applicative f => f a -> f [a] -> f [a]
 (<:>)  a b = (:)  <$> a <*> b
 
@@ -56,6 +57,7 @@ import qualified Text.Megaparsec.Char.Lexer as LEX
 {-
 -- |
 -- Concatenate the result of two list producing combinators.
+{-# INLINE (<++>) #-}
 (<++>) :: (Applicative f, Semigroup a) => f a -> f a -> f a
 (<++>) a b = (<>) <$> a <*> b
 -}
@@ -63,6 +65,7 @@ import qualified Text.Megaparsec.Char.Lexer as LEX
 
 -- |
 -- Parse a string-like chunk.
+{-# INLINEABLE string'' #-}
 string'' :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => String -> m (Tokens s)
 string'' = string' . tokensToChunk (Proxy :: Proxy s)
 
@@ -70,6 +73,7 @@ string'' = string' . tokensToChunk (Proxy :: Proxy s)
 -- |
 -- @anythingTill end@ consumes zero or more characters until @end@ is matched,
 -- leaving @end@ in the stream.
+{-# INLINEABLE anythingTill #-}
 anythingTill :: MonadParsec e s m => m a -> m [Token s]
 anythingTill c = do
     ahead <- optional . try $ lookAhead c
@@ -81,6 +85,7 @@ anythingTill c = do
 -- |
 -- @somethingTill end@ consumes one or more characters until @end@ is matched,
 -- leaving @end@ in the stream.
+{-# INLINEABLE somethingTill #-}
 somethingTill :: MonadParsec e s m => m a -> m [Token s]
 somethingTill c = do
     _ <- notFollowedBy c
@@ -89,6 +94,7 @@ somethingTill c = do
 
 -- |
 -- Flexibly parses a 'Double' value represented in a variety of forms.
+{-# INLINEABLE double #-}
 double :: (MonadParsec e s m, Token s ~ Char) => m Double
 double = try real <|> fromIntegral <$> int
   where
@@ -100,6 +106,7 @@ double = try real <|> fromIntegral <$> int
 -- |
 -- Custom 'eol' combinator to account for /very/ old Mac file formats ending
 -- lines in a single @\'\\r\'@.
+{-# INLINE endOfLine #-}
 endOfLine :: (Enum (Token s), MonadParsec e s m) => m ()
 endOfLine = choice [ nl, try (cr *> nl), cr ] $> ()
   where
@@ -111,6 +118,7 @@ endOfLine = choice [ nl, try (cr *> nl), cr ] $> ()
 
 -- |
 -- Accepts zero or more Failure messages.
+{-# INLINEABLE fails #-}
 fails :: MonadParsec e s m => [String] -> m a
 fails = failure Nothing . S.fromList . fmap Label . mapMaybe nonEmpty
 

@@ -68,6 +68,7 @@ data FastcSequence
 
 -- |
 -- Consumes a stream of 'Char's and parses the stream into a 'FastcParseResult'
+{-# INLINEABLE fastcStreamParser #-}
 fastcStreamParser :: (MonadParsec e s m, Token s ~ Char) => m FastcParseResult
 fastcStreamParser = some fastcTaxonSequenceDefinition <* eof
 
@@ -75,6 +76,7 @@ fastcStreamParser = some fastcTaxonSequenceDefinition <* eof
 -- |
 -- Parses a FASTC 'Identifier' and the associated sequence, discarding any
 -- comments
+{-# INLINEABLE fastcTaxonSequenceDefinition #-}
 fastcTaxonSequenceDefinition :: (MonadParsec e s m, Token s ~ Char) => m FastcSequence
 fastcTaxonSequenceDefinition = do
     name <- identifierLine
@@ -89,6 +91,7 @@ fastcTaxonSequenceDefinition = do
 -- |
 -- Parses a sequence of 'Symbol's represneted by a 'CharacterSequence'.
 -- Symbols can be multi-character and are assumed to be seperated by whitespace.
+{-# INLINEABLE fastcSymbolSequence #-}
 fastcSymbolSequence :: (MonadParsec e s m, Token s ~ Char) => m [Vector ShortText]
 fastcSymbolSequence = space *> fullSequence
   where
@@ -99,6 +102,7 @@ fastcSymbolSequence = space *> fullSequence
 -- |
 -- Parses either an ambiguity group of 'Symbol's or a single, unambiguous
 -- 'Symbol'.
+{-# INLINE symbolGroup #-}
 symbolGroup :: (MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
 symbolGroup = ambiguityGroup <|> (pure <$> validSymbol)
 
@@ -106,6 +110,7 @@ symbolGroup = ambiguityGroup <|> (pure <$> validSymbol)
 -- |
 -- Parses an ambiguity group of symbols. Ambiguity groups are enclosed by square
 -- brackets and delimited by whitespace.
+{-# INLINE ambiguityGroup #-}
 ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
 ambiguityGroup = start *> group <* close
   where
@@ -117,6 +122,7 @@ ambiguityGroup = start *> group <* close
 -- |
 -- Parses a 'Symbol' token ending with whitespace and excluding the forbidden
 -- characters: '[\'>\',\'[\',\']\']'.
+{-# INLINE validSymbol #-}
 validSymbol :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ShortText
 validSymbol = do
     syn <- syntenyDefinition <* notFollowedBy space1

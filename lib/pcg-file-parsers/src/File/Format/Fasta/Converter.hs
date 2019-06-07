@@ -50,6 +50,7 @@ data  FastaSequenceType
 
 -- |
 -- Define and convert a 'FastaParseResult' to the expected sequence type
+{-# INLINEABLE fastaStreamConverter #-}
 fastaStreamConverter :: MonadParsec e s m => FastaSequenceType -> FastaParseResult -> m TaxonSequenceMap
 fastaStreamConverter seqType =
     fmap (colate seqType) . validateStreamConversion seqType . processedChars seqType
@@ -60,6 +61,7 @@ fastaStreamConverter seqType =
 -- not surjectively mapped to from the domain
 -- (ie, more than one element on the left side goes to an element on the right side),
 -- this means that we must preprocess these element so that there is a bijective mapping.
+{-# INLINE processedChars #-}
 processedChars :: FastaSequenceType -> FastaParseResult -> FastaParseResult
 processedChars seqType = fmap processElement
   where
@@ -79,6 +81,7 @@ processedChars seqType = fmap processElement
 
 -- |
 -- Validates that the stream contains a 'FastaParseResult' of the given 'FastaSequenceType'.
+{-# INLINE validateStreamConversion #-}
 validateStreamConversion :: MonadParsec e s m => FastaSequenceType -> FastaParseResult -> m FastaParseResult
 validateStreamConversion seqType xs =
   case filter hasErrors result of
@@ -109,6 +112,7 @@ validateStreamConversion seqType xs =
 
 -- |
 -- Interprets and converts an entire 'FastaParseResult according to the given 'FastaSequenceType'.
+{-# INLINE colate #-}
 colate :: FastaSequenceType -> FastaParseResult -> TaxonSequenceMap
 colate seqType = foldr f empty
   where
@@ -118,6 +122,7 @@ colate seqType = foldr f empty
 -- |
 -- Interprets and converts an ambiguous sequence according to the given 'FastaSequenceType'
 -- from the ambiguous form to a 'CharacterSequence' based on IUPAC codes.
+{-# INLINE seqCharMapping #-}
 seqCharMapping :: FastaSequenceType -> Vector Char -> CharacterSequence
 seqCharMapping seqType v = transformVector
   where

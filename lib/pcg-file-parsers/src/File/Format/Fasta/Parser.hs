@@ -76,12 +76,14 @@ type FastaParseResult = [FastaSequence]
 -- |
 -- Consumes a stream of 'Char's and parses the stream into a 'FastaParseResult'
 -- that has been validated for information consistency
+{-# INLINEABLE fastaStreamParser #-}
 fastaStreamParser :: (MonadParsec e s m, Monoid (Tokens s), Token s ~ Char) => m FastaParseResult
 fastaStreamParser = validate =<< {- seqTranslation <$> -} (some fastaTaxonSequenceDefinition <* eof)
 
 
 -- |
 -- Parses a single FASTA defined taxon sequence from a Char stream
+{-# INLINEABLE fastaTaxonSequenceDefinition #-}
 fastaTaxonSequenceDefinition :: (MonadParsec e s m, Monoid (Tokens s), Token s ~ Char) => m FastaSequence
 fastaTaxonSequenceDefinition = do
     name <- fastaTaxonName
@@ -92,6 +94,7 @@ fastaTaxonSequenceDefinition = do
 
 -- |
 -- Consumes a line from the Char stream and parses a FASTA identifier
+{-# INLINE fastaTaxonName #-}
 fastaTaxonName :: (MonadParsec e s m, Token s ~ Char) => m Identifier
 fastaTaxonName = identifierLine
 
@@ -99,6 +102,7 @@ fastaTaxonName = identifierLine
 -- |
 -- Consumes one or more lines from the Char stream to produce a list of Chars
 -- constrained to a valid Char alphabet representing possible character states
+{-# INLINEABLE fastaSequence #-}
 fastaSequence :: forall e s m . (MonadParsec e s m, Monoid (Tokens s), Token s ~ Char) => m (Vector Char)
 fastaSequence = space *> fullSequence
   where
@@ -152,6 +156,7 @@ withinVec v e = go 0 (V.length v - 1)
 
 -- |
 -- Extract the keys from a 'Bimap'.
+{-# INLINE extractFromBimap #-}
 extractFromBimap :: Bimap (NonEmpty String) a -> Set Char
 extractFromBimap = mapMonotonic (head . NE.head) . keysSet . toMap
 
@@ -167,6 +172,7 @@ iupacRNAChars        = otherValidChars <> caseInsensitiveOptions (extractFromBim
 -- |
 -- Adds the lowercase and uppercase Chars to string when only the upper or
 -- lower is present in the String
+{-# INLINE caseInsensitiveOptions #-}
 caseInsensitiveOptions :: Set Char -> Set Char
 caseInsensitiveOptions = foldMap f
   where
@@ -188,12 +194,14 @@ seqTranslation = foldr f []
 
 -- |
 -- Ensures that the parsed result has consistent data
+{-# INLINE validate #-}
 validate :: MonadParsec e s m => FastaParseResult -> m FastaParseResult
 validate = validateSequenceConsistency <=< validateIdentifierConsistency
 
 
 -- |
 -- Ensures that there are no duplicate identifiers in the stream
+{-# INLINE validateIdentifierConsistency #-}
 validateIdentifierConsistency :: MonadParsec e s m => FastaParseResult -> m FastaParseResult
 validateIdentifierConsistency xs =
   case dupes of
@@ -207,6 +215,7 @@ validateIdentifierConsistency xs =
 
 -- |
 -- Ensures that the charcters are all from a consistent alphabet
+{-# INLINE validateSequenceConsistency #-}
 validateSequenceConsistency :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateSequenceConsistency = validateConsistentPartition <=< validateConsistentAlphabet
 
@@ -214,6 +223,7 @@ validateSequenceConsistency = validateConsistentPartition <=< validateConsistent
 -- |
 -- Validates that all elements of all sequences are consistent with each other
 -- sequence. Sequences of differing types cannot be mixed.
+{-# INLINE validateConsistentAlphabet #-}
 validateConsistentAlphabet :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateConsistentAlphabet xs =
   case partition snd results of
@@ -239,6 +249,7 @@ validateConsistentAlphabet xs =
 -- |
 -- Validates that sequences partitioned with the '\'#\'' character are all of
 -- the same length.
+{-# INLINE validateConsistentPartition #-}
 validateConsistentPartition :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateConsistentPartition xs
   |  null xs
