@@ -1,30 +1,40 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
+
 module Benchmark.FASTA.Time
-  ( main
+  ( benchTime
   , fastaFilePath
   , fastaInlineSequenceFiles
   ) where
 
 import           Benchmark.Internal    (measureParserTime)
+import           Control.DeepSeq       (NFData)
 import           Criterion.Main
 import           Data.Foldable
-import qualified Data.Text.IO          as T
+--import qualified Data.Text.IO          as T
 import qualified Data.Text.Lazy.IO     as TL
 import           File.Format.Fasta
 import           System.FilePath.Posix
+import           Text.Megaparsec
 
 
-main :: IO ()
-main = defaultMain $ 
-    fmap parserBenchmark  fastaInlineSequenceFiles <>
-    fmap parserBenchmark' fastaInlineSequenceFiles
+benchTime :: [Benchmark]
+benchTime = mconcat
+    [ parserBenchmark ("lazy-text", TL.readFile) <$> fastaInlineSequenceFiles
+--    , parserBenchmark (     "text",  T.readFile) <$> fastcSequenceFiles
+    ]
 
 
-parserBenchmark :: FilePath -> Benchmark
-parserBenchmark filePath = measureParserTime "text" filePath T.readFile fastaStreamParser
-
-
-parserBenchmark' :: FilePath -> Benchmark
-parserBenchmark' filePath = measureParserTime "lazy-text" filePath TL.readFile fastaStreamParser
+parserBenchmark
+  :: ( NFData s
+     , Stream s
+     , Token s ~ Char
+     , Monoid (Tokens s)
+     )
+  => (String, FilePath -> IO s)
+  -> FilePath
+  -> Benchmark
+parserBenchmark (prefix, reader) filePath = measureParserTime prefix filePath reader fastaStreamParser
 
 
 fastaInlineSequenceFiles :: [FilePath]

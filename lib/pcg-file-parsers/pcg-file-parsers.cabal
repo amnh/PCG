@@ -228,6 +228,7 @@ benchmark bench-space
 
   other-modules:
     Benchmark.FASTA.Space
+    Benchmark.FASTC.Space
     Benchmark.Internal
 
 
@@ -260,6 +261,7 @@ benchmark bench-time
 
   other-modules:
     Benchmark.FASTA.Time
+    Benchmark.FASTC.Time
     Benchmark.Internal
 
 

@@ -13,6 +13,10 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE ApplicativeDo       #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -29,7 +33,7 @@ module File.Format.Fastc.Parser
   ) where
 
 
-import           Control.DeepSeq
+import           Control.DeepSeq                    (NFData, force)
 import           Control.Monad.Combinators.NonEmpty
 import           Data.Char                          (isSpace)
 import           Data.List.NonEmpty                 (NonEmpty (..))
@@ -42,6 +46,7 @@ import qualified Data.Text.Short                    as T
 import           Data.Vector.NonEmpty               (Vector)
 import qualified Data.Vector.NonEmpty               as V
 import           File.Format.Fasta.Internal
+import           GHC.Generics                       (Generic)
 import           Text.Megaparsec                    hiding (sepBy1, some)
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
@@ -58,7 +63,7 @@ data FastcSequence
    = FastcSequence
    { fastcLabel   :: {-# UNPACK #-} !Identifier
    , fastcSymbols :: {-# UNPACK #-} !CharacterSequence
-   } deriving (Eq,Show)
+   } deriving (Eq, Generic, NFData, Show)
 
 
 -- |

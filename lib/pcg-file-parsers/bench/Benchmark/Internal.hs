@@ -1,4 +1,3 @@
--- {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Benchmark.Internal

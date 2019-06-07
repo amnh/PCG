@@ -1,31 +1,38 @@
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
+
 module Benchmark.FASTA.Space
-  ( main
+  ( benchSpace
   , fastaFilePath
   , fastaInlineSequenceFiles
   ) where
 
 import           Benchmark.Internal    (measureParserSpace)
 import           Data.Foldable
-import qualified Data.Text.IO          as T
+--import qualified Data.Text.IO          as T
 import qualified Data.Text.Lazy.IO     as TL
 import           File.Format.Fasta
 import           System.FilePath.Posix
+import           Text.Megaparsec
 import           Weigh
 
 
-main :: IO ()
-main = mainWith $ do
-    setColumns [Case, Allocated, GCs, Max]
-    traverse_ parserBenchmark  fastaInlineSequenceFiles
-    traverse_ parserBenchmark' fastaInlineSequenceFiles
+benchSpace :: [Weigh ()]
+benchSpace = fold
+    [ parserBenchmark ("lazy-text", TL.readFile) <$> fastaInlineSequenceFiles
+--    , parserBenchmark (     "text",  T.readFile) <$> fastaInlineSequenceFiles
+    ]
 
 
-parserBenchmark :: FilePath -> Weigh ()
-parserBenchmark filePath = measureParserSpace "text" filePath T.readFile fastaStreamParser
-
-
-parserBenchmark' :: FilePath -> Weigh ()
-parserBenchmark' filePath = measureParserSpace "lazy-text" filePath TL.readFile fastaStreamParser
+parserBenchmark
+  :: ( Stream s
+     , Token s ~ Char
+     , Monoid (Tokens s)
+     )
+  => (String, FilePath -> IO s)
+  -> FilePath
+  -> Weigh ()
+parserBenchmark (prefix, reader) filePath = measureParserSpace prefix filePath reader fastaStreamParser
 
 
 fastaInlineSequenceFiles :: [FilePath]
