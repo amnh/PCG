@@ -89,16 +89,16 @@ tcmDefinition = do
 
 -- |
 -- Shorthand for the expected format of the alphabet lin in a TCM file.
--- The same as 'alphabetLine inlineSpace'.
+-- The same as 'alphabetLine inlinedSpace'.
 tcmAlphabet :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
-tcmAlphabet = alphabetLine inlineSpace
+tcmAlphabet = alphabetLine inlinedSpace
 
 
 -- |
 -- Shorthand for the expected format of the matrix block in a TCM file
--- The same as 'matrixBlock inlineSpace'.
+-- The same as 'matrixBlock inlinedSpace'.
 tcmMatrix   :: (MonadParsec e s m, Token s ~ Char) => m (Matrix Double)
-tcmMatrix   = matrixBlock  inlineSpace
+tcmMatrix   = matrixBlock  inlinedSpace
 
 
 -- |
@@ -109,10 +109,10 @@ tcmMatrix   = matrixBlock  inlineSpace
 --
 -- Basic usage:
 --
--- >>> parse (alphabetLine inlineSpace) "" "a b c d\n"
+-- >>> parse (alphabetLine inlinedSpace) "" "a b c d\n"
 -- Right ["a","b","c","d"]
 --
--- >>> parse (alphabetLine (inlineSpace *> char '|' <* inlineSpace)) "" "2 | 3 | 5 | 7\n"
+-- >>> parse (alphabetLine (inlinedSpace *> char '|' <* inlinedSpace)) "" "2 | 3 | 5 | 7\n"
 -- Right ["2","3","5","7"]
 alphabetLine :: (MonadParsec e s m, Token s ~ Char) => m () -> m (NonEmpty String)
 alphabetLine spacing = validateAlphabet =<< NE.fromList <$> ((alphabetSymbol <* spacing) `someTill` endOfLine)
@@ -129,7 +129,7 @@ alphabetLine spacing = validateAlphabet =<< NE.fromList <$> ((alphabetSymbol <* 
 --
 -- Basic usage:
 --
--- >>> parse (matrixBlock inlineSpace) "" "1 2 3 \n 4 5 6\n7 8 9\n"
+-- >>> parse (matrixBlock inlinedSpace) "" "1 2 3 \n 4 5 6\n7 8 9\n"
 -- Right (( 1 2 3 )
 --        ( 4 5 6 )
 --        ( 7 8 9 ))

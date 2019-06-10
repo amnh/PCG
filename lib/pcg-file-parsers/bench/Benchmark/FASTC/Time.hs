@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-} 
+{-# LANGUAGE TypeFamilies     #-}
 
 module Benchmark.FASTC.Time
   ( benchTime
@@ -54,7 +54,7 @@ symbolSizes = (2 *) . (2^) <$> [0 .. 3 :: Word]
 
 
 taxaCounts :: [Word]
-taxaCounts = (4 *) . (4^) <$> [0 .. 3 :: Word] 
+taxaCounts = (4 *) . (4^) <$> [0 .. 3 :: Word]
 
 
 sequenceLengths :: [Word]

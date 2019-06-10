@@ -12,4 +12,4 @@ main = defaultMain $ fold
     [ FASTA.benchTime
     , FASTC.benchTime
     , Newick.benchTime
-    ] 
+    ]

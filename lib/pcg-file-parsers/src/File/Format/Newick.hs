@@ -41,7 +41,6 @@ module File.Format.Newick
   , branchLength
   , descendants
   , newickLabel
-  , newickLabelShort -- TODO: deprecated
   , isLeaf
   -- * Mapping
   , mapLeafLabels

@@ -30,20 +30,19 @@ module File.Format.Newick.Internal
   , mapLeafLabels
   , newickNode
   , renderNewickForest
-  -- TODO: (Deprecated)
-  , newickLabelShort
   ) where
 
 
-import Control.DeepSeq      (NFData)
-import Data.Foldable
-import Data.List.NonEmpty   (NonEmpty(..))
-import Data.String          (IsString (fromString))
-import Data.Text            (Text)
-import Data.Text.Short      (ShortText, toString)
-import Data.Tree
-import Data.Vector.NonEmpty (Vector, fromNonEmpty)
-import GHC.Generics         (Generic)
+import           Control.DeepSeq    (NFData)
+import           Data.Foldable
+import           Data.List.NonEmpty (NonEmpty (..))
+import           Data.String        (IsString (fromString))
+import           Data.Text          (Text)
+import           Data.Text.Short    (ShortText, toString)
+import qualified Data.Text.Short    as T
+import           Data.Tree
+import           Data.Vector        (Vector, fromList, fromListN)
+import           GHC.Generics       (Generic)
 
 
 {----
@@ -73,57 +72,53 @@ import GHC.Generics         (Generic)
 type NewickForest = NonEmpty NewickNode
 
 
-data NewickNode
-    = NewickLeaf {-# UNPACK #-} !ShortText !(Maybe Rational)
-    | NewickInternal
-    { childNodes     :: {-#UNPACK #-} !(Vector NewickNode)
-    , internalName   :: !(Maybe ShortText)
+-- |
+-- A node in a "Phylogenetic Forest"
+data  NewickNode
+    = NewickNode
+    { childNodes     :: {-# UNPACK #-} !(Vector NewickNode)
+    , internalName   :: {-# UNPACK #-} !ShortText
     , internalLength :: !(Maybe Rational)
     } deriving (Eq, Generic, NFData, Ord)
 
 
 mapLeafLabels :: (ShortText -> ShortText) -> NewickNode -> NewickNode
-mapLeafLabels f (NewickLeaf       x y) = NewickLeaf                             (f x) y
-mapLeafLabels f (NewickInternal d x y) = NewickInternal (mapLeafLabels f <$> d)    x  y
+mapLeafLabels f (NewickNode d x y) = NewickNode (mapLeafLabels f <$> d) x y
 
 
 {-# INLINE descendants #-}
 descendants :: NewickNode -> [NewickNode]
-descendants  NewickLeaf {}         = mempty
-descendants (NewickInternal x _ _) = toList x
+descendants (NewickNode x _ _) = toList x
 
 
 {-# INLINE newickLabel #-}
 newickLabel :: NewickNode -> Maybe ShortText
-newickLabel (NewickLeaf       x _) = Just x
-newickLabel (NewickInternal _ x _) = x
+newickLabel (NewickNode _ x _)
+  | T.null x  = Nothing
+  | otherwise = Just x
 
 
 {-# INLINE branchLength #-}
 branchLength :: NewickNode -> Maybe Rational
-branchLength (NewickLeaf       _ x) = x
-branchLength (NewickInternal _ _ x) = x
+branchLength (NewickNode _ _ x) = x
 
 
 instance Semigroup NewickNode where
 
     lhs <> rhs =
-        NewickInternal
-        { childNodes     = fromNonEmpty $ lhs:|[rhs]
-        , internalName   = Nothing
+        NewickNode
+        { childNodes     = fromListN 2 [lhs, rhs]
+        , internalName   = ""
         , internalLength = Nothing
         }
 
 
 instance Show NewickNode where
 
-    show node =
-        case node of
-          NewickLeaf       n b -> fold [name (Just n), len b]
-          NewickInternal d n b -> fold [name       n , len b, " ", show d]
+    show (NewickNode d n b) = fold [name, len, " ", show d]
       where
-        name n = maybe "Node" toString n
-        len  b = maybe "" (\x -> ':' : show x) b
+        name = (\x -> if null x then "Node" else x) $ toString n
+        len  = maybe "" (\x -> ':' : show x) b
 
 
 -- TODO: No String, only ShortText
@@ -177,20 +172,11 @@ newickNode :: [NewickNode] -> Maybe ShortText -> Maybe Rational -> Maybe NewickN
 newickNode nodes label length' =
   case (nodes, label) of
     (  [], Nothing) -> Nothing
-    (  [], Just x ) -> Just $ NewickLeaf x length'
-    (x:xs,      _ ) -> Just $ NewickInternal (fromNonEmpty $ x:|xs) label length' 
+    _               -> Just $ NewickNode (fromList nodes) (fold label) length'
 
 
 -- |
 -- Determines whether a given 'NewickNode' is a leaf node in the tree.
 {-# INLINEABLE isLeaf #-}
 isLeaf :: NewickNode -> Bool
-isLeaf NewickLeaf {} = True
-isLeaf _             = False
-
-
--- |
--- Extracts a newick label (if it exists) and converts to ShortText
-{-# INLINE newickLabelShort #-}
-newickLabelShort :: NewickNode -> Maybe ShortText
-newickLabelShort = newickLabel 
+isLeaf (NewickNode x y _) = null x && not (T.null y)

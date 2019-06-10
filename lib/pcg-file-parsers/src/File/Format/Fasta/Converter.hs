@@ -29,13 +29,16 @@ import           Data.List                  (intercalate)
 import           Data.List.NonEmpty         (NonEmpty (..))
 import           Data.Map                   hiding (filter, foldr, null, partition, (!))
 import           Data.String
+import qualified Data.Text                  as T
+import qualified Data.Text.Lazy             as LT
 import           Data.Text.Short            (ShortText, toString)
 import qualified Data.Vector.NonEmpty       as VNE
 import           Data.Vector.Unboxed        (Vector, (!))
 import qualified Data.Vector.Unboxed        as V (filter, length, map, null, toList)
+import           Data.Void
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
-import           Text.Megaparsec            (MonadParsec)
+import           Text.Megaparsec            (MonadParsec, Parsec)
 import           Text.Megaparsec.Custom     (fails)
 
 
@@ -51,6 +54,9 @@ data  FastaSequenceType
 -- |
 -- Define and convert a 'FastaParseResult' to the expected sequence type
 {-# INLINEABLE fastaStreamConverter #-}
+{-# SPECIALISE fastaStreamConverter :: FastaSequenceType -> FastaParseResult -> Parsec Void  T.Text TaxonSequenceMap #-}
+{-# SPECIALISE fastaStreamConverter :: FastaSequenceType -> FastaParseResult -> Parsec Void LT.Text TaxonSequenceMap #-}
+{-# SPECIALISE fastaStreamConverter :: FastaSequenceType -> FastaParseResult -> Parsec Void  String TaxonSequenceMap #-}
 fastaStreamConverter :: MonadParsec e s m => FastaSequenceType -> FastaParseResult -> m TaxonSequenceMap
 fastaStreamConverter seqType =
     fmap (colate seqType) . validateStreamConversion seqType . processedChars seqType
@@ -82,6 +88,9 @@ processedChars seqType = fmap processElement
 -- |
 -- Validates that the stream contains a 'FastaParseResult' of the given 'FastaSequenceType'.
 {-# INLINE validateStreamConversion #-}
+{-# SPECIALISE validateStreamConversion :: FastaSequenceType -> FastaParseResult -> Parsec Void  T.Text FastaParseResult #-}
+{-# SPECIALISE validateStreamConversion :: FastaSequenceType -> FastaParseResult -> Parsec Void LT.Text FastaParseResult #-}
+{-# SPECIALISE validateStreamConversion :: FastaSequenceType -> FastaParseResult -> Parsec Void  String FastaParseResult #-}
 validateStreamConversion :: MonadParsec e s m => FastaSequenceType -> FastaParseResult -> m FastaParseResult
 validateStreamConversion seqType xs =
   case filter hasErrors result of

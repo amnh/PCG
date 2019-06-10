@@ -526,7 +526,7 @@ flexiblePositiveInt labeling = either coerceFloating coerceIntegral . floatingOr
 -- Consumes a TNT keyword flexibly.
 -- @keyword fullName minChars@ will parse the __longest prefix of__ @fullName@
 -- requiring that __at least__ the first @minChars@ of @fullName@ are in the prefix.
--- Keyword prefixes are terminated with an `inlineSpace` which is not consumed by the combinator.
+-- Keyword prefixes are terminated with an `inlinedSpace` which is not consumed by the combinator.
 --
 -- ==== __Examples__
 --
@@ -744,4 +744,4 @@ whitespace = space
 -- Consumes zero or more whitespace characters that are not line breaks.
 {-# INLINE whitespaceInline #-}
 whitespaceInline :: (MonadParsec e s m, Token s ~ Char) => m ()
-whitespaceInline =  inlineSpace
+whitespaceInline =  inlinedSpace

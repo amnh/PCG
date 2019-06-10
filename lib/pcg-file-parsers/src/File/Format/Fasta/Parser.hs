@@ -47,9 +47,12 @@ import           Data.Maybe                 (fromJust)
 import           Data.Proxy
 import           Data.Set                   (Set, mapMonotonic)
 import qualified Data.Set                   as S
+import qualified Data.Text                  as T
+import qualified Data.Text.Lazy             as LT
 import           Data.Text.Short            (toString)
 import           Data.Vector.Unboxed        (Unbox, Vector, (!))
 import qualified Data.Vector.Unboxed        as V
+import           Data.Void
 import           File.Format.Fasta.Internal
 import           GHC.Generics               (Generic)
 import           Text.Megaparsec
@@ -78,6 +81,9 @@ type FastaParseResult = [FastaSequence]
 -- Consumes a stream of 'Char's and parses the stream into a 'FastaParseResult'
 -- that has been validated for information consistency
 {-# INLINEABLE fastaStreamParser #-}
+{-# SPECIALISE fastaStreamParser :: Parsec Void  T.Text FastaParseResult #-}
+{-# SPECIALISE fastaStreamParser :: Parsec Void LT.Text FastaParseResult #-}
+{-# SPECIALISE fastaStreamParser :: Parsec Void  String FastaParseResult #-}
 fastaStreamParser :: (MonadParsec e s m, Monoid (Tokens s), Token s ~ Char) => m FastaParseResult
 fastaStreamParser = validate =<< {- seqTranslation <$> -} (some fastaTaxonSequenceDefinition <* eof)
 
@@ -85,6 +91,9 @@ fastaStreamParser = validate =<< {- seqTranslation <$> -} (some fastaTaxonSequen
 -- |
 -- Parses a single FASTA defined taxon sequence from a Char stream
 {-# INLINEABLE fastaTaxonSequenceDefinition #-}
+{-# SPECIALISE fastaTaxonSequenceDefinition :: Parsec Void  T.Text FastaSequence #-}
+{-# SPECIALISE fastaTaxonSequenceDefinition :: Parsec Void LT.Text FastaSequence #-}
+{-# SPECIALISE fastaTaxonSequenceDefinition :: Parsec Void  String FastaSequence #-}
 fastaTaxonSequenceDefinition :: (MonadParsec e s m, Monoid (Tokens s), Token s ~ Char) => m FastaSequence
 fastaTaxonSequenceDefinition = do
     name <- fastaTaxonName
@@ -96,6 +105,9 @@ fastaTaxonSequenceDefinition = do
 -- |
 -- Consumes a line from the Char stream and parses a FASTA identifier
 {-# INLINE fastaTaxonName #-}
+{-# SPECIALISE fastaTaxonName :: Parsec Void  T.Text Identifier #-}
+{-# SPECIALISE fastaTaxonName :: Parsec Void LT.Text Identifier #-}
+{-# SPECIALISE fastaTaxonName :: Parsec Void  String Identifier #-}
 fastaTaxonName :: (MonadParsec e s m, Token s ~ Char) => m Identifier
 fastaTaxonName = identifierLine
 
@@ -104,6 +116,9 @@ fastaTaxonName = identifierLine
 -- Consumes one or more lines from the Char stream to produce a list of Chars
 -- constrained to a valid Char alphabet representing possible character states
 {-# INLINEABLE fastaSequence #-}
+{-# SPECIALISE fastaSequence :: Parsec Void  T.Text (Vector Char) #-}
+{-# SPECIALISE fastaSequence :: Parsec Void LT.Text (Vector Char) #-}
+{-# SPECIALISE fastaSequence :: Parsec Void  String (Vector Char) #-}
 fastaSequence :: forall e s m . (MonadParsec e s m, Monoid (Tokens s), Token s ~ Char) => m (Vector Char)
 fastaSequence = space *> fullSequence
   where
@@ -116,10 +131,10 @@ fastaSequence = space *> fullSequence
     --
     --   * One or more sequence data symbools, possibly seperated by spaces,
     --       followed by a newline or the end of the file.
-    taxonContentLine = inlineSpace *> (sequenceLine <|> (endOfLine $> mempty))
+    taxonContentLine = inlinedSpace *> (sequenceLine <|> (endOfLine $> mempty))
 
     -- Defines the contents of a taxon line which contains sequence data
-    sequenceLine = mconcat <$> ((seqChunk <* inlineSpace) `someTill` flexEOL)
+    sequenceLine = mconcat <$> ((seqChunk <* inlinedSpace) `someTill` flexEOL)
       where
         seqChunk = someOfThese alphabet
 
@@ -171,6 +186,9 @@ seqTranslation = foldr f []
 -- |
 -- Ensures that the parsed result has consistent data
 {-# INLINE validate #-}
+{-# SPECIALISE validate :: FastaParseResult -> Parsec Void  T.Text FastaParseResult #-}
+{-# SPECIALISE validate :: FastaParseResult -> Parsec Void LT.Text FastaParseResult #-}
+{-# SPECIALISE validate :: FastaParseResult -> Parsec Void  String FastaParseResult #-}
 validate :: MonadParsec e s m => FastaParseResult -> m FastaParseResult
 validate = validateSequenceConsistency <=< validateIdentifierConsistency
 
@@ -178,6 +196,9 @@ validate = validateSequenceConsistency <=< validateIdentifierConsistency
 -- |
 -- Ensures that there are no duplicate identifiers in the stream
 {-# INLINE validateIdentifierConsistency #-}
+{-# SPECIALISE validateIdentifierConsistency :: FastaParseResult -> Parsec Void  T.Text FastaParseResult #-}
+{-# SPECIALISE validateIdentifierConsistency :: FastaParseResult -> Parsec Void LT.Text FastaParseResult #-}
+{-# SPECIALISE validateIdentifierConsistency :: FastaParseResult -> Parsec Void  String FastaParseResult #-}
 validateIdentifierConsistency :: MonadParsec e s m => FastaParseResult -> m FastaParseResult
 validateIdentifierConsistency xs =
   case dupes of
@@ -192,6 +213,9 @@ validateIdentifierConsistency xs =
 -- |
 -- Ensures that the charcters are all from a consistent alphabet
 {-# INLINE validateSequenceConsistency #-}
+{-# SPECIALISE validateSequenceConsistency :: FastaParseResult -> Parsec Void  T.Text FastaParseResult #-}
+{-# SPECIALISE validateSequenceConsistency :: FastaParseResult -> Parsec Void LT.Text FastaParseResult #-}
+{-# SPECIALISE validateSequenceConsistency :: FastaParseResult -> Parsec Void  String FastaParseResult #-}
 validateSequenceConsistency :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateSequenceConsistency = validateConsistentPartition <=< validateConsistentAlphabet
 
@@ -200,6 +224,9 @@ validateSequenceConsistency = validateConsistentPartition <=< validateConsistent
 -- Validates that all elements of all sequences are consistent with each other
 -- sequence. Sequences of differing types cannot be mixed.
 {-# INLINE validateConsistentAlphabet #-}
+{-# SPECIALISE validateConsistentAlphabet :: FastaParseResult -> Parsec Void  T.Text FastaParseResult #-}
+{-# SPECIALISE validateConsistentAlphabet :: FastaParseResult -> Parsec Void LT.Text FastaParseResult #-}
+{-# SPECIALISE validateConsistentAlphabet :: FastaParseResult -> Parsec Void  String FastaParseResult #-}
 validateConsistentAlphabet :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateConsistentAlphabet xs =
   case partition snd results of
@@ -226,6 +253,9 @@ validateConsistentAlphabet xs =
 -- Validates that sequences partitioned with the '\'#\'' character are all of
 -- the same length.
 {-# INLINE validateConsistentPartition #-}
+{-# SPECIALISE validateConsistentPartition :: FastaParseResult -> Parsec Void  T.Text FastaParseResult #-}
+{-# SPECIALISE validateConsistentPartition :: FastaParseResult -> Parsec Void LT.Text FastaParseResult #-}
+{-# SPECIALISE validateConsistentPartition :: FastaParseResult -> Parsec Void  String FastaParseResult #-}
 validateConsistentPartition :: (MonadParsec e s m {- , Token s ~ Char -}) => FastaParseResult -> m FastaParseResult
 validateConsistentPartition xs
   |  null xs

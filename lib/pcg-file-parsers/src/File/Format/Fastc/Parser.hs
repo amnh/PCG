@@ -17,7 +17,6 @@
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 
@@ -41,10 +40,13 @@ import           Data.Maybe
 import           Data.Proxy
 import           Data.Semigroup.Foldable
 import           Data.String
+import qualified Data.Text                          as T
+import qualified Data.Text.Lazy                     as LT
 import           Data.Text.Short                    (ShortText, toString)
-import qualified Data.Text.Short                    as T
+import qualified Data.Text.Short                    as ST
 import           Data.Vector.NonEmpty               (Vector)
 import qualified Data.Vector.NonEmpty               as V
+import           Data.Void
 import           File.Format.Fasta.Internal
 import           GHC.Generics                       (Generic)
 import           Text.Megaparsec                    hiding (sepBy1, some)
@@ -69,6 +71,9 @@ data FastcSequence
 -- |
 -- Consumes a stream of 'Char's and parses the stream into a 'FastcParseResult'
 {-# INLINEABLE fastcStreamParser #-}
+{-# SPECIALISE fastcStreamParser :: Parsec Void  T.Text FastcParseResult #-}
+{-# SPECIALISE fastcStreamParser :: Parsec Void LT.Text FastcParseResult #-}
+{-# SPECIALISE fastcStreamParser :: Parsec Void  String FastcParseResult #-}
 fastcStreamParser :: (MonadParsec e s m, Token s ~ Char) => m FastcParseResult
 fastcStreamParser = some fastcTaxonSequenceDefinition <* eof
 
@@ -77,6 +82,9 @@ fastcStreamParser = some fastcTaxonSequenceDefinition <* eof
 -- Parses a FASTC 'Identifier' and the associated sequence, discarding any
 -- comments
 {-# INLINEABLE fastcTaxonSequenceDefinition #-}
+{-# SPECIALISE fastcTaxonSequenceDefinition :: Parsec Void  T.Text FastcSequence #-}
+{-# SPECIALISE fastcTaxonSequenceDefinition :: Parsec Void LT.Text FastcSequence #-}
+{-# SPECIALISE fastcTaxonSequenceDefinition :: Parsec Void  String FastcSequence #-}
 fastcTaxonSequenceDefinition :: (MonadParsec e s m, Token s ~ Char) => m FastcSequence
 fastcTaxonSequenceDefinition = do
     name <- identifierLine
@@ -92,17 +100,23 @@ fastcTaxonSequenceDefinition = do
 -- Parses a sequence of 'Symbol's represneted by a 'CharacterSequence'.
 -- Symbols can be multi-character and are assumed to be seperated by whitespace.
 {-# INLINEABLE fastcSymbolSequence #-}
+{-# SPECIALISE fastcSymbolSequence :: Parsec Void  T.Text [Vector ShortText] #-}
+{-# SPECIALISE fastcSymbolSequence :: Parsec Void LT.Text [Vector ShortText] #-}
+{-# SPECIALISE fastcSymbolSequence :: Parsec Void  String [Vector ShortText] #-}
 fastcSymbolSequence :: (MonadParsec e s m, Token s ~ Char) => m [Vector ShortText]
 fastcSymbolSequence = space *> fullSequence
   where
-    fullSequence = fold1 <$> some (inlineSpace *> sequenceLine)
-    sequenceLine = (symbolGroup <* inlineSpace) `manyTill` endOfLine
+    fullSequence = fold1 <$> some (inlinedSpace *> sequenceLine)
+    sequenceLine = (symbolGroup <* inlinedSpace) `manyTill` endOfLine
 
 
 -- |
 -- Parses either an ambiguity group of 'Symbol's or a single, unambiguous
 -- 'Symbol'.
 {-# INLINE symbolGroup #-}
+{-# SPECIALISE symbolGroup :: Parsec Void  T.Text (Vector ShortText) #-}
+{-# SPECIALISE symbolGroup :: Parsec Void LT.Text (Vector ShortText) #-}
+{-# SPECIALISE symbolGroup :: Parsec Void  String (Vector ShortText) #-}
 symbolGroup :: (MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
 symbolGroup = ambiguityGroup <|> (pure <$> validSymbol)
 
@@ -111,28 +125,34 @@ symbolGroup = ambiguityGroup <|> (pure <$> validSymbol)
 -- Parses an ambiguity group of symbols. Ambiguity groups are enclosed by square
 -- brackets and delimited by whitespace.
 {-# INLINE ambiguityGroup #-}
+{-# SPECIALISE ambiguityGroup :: Parsec Void  T.Text (Vector ShortText) #-}
+{-# SPECIALISE ambiguityGroup :: Parsec Void LT.Text (Vector ShortText) #-}
+{-# SPECIALISE ambiguityGroup :: Parsec Void  String (Vector ShortText) #-}
 ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
 ambiguityGroup = start *> group <* close
   where
-    start = char '[' <* inlineSpace
-    close = char ']' <* inlineSpace
-    group = force . V.fromNonEmpty <$> (validSymbol `sepBy1` inlineSpace)
+    start = char '[' <* inlinedSpace
+    close = char ']' <* inlinedSpace
+    group = force . V.fromNonEmpty <$> (validSymbol `sepBy1` inlinedSpace)
 
 
 -- |
 -- Parses a 'Symbol' token ending with whitespace and excluding the forbidden
 -- characters: '[\'>\',\'[\',\']\']'.
 {-# INLINE validSymbol #-}
+{-# SPECIALISE validSymbol :: Parsec Void  T.Text ShortText #-}
+{-# SPECIALISE validSymbol :: Parsec Void LT.Text ShortText #-}
+{-# SPECIALISE validSymbol :: Parsec Void  String ShortText #-}
 validSymbol :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ShortText
 validSymbol = do
     syn <- syntenyDefinition <* notFollowedBy space1
-    res <- validSymbolChars  <* inlineSpace
+    res <- validSymbolChars  <* inlinedSpace
     pure . force $ handleSynteny syn res
   where
     syntenyDefinition = optional (char '~') <?> "synteny specification prefix: '~'"
 
     handleSynteny x
-      | isJust x  = T.reverse
+      | isJust x  = ST.reverse
       | otherwise = id
 
     validSymbolChars = fromString . chunkToTokens (Proxy :: Proxy s) <$> symbolStr

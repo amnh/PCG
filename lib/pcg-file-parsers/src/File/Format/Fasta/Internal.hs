@@ -12,19 +12,23 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE ApplicativeDo    #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Fasta.Internal where
 
-import Data.Char              (isSpace)
-import Data.Map               (Map)
-import Data.String
-import Data.Text.Short        (ShortText)
-import Data.Vector.NonEmpty   (Vector)
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Custom
+import           Data.Char              (isSpace)
+import           Data.Map               (Map)
+import           Data.String
+import qualified Data.Text              as T
+import qualified Data.Text.Lazy         as LT
+import           Data.Text.Short        (ShortText)
+import           Data.Vector.NonEmpty   (Vector)
+import           Data.Void
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
+import           Text.Megaparsec.Custom
 
 
 -- |
@@ -51,12 +55,15 @@ type CharacterSequence = Vector (Vector Symbol)
 -- Parses a line containing the sequence identifier along with an
 -- optional conmment which is discarded.
 {-# INLINE identifierLine #-}
+{-# SPECIALISE identifierLine :: Parsec Void  T.Text Identifier #-}
+{-# SPECIALISE identifierLine :: Parsec Void LT.Text Identifier #-}
+{-# SPECIALISE identifierLine :: Parsec Void  String Identifier #-}
 identifierLine :: (MonadParsec e s m, Token s ~ Char) => m Identifier
 identifierLine = do
     _ <- char '>'
-    _ <- inlineSpace
+    _ <- inlinedSpace
     x <- identifier
-    _ <- inlineSpace
+    _ <- inlinedSpace
     _ <- optional (try commentBody <?> commentMessage x)
     _ <- endOfLine <?> lineEndMessage x
     pure $ fromString x
@@ -68,6 +75,9 @@ identifierLine = do
 -- |
 -- 'Identifier' of a sequence
 {-# INLINE identifier #-}
+{-# SPECIALISE identifier :: Parsec Void  T.Text String #-}
+{-# SPECIALISE identifier :: Parsec Void LT.Text String #-}
+{-# SPECIALISE identifier :: Parsec Void  String String #-}
 identifier :: (MonadParsec e s m, Token s ~ Char) => m String
 identifier = some $ satisfy validIdentifierChar
 
@@ -82,12 +92,15 @@ validIdentifierChar c = (not . isSpace) c && c /= '$' && c /= ';'
 -- |
 -- Defines the comment format which can be expected after an identifier
 {-# INLINE commentBody #-}
+{-# SPECIALISE commentBody :: Parsec Void  T.Text String #-}
+{-# SPECIALISE commentBody :: Parsec Void LT.Text String #-}
+{-# SPECIALISE commentBody :: Parsec Void  String String #-}
 commentBody :: (MonadParsec e s m, Token s ~ Char) => m String
 commentBody  = do
-    _       <- inlineSpace
+    _       <- inlinedSpace
     _       <- optional $ char '$'
-    _       <- inlineSpace
-    content <- many (commentWord <* inlineSpace)
+    _       <- inlinedSpace
+    content <- many (commentWord <* inlinedSpace)
     pure $ unwords content
   where
     -- |
