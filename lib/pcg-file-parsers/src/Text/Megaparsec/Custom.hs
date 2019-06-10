@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE ApplicativeDo       #-}
+{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -26,6 +28,8 @@ module Text.Megaparsec.Custom
   , inlineSpaceChar
   , inlineSpace
   , isInlineSpace
+  , noneOfThese
+  , someOfThese
   , somethingTill
   , string''
 --  , runParserOnFile
@@ -35,11 +39,15 @@ module Text.Megaparsec.Custom
 import           Data.CaseInsensitive       (FoldCase)
 import           Data.Char                  (isSpace)
 --import           Data.Either                       (either)
+import           Data.Foldable
 import           Data.Functor               (void, ($>))
+import           Data.List                  (sort)
 import           Data.List.NonEmpty         (NonEmpty (..), nonEmpty)
 import           Data.Maybe                 (mapMaybe)
 import           Data.Proxy
 import qualified Data.Set                   as S
+import           Data.Vector.Unboxed        (Unbox, Vector, (!))
+import qualified Data.Vector.Unboxed        as V
 --import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -90,6 +98,36 @@ somethingTill :: MonadParsec e s m => m a -> m [Token s]
 somethingTill c = do
     _ <- notFollowedBy c
     anySingle <:> anythingTill c
+
+
+-- |
+-- Matches one or more elements from the supplied collection.
+--
+-- Coerces the collection to a sorted, unboxed vector and performs a binary
+-- search on the elements to determine if a 'Token s' is part of the collection.
+--
+-- Preferable to 'someOf'.
+{-# INLINE someOfThese #-}
+someOfThese :: (Foldable f, MonadParsec e s m, Token s ~ a, Unbox a) => f a -> m (Tokens s)
+someOfThese xs = 
+    let !uvec = V.fromList . sort $ toList xs
+        !cond = withinVec uvec
+    in  takeWhile1P Nothing cond
+
+
+-- |
+-- Matches one or more elements /not/ from the supplied collection.
+--
+-- Coerces the collection to a sorted, unboxed vector and performs a binary
+-- search on the elements to determine if a 'Token s' is part of the collection.
+--
+-- Preferable to 'noneOf'.
+{-# INLINE noneOfThese #-}
+noneOfThese :: (Foldable f, MonadParsec e s m, Token s ~ a, Unbox a) => f a -> m (Tokens s)
+noneOfThese xs = 
+    let !uvec = V.fromList . sort $ toList xs
+        !cond = not . withinVec uvec
+    in  takeWhile1P Nothing cond
 
 
 -- |
@@ -230,3 +268,22 @@ parseWithDefaultErrorType c = parse c ""
 -- Convert one Enum to another through the Int value.
 enumCoerce :: (Enum a, Enum b) => a -> b
 enumCoerce = toEnum . fromEnum
+
+
+{-# INLINE withinVec #-}
+withinVec :: (Ord a, Unbox a) => Vector a -> a -> Bool
+withinVec v e = go 0 (V.length v - 1)
+  where
+    -- Perform a binary search on the unboxed vector
+    -- to determine if a character is valid.
+    --
+    -- Equally fast, and uses less memory than a Set.
+    {-# INLINE go #-}
+    go !lo !hi
+      | lo > hi   = False
+      | otherwise = let !md = (hi + lo) `div` 2
+                        !z  = v ! md
+                    in  case z `compare` e of
+                          EQ -> True
+                          LT -> go    (md + 1) hi
+                          GT -> go lo (md - 1)
