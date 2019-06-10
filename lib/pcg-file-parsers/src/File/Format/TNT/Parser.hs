@@ -21,7 +21,7 @@ module File.Format.TNT.Parser
   ) where
 
 import           Control.Monad                  (liftM3, (<=<))
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive (FoldCase)
 import           Data.Foldable
 import           Data.IntMap                    (IntMap, insertWith, mapWithKey, toAscList)
 import qualified Data.IntMap                    as IM (lookup)
