@@ -41,8 +41,10 @@ module File.Format.Newick
   , branchLength
   , descendants
   , newickLabel
-  , newickLabelShort
+  , newickLabelShort -- TODO: deprecated
   , isLeaf
+  -- * Mapping
+  , mapLeafLabels
   -- * Node Rendering
   , renderNewickForest
   -- * Parser

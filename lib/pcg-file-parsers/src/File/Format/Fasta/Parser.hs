@@ -121,7 +121,7 @@ fastaSequence = space *> fullSequence
     -- Defines the contents of a taxon line which contains sequence data
     sequenceLine = mconcat <$> ((seqChunk <* inlineSpace) `someTill` flexEOL)
       where
-        seqChunk = takeWhile1P Nothing withinAlphabet
+        seqChunk = someOfThese alphabet
 
     -- Matches on the end of line or the end of the stream.
     flexEOL      = void (try endOfLine) <|> lookAhead eof
@@ -129,31 +129,6 @@ fastaSequence = space *> fullSequence
     buildVector  :: Tokens s -> Vector Char
     buildVector  = V.fromList . chunkToTokens (Proxy :: Proxy s)
 
-
-{-# INLINE withinAlphabet #-}
-withinAlphabet :: Char -> Bool
-withinAlphabet =
-    let !v = V.fromList $ toList alphabet
-    in  withinVec v
-
-
-{-# INLINE withinVec #-}
-withinVec :: Vector Char -> Char -> Bool
-withinVec v e = go 0 (V.length v - 1)
-  where
-    -- Perform a binary search on the unboxed vector
-    -- to determine if a character is valid.
-    --
-    -- Equally fast, and uses less memory than a Set.
-    {-# INLINE go #-}
-    go !lo !hi
-      | lo > hi   = False
-      | otherwise = let !md = (hi + lo) `div` 2
-                        !z  = v ! md
-                    in  case z `compare` e of
-                          EQ -> True
-                          LT -> go    (md + 1) hi
-                          GT -> go lo (md - 1)
 
 -- |
 -- Extract the keys from a 'Bimap'.
