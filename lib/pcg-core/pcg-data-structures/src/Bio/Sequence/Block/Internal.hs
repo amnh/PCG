@@ -28,6 +28,7 @@ module Bio.Sequence.Block.Internal
   , HasMetricBin(..)
   , HasNonMetricBin(..)
   , HasDynamicBin(..)
+  , substituteBlock
   ) where
 
 
@@ -345,6 +346,6 @@ substituteBlock
   , _nonAdditiveBin = subAt ind sNonAdd tNonAdd
   , _additiveBin    = subAt ind sAdd tAdd
   , _metricBin      = subAt ind sMet tMet
-  , _nonMetricBin    = subAt ind sNonMet tNonMet
+  , _nonMetricBin   = subAt ind sNonMet tNonMet
   , _dynamicBin     = subAt ind sDyn tDyn
   } `using` (blockParWithStrat (rparWith rseq))

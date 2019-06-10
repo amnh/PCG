@@ -33,6 +33,7 @@ module Bio.Sequence.Block.Metadata
   -- * Mutation
   , setAllFoci
   , setFoci
+  , substituteMetadataBlock
   ) where
 
 import Bio.Character.Encodable
@@ -270,3 +271,11 @@ dynamicToMetadataBlock v = MB ()
     , _dynamicBin     = pure v
     }
 
+
+
+
+substituteMetadataBlock :: Int -> MetadataBlock m -> MetadataBlock m -> MetadataBlock m
+substituteMetadataBlock ind sub tot =
+  tot {_blockDataSet = subBlockDataSet}
+  where
+  subBlockDataSet = substituteBlock ind (_blockDataSet sub) (_blockDataSet tot)

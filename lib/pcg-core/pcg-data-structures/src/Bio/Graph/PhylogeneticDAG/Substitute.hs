@@ -31,6 +31,8 @@ import qualified Data.List.NonEmpty as NE
 import Bio.Graph.ReferenceDAG.Utility (incrementRefVector)
 import Data.IntMap.Lazy (keys)
 import qualified Data.IntSet as IS
+import Bio.Sequence.Metadata
+
 
 
 type Name = NodeLabel
@@ -64,7 +66,7 @@ getIndexFromName dag name =
     snd <$> ind
 
 substituteSingle
-  :: (Ord n)
+  :: forall m e n u v w x y z . (Ord n)
   => M.Map n Int
   -> (n, PhylogeneticDAG m e n u v w x y z)
   -> PhylogeneticDAG m e n u v w x y z -> PhylogeneticDAG m e n u v w x y z
@@ -78,7 +80,6 @@ substituteSingle namedContext (nodeName, subGraph) totalGraph =
         rootInd          = NE.head $ subGraph ^. _phylogeneticForest . _rootRefs
         subReferences    = subGraph ^. _phylogeneticForest .  _references
         sizeOfSubGraph   = length subReferences
-        rootChildInds    = (subReferences ! rootInd) ^. _childRefs
         totalReferences  = totalGraph ^. _phylogeneticForest . _references
         incrementedTotalRef = incrementRefVector (sizeOfSubGraph - 1) totalReferences
         incrementedInd   = ind + (sizeOfSubGraph - 1)
@@ -100,12 +101,26 @@ substituteSingle namedContext (nodeName, subGraph) totalGraph =
 
         newTotalGraphRefs = incTotalRefNewChild
         updatedReferenceVector = newSubGraphRefs <> newTotalGraphRefs
+
+        subMetadataSequence = subGraph ^. _columnMetadata
+        totMetadataSequence = totalGraph ^. _columnMetadata
+        totReferenceDAG = totalGraph ^. _phylogeneticForest
+        newReferenceDAG :: PhylogeneticRefDAG e n u v w x y z
+        newReferenceDAG = totReferenceDAG
+      -- TODO: fix this -->  & _graphData .~ updateGraphMetadata 
+                        & _references .~ updatedReferenceVector
+        newMetadataSequence = substituteMetadataSequence ind subMetadataSequence totMetadataSequence
       in
-        undefined
+        PDAG2 { phylogeneticForest = newReferenceDAG , columnMetadata = newMetadataSequence }
 
 
-substitute :: M.Map n Int -> [(n, PhylogeneticDAG m e n u v w x y z)] -> PhylogeneticDAG m e n u v w x y z -> PhylogeneticDAG m e n u v w x y z
-substitute = undefined
+
+substitute :: (Ord n) => M.Map n Int -> [(n, PhylogeneticDAG m e n u v w x y z)] -> PhylogeneticDAG m e n u v w x y z -> PhylogeneticDAG m e n u v w x y z
+substitute namedContext namedSubGraphs totalGraph
+  = foldr (\namedSubGraph currTotalGraph ->
+             substituteSingle namedContext namedSubGraph currTotalGraph)
+          totalGraph
+          namedSubGraphs
 
 -- Function taken from: http://hackage.haskell.org/package/ilist-0.3.1.0/docs/Data-List-Index.html
 deleteAt :: Int -> [a] -> [a]
@@ -122,3 +137,8 @@ deleteAtV :: Int -> Vector a -> Vector a
 deleteAtV i = V.fromList . deleteAt i . toList
 
 
+type PhylogeneticRefDAG e n u v w x y z = 
+  ReferenceDAG
+    (PostorderContextualData (CharacterSequence u v w x y z))
+    e
+    (PhylogeneticNode (CharacterSequence u v w x y z) n)

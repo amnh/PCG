@@ -31,6 +31,7 @@ module Bio.Sequence.Metadata
   -- * Mutation
   , setAllFoci
   , setFoci
+  , substituteMetadataSequence
   ) where
 
 
@@ -42,6 +43,7 @@ import           Bio.Metadata.Dynamic
 import           Bio.Sequence.Block.Metadata
 import           Bio.Sequence.Internal
 import           Control.DeepSeq
+import Data.Key
 import           Control.Lens
 import           Data.Foldable
 import           Data.MonoTraversable
@@ -50,6 +52,7 @@ import           Data.Vector.NonEmpty         (Vector)
 import qualified Data.Vector.NonEmpty         as V
 import           GHC.Generics
 import           Text.XML
+import Prelude hiding (zipWith)
 
 
 -- |
@@ -191,3 +194,20 @@ hexFoldMap m1 m2 m3 m4 m5 m6 metaSeq =
      <> (foldMap m4 . (^.      metricBin) $ metaDataBlock)
      <> (foldMap m5 . (^.   nonMetricBin) $ metaDataBlock)
      <> (foldMap m6 . (^.     dynamicBin) $ metaDataBlock)
+
+
+
+-- |
+-- This function takes two metadata sequences and substitutes one into the other block
+-- by block to match substituting a subgraph into a total graph.
+substituteMetadataSequence
+  :: Int  -- ^ Index of node we substitute into
+  -> MetadataSequence m  -- ^ Metadata of subgraph
+  -> MetadataSequence m  -- ^ Metadata of total graph
+  -> MetadataSequence m
+substituteMetadataSequence ind sub tot =
+  let
+    subBlocks = toBlocks sub
+    totBlocks = toBlocks tot
+  in
+    fromBlocks (zipWith (substituteMetadataBlock ind) subBlocks totBlocks)
