@@ -7,10 +7,9 @@ module File.Format.Fastc.Test
 
 import           Control.Arrow            (first, second)
 import           Data.Foldable
-import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty       as NE (fromList)
 import           Data.String
-import           Data.Text.Short          (ShortText, toString)
+import           Data.Text.Short          (ShortText)
 import           Data.Vector.NonEmpty     (Vector, fromNonEmpty)
 import           File.Format.Fasta.Test   (validTaxonLines)
 import           File.Format.Fastc.Parser

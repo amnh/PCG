@@ -10,7 +10,6 @@ module File.Format.Fasta.Test
 import Control.Arrow              (first, second)
 import Data.Char                  (isSpace)
 import Data.Foldable
-import Data.Maybe                 (fromMaybe)
 import Data.String
 import Data.Text.Short            (ShortText, toString)
 import Data.Vector.Unboxed        (Vector, fromList)
@@ -84,7 +83,7 @@ commentBody' = testGroup "commentBody"
             hasLeadingDollarSign =
                 case dropWhile isSpace x of
                   []  -> False
-                  x:_ -> x == '$'
+                  y:_ -> y == '$'
 
     prependedDollarSign :: TestTree
     prependedDollarSign = testProperty "Comments defined with leading dollar sign" $ prepended '$'

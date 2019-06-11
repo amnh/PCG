@@ -351,6 +351,8 @@ executable newick-resolver
     megaparsec               >= 7.0       && < 7.1,
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1       && < 1.0,
 
 
 executable ukkonen-do-comparison

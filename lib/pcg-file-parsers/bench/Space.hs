@@ -10,7 +10,7 @@ import           Weigh
 main :: IO ()
 main = mainWith $ do
     setColumns [Case, Allocated, GCs, Max]
-    sequenceA_ $ mconcat
+    sequenceA_ $ fold
       [ FASTA.benchSpace
       , FASTC.benchSpace
       , Newick.benchSpace

@@ -50,7 +50,7 @@ import qualified Data.Set                   as S
 import qualified Data.Text                  as T
 import qualified Data.Text.Lazy             as LT
 import           Data.Text.Short            (toString)
-import           Data.Vector.Unboxed        (Unbox, Vector, (!))
+import           Data.Vector.Unboxed        (Unbox, Vector)
 import qualified Data.Vector.Unboxed        as V
 import           Data.Void
 import           File.Format.Fasta.Internal

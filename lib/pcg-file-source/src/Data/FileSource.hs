@@ -52,6 +52,12 @@ import           Text.Printf               (PrintfArg)
 import           TextShow                  (TextShow (..), fromText)
 
 
+-- |
+-- Represents the location of a file on disk.
+--
+-- Space efficient representation for in-memory storage.
+--
+-- Use exported functionality from 'Data.FileSource.IO' to interact with the disk.
 newtype FileSource = FileSource { toShortText :: ShortText }
     deriving ( Binary
              , Eq
@@ -68,6 +74,8 @@ newtype FileSource = FileSource { toShortText :: ShortText }
              )
 
 
+-- |
+-- Extension of a 'FileSource'.
 newtype FileExtension = FileExtension { unwrapExtension :: ShortText }
     deriving ( Binary
              , Eq

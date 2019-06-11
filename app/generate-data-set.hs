@@ -13,7 +13,6 @@ import           Control.DeepSeq
 import           Control.Monad
 import           Control.Monad.ST
 import           Data.Alphabet
-import           Data.Bits
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty           (NonEmpty (..))
@@ -33,7 +32,6 @@ import           Data.Validation
 import           Data.Vector.Unboxed          (Vector)
 import qualified Data.Vector.Unboxed          as V
 import           Data.Word
-import           Numeric
 import           Options.Applicative
 import           Prelude                      hiding (writeFile)
 import           System.Random.MWC

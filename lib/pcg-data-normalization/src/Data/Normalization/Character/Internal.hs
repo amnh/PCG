@@ -26,7 +26,6 @@ import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.List.NonEmpty      (NonEmpty)
-import qualified Data.List.NonEmpty      as NE
 import           Data.Map                (Map)
 import qualified Data.Map                as M
 import           Data.Semigroup.Foldable

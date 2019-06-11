@@ -159,7 +159,7 @@ renderRational num den =
     go  0 xs = foldMap (show . fst) xs
     go !v xs =
       case hasCycle xs of
-        Nothing                  -> let t@(_,r) = (v*10) `quotRem` den in go r (xs |> t)
+        Nothing                  -> let t@(_,r) = (v*10) `quotRem` den in go r $ xs |> t
         Just (static, repeating) -> render static <> addOverline (render repeating)
 
     addOverline = (<>[c]) . intersperse c

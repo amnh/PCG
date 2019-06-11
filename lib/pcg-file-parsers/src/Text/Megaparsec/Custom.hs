@@ -222,6 +222,8 @@ inlinedSpace :: (Token s ~ Char, MonadParsec e s m) => m ()
 inlinedSpace = void $ takeWhileP (Just "inline space") isInlinedSpace
 
 
+-- |
+-- Returns @True@ if the 'Char' is a space value but not a ``newline'' character.
 {-# INLINE isInlinedSpace #-}
 isInlinedSpace :: Char -> Bool
 isInlinedSpace c = isSpace c && c /= '\n' && c /= '\r'

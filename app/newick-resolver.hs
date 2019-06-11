@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main (main) where
 
@@ -8,8 +9,13 @@ import Data.Foldable
 import Data.List.NonEmpty      hiding (unfoldr)
 import Data.Maybe
 import Data.Semigroup.Foldable
+import Data.String
+import Data.Text               (Text)
+import Data.Text.IO            (putStrLn, readFile)
+import Data.Text.Short         (ShortText, toText)
 import Data.Void
 import File.Format.Newick
+import Prelude                 hiding (putStrLn, readFile)
 import System.Environment
 import Text.Megaparsec
 
@@ -35,10 +41,10 @@ main = do
         inputfileName : _ -> do
             inputStream  <- readFile inputfileName
             case parse' newickStreamParser inputfileName inputStream of
-                Left  errMsg -> putStrLn $ errorBundlePretty errMsg
+                Left  errMsg -> putStrLn . fromString $ errorBundlePretty errMsg
                 Right forest -> nicelyPrintAllResolutions $ renderAllResolutions <$> forest
     where
-        parse' :: Parsec Void s a -> String -> s -> Either (ParseErrorBundle s Void) a
+        parse' :: Parsec Void Text a -> String -> Text -> Either (ParseErrorBundle Text Void) a
         parse' = parse
         appendSemicolon = (<> ";")
         getLabel = fromJust . newickLabel
@@ -49,8 +55,8 @@ main = do
 
 -- |
 -- Take a 'NewickNode' and map over its descendents to render the entire string in Newick format.
-renderNewickString :: BinaryTree String -> String
-renderNewickString (Leaf x) = x
+renderNewickString :: BinaryTree ShortText -> Text
+renderNewickString (Leaf x) = toText x
 renderNewickString (Branch lhs rhs) = fold
     [ "("
     , renderNewickString lhs

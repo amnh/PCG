@@ -82,15 +82,25 @@ data  NewickNode
     } deriving (Eq, Generic, NFData, Ord)
 
 
+-- |
+-- Apply a transformation over the leaf labels of a 'newickNode'.
 mapLeafLabels :: (ShortText -> ShortText) -> NewickNode -> NewickNode
 mapLeafLabels f (NewickNode d x y) = NewickNode (mapLeafLabels f <$> d) x y
 
 
+-- |
+-- Retrieve the direct descendants of the 'NewickNode'.
 {-# INLINE descendants #-}
 descendants :: NewickNode -> [NewickNode]
 descendants (NewickNode x _ _) = toList x
 
 
+-- |
+-- Retrieve the label (if any) of the 'NewickNode'.
+--
+-- Will always return a @Just@ value for a leaf node.
+--
+-- > isLeaf ==> isJust . newickLabel
 {-# INLINE newickLabel #-}
 newickLabel :: NewickNode -> Maybe ShortText
 newickLabel (NewickNode _ x _)
@@ -98,6 +108,8 @@ newickLabel (NewickNode _ x _)
   | otherwise = Just x
 
 
+-- |
+-- Retrieve the branch length (if any) of the 'NewickNode'.
 {-# INLINE branchLength #-}
 branchLength :: NewickNode -> Maybe Rational
 branchLength (NewickNode _ _ x) = x
@@ -105,6 +117,7 @@ branchLength (NewickNode _ _ x) = x
 
 instance Semigroup NewickNode where
 
+    {-# INLINEABLE (<>) #-}
     lhs <> rhs =
         NewickNode
         { childNodes     = fromListN 2 [lhs, rhs]
@@ -119,37 +132,6 @@ instance Show NewickNode where
       where
         name = (\x -> if null x then "Node" else x) $ toString n
         len  = maybe "" (\x -> ':' : show x) b
-
-
--- TODO: No String, only ShortText
-{-
--- |
--- A node in a "Phylogenetic Forest"
-data NewickNode
-   = NewickNode
-   { descendants  :: [NewickNode] -- ^ List of node's children, leaf nodes are empty lists
-   , newickLabel  :: Maybe String -- ^ The node's possibly included label, leaf nodes will always be Just-valued
-   , branchLength :: Maybe Double -- ^ The node's possibly included branch length
-   } deriving (Eq, Generic, NFData, Ord)
-
-
-instance Show NewickNode where
-
-    show (NewickNode d n b) = name <> len <> " " <> show d
-      where
-        name = maybe "Node" show n
-        len  = maybe "" (\x -> ':' : show x) b
-
-
-instance Semigroup NewickNode where
-
-    lhs <> rhs =
-        NewickNode
-        { descendants  = [lhs,rhs]
-        , newickLabel  = Nothing
-        , branchLength = Nothing
-        }
--}
 
 
 -- |

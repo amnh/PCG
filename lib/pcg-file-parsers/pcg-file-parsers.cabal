@@ -227,8 +227,11 @@ benchmark bench-space
     weigh                    >= 0.0.14    && < 1.0,
 
   other-modules:
+    Benchmark.FASTA.Files
     Benchmark.FASTA.Space
+    Benchmark.FASTC.Files
     Benchmark.FASTC.Space
+    Benchmark.Newick.Files            
     Benchmark.Newick.Space
     Benchmark.Internal
 
@@ -261,8 +264,11 @@ benchmark bench-time
     weigh                    >= 0.0.14    && < 1.0,
 
   other-modules:
+    Benchmark.FASTA.Files
     Benchmark.FASTA.Time
+    Benchmark.FASTC.Files
     Benchmark.FASTC.Time
+    Benchmark.Newick.Files
     Benchmark.Newick.Time
     Benchmark.Internal
 
@@ -340,6 +346,7 @@ test-suite unit-tests
     tasty-hunit              >= 0.10      && < 1.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
+    text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,

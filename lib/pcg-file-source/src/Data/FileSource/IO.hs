@@ -64,7 +64,7 @@ import           Data.Text.Lazy                    (Text)
 import qualified Data.Text.Lazy.IO                 as T
 import           Data.Typeable                     (Typeable)
 import           Data.Validation
-import           Pipes                             (await, for, runEffect, yield, (>~))
+import           Pipes                             (for, runEffect, yield)
 import           Prelude                           hiding (appendFile, getContents, readFile, writeFile)
 import           System.Directory
 import           System.FilePath.Glob

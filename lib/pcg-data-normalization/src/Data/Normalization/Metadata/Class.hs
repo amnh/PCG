@@ -202,7 +202,7 @@ instance HasNormalizedMetadata VertexEdgeRoot where
 -- | (✔)
 instance HasNormalizedMetadata Nexus where
 
-    getNormalizedMetadata input @(Nexus (_, metas) _) =
+    getNormalizedMetadata input@(Nexus (_, metas) _) =
         zipWith convertNexusMeta alphabetVector <$> VNE.fromVector metas
       where
         alphabetVector = developAlphabets $ getNormalizedCharacters input
