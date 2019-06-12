@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE LambdaCase          #-}
-{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
 
@@ -17,22 +16,22 @@ module PCG.Command.Read.InputStreams
   , invalid
   ) where
 
-import           Control.DeepSeq
-import           Control.Monad.IO.Class
-import           Data.FileSource
-import           Data.Functor
-import           Data.List.NonEmpty                        (NonEmpty (..))
-import           Data.MonoTraversable
-import           Data.Semigroup
-import           Data.Semigroup.Foldable
-import           Data.Text                                 (Text)
-import           Data.Text.IO                              (readFile)
-import           Data.Validation
-import           PCG.Command.Read
-import           PCG.Command.Read.ReadCommandError
-import           Prelude                                   hiding (readFile)
-import           System.Directory
-import           System.FilePath.Glob
+import Control.DeepSeq
+import Control.Monad.IO.Class
+import Data.FileSource
+import Data.Functor
+import Data.List.NonEmpty                (NonEmpty (..))
+import Data.MonoTraversable
+import Data.Semigroup
+import Data.Semigroup.Foldable
+import Data.Text                         (Text)
+import Data.Text.IO                      (readFile)
+import Data.Validation
+import PCG.Command.Read
+import PCG.Command.Read.ReadCommandError
+import Prelude                           hiding (readFile)
+import System.Directory
+import System.FilePath.Glob
 
 
 -- |
@@ -46,7 +45,7 @@ data  DataContent
     = DataContent
     { dataFile :: !FileResult
     , tcmFile  :: !(Maybe FileResult)
-    } deriving (Eq) 
+    } deriving (Eq)
 
 
 -- |
@@ -84,7 +83,7 @@ evaluate (ReadCommand fileSpecs) = do
               -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
               Success g ->  liftIO $ compact g
                          -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
-                         -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)  
+                         -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
                          -- (liftIO . putStrLn $ show g) $> g
   where
     transformation = id -- expandIUPAC
@@ -103,10 +102,10 @@ getSpecifiedContent (PrealignedFile     fs    ) = getSpecifiedContent fs
 getSpecifiedContent (WithSpecifiedTCM   fs tcm) = do
     SpecContent fs'  <- getSpecifiedContent fs
     tcm'             <- getSpecifiedTcm tcm
-    pure . SpecContent $ (DataContent <$> dataFile <*> const (Just tcm')) <$> fs'    
-{-    
+    pure . SpecContent $ (DataContent <$> dataFile <*> const (Just tcm')) <$> fs'
+{-
     fs'  <- getSpecifiedContent fs
-    tcm' <- getSpecifiedTcm tcm    
+    tcm' <- getSpecifiedTcm tcm
     pure $ fs' `bindValidation` (\(SpecContent fs'') ->
                tcm' `bindValidation` (\tcm'' ->
                    pure . SpecContent $ (DataContent <$> dataFile <*> const (Just tcm'')) <$> fs''
@@ -127,7 +126,7 @@ getSpecifiedContent (CustomAlphabetFile xs tcm) = do
                                 )
 -}
 
-  
+
 getSpecifiedTcm :: FileSource -> ValidationT ReadCommandError IO FileResult
 getSpecifiedTcm tcmPath = getFileContents tcmPath >>= f
   where
@@ -184,7 +183,7 @@ traverseValidationT f = ValidationT . fmap sequenceA . traverse f
 -}
 
 
-data  ValidationT e m a
+newtype  ValidationT e m a
     = ValidationT { runValidationT :: m (Validation e a) }
 
 

@@ -1,8 +1,7 @@
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module PCG.Command.Read.InputStreamError
   ( InputStreamError()
@@ -11,14 +10,14 @@ module PCG.Command.Read.InputStreamError
   , makeFileNotOpenable
   ) where
 
-import Control.DeepSeq           (NFData)
+import Control.DeepSeq         (NFData)
 --import Data.Data                 (Data)
-import Data.FileSource           (FileSource)
+import Data.FileSource         (FileSource)
 import Data.Foldable
-import Data.List.NonEmpty hiding (toList)
-import Data.Maybe                (catMaybes)
+import Data.List.NonEmpty      hiding (toList)
+import Data.Maybe              (catMaybes)
 import Data.Semigroup.Foldable
-import GHC.Generics              (Generic)
+import GHC.Generics            (Generic)
 import TextShow
 
 

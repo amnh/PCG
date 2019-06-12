@@ -64,14 +64,14 @@ import Control.Evaluation
 import Control.Lens.Combinators            (mapped)
 import Control.Lens.Operators              ((%~), (.~), (^.))
 import Control.Monad.Reader                (ReaderT)
+import Data.Coerce                         (coerce)
 import Data.Compact
 import Data.EdgeLength
 import Data.Function                       ((&))
+import Data.Functor.Identity               (Identity (..))
 import Data.List.NonEmpty
 import Data.NodeLabel
 import Data.Vector                         (Vector)
-import Data.Functor.Identity (Identity(..))
-import Data.Coerce (coerce)
 
 
 -- |

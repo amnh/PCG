@@ -177,7 +177,7 @@ hexFold cBlock =
     , fold $ (^.    additiveBin) cBlock
     , fold $ (^.      metricBin) cBlock
     , fold $ (^.   nonMetricBin) cBlock
-    ] `using` (evalList rpar)
+    ] `using` evalList rpar
     )
 
 

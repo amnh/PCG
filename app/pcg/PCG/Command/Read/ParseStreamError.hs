@@ -1,8 +1,7 @@
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module PCG.Command.Read.ParseStreamError
   ( ParseStreamError()
@@ -11,14 +10,14 @@ module PCG.Command.Read.ParseStreamError
   ) where
 
 import Control.Arrow
-import Control.DeepSeq           (NFData)
+import Control.DeepSeq    (NFData)
 --import Data.Data
 import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty hiding (toList)
 import Data.String
-import Data.Text                 (Text)
-import GHC.Generics              (Generic)
+import Data.Text          (Text)
+import GHC.Generics       (Generic)
 import Text.Megaparsec
 import TextShow           hiding (fromString)
 import TextShow.Custom
@@ -39,7 +38,7 @@ data  ParseStreamErrorMessage
     = FileUnparsable    FileSource Text
     | InvalidPrealigned FileSource (NonEmpty Word)
     deriving (Generic, NFData, Show)
-   
+
 
 instance Semigroup ParseStreamError where
 
@@ -89,3 +88,4 @@ makeInvalidPrealigned path = ParseStreamError . pure . InvalidPrealigned path . 
 
 showbIndent :: (Functor f, TextShow s) => f s -> f Builder
 showbIndent = fmap (\x -> showbSpace <> showbSpace <> showb x)
+

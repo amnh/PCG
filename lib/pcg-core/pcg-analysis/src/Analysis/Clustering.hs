@@ -17,13 +17,13 @@ module Analysis.Clustering
   , clusterIntoGroups
   ) where
 
+import qualified AI.Clustering.Hierarchical       as H
 import qualified Analysis.Clustering.Hierarchical as CH
-import qualified AI.Clustering.Hierarchical as H
-import qualified Data.Vector.NonEmpty as NE
-import Bio.Graph.Node
-import Bio.Graph.LeafSet
 import           Bio.Graph.Constructions
-import Bio.Sequence
+import           Bio.Graph.LeafSet
+import           Bio.Graph.Node
+import           Bio.Sequence
+import qualified Data.Vector.NonEmpty             as NE
 
 data ClusterOptions
   = Hierarchical H.Linkage

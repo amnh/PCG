@@ -1433,11 +1433,10 @@ mapRefDAG eFn lFn iFn refDAG =
     updateIndexData :: IndexData e n -> IndexData e' n'
     {-# INLINE updateIndexData #-}
     updateIndexData ind =
-      case null . childRefs $ ind of
-         True  -> ind & _nodeDecoration %~ lFn
-                      & _childRefs      .~ mempty
+      if null . childRefs $ ind
+        then ind & _nodeDecoration %~ lFn
+                 & _childRefs      .~ mempty
+        else ind & _nodeDecoration %~ iFn
+                 & _childRefs      %~ fmap eFn
 
-         False -> ind & _nodeDecoration %~ iFn
-                      & _childRefs      %~ fmap eFn
-         
-  
+

@@ -9,47 +9,47 @@ module PCG.Command.Read.ParseStreams
   ) where
 
 import           Data.Alphabet
-import           Data.Bifunctor                            (first)
-import           Data.Char                                 (toLower)
+import           Data.Bifunctor                    (first)
+import           Data.Char                         (toLower)
 import           Data.FileSource
 import           Data.Foldable
 import           Data.Functor
 import           Data.Key
-import           Data.List                                 (sortOn)
-import           Data.List.NonEmpty                        (NonEmpty (..))
-import qualified Data.List.NonEmpty                        as NE
-import           Data.List.Utility                         (occurances)
-import           Data.Map                                  (Map, updateLookupWithKey)
-import qualified Data.Map                                  as M
-import           Data.Maybe                                (mapMaybe)
+import           Data.List                         (sortOn)
+import           Data.List.NonEmpty                (NonEmpty (..))
+import qualified Data.List.NonEmpty                as NE
+import           Data.List.Utility                 (occurances)
+import           Data.Map                          (Map, updateLookupWithKey)
+import qualified Data.Map                          as M
+import           Data.Maybe                        (mapMaybe)
 import           Data.MonoTraversable
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata
 import           Data.Normalization.Topology
-import           Data.Ord                                  (comparing)
+import           Data.Ord                          (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.String                               (IsString (fromString))
-import           Data.TCM                                  (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
-import qualified Data.TCM                                  as TCM
+import           Data.String                       (IsString (fromString))
+import           Data.TCM                          (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
+import qualified Data.TCM                          as TCM
 import           Data.Unification
 import           Data.Validation
-import qualified Data.Vector.NonEmpty                      as VNE
+import qualified Data.Vector.NonEmpty              as VNE
 import           Data.Void
 import           File.Format.Dot
-import           File.Format.Fasta                         hiding (FastaSequenceType (..))
-import qualified File.Format.Fasta                         as Fasta (FastaSequenceType (..))
-import           File.Format.Fastc                         hiding (Identifier)
+import           File.Format.Fasta                 hiding (FastaSequenceType (..))
+import qualified File.Format.Fasta                 as Fasta (FastaSequenceType (..))
+import           File.Format.Fastc                 hiding (Identifier)
 import           File.Format.Newick
-import           File.Format.Nexus                         (nexusStreamParser)
-import           File.Format.TNT                           hiding (weight)
+import           File.Format.Nexus                 (nexusStreamParser)
+import           File.Format.TNT                   hiding (weight)
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
 import           PCG.Command.Read
 import           PCG.Command.Read.InputStreams
 import           PCG.Command.Read.ReadCommandError
-import           Prelude                                   hiding (readFile)
-import           System.FilePath                           (takeExtension, takeFileName)
+import           Prelude                           hiding (readFile)
+import           System.FilePath                   (takeExtension, takeFileName)
 import           Text.Megaparsec
 
 
@@ -57,7 +57,7 @@ import           Text.Megaparsec
 -- Used as a simplified binding of the parser action, with specific error handling.
 parse' :: Stream s => Parsec Void s a -> FileSource -> s -> Validation ReadCommandError a
 parse' parser fp = fromEither . first (unparsable fp) . runStreamParser parser fp
-    
+
 
 -- |
 -- Specify the polymorphic, custom error type as 'Void'.
@@ -87,7 +87,7 @@ evaluate (ReadCommand fileSpecs) = do
               -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
               Success g ->  liftIO $ compact g
                          -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
-                         -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)  
+                         -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
                          -- (liftIO . putStrLn $ show g) $> g
   where
     transformation = id -- expandIUPAC
@@ -153,7 +153,7 @@ fastaWithValidator
   :: (FastaParseResult -> Parsec Void FileContent TaxonSequenceMap)
   -> FileSpecification
   -> ValidationT ReadCommandError IO (NonEmpty PartialInputData)
-fastaWithValidator validator spec = getSpecifiedContent spec >>= (parseSpecifiedContent parse'')
+fastaWithValidator validator spec = getSpecifiedContent spec >>= parseSpecifiedContent parse''
   where
     parse'' :: FileResult -> Validation ReadCommandError PartialInputData
     parse'' (path, content) = toFractured Nothing path <$> parseResult

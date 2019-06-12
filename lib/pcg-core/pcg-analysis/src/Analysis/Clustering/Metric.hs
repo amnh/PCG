@@ -75,7 +75,7 @@ blockDistance
 blockDistance meta block1 block2
   = hexFold $
     Blk.hexZipWithMeta
-      (characterDistance @ExtendedReal (^. (intervalCharacter @u)))
+      (characterDistance @ExtendedReal (^.   intervalCharacter @u))
       (characterDistance @Word         (^.   discreteCharacter))
       (characterDistance @Word         (^.   discreteCharacter))
       (characterDistance @Word         (^.   discreteCharacter))

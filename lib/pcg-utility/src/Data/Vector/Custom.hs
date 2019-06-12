@@ -34,4 +34,4 @@ fromList' = uncurry V.fromListN . L.fold f
 
 
 subAt :: Int -> Vector a -> Vector a -> Vector a
-subAt ind sub tot = let (l,r) = V.splitAt ind tot in l <> sub <> (V.tail r)
+subAt ind sub tot = let (l,r) = V.splitAt ind tot in l <> sub <> V.tail r

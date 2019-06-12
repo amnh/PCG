@@ -53,7 +53,7 @@ instance GeneralCharacterMetadata ContinuousCharacterMetadataDec where
 instance forall c d . (Ranged c, Bound c ~ d, Ord d) =>
   GetPairwiseTransitionCostMatrix ContinuousCharacterMetadataDec c d where
 
-    pairwiseTransitionCostMatrix = to $ (const (firstLinearNormPairwiseLogic @c @c @c))
+    pairwiseTransitionCostMatrix = to $ const (firstLinearNormPairwiseLogic @c @c @c)
 
 
 

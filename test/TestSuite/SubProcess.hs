@@ -79,7 +79,7 @@ constructProcess scriptStr = do
                     , "2>"
                     , errFilePath
                     ]
-    
+
     -- Delete log files if they exist
     _ <- deleteFileIfExists outFilePath
     _ <- deleteFileIfExists errFilePath

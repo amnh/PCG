@@ -43,16 +43,16 @@ import           Bio.Metadata.Dynamic
 import           Bio.Sequence.Block.Metadata
 import           Bio.Sequence.Internal
 import           Control.DeepSeq
-import Data.Key
 import           Control.Lens
 import           Data.Foldable
+import           Data.Key
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.Vector.NonEmpty         (Vector)
 import qualified Data.Vector.NonEmpty         as V
 import           GHC.Generics
+import           Prelude                      hiding (zipWith)
 import           Text.XML
-import Prelude hiding (zipWith)
 
 
 -- |

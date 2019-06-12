@@ -43,7 +43,7 @@ import Data.FileSource
 import Data.List                          (intercalate)
 import Data.MetricRepresentation
 import Data.Range
-import Data.TCM                                as TCM
+import Data.TCM                           as TCM
 import Data.TCM.Memoized
 import GHC.Generics                       hiding (to)
 import Text.XML

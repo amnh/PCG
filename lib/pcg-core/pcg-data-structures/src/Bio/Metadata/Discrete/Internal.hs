@@ -34,12 +34,12 @@ import Bio.Metadata.Metric
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
+import Data.Bits
 import Data.FileSource
 import Data.List                   (intercalate)
-import GHC.Generics hiding (to)
-import Text.XML
-import Data.Bits
 import Data.MetricRepresentation
+import GHC.Generics                hiding (to)
+import Text.XML
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all

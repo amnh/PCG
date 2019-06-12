@@ -17,7 +17,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes             #-}
 
 module Bio.Sequence.Block.Internal
   ( Block(..)
@@ -34,18 +34,18 @@ module Bio.Sequence.Block.Internal
 
 import           Control.DeepSeq
 import           Control.Lens
+import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import qualified Data.Text               as T (Text, lines, unlines)
-import           Data.Vector             (Vector, fromListN)
-import Data.Vector.Custom
-import           Data.Vector.Instances   ()
+import qualified Data.Text                   as T (Text, lines, unlines)
+import           Data.Vector                 (Vector, fromListN)
+import           Data.Vector.Custom
+import           Data.Vector.Instances       ()
 import           GHC.Generics
 import           Text.XML
-import           TextShow                (TextShow (showb, showt), fromText)
-import Control.Parallel.Strategies
+import           TextShow                    (TextShow (showb, showt), fromText)
 
 
 -- |
@@ -334,7 +334,7 @@ blockParWithStrat strat (Block u v w x y z) =
 
 
 
--- | This function takes an index corresponding to a node and substitutes 
+-- | This function takes an index corresponding to a node and substitutes
 substituteBlock :: Int -> Block u v w x y z -> Block u v w x y z -> Block u v w x y z
 {-# INLINE substituteBlock #-}
 substituteBlock
@@ -348,4 +348,4 @@ substituteBlock
   , _metricBin      = subAt ind sMet tMet
   , _nonMetricBin   = subAt ind sNonMet tNonMet
   , _dynamicBin     = subAt ind sDyn tDyn
-  } `using` (blockParWithStrat (rparWith rseq))
+  } `using` blockParWithStrat (rparWith rseq)

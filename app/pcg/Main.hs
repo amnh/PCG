@@ -15,10 +15,10 @@ import Data.Void
 import PCG.CommandLineOptions
 import PCG.Computation.Internal
 import PCG.Syntax                 (computationalStreamParser)
-import Prelude             hiding (putStrLn, writeFile)
+import Prelude                    hiding (putStrLn, writeFile)
 import System.Environment
 import System.Exit
-import System.IO           hiding (putStrLn, writeFile)
+import System.IO                  hiding (putStrLn, writeFile)
 import Text.Megaparsec            (ParseErrorBundle, Parsec, errorBundlePretty, parse)
 
 

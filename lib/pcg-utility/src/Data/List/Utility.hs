@@ -442,5 +442,5 @@ class HasHead s a | s -> a where
 -- |
 -- An instance of 'HasHead' for 'NonEmpty'.
 instance HasHead (NonEmpty a) a where
-  _head = lens (NE.head) (\ls a' -> a' :| NE.tail ls)
+  _head = lens NE.head (\ls a' -> a' :| NE.tail ls)
 

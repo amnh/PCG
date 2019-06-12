@@ -32,7 +32,7 @@ import           Data.Monoid                (Sum (..))
 import           Data.Vector
 import           Data.Vector.Mutable        (STVector)
 import qualified Data.Vector.Mutable        as MV
-import qualified Data.Vector.NonEmpty as NE
+import qualified Data.Vector.NonEmpty       as NE
 
 
 clusterLeaves
@@ -47,7 +47,7 @@ clusterLeaves meta leaves opt = dendro
     leafSetVector :: Vector (DecoratedCharacterNode f)
     leafSetVector = fromLeafSet leaves
 
-    distance :: (DecoratedCharacterNode f) -> (DecoratedCharacterNode f) -> Double
+    distance :: DecoratedCharacterNode f -> DecoratedCharacterNode f -> Double
     distance node1 node2 =
       let
         charSeq1 = node1 ^. _sequenceDecoration
@@ -66,9 +66,7 @@ clusterShuffle
   -> Linkage
   -> LeafSet (DecoratedCharacterNode f)
 clusterShuffle meta leaves = coerce . dendroToVector . clusterLeaves meta leaves
-  where
---    clusteredLeafSet :: LeafSet CharacterNode
---    clusteredLeafSet = coerce $ dendroToVector dendro
+
 
 clusterIntoGroups
   :: (Applicative f, Foldable f)

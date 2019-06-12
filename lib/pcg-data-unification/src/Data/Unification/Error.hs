@@ -12,10 +12,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Data.Unification.Error
   ( UnificationError()
@@ -31,7 +30,7 @@ import Control.DeepSeq        (NFData)
 import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty     (NonEmpty)
-import Data.Text.Short hiding (toString)
+import Data.Text.Short        hiding (toString)
 import Data.Text.Short.Custom ()
 import GHC.Generics           (Generic)
 import TextShow
