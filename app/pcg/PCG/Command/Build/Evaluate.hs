@@ -20,6 +20,7 @@ import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
 import           Bio.Character.Decoration.Metric
 import           Bio.Graph
+import Bio.Graph (DecoratedCharacterNode)
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG                     (PostorderContextualData, setDefaultMetadata, HasColumnMetadata(..))
@@ -50,6 +51,8 @@ import           Immutable.Shuffle (shuffleM)
 import Data.Vector (Vector)
 import Data.Vector.NonEmpty (unsafeFromVector)
 import qualified Data.Vector.NonEmpty as NE
+import Data.Coerce (coerce)
+import qualified Data.Map as M
 
 
 
@@ -167,20 +170,66 @@ naiveWagnerBuild metaSeq ns =
 
 clusterBuild
   :: MetadataSequence m
-  -> NE.Vector CharacterNode
+  -> LeafSet FinalCharacterNode
   -> ClusterOptions
   -> Int
   -> FinalDecorationDAG
-clusterBuild meta leafSet option numberOfClusters = undefined
+clusterBuild meta leafSet option numberOfClusters = parallelClusterWagner meta clusters
   where
---    leafSetV :: NE.Vector CharacterNode
---    clusters :: NE.Vector (NE.Vector CharacterNode)
---    -- TO DO: Add cluster options here
---    clusters = clusterIntoGroups meta leafSet UPGMA numberOfClusters
---
---    parallelWagner :: NE.Vector FinalDecorationDAG
---    parallelWagner = parmap rpar (naiveWagnerBuild meta leafSet) clusters
-    
+    leafSetId :: LeafSet (DecoratedCharacterNode Identity)
+    leafSetId = coerce leafSet
+
+    clusters :: NE.Vector (NE.Vector (DecoratedCharacterNode Identity))
+    clusters = clusterIntoGroups meta leafSetId option numberOfClusters
+
+
+parallelClusterWagner
+  :: MetadataSequence m
+  -> NE.Vector (NE.Vector (DecoratedCharacterNode Identity))
+  -> FinalDecorationDAG
+parallelClusterWagner meta clusters = 
+  let
+    finalDecClusters :: NE.Vector (NE.Vector FinalCharacterNode)
+    finalDecClusters = coerce clusters
+
+    clusterTrees :: NE.Vector (FinalDecorationDAG)
+    clusterTrees = parmap rpar (naiveWagnerBuild meta) finalDecClusters
+  in
+    subTreeWagner meta clusterTrees
+
+
+subTreeWagner :: MetadataSequence m -> NE.Vector (FinalDecorationDAG) -> FinalDecorationDAG
+subTreeWagner meta subTrees = 
+  let
+    p :: (M.Map NodeLabel FinalDecorationDAG, [NodeLabel])
+    p =
+      foldMap (\t -> (M.singleton (getRootName t) t, pure (getRootName t))) subTrees
+
+    (subTreeDict, rootNodeLabels) = p
+    rootCharNodes :: NE.Vector FinalCharacterNode
+    rootCharNodes = fmap getRootDecoration subTrees
+
+    rootNodeWagner :: FinalDecorationDAG
+    rootNodeWagner = naiveWagnerBuild meta rootCharNodes
+
+    namedContext :: M.Map NodeLabel Int
+    namedContext = rootNodeWagner `getNamedContext` rootNodeLabels 
+  in
+    substituteDAGs namedContext subTreeDict rootNodeWagner
+  where
+    getRootDecoration :: FinalDecorationDAG -> FinalCharacterNode
+    {-# INLINE getRootDecoration #-}
+    getRootDecoration dag = 
+      let
+        refDAG  = dag ^. _phylogeneticForest
+        rootInd = NE.head (refDAG ^. _rootRefs)
+      in
+        (refDAG ^. _references) ! rootInd ^. _nodeDecoration
+
+    getRootName :: FinalDecorationDAG -> NodeLabel
+    {-# INLINE getRootName #-}
+    getRootName dag = getRootDecoration dag ^. _nodeDecorationDatum
+        
 
 iterativeBuild :: FinalDecorationDAG -> FinalCharacterNode -> FinalDecorationDAG
 iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
