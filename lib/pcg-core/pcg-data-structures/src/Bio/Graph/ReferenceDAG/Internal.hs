@@ -35,7 +35,7 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.Node.Context
 import           Control.Arrow                 ((&&&), (***))
 import           Control.DeepSeq
-import           Control.Lens                  as Lens (Lens, Lens', lens, to)
+import           Control.Lens                  as Lens (Lens, Lens', lens, to, (&))
 import           Control.Lens.Fold             (Fold, folding)
 import           Control.Lens.Operators        ((%~), (.~), (^.))
 import           Control.Monad.State.Lazy
@@ -47,7 +47,7 @@ import           Data.Foldable.Custom
 import           Data.GraphViz.Attributes
 import           Data.GraphViz.Printing
 import           Data.GraphViz.Types           hiding (attrs)
-import           Data.GraphViz.Types.Graph     hiding (node)
+import           Data.GraphViz.Types.Graph     hiding (node, (&))
 import           Data.Hashable                 (Hashable)
 import qualified Data.HashMap.Strict           as HM
 import           Data.IntMap                   (IntMap)
@@ -779,9 +779,21 @@ contractToContiguousVertexMapping inputMap = foldMapWithKey contractIndices inpu
 -- Set the metadata to a "default" value.
 --
 -- Default in the function's name is used as a verb, not a noun.
-defaultGraphMetadata :: Monoid m => GraphData d -> GraphData m
+defaultGraphMetadata :: forall m d . Monoid m => GraphData d -> GraphData m
 {-# INLINE defaultGraphMetadata #-}
 defaultGraphMetadata = _graphMetadata .~ mempty
+
+-- |
+
+zeroGraphMetadataWith :: v -> GraphData v
+zeroGraphMetadataWith v =
+  GraphData
+  { dagCost         = 0
+  , networkEdgeCost = 0
+  , rootingCost     = 0
+  , totalBlockCost  = 0
+  , graphMetadata   = v
+  }
 
 -- |
 -- Overwrite the current graph metadata with a default value.
@@ -1399,3 +1411,33 @@ getChildContext refs ind = otoChildContext . IM.keysSet $ (refs ! ind) ^. _child
 getParentContext :: forall e n . Vector (IndexData e n) -> Int -> ParentContext Int
 {-# INLINE getParentContext #-}
 getParentContext refs ind = otoParentContext $ (refs ! ind) ^. _parentRefs
+
+
+
+
+mapRefDAG
+  :: forall d e n e' n'
+  .  (e -> e')  -- ^ update edge decoration
+  -> (n -> n')  -- ^ update leaf nodes
+  -> (n -> n')  -- ^ update internal nodes
+  -> ReferenceDAG d e n
+  -> ReferenceDAG d e' n'
+{-# INLINE mapRefDAG #-}
+mapRefDAG eFn lFn iFn refDAG =
+    refDAG & _references %~ updateRefs
+  where
+    updateRefs :: Vector (IndexData e n) -> Vector (IndexData e' n')
+    {-# INLINE updateRefs #-}
+    updateRefs = fmap updateIndexData
+
+    updateIndexData :: IndexData e n -> IndexData e' n'
+    {-# INLINE updateIndexData #-}
+    updateIndexData ind =
+      case null . childRefs $ ind of
+         True  -> ind & _nodeDecoration %~ lFn
+                      & _childRefs      .~ mempty
+
+         False -> ind & _nodeDecoration %~ iFn
+                      & _childRefs      %~ fmap eFn
+         
+  

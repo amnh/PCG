@@ -44,6 +44,7 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , HasMinimalNetworkContext(..)
   , HasVirtualNodeMapping(..)
   , setDefaultMetadata
+  , zeroPhylogeneticGraphData
   ) where
 
 
@@ -137,6 +138,18 @@ data PostorderContextualData t = PostorderContextualData
     , Traversable
     )
 
+
+defaultPostorderContextualData :: PostorderContextualData t
+defaultPostorderContextualData =
+  PostorderContextualData
+    { virtualNodeMapping    = mempty
+    , contextualNodeDatum   = mempty
+    , minimalNetworkContext = Nothing
+    }
+
+
+zeroPhylogeneticGraphData :: GraphData (PostorderContextualData t)
+zeroPhylogeneticGraphData = zeroGraphMetadataWith defaultPostorderContextualData
 
 -- | (✔)
 instance NFData t => NFData (PostorderContextualData t)
