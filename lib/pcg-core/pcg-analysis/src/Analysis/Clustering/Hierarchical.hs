@@ -12,6 +12,7 @@
 
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Analysis.Clustering.Hierarchical where
 
@@ -35,43 +36,47 @@ import qualified Data.Vector.NonEmpty as NE
 
 
 clusterLeaves
-  :: MetadataSequence m
-  -> LeafSet CharacterNode
+  :: forall f m . (Applicative f, Foldable f)
+  => MetadataSequence m
+  -> LeafSet (DecoratedCharacterNode f)
   -> Linkage
-  -> Dendrogram CharacterNode
+  -> Dendrogram (DecoratedCharacterNode f)
+{-# INLINE clusterLeaves #-}
 clusterLeaves meta leaves opt = dendro
   where
-    leafSetVector :: Vector CharacterNode
+    leafSetVector :: Vector (DecoratedCharacterNode f)
     leafSetVector = fromLeafSet leaves
 
-    distance :: CharacterNode -> CharacterNode -> Double
+    distance :: (DecoratedCharacterNode f) -> (DecoratedCharacterNode f) -> Double
     distance node1 node2 =
       let
         charSeq1 = node1 ^. _sequenceDecoration
         charSeq2 = node2 ^. _sequenceDecoration
       in
-        coerce $ characterSequenceDistance meta charSeq1 charSeq2
+        getSum $ characterSequenceDistance @f meta charSeq1 charSeq2
 
-    dendro :: Dendrogram CharacterNode
+    dendro :: Dendrogram (DecoratedCharacterNode f)
     dendro = hclust opt leafSetVector distance
 
 
 clusterShuffle
-  :: MetadataSequence m
-  -> LeafSet CharacterNode
+  :: (Applicative f, Foldable f)
+  => MetadataSequence m
+  -> LeafSet (DecoratedCharacterNode f)
   -> Linkage
-  -> LeafSet CharacterNode
+  -> LeafSet (DecoratedCharacterNode f)
 clusterShuffle meta leaves = coerce . dendroToVector . clusterLeaves meta leaves
   where
 --    clusteredLeafSet :: LeafSet CharacterNode
 --    clusteredLeafSet = coerce $ dendroToVector dendro
 
 clusterIntoGroups
-  :: MetadataSequence m
-  -> LeafSet CharacterNode
+  :: (Applicative f, Foldable f)
+  => MetadataSequence m
+  -> LeafSet (DecoratedCharacterNode f)
   -> Linkage
   -> Int
-  -> NE.Vector (NE.Vector CharacterNode)
+  -> NE.Vector (NE.Vector (DecoratedCharacterNode f))
 clusterIntoGroups meta leaves link = dendroToVectorClusters dendro
   where
     dendro = clusterLeaves meta leaves link
@@ -101,6 +106,7 @@ dendroToVectorClusters
   :: Dendrogram a
   -> Int
   -> NE.Vector (NE.Vector a)
+{-# INLINE dendroToVectorClusters #-}
 dendroToVectorClusters d 0 = error "Cannot return zero clusers"
 dendroToVectorClusters d n = case d of
     Leaf a -> pure $ pure a

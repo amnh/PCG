@@ -17,13 +17,32 @@ module Analysis.Clustering
   , clusterIntoGroups
   ) where
 
-import Analysis.Clustering.Hierarchical as H
-import           AI.Clustering.Hierarchical
+import qualified Analysis.Clustering.Hierarchical as CH
+import qualified AI.Clustering.Hierarchical as H
+import qualified Data.Vector.NonEmpty as NE
+import Bio.Graph.Node
+import Bio.Graph.LeafSet
+import           Bio.Graph.Constructions
+import Bio.Sequence
 
-data ClusterOptions = ClusterOpt Linkage
+data ClusterOptions
+  = Hierarchical H.Linkage
+  | Median
 
 pattern UPGMA :: ClusterOptions
-pattern UPGMA = ClusterOpt Average
+pattern UPGMA = Hierarchical H.Average
 
-cluster :: Int
-cluster = undefined
+
+clusterIntoGroups
+  :: (Applicative f, Foldable f)
+  => MetadataSequence m
+  -> LeafSet (DecoratedCharacterNode f)
+  -> ClusterOptions
+  -> Int
+  -> NE.Vector (NE.Vector (DecoratedCharacterNode f))
+clusterIntoGroups meta leafSet clusterOption numberOfClusters =
+  case clusterOption of
+    Hierarchical hierarchicalOpt
+      -> CH.clusterIntoGroups meta leafSet hierarchicalOpt numberOfClusters
+
+    Median -> error "Median clustering not yet implemented."
