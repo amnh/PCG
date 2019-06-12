@@ -12,6 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE ApplicativeDo       #-}
 {-# LANGUAGE DoAndIfThenElse     #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -156,7 +157,7 @@ assumptionFieldDef = symbol block
 -- > etc.
 -- and a StepMatrix, which is some metadata: the matrix name and the cardinality,
 -- as well as a TCMParseResult.
-tcmMatrixDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m StepMatrix
+tcmMatrixDefinition :: forall e s m . (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m StepMatrix
 tcmMatrixDefinition = do
         _            <- symbol $ string'' "usertype"
         matrixName   <- symbol $ somethingTill spaceChar

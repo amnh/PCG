@@ -12,9 +12,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ApplicativeDo    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE ApplicativeDo       #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module File.Format.Fasta.Internal where
 
@@ -92,18 +93,17 @@ validIdentifierChar c = (not . isSpace) c && c /= '$' && c /= ';'
 -- |
 -- Defines the comment format which can be expected after an identifier
 {-# INLINE commentBody #-}
-{-# SPECIALISE commentBody :: Parsec Void  T.Text String #-}
-{-# SPECIALISE commentBody :: Parsec Void LT.Text String #-}
-{-# SPECIALISE commentBody :: Parsec Void  String String #-}
-commentBody :: (MonadParsec e s m, Token s ~ Char) => m String
+{-# SPECIALISE commentBody :: Parsec Void  T.Text  T.Text #-}
+{-# SPECIALISE commentBody :: Parsec Void LT.Text LT.Text #-}
+{-# SPECIALISE commentBody :: Parsec Void  String  String #-}
+commentBody :: (MonadParsec e s m, Token s ~ Char) => m (Tokens s)
 commentBody  = do
-    _       <- inlinedSpace
-    _       <- optional $ char '$'
-    _       <- inlinedSpace
-    content <- many (commentWord <* inlinedSpace)
-    pure $ unwords content
+    _  <- inlinedSpace
+    _  <- optional $ char '$'
+    _  <- inlinedSpace
+    commentLine
   where
     -- |
-    -- Defines the words of a comment
-    commentWord :: (MonadParsec e s m, Token s ~ Char) => m String
-    commentWord  = some (satisfy (not . isSpace)) <?> "Non-space characters"
+    -- Defines the line of a comment
+    commentLine :: (MonadParsec e s m, Token s ~ Char) => m (Tokens s)
+    commentLine = takeWhile1P (Just "Taxon comment content") $ \x -> x /= '\n' && x /= '\r'

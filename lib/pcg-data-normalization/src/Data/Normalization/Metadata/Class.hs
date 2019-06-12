@@ -181,7 +181,7 @@ instance HasNormalizedMetadata F.TCM where
 
     getNormalizedMetadata (F.TCM alph mat) =
         Just $ pure NormalizedMetadata
-        { alphabet      = fmap fromString . fromSymbols $  alph
+        { alphabet      = fromSymbols alph
         , characterName = ""
         , weight        = fromRational rationalWeight * fromIntegral coefficient
         , parsedTCM     = Just (resultTCM, structure)

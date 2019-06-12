@@ -41,7 +41,6 @@ import           Data.Normalization.Topology
 import           Data.Ord                          (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.String                       (IsString (fromString))
 import           Data.TCM                          (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                          as TCM
 import           Data.Unification
@@ -123,7 +122,7 @@ setTcm t pid = pid
                                                $   diagnoseTcm unfactoredTCM
     metadataUpdate x = x
         { weight   = weight x * fromRational unfactoredWeight * fromIntegral coefficient
-        , alphabet = fmap fromString relatedAlphabet
+        , alphabet = relatedAlphabet
         }
 
 
