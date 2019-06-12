@@ -13,12 +13,14 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE KindSignatures   #-}
 
 module Bio.Graph.Constructions
   ( CharacterResult
   , CharacterDAG
   , CharacterNode
   , DecoratedCharacterResult
+  , DecoratedCharacterNode
   , FinalDecorationDAG
   , FinalCharacterNode
   , GlobalSettings
@@ -42,6 +44,8 @@ module Bio.Graph.Constructions
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
   , extractReferenceDAG
+  , convertToFinalCharacterSequence
+  , convertFromFinalCharacterSequence
   ) where
 
 import Bio.Character
@@ -66,6 +70,8 @@ import Data.Function                       ((&))
 import Data.List.NonEmpty
 import Data.NodeLabel
 import Data.Vector                         (Vector)
+import Data.Functor.Identity (Identity(..))
+import Data.Coerce (coerce)
 
 
 -- |
@@ -85,23 +91,49 @@ type CharacterDAG =
 
 -- |
 -- A Phylogenetic Node within a 'CharacterDAG'.
-type CharacterNode = PhylogeneticNode UnifiedCharacterSequence NodeLabel
+type CharacterNode = PhylogeneticNode UnifiedCharacterSequence NodeLabel --DecoratedCharacterNode Maybe
 
 
 -- |
 -- A Phylogenetic Node within a 'FinalDecorationDAG'.
-type FinalCharacterNode =
-  PhylogeneticNode
-    (CharacterSequence
+type FinalCharacterNode = PhylogeneticNode FinalCharacterSequence NodeLabel
+
+
+-- |
+-- A final character sequence after decoration.
+type FinalCharacterSequence =
+     CharacterSequence
       (ContinuousOptimizationDecoration ContinuousCharacter)
       (FitchOptimizationDecoration   StaticCharacter)
       (AdditiveOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)
       (DynamicDecorationDirectOptimization DynamicCharacter)
+
+
+-- |
+-- A Phylogenetic Node within a decorations parameterized by a functor.
+type DecoratedCharacterNode (f :: * -> *) =
+  PhylogeneticNode
+    (CharacterSequence
+      (f (ContinuousOptimizationDecoration ContinuousCharacter))
+      (f (FitchOptimizationDecoration   StaticCharacter))
+      (f (AdditiveOptimizationDecoration StaticCharacter))
+      (f (SankoffOptimizationDecoration StaticCharacter))
+      (f (SankoffOptimizationDecoration StaticCharacter))
+      (f (DynamicDecorationDirectOptimization DynamicCharacter))
     )
     NodeLabel
 
+-- |
+-- Removes the Identity wrappers from a 'DecoratedCharacterNode'.
+convertToFinalCharacterSequence :: DecoratedCharacterNode Identity -> FinalCharacterNode
+convertToFinalCharacterSequence = coerce
+
+-- |
+-- Adds in Identity wrappers to a 'FinalCharacterNode'.
+convertFromFinalCharacterSequence :: FinalCharacterNode -> DecoratedCharacterNode Identity
+convertFromFinalCharacterSequence = coerce
 
 -- |
 -- A context type for global settings during evaluation
