@@ -19,7 +19,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
 module Data.Vector.NonEmpty
-  ( Vector()
+  ( Vector(..)
   -- * Construction
   , fromNonEmpty
   , generate
