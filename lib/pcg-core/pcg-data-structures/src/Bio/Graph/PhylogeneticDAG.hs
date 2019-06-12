@@ -42,6 +42,9 @@ module Bio.Graph.PhylogeneticDAG
   , nodePreorderFold
   , nodePostorderFold
   , setDefaultMetadata
+  -- * Substitution functions
+  , getNamedContext
+  , substituteDAGs
   ) where
 
 
@@ -57,6 +60,7 @@ import           Bio.Sequence
 import           Data.Key
 import           Data.List.NonEmpty                                  (NonEmpty)
 import qualified Data.List.NonEmpty                                  as NE
+import           Bio.Graph.PhylogeneticDAG.Substitute
 
 
 -- |

@@ -19,10 +19,12 @@ module Bio.Graph
   , CharacterDAG
   , CharacterNode
   , DecoratedCharacterResult
+  , DecoratedCharacterNode
   , FinalDecorationDAG
   , FinalCharacterNode
   , GlobalSettings
   , GraphState
+  , HasPhylogeneticForest(..)
   , PhylogeneticFreeDAG(..)
   , PhylogeneticDAG(..)
   , PhylogeneticDAGish(..)
@@ -65,6 +67,9 @@ module Bio.Graph
   , nodePostorderMap
   , nodePreorderFold
   , nodePostorderFold
+  -- * Substitution functions
+  , getNamedContext
+  , substituteDAGs
   ) where
 
 
