@@ -5,11 +5,11 @@ module Benchmark.Newick.Space
   ( benchSpace
   ) where
 
-import           Benchmark.Internal    (measureParserSpace)
+import           Benchmark.Internal     (measureParserSpace)
 import           Benchmark.Newick.Files
 import           Data.Foldable
 --import qualified Data.Text.IO          as T
-import qualified Data.Text.Lazy.IO     as TL
+import qualified Data.Text.Lazy.IO      as TL
 import           File.Format.Newick
 import           Text.Megaparsec
 import           Weigh

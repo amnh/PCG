@@ -231,9 +231,11 @@ benchmark bench-space
     Benchmark.FASTA.Space
     Benchmark.FASTC.Files
     Benchmark.FASTC.Space
+    Benchmark.Internal
     Benchmark.Newick.Files            
     Benchmark.Newick.Space
-    Benchmark.Internal
+    Benchmark.TCM.Files            
+    Benchmark.TCM.Space
 
 
 benchmark bench-time
@@ -268,9 +270,11 @@ benchmark bench-time
     Benchmark.FASTA.Time
     Benchmark.FASTC.Files
     Benchmark.FASTC.Time
+    Benchmark.Internal
     Benchmark.Newick.Files
     Benchmark.Newick.Time
-    Benchmark.Internal
+    Benchmark.TCM.Files            
+    Benchmark.TCM.Time
 
 
 executable file-tests

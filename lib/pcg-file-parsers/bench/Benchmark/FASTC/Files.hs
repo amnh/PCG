@@ -4,7 +4,7 @@ module Benchmark.FASTC.Files
   ) where
 
 import Data.Foldable
-import           System.FilePath.Posix
+import System.FilePath.Posix
 
 
 fastcSequenceFiles :: [FilePath]

@@ -12,8 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module File.Format.TransitionCostMatrix.Parser
   ( TCM(..)
@@ -24,6 +27,7 @@ module File.Format.TransitionCostMatrix.Parser
   , matrixBlock
   ) where
 
+import           Control.DeepSeq
 import           Data.Char              (isSpace)
 import           Data.Foldable
 import           Data.List.NonEmpty     (NonEmpty)
@@ -32,13 +36,14 @@ import           Data.List.Utility      (duplicates, mostCommon)
 import           Data.Matrix.NotStupid  (Matrix, ncols, nrows)
 import qualified Data.Matrix.NotStupid  as M (fromList)
 import           Data.Maybe             (catMaybes, fromJust)
+import           GHC.Generics
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
 
 
 -- |
---Intermediate parse result prior to consistancy validation
+-- Intermediate parse result prior to consistancy validation
 data TCMParseResult
    = TCMParseResult (NonEmpty String) (Matrix Double) deriving (Show)
 
@@ -61,7 +66,7 @@ data TCM
      customAlphabet  :: NonEmpty String
      -- | The cost to transition between any two symbols, square but not necessarily symetric
    , transitionCosts :: Matrix Double -- n+1 X n+1 matrix where n = length customAlphabet
-   } deriving (Show)
+   } deriving (Eq, Generic, NFData, Show)
 
 
 -- |
