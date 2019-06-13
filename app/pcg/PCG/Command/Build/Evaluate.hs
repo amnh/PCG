@@ -7,7 +7,7 @@ module PCG.Command.Build.Evaluate
   ( evaluate
   ) where
 
-import           Analysis.Clustering
+import qualified Analysis.Clustering as AC
 import           Analysis.Parsimony.Additive
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch
@@ -60,7 +60,7 @@ evaluate
   :: BuildCommand
   -> GraphState
   -> SearchState
-evaluate (BuildCommand clustertype trajectoryCount buildType) cpctInState =
+evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
     case getCompact cpctInState of
       Left  _ -> pure cpctInState
       Right v -> do
@@ -68,9 +68,21 @@ evaluate (BuildCommand clustertype trajectoryCount buildType) cpctInState =
                            WagnerTree     -> wagnerBuildLogic
                            WheelerNetwork -> networkBuildLogic
                            WheelerForest  -> forestBuildLogic
+        let buildMethod = case buildType of
+                           WagnerTree     -> naiveWagnerBuild
+                           WheelerNetwork -> naiveNetworkBuild
+                           WheelerForest  -> naiveForestBuild
+        let cluster = clusterBuildLogic buildMethod
         let clusterLogic = case clusterType of
-                             ClusterOption 1 _         -> 
-                             ClusterOption n NoCluster -> 
+                             ClusterOption 1 _               -> buildLogic
+                             ClusterOption NoCluster       n -> cluster AC.NoCluster       n
+                             ClusterOption SingleLinkage   n -> cluster AC.SingleLinkage   n
+                             ClusterOption CompleteLinkage n -> cluster AC.CompleteLinkage n
+                             ClusterOption UPGMALinkage    n -> cluster AC.UPGMALinkage    n
+                             ClusterOption WeightedLinkage n -> cluster AC.WeightedLinkage n
+                             ClusterOption WardLinkage     n -> cluster AC.WardLinkage     n
+                             ClusterOption KMedians        n -> cluster AC.KMedians        n
+                             
         bestNetwork <- buildLogic v trajectoryCount
         liftIO . compact . Right $ toSolution bestNetwork
 
@@ -78,12 +90,56 @@ evaluate (BuildCommand clustertype trajectoryCount buildType) cpctInState =
     toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
 
+    cluster = clusterBuildMethod buildMethod
+
 
 wagnerBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
   -> Int
   -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
-wagnerBuildLogic v count =
+wagnerBuildLogic = buildLogicMethod naiveWagnerParallelBuild
+
+
+networkBuildLogic
+  :: PhylogeneticSolution FinalDecorationDAG
+  -> a
+  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
+networkBuildLogic v _ = do
+    let bestTrees = toNonEmpty . NE.head $ phylogeneticForests v
+    liftIO $ putStrLn "Beginning network construction."
+    pure $ parmap rpar iterativeNetworkBuild bestTrees
+--  pure $ fmap iterativeNetworkBuild bestTrees
+
+forestBuildLogic
+  :: PhylogeneticSolution FinalDecorationDAG
+  -> Int
+  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
+forestBuildLogic _ _ = fail "The BUILD command type 'Forest' is not yet implemented!"
+
+
+clusterBuildLogic
+  :: (Foldable1 f)
+  => (MetadataSequence m -> f FinalCharacterNode -> FinalDecorationDAG)
+  -> AC.ClusterOptions
+  -> Int
+  -> PhylogeneticSolution FinalDecorationDAG
+  -> Int
+  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
+clusterBuildLogic buildMethod clusterOption numberOfClusters
+  = buildLogicMethod (clusterParallelBuild buildMethod cluserOption numberOfClusters)
+
+
+buildLogicMethod
+  :: ( Foldable1 f
+     , Traversable t
+     )
+  => (MetadataSequence m
+  -> t (f FinalCharacterNode)
+  -> t FinalDecorationDAG)
+  -> PhylogeneticSolution FinalDecorationDAG
+  -> Int
+  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
+buildLogicMethod parallelBuildLogic v count =
     let
       solutionDAG = extractSolution v
       leaves = fromLeafSet $ v ^. leafSet
@@ -106,29 +162,10 @@ wagnerBuildLogic v count =
                         <- case count of
                              1 -> pure $ leavesNE :| []
                              n -> liftIO . convert  $ replicateM n (shuffleM leaves)
-                    pure $ naiveWagnerParallelBuild m trajectories
+                    pure $ parallelBuildLogic m trajectories
   where
     convert :: IO [Vector a] -> IO (NonEmpty (NE.Vector a))
     convert = fmap (NE.fromList . fmap unsafeFromVector)
-
-
-
-networkBuildLogic
-  :: PhylogeneticSolution FinalDecorationDAG
-  -> a
-  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
-networkBuildLogic v _ = do
-    let bestTrees = toNonEmpty . NE.head $ phylogeneticForests v
-    liftIO $ putStrLn "Beginning network construction."
-    pure $ parmap rpar iterativeNetworkBuild bestTrees
---  pure $ fmap iterativeNetworkBuild bestTrees
-
-
-forestBuildLogic
-  :: PhylogeneticSolution FinalDecorationDAG
-  -> Int
-  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
-forestBuildLogic _ _ = fail "The BUILD command type 'Forest' is not yet implemented!"
 
 
 naiveWagnerParallelBuild
@@ -139,6 +176,20 @@ naiveWagnerParallelBuild
   -> t (f FinalCharacterNode)
   -> t FinalDecorationDAG
 naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
+
+
+clusterParallelBuild
+  :: ( Foldable1 f
+     , Traversable t
+     )
+  => (MetadataSequence m -> f FinalCharacterNode -> FinalDecorationDAG)
+  -> AC.ClusterOptions
+  -> Int
+  -> MetadataSequence m
+  -> t (f FinalCharacterNode)
+  -> t FinalDecorationDAG
+clusterParallelBuild buildMethod clusterOptions numberOfClusters m
+  = parmap rpar (clusterBuildMethod buildMethod clusterOptions numberOfclusters m)
 
 
 naiveWagnerBuild
@@ -170,14 +221,32 @@ naiveWagnerBuild metaSeq ns =
   where
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
-
-clusterBuild
-  :: MetadataSequence m
-  -> LeafSet FinalCharacterNode
-  -> ClusterOptions
-  -> Int
+naiveNetworkBuild
+  :: Foldable1 f
+  => MetadataSequence m
+  -> f FinalCharacterNode
   -> FinalDecorationDAG
-clusterBuild meta leafSet option numberOfClusters = parallelClusterWagner meta clusters
+naiveNetworkBuild = error "Naive network build not yet implemented!"
+
+
+naiveForestBuild
+  :: Foldable1 f
+  => MetadataSequence m
+  -> f FinalCharacterNode
+  -> FinalDecorationDAG
+naiveForestBuild = error "Naive forest build not yet implemented!"
+
+
+clusterBuildMethod
+  :: (Foldable1 f)
+  => (MetadataSequence m -> f FinalCharacterNode -> FinalDecorationDAG)
+  -> AC.ClusterOptions
+  -> Int
+  -> MetadataSequence m
+  -> LeafSet FinalCharacterNode
+  -> FinalDecorationDAG
+clusterBuildMethod buildMethod option numberOfClusters meta leafSet
+    = parallelClusterMethod buildMethod meta clusters
   where
     leafSetId :: LeafSet (DecoratedCharacterNode Identity)
     leafSetId = coerce leafSet
@@ -186,23 +255,30 @@ clusterBuild meta leafSet option numberOfClusters = parallelClusterWagner meta c
     clusters = clusterIntoGroups meta leafSetId option numberOfClusters
 
 
-parallelClusterWagner
-  :: MetadataSequence m
+parallelClusterMethod
+  :: (Foldable1 f)
+  => (MetadataSequence m -> f FinalCharacterNode -> FinalDecorationDAG)
+  -> MetadataSequence m
   -> NE.Vector (NE.Vector (DecoratedCharacterNode Identity))
   -> FinalDecorationDAG
-parallelClusterWagner meta clusters =
+parallelClusterMethod buildMethod meta clusters =
   let
     finalDecClusters :: NE.Vector (NE.Vector FinalCharacterNode)
     finalDecClusters = coerce clusters
 
     clusterTrees :: NE.Vector FinalDecorationDAG
-    clusterTrees = parmap rpar (naiveWagnerBuild meta) finalDecClusters
+    clusterTrees = parmap rpar (buildMethod meta) finalDecClusters
   in
-    subTreeWagner meta clusterTrees
+    subTreeWagner buildMethod meta clusterTrees
 
 
-subTreeWagner :: MetadataSequence m -> NE.Vector FinalDecorationDAG -> FinalDecorationDAG
-subTreeWagner meta subTrees =
+subTreeMethod
+  :: (Foldable1 f)
+  => (MetadataSequence m -> f FinalCharacterNode -> FinalDecorationDAG)
+  -> MetadataSequence m
+  -> NE.Vector FinalDecorationDAG
+  -> FinalDecorationDAG
+subTreeMethod buildMethod meta subTrees =
   let
     p :: (M.Map NodeLabel FinalDecorationDAG, [NodeLabel])
     p =
@@ -212,13 +288,13 @@ subTreeWagner meta subTrees =
     rootCharNodes :: NE.Vector FinalCharacterNode
     rootCharNodes = fmap getRootDecoration subTrees
 
-    rootNodeWagner :: FinalDecorationDAG
-    rootNodeWagner = naiveWagnerBuild meta rootCharNodes
+    rootNodeTree :: FinalDecorationDAG
+    rootNodeTree = buildMethod meta rootCharNodes
 
     namedContext :: M.Map NodeLabel Int
-    namedContext = rootNodeWagner `getNamedContext` rootNodeLabels
+    namedContext = rootNodeTree `getNamedContext` rootNodeLabels
   in
-    substituteDAGs namedContext subTreeDict rootNodeWagner
+    substituteDAGs namedContext subTreeDict rootNodeTree
   where
     getRootDecoration :: FinalDecorationDAG -> FinalCharacterNode
     {-# INLINE getRootDecoration #-}
