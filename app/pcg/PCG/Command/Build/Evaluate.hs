@@ -60,7 +60,7 @@ evaluate
   :: BuildCommand
   -> GraphState
   -> SearchState
-evaluate (BuildCommand trajectoryCount buildType) cpctInState =
+evaluate (BuildCommand clustertype trajectoryCount buildType) cpctInState =
     case getCompact cpctInState of
       Left  _ -> pure cpctInState
       Right v -> do
@@ -68,6 +68,9 @@ evaluate (BuildCommand trajectoryCount buildType) cpctInState =
                            WagnerTree     -> wagnerBuildLogic
                            WheelerNetwork -> networkBuildLogic
                            WheelerForest  -> forestBuildLogic
+        let clusterLogic = case clusterType of
+                             ClusterOption 1 _         -> 
+                             ClusterOption n NoCluster -> 
         bestNetwork <- buildLogic v trajectoryCount
         liftIO . compact . Right $ toSolution bestNetwork
 

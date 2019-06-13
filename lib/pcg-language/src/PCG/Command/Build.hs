@@ -32,7 +32,7 @@ import PCG.Syntax.Combinators
 -- The \"BUILD\" command specifying how a component graph should be constructed.
 -- output should be directed.
 data  BuildCommand
-    = BuildCommand {-# UNPACK #-} !Int !ConstructionType
+    = BuildCommand {-# UNPACK #-} !ClusterOption !Int !ConstructionType 
     deriving (Show)
 
 -- |
@@ -43,12 +43,26 @@ data  ConstructionType
     | WheelerForest
     deriving (Eq, Show)
 
+-- |
+-- Different possible types of clustering pre-pass.
+data ClusterLabel
+    = NoCluster      
+    | SingleLinkage  
+    | CompleteLinkage
+    | UPGMALinkage   
+    | WeightedLinkage
+    | WardLinkage    
+  deriving Show
 
+data ClusterOption = ClusterOption !Int !ClusterLabel
+  deriving Show
+    
 -- |
 -- Defines the semantics of interpreting a valid \"BUILD\" command from the PCG
 -- scripting language syntax.
 buildCommandSpecification :: CommandSpecification BuildCommand
-buildCommandSpecification = command "build" . argList $ BuildCommand <$> trajectoryCount <*> constructionType
+buildCommandSpecification = command "build" . argList $
+  BuildCommand <$> clusterOptionType <*> trajectoryCount <*> constructionType
 
 
 trajectoryCount :: Ap SyntacticArgument Int
@@ -61,3 +75,28 @@ constructionType = choiceFrom [ buildTree, buildNetwork, buildForest ] `withDefa
     buildTree    = value "tree"    $> WagnerTree
     buildNetwork = value "network" $> WheelerNetwork
     buildForest  = value "forest"  $> WheelerForest
+
+
+clusterOptionType :: Ap SyntacticArgument ClusterOption
+clusterOptionType =
+  (argList $ ClusterOption <$> int <*> clusterLabelType)
+  `withDefault` (ClusterOption 1 NoCluster)
+
+clusterLabelType :: Ap SyntacticArgument ClusterLabel
+clusterLabelType =
+    choiceFrom
+      [ noCluster
+      , singleLinkage
+      , completeLinkage
+      , upgmaLinkage
+      , weightedLinkage
+      , wardLinkage
+      ]
+      `withDefault` NoCluster
+  where
+    noCluster       = value "no-cluster"       $> NoCluster 
+    singleLinkage   = value "single-linkage "  $> SingleLinkage 
+    completeLinkage = value "complete-linkage" $> CompleteLinkage
+    upgmaLinkage    = value "upgma-linkage"    $> UPGMALinkage
+    weightedLinkage = value "weighted-linkage" $> WeightedLinkage
+    wardLinkage     = value "ward-linkage"     $> WardLinkage
