@@ -14,6 +14,13 @@
 module Analysis.Clustering
   ( ClusterOptions
   , pattern UPGMA
+  , pattern SingleLinkage
+  , pattern CompleteLinkage
+  , pattern UPGMALinkage
+  , pattern WeightedLinkage
+  , pattern WardLinkage
+  , pattern KMedians
+  , pattern NoCluster
   , clusterIntoGroups
   ) where
 
@@ -28,9 +35,31 @@ import qualified Data.Vector.NonEmpty             as NE
 data ClusterOptions
   = Hierarchical H.Linkage
   | Median
+  | None
 
 pattern UPGMA :: ClusterOptions
 pattern UPGMA = Hierarchical H.Average
+
+pattern SingleLinkage :: ClusterOptions
+pattern SingleLinkage = Hierarchical H.Single
+
+pattern CompleteLinkage :: ClusterOptions
+pattern CompleteLinkage = Hierarchical H.Complete
+
+pattern UPGMALinkage :: ClusterOptions
+pattern UPGMALinkage = Hierarchical H.Average
+
+pattern WeightedLinkage :: ClusterOptions
+pattern WeightedLinkage = Hierarchical H.Weighted
+
+pattern WardLinkage :: ClusterOptions
+pattern WardLinkage = Hierarchical H.Ward
+
+pattern KMedians :: ClusterOptions
+pattern KMedians = Median
+
+pattern NoCluster :: ClusterOptions
+pattern NoCluster = None
 
 
 clusterIntoGroups
@@ -46,3 +75,4 @@ clusterIntoGroups meta leafSet clusterOption numberOfClusters =
       -> CH.clusterIntoGroups meta leafSet hierarchicalOpt numberOfClusters
 
     Median -> error "Median clustering not yet implemented."
+    NoCluster -> error "ToDO"
