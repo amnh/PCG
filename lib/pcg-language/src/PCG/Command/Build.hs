@@ -19,6 +19,8 @@
 module PCG.Command.Build
   ( BuildCommand(..)
   , ConstructionType(..)
+  , ClusterLabel(..)
+  , ClusterOption(..)
   , buildCommandSpecification
   ) where
 
@@ -32,7 +34,7 @@ import PCG.Syntax.Combinators
 -- The \"BUILD\" command specifying how a component graph should be constructed.
 -- output should be directed.
 data  BuildCommand
-    = BuildCommand {-# UNPACK #-} !ClusterOption !Int !ConstructionType 
+    = BuildCommand {-# UNPACK #-} !Int !ConstructionType !ClusterOption
     deriving (Show)
 
 -- |
@@ -51,10 +53,11 @@ data ClusterLabel
     | CompleteLinkage
     | UPGMALinkage   
     | WeightedLinkage
-    | WardLinkage    
+    | WardLinkage
+    | KMedians
   deriving Show
 
-data ClusterOption = ClusterOption !Int !ClusterLabel
+data ClusterOption = ClusterOption !ClusterLabel !Int
   deriving Show
     
 -- |
@@ -62,7 +65,7 @@ data ClusterOption = ClusterOption !Int !ClusterLabel
 -- scripting language syntax.
 buildCommandSpecification :: CommandSpecification BuildCommand
 buildCommandSpecification = command "build" . argList $
-  BuildCommand <$> clusterOptionType <*> trajectoryCount <*> constructionType
+  BuildCommand <$> trajectoryCount <*> constructionType <*> clusterOptionType
 
 
 trajectoryCount :: Ap SyntacticArgument Int
@@ -79,8 +82,8 @@ constructionType = choiceFrom [ buildTree, buildNetwork, buildForest ] `withDefa
 
 clusterOptionType :: Ap SyntacticArgument ClusterOption
 clusterOptionType =
-  (argList $ ClusterOption <$> int <*> clusterLabelType)
-  `withDefault` (ClusterOption 1 NoCluster)
+  value "cluster" *> (argList $ ClusterOption <$> clusterLabelType <*> int)
+  `withDefault` (ClusterOption NoCluster 1)
 
 clusterLabelType :: Ap SyntacticArgument ClusterLabel
 clusterLabelType =
@@ -91,6 +94,7 @@ clusterLabelType =
       , upgmaLinkage
       , weightedLinkage
       , wardLinkage
+      , kMedians
       ]
       `withDefault` NoCluster
   where
@@ -100,3 +104,4 @@ clusterLabelType =
     upgmaLinkage    = value "upgma-linkage"    $> UPGMALinkage
     weightedLinkage = value "weighted-linkage" $> WeightedLinkage
     wardLinkage     = value "ward-linkage"     $> WardLinkage
+    kMedians        = value "k-medians"        $> KMedians
