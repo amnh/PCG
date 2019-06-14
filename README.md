@@ -1,14 +1,20 @@
-Phylogenetic Component Graph
-=============
-
-[![BSD3 license][license-img]][license-ref]
-[![Build Status][ travis-img]][ travis-ref]
+# Phylogenetic Component Graph
 
 Haskell program and libraries for general phylogenetic graph search
 
-**Project status:**  [Alpha release](https://github.com/amnh/PCG/releases/latest)
+[![Build Status][   travis-img]][   travis-ref]
+[![Maintained  ][ maintain-img]][ maintain-ref]
 
-**Project manager:** [Ward Wheeler](mailto:wheeler@amnh.org)
+[![Release     ][  release-img]][latest-release]
+[![Release Date][ tag-date-img]][latest-release]
+
+[![New Commits ][  commits-img]][  commits-ref]
+[![Code Size   ][code-size-img]][code-size-ref]
+
+[![Author      ][   author-img]][   author-ref]
+[![BSD3 License][  license-img]][  license-ref]
+
+### Codebase structure
 
 | Directory         | Description of Contents
 |:----------------- |:--------------------------------------- |
@@ -39,7 +45,20 @@ Haskell program and libraries for general phylogenetic graph search
 [f2]: https://www.darpa.mil/program/simplifying-complexity-in-scientific-discovery
 [f3]: http://www.klebergfoundation.org/
 
-[license-img]: https://img.shields.io/badge/license-BSD3-blue.svg
-[license-ref]: https://github.com/amnh/PCG/blob/master/LICENSE
-[ travis-img]: https://travis-ci.org/amnh/PCG.svg?branch=master
-[ travis-ref]: https://travis-ci.org/amnh/PCG
+[latest-release]: https://github.com/amnh/PCG/releases/latest
+
+[   author-img]: https://img.shields.io/badge/author-Ward%20Wheeler-blue.svg
+[   author-ref]: https://www.amnh.org/research/staff-directory/ward-wheeler
+[  license-img]: https://img.shields.io/badge/license-BSD3-blue.svg
+[  license-ref]: https://github.com/amnh/PCG/blob/master/LICENSE
+[   travis-img]: https://travis-ci.org/amnh/PCG.svg?branch=master
+[   travis-ref]: https://travis-ci.org/amnh/PCG
+[code-size-img]: https://img.shields.io/github/languages/code-size/amnh/PCG.svg?style=popout
+[code-size-ref]: https://github.com/amnh/PCG/archive/master.zip
+[  commits-img]: https://img.shields.io/github/commits-since/amnh/PCG/v0.1.0.1.svg?style=popout
+[  commits-ref]: https://github.com/amnh/PCG/commits/master
+[  release-img]: https://img.shields.io/github/release-pre/amnh/PCG.svg
+[ tag-date-img]: https://img.shields.io/github/release-date-pre/amnh/PCG.svg?style=popout
+
+[ maintain-img]: https://img.shields.io/maintenance/yes/2019.svg?style=popout
+[ maintain-ref]: https://github.com/amnh/PCG/graphs/contributors
