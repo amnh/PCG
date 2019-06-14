@@ -19,4 +19,4 @@ newickFilePath =  "bench" </> "data-sets" </>"newick"
 
 
 taxaCounts :: [Word]
-taxaCounts = (8 *) . (2^) <$> [0 .. 5 :: Word]
+taxaCounts = (8 *) . (2^) <$> [0 .. 9 :: Word]
