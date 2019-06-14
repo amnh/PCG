@@ -23,6 +23,7 @@ module Bio.Graph.Constructions
   , DecoratedCharacterNode
   , FinalDecorationDAG
   , FinalCharacterNode
+  , FinalMetadata
   , GlobalSettings
   , GraphState
   , PhylogeneticFreeDAG(..)
@@ -169,10 +170,15 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 
 
 -- |
+-- The Metadata on a 'FinalDecorationDAG' after a pre-order traversal.
+type FinalMetadata = (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+
+
+-- |
 -- Decoration of a phylogenetic DAG after a pre-order traversal AND after the edge data has been finalized.
 type FinalDecorationDAG =
        PhylogeneticDAG
-         (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+         FinalMetadata
          EdgeAnnotation
          NodeLabel
          (ContinuousOptimizationDecoration ContinuousCharacter)
