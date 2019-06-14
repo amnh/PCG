@@ -18,7 +18,6 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG
 import           Control.Lens
 import qualified Data.Map                           as M
--- import Data.NodeLabel
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal    (IndexData)
 import           Bio.Graph.ReferenceDAG.Utility     (incrementRefVector)
