@@ -55,10 +55,10 @@ data ClusterLabel
     | WeightedLinkage
     | WardLinkage
     | KMedians
-  deriving Show
+  deriving (Eq, Show)
 
 data ClusterOption = ClusterOption !ClusterLabel !Int
-  deriving Show
+  deriving (Eq, Show)
     
 -- |
 -- Defines the semantics of interpreting a valid \"BUILD\" command from the PCG
