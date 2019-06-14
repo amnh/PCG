@@ -143,6 +143,7 @@ library
     pcg-utility,
     bimap                    >= 0.3       && < 0.4,
     case-insensitive         >= 1.2.0     && < 1.3,
+    deepseq                  >= 1.4       && < 2.0,
     dlist                    >= 0.8       && < 1.0,
     -- >=2999.20 Required for forgiving construction of DOT object
     graphviz                 >= 2999.20   && < 3000,
@@ -160,6 +161,7 @@ library
     transformers             >= 0.5.5     && < 1.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
+    vector-builder           >= 0.3       && < 1.0,             
 
   exposed-modules:
     File.Format.Dot
@@ -195,6 +197,90 @@ library
     File.Format.TransitionCostMatrix.Parser
     File.Format.VertexEdgeRoot.Parser
     Text.Megaparsec.Custom
+
+
+benchmark bench-space
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+         
+  main-is:
+    Space.hs
+
+  type:
+    exitcode-stdio-1.0  
+    
+  ghc-options:
+    -threaded
+
+  hs-source-dirs:
+    bench
+  
+  build-depends:
+    pcg-file-parsers,
+    case-insensitive         >= 1.2.0     && < 1.3,
+    criterion                >= 1.5       && < 2.0,
+    deepseq                  >= 1.4       && < 2.0,
+    filepath                 >= 1.4       && < 2.0,
+    text                     >= 1.2       && < 2.0,
+    weigh                    >= 0.0.14    && < 1.0,
+
+  other-modules:
+    Benchmark.FASTA.Files
+    Benchmark.FASTA.Space
+    Benchmark.FASTC.Files
+    Benchmark.FASTC.Space
+    Benchmark.Internal
+    Benchmark.Newick.Files            
+    Benchmark.Newick.Space
+    Benchmark.TCM.Files            
+    Benchmark.TCM.Space
+    Benchmark.VER.Files            
+    Benchmark.VER.Space
+
+
+benchmark bench-time
+
+  import:
+    dependencies,
+    ghc-flags,
+    language-specs
+         
+  main-is:
+    Time.hs
+
+  type:
+    exitcode-stdio-1.0  
+    
+  ghc-options:
+    -threaded
+
+  hs-source-dirs:
+    bench
+  
+  build-depends:
+    pcg-file-parsers,
+    case-insensitive         >= 1.2.0     && < 1.3,
+    criterion                >= 1.5       && < 2.0,
+    deepseq                  >= 1.4       && < 2.0,
+    filepath                 >= 1.4       && < 2.0,
+    text                     >= 1.2       && < 2.0,
+    weigh                    >= 0.0.14    && < 1.0,
+
+  other-modules:
+    Benchmark.FASTA.Files
+    Benchmark.FASTA.Time
+    Benchmark.FASTC.Files
+    Benchmark.FASTC.Time
+    Benchmark.Internal
+    Benchmark.Newick.Files
+    Benchmark.Newick.Time
+    Benchmark.TCM.Files            
+    Benchmark.TCM.Time
+    Benchmark.VER.Files
+    Benchmark.VER.Time
 
 
 executable file-tests
@@ -250,8 +336,11 @@ test-suite unit-tests
     -threaded
 
   build-depends:
+    pcg-alphabet,
     pcg-utility,
+    bimap                    >= 0.3       && < 0.4,
     case-insensitive         >= 1.2.0     && < 1.3,
+    deepseq                  >= 1.4       && < 2.0,
     dlist                    >= 0.8       && < 1.0,
     integer-gmp              >= 1.0       && < 2.0,
     keys                     >= 3.0       && < 4.0,
@@ -260,14 +349,18 @@ test-suite unit-tests
     QuickCheck               >= 2.12      && < 3.0,
     safe                     >= 0.3.17    && < 0.4,
     scientific               >= 0.3.6     && < 0.4,
+    -- required for Data.Semigroup.Foldable.toNonEmpty
+    semigroupoids            >= 5.2.1     && < 5.4,
     smallcheck               >= 1.1.5     && < 2.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-hunit              >= 0.10      && < 1.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
+    text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
+    vector-builder           >= 0.3       && < 1.0,             
 
   other-modules:
     File.Format.Fasta.Internal

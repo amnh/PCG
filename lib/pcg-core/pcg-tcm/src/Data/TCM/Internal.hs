@@ -631,7 +631,8 @@ isMetric tcm = conditions `allSatisfiedBy` tcm
         [ zeroDiagonalOnly
         , triangleInequality
         ]
-    triangleInequality x = all triangleInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
+    triangleInequality x = all triangleInequalityIndex
+        [(i, k, j) | i <- range, j <- range, i < j, k <- range, j < k]
       where
         triangleInequalityIndex (i,j,k) = x ! (i,k) <= x ! (i,j) + x ! (j,k)
         range = [0 .. size tcm - 1]
@@ -660,7 +661,8 @@ isUltraMetric :: TCM -> Bool
 isUltraMetric tcm = conditions `allSatisfiedBy` tcm
   where
     conditions = [ ultraMetricInequality ]
-    ultraMetricInequality x = all ultraMetricInequalityIndex [(i,k,j) | i <- range, j <- range, k <- range, i < j, j < k ]
+    ultraMetricInequality x = all ultraMetricInequalityIndex
+        [(i,k,j) | i <- range, j <- range, i < j, k <- range, j < k ]
       where
         ultraMetricInequalityIndex (i,j,k) = x ! (i,k) <= max (x ! (i,j)) (x ! (j,k))
         range = [0 .. size tcm - 1]

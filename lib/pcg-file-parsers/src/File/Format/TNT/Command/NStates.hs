@@ -20,8 +20,7 @@ module File.Format.TNT.Command.NStates
   ( nstatesCommand
   ) where
 
-
-import Data.CaseInsensitive
+import Data.CaseInsensitive     (FoldCase)
 import Data.Functor             (($>))
 import Data.Proxy
 import File.Format.TNT.Internal

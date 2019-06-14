@@ -22,7 +22,7 @@ module File.Format.TNT.Command.Procedure
   , procHeader
   ) where
 
-import Data.CaseInsensitive
+import Data.CaseInsensitive     (FoldCase)
 import Data.Functor             (($>))
 import File.Format.TNT.Internal
 import Text.Megaparsec

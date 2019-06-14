@@ -21,6 +21,7 @@ module Data.EdgeLength
   ( EdgeLength()
   , fromDouble
   , fromDoubleMay
+  , fromRationalMay
   ) where
 
 
@@ -44,7 +45,7 @@ import TextShow            (TextShow (showb))
 -- the edge lengths are unspecified (the identity element), the semigroup
 -- operation returns a specified edge length if possible, satifying the monoid
 -- laws regarding the identity element.
-newtype EdgeLength = C (Maybe (Sum Double))
+newtype EdgeLength = C (Maybe (Sum Rational))
     deriving(Eq, Default, Generic, NFData, Ord, Semigroup, Monoid)
 
 
@@ -84,7 +85,7 @@ instance TextShow EdgeLength where
 -- Construct an 'EdgeLength' from a 'Double' value.
 {-# INLINE fromDouble #-}
 fromDouble :: Double -> EdgeLength
-fromDouble = C . Just . Sum
+fromDouble = C . Just . Sum . toRational
 
 
 -- |
@@ -92,7 +93,15 @@ fromDouble = C . Just . Sum
 -- A @Nothing@ value indicates a missing edge length.
 {-# INLINE fromDoubleMay #-}
 fromDoubleMay :: Maybe Double -> EdgeLength
-fromDoubleMay = C . fmap Sum
+fromDoubleMay = C . fmap (Sum . toRational)
+
+
+-- |
+-- Construct an 'EdgeLength' from a 'Maybe Rational' value.
+-- A @Nothing@ value indicates a missing edge length.
+{-# INLINE fromRationalMay #-}
+fromRationalMay :: Maybe Rational -> EdgeLength
+fromRationalMay = C . fmap Sum
 
 
 {-# INLINE liftAlt2 #-}
@@ -104,5 +113,5 @@ liftAlt2 f lhs      rhs     = liftA2 f lhs rhs
 
 
 {-# INLINE unwrap #-}
-unwrap :: EdgeLength -> Maybe (Sum Double)
+unwrap :: EdgeLength -> Maybe (Sum Rational)
 unwrap (C x) = x

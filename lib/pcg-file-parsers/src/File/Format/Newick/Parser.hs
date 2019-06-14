@@ -12,6 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE ApplicativeDo       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -29,25 +30,35 @@ module File.Format.Newick.Parser
   , unquotedLabel
   ) where
 
-import Data.Char                   (isSpace)
-import Data.Foldable
-import Data.Functor                (void)
-import Data.List                   (intercalate)
-import Data.List.NonEmpty          (some1)
-import Data.Map                    hiding (filter, foldl', null)
-import Data.Maybe                  (fromJust, fromMaybe, isJust)
-import Data.Proxy
-import Data.String
-import File.Format.Newick.Internal
-import Prelude                     hiding (lookup)
-import Text.Megaparsec             hiding (label)
-import Text.Megaparsec.Char
-import Text.Megaparsec.Char.Lexer  (skipBlockCommentNested)
-import Text.Megaparsec.Custom
+import           Control.Applicative.Combinators.NonEmpty
+import           Data.Char                                (isSpace)
+import           Data.Foldable
+import           Data.Functor                             (void)
+import           Data.List                                (intercalate)
+import           Data.List.NonEmpty                       (NonEmpty (..), some1)
+import           Data.Map                                 hiding (filter, fold, foldl', fromList, null, toList)
+import           Data.Maybe                               (fromJust, fromMaybe, isJust)
+import           Data.Proxy
+import           Data.String
+import qualified Data.Text                                as T
+import qualified Data.Text.Lazy                           as LT
+import           Data.Text.Short                          (ShortText)
+import           Data.Vector                              (fromList)
+import           Data.Void
+import           File.Format.Newick.Internal
+import           Prelude                                  hiding (lookup)
+import           Text.Megaparsec                          hiding (label, sepBy1)
+import           Text.Megaparsec.Char
+import           Text.Megaparsec.Char.Lexer               (scientific, skipBlockCommentNested)
+import           Text.Megaparsec.Custom
 
 
 -- |
 -- Parses a stream producing a standard Newick tree
+{-# INLINEABLE newickStandardDefinition #-}
+{-# SPECIALISE newickStandardDefinition :: Parsec Void  T.Text NewickNode #-}
+{-# SPECIALISE newickStandardDefinition :: Parsec Void LT.Text NewickNode #-}
+{-# SPECIALISE newickStandardDefinition :: Parsec Void  String NewickNode #-}
 newickStandardDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickStandardDefinition = whitespace *> newickNodeDefinition <* symbol (char ';')
 
@@ -55,12 +66,20 @@ newickStandardDefinition = whitespace *> newickNodeDefinition <* symbol (char ';
 -- |
 -- Parses a stream producing an extended Newick tree.
 -- Directed cycles in extended Newick trees are not permitted.
+{-# INLINEABLE newickExtendedDefinition #-}
+{-# SPECIALISE newickExtendedDefinition :: Parsec Void  T.Text NewickNode #-}
+{-# SPECIALISE newickExtendedDefinition :: Parsec Void LT.Text NewickNode #-}
+{-# SPECIALISE newickExtendedDefinition :: Parsec Void  String NewickNode #-}
 newickExtendedDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickExtendedDefinition = newickStandardDefinition >>= joinNonUniqueLabeledNodes
 
 
 -- |
 -- Parses a stream producing a forest of extended Newick trees.
+{-# INLINEABLE newickForestDefinition #-}
+{-# SPECIALISE newickForestDefinition :: Parsec Void  T.Text   NewickForest #-}
+{-# SPECIALISE newickForestDefinition :: Parsec Void LT.Text   NewickForest #-}
+{-# SPECIALISE newickForestDefinition :: Parsec Void    String NewickForest #-}
 newickForestDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickForest
 newickForestDefinition = whitespace *> symbol (char '<') *> some1 newickExtendedDefinition <* symbol (char '>')
 
@@ -69,24 +88,36 @@ newickForestDefinition = whitespace *> symbol (char '<') *> some1 newickExtended
 -- Definition of a serialized Newick node consisiting of the node's descendants,
 -- optional label, and optional branch length. Mutually recursive with
 -- 'subtreeDefinition '.
+{-# INLINEABLE newickNodeDefinition #-}
+{-# SPECIALISE newickNodeDefinition :: Parsec Void  T.Text NewickNode #-}
+{-# SPECIALISE newickNodeDefinition :: Parsec Void LT.Text NewickNode #-}
+{-# SPECIALISE newickNodeDefinition :: Parsec Void  String NewickNode #-}
 newickNodeDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickNodeDefinition = do
-    descendants'  <- descendantListDefinition
+    descendants'  <- fromList . toList <$> descendantListDefinition
     label'        <- optional newickLabelDefinition
     branchLength' <- optional branchLengthDefinition
-    pure $ NewickNode descendants' label' branchLength'
+    pure $ NewickNode descendants' (fold label') branchLength'
 
 
 -- |
 -- Parses one or more subtrees consisting of a single node or a further
 -- descendant list.
-descendantListDefinition :: (MonadParsec e s m, Token s ~ Char) => m [NewickNode]
+{-# INLINEABLE descendantListDefinition #-}
+{-# SPECIALISE descendantListDefinition :: Parsec Void  T.Text (NonEmpty NewickNode) #-}
+{-# SPECIALISE descendantListDefinition :: Parsec Void LT.Text (NonEmpty NewickNode) #-}
+{-# SPECIALISE descendantListDefinition :: Parsec Void  String (NonEmpty NewickNode) #-}
+descendantListDefinition :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty NewickNode)
 descendantListDefinition = char '(' *> trimmed subtreeDefinition `sepBy1` char ',' <* char ')' <* whitespace
 
 
 -- |
 -- Definition of a Newick subtree consisting of either a single leaf node or a
 -- greater subtree. Mutually recursive with 'newickNodeDefinition'.
+{-# INLINEABLE subtreeDefinition #-}
+{-# SPECIALISE subtreeDefinition :: Parsec Void  T.Text NewickNode #-}
+{-# SPECIALISE subtreeDefinition :: Parsec Void LT.Text NewickNode #-}
+{-# SPECIALISE subtreeDefinition :: Parsec Void  String NewickNode #-}
 subtreeDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 subtreeDefinition = newickNodeDefinition <|> newickLeafDefinition
 
@@ -94,16 +125,24 @@ subtreeDefinition = newickNodeDefinition <|> newickLeafDefinition
 -- |
 -- Definition of a sigle leaf node in a Newick tree. Must contain a node label.
 -- Has no descendants be definition.
+{-# INLINEABLE newickLeafDefinition #-}
+{-# SPECIALISE newickLeafDefinition :: Parsec Void  T.Text NewickNode #-}
+{-# SPECIALISE newickLeafDefinition :: Parsec Void LT.Text NewickNode #-}
+{-# SPECIALISE newickLeafDefinition :: Parsec Void  String NewickNode #-}
 newickLeafDefinition :: (MonadParsec e s m, Token s ~ Char) => m NewickNode
 newickLeafDefinition = do
     label'        <- newickLabelDefinition
     branchLength' <- optional branchLengthDefinition
-    pure . NewickNode [] (Just label') $ branchLength'
+    pure . NewickNode mempty label' $ branchLength'
 
 
 -- |
 -- Defines the label for a 'NewickNode' which can be either quoted or unquoted.
-newickLabelDefinition :: (MonadParsec e s m, Token s ~ Char) => m String
+{-# INLINEABLE newickLabelDefinition #-}
+{-# SPECIALISE newickLabelDefinition :: Parsec Void  T.Text ShortText #-}
+{-# SPECIALISE newickLabelDefinition :: Parsec Void LT.Text ShortText #-}
+{-# SPECIALISE newickLabelDefinition :: Parsec Void  String ShortText #-}
+newickLabelDefinition :: (MonadParsec e s m, Token s ~ Char) => m ShortText
 newickLabelDefinition = (quotedLabel <|> unquotedLabel) <* whitespace
 
 
@@ -111,22 +150,26 @@ newickLabelDefinition = (quotedLabel <|> unquotedLabel) <* whitespace
 -- We use a recursive parsing technique to handle the quoted escape sequence
 -- of two single quotes ("''") to denote an escaped quotation character
 -- in the quoted label rather than signifying the end of the quoted label
-quotedLabel :: (MonadParsec e s m, Token s ~ Char) => m String
+{-# INLINEABLE quotedLabel #-}
+{-# SPECIALISE quotedLabel :: Parsec Void  T.Text ShortText #-}
+{-# SPECIALISE quotedLabel :: Parsec Void LT.Text ShortText #-}
+{-# SPECIALISE quotedLabel :: Parsec Void  String ShortText #-}
+quotedLabel :: forall e s m . (MonadParsec e s m, Token s ~ Char) => m ShortText
 quotedLabel = do
     _ <- char '\''
     x <- quotedLabelData
-    case filter (not.isSpace) x of
-      [] -> fail $ "Blank quoted identifier found. The identifier '"<>x<>"' is not valid"
-      _  -> pure x
+    case filter (not . isSpace) x of
+      [] -> fail $ fold ["Blank quoted identifier found. The identifier '", x, "' is not valid"]
+      _  -> pure $ fromString x
   where
     quotedLabelData = do
-      prefix <- many (noneOf $ '\'':invalidQuotedLabelChars)
+      prefix <- noneOfThese $ '\'':invalidQuotedLabelChars
       _      <- char '\''
       suffix <- optional . try $ char '\'' *> quotedLabelData
-      pure $
-        case suffix of
-          Just y  -> prefix <> ('\'':y)
-          Nothing -> prefix
+      pure $ let p = chunkToTokens (Proxy :: Proxy s) prefix
+             in  case suffix of
+                   Just y  -> p <> ('\'' : y)
+                   Nothing -> p
 
 
 -- |
@@ -139,12 +182,18 @@ quotedLabel = do
 -- interpretation of the standard Newick format and the Extended Newick
 -- format. However, if a user really want to put '<' & '>' characters in
 -- a node label, they can always put such characters in a quoted label.
-unquotedLabel :: (MonadParsec e s m, Token s ~ Char) => m String
-unquotedLabel = some $ noneOf invalidUnquotedLabelChars
+{-# INLINEABLE unquotedLabel #-}
+{-# SPECIALISE unquotedLabel :: Parsec Void  T.Text ShortText #-}
+{-# SPECIALISE unquotedLabel :: Parsec Void LT.Text ShortText #-}
+{-# SPECIALISE unquotedLabel :: Parsec Void  String ShortText #-}
+unquotedLabel :: forall e s m . (MonadParsec e s m, Token s ~ Char) => m ShortText
+unquotedLabel =
+  fromString . chunkToTokens (Proxy :: Proxy s) <$> noneOfThese invalidUnquotedLabelChars
 
 
 -- |
 -- Characters which can ontly appear in a quoted 'NewickNode' label.
+{-# INLINE requiresQuotedLabelChars #-}
 requiresQuotedLabelChars :: String
 requiresQuotedLabelChars = " ':;,()[]<>"
 
@@ -152,6 +201,7 @@ requiresQuotedLabelChars = " ':;,()[]<>"
 -- |
 -- List of chacracters which __cannot__ appear in an /quoted/ label of a
 -- 'NewickNode'.
+{-# INLINE invalidQuotedLabelChars #-}
 invalidQuotedLabelChars :: String
 invalidQuotedLabelChars = "\r\n\t\f\v\b"
 
@@ -159,6 +209,7 @@ invalidQuotedLabelChars = "\r\n\t\f\v\b"
 -- |
 -- List of chacracters which __cannot__ appear in an /unquoted/ label of a
 -- 'NewickNode'. A superset of 'invalidQuotedLabelChars'.
+{-# INLINE invalidUnquotedLabelChars #-}
 invalidUnquotedLabelChars :: String
 invalidUnquotedLabelChars = invalidQuotedLabelChars <> requiresQuotedLabelChars
 
@@ -169,19 +220,31 @@ invalidUnquotedLabelChars = invalidQuotedLabelChars <> requiresQuotedLabelChars
 -- the 'branchLength' of a given 'NewickNode' is the branch length itself and
 -- it's parent. Becomes non-sensical with extended Newick trees that have nodes
 -- with "in-degree" greater than one.
-branchLengthDefinition :: (MonadParsec e s m, Token s ~ Char) => m Double
-branchLengthDefinition = symbol (char ':') *> symbol double
+{-# INLINEABLE branchLengthDefinition #-}
+{-# SPECIALISE branchLengthDefinition :: Parsec Void  T.Text Rational #-}
+{-# SPECIALISE branchLengthDefinition :: Parsec Void LT.Text Rational #-}
+{-# SPECIALISE branchLengthDefinition :: Parsec Void  String Rational #-}
+branchLengthDefinition :: (MonadParsec e s m, Token s ~ Char) => m Rational
+branchLengthDefinition = symbol (char ':') *> (toRational <$> symbol scientific)
 
 
 -- |
 -- Convinience combinator for stripping /leading and trailing/ whitespace from a
 -- combinator.
+{-# INLINE trimmed #-}
+{-# SPECIALISE trimmed :: Parsec Void  T.Text a -> Parsec Void  T.Text a #-}
+{-# SPECIALISE trimmed :: Parsec Void LT.Text a -> Parsec Void LT.Text a #-}
+{-# SPECIALISE trimmed :: Parsec Void  String a -> Parsec Void  String a #-}
 trimmed :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 trimmed x = whitespace *> x <* whitespace
 
 
 -- |
 -- Convinience combinator for stripping /trailing/ whitespace from a combinator.
+{-# INLINE symbol #-}
+{-# SPECIALISE symbol :: Parsec Void  T.Text a -> Parsec Void  T.Text a #-}
+{-# SPECIALISE symbol :: Parsec Void LT.Text a -> Parsec Void LT.Text a #-}
+{-# SPECIALISE symbol :: Parsec Void  String a -> Parsec Void  String a #-}
 symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol x = x <* whitespace
 
@@ -189,7 +252,11 @@ symbol x = x <* whitespace
 -- |
 -- Definition of space between tokens which can be discarded. This includes
 -- spaces /and/ comments.
-whitespace :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ()
+{-# INLINE whitespace #-}
+{-# SPECIALISE whitespace :: Parsec Void  T.Text () #-}
+{-# SPECIALISE whitespace :: Parsec Void LT.Text () #-}
+{-# SPECIALISE whitespace :: Parsec Void  String () #-}
+whitespace :: forall e s m . (MonadParsec e s m, Token s ~ Char) => m ()
 whitespace = skipMany $ choice [ hidden spChar, hidden block ]
   where
     spChar = void spaceChar
@@ -210,6 +277,10 @@ whitespace = try commentDefinition <|> space
 -- |
 -- Joins the nodes of an extended Newick tree which share the same label.
 -- Directed cycles from the tree's implicit root will result in a 'ParseError'.
+{-# INLINE joinNonUniqueLabeledNodes #-}
+{-# SPECIALISE joinNonUniqueLabeledNodes :: NewickNode -> Parsec Void  T.Text NewickNode #-}
+{-# SPECIALISE joinNonUniqueLabeledNodes :: NewickNode -> Parsec Void LT.Text NewickNode #-}
+{-# SPECIALISE joinNonUniqueLabeledNodes :: NewickNode -> Parsec Void  String NewickNode #-}
 joinNonUniqueLabeledNodes :: (MonadParsec e s m, Token s ~ Char) => NewickNode -> m NewickNode
 joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
   where
@@ -218,11 +289,12 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
     -- combine thier descendant lists. We use this Map of Newick labels to
     -- combined descendant lists for substituting labeled node descendants
     -- in a second pass over the Newick Tree.
-    joinedNodes :: Map String [NewickNode]
+    joinedNodes :: Map ShortText [NewickNode]
     joinedNodes = foldl' joinNodes mempty labeledNodes
       where
-        labeledNodes           = filter (isJust . newickLabel) $ toList' root
-        joinNodes :: Map String [NewickNode] -> NewickNode -> Map String [NewickNode]
+        labeledNodes = filter (isJust . newickLabel) $ toList' root
+
+        joinNodes :: Map ShortText [NewickNode] -> NewickNode -> Map ShortText [NewickNode]
         joinNodes mapping node = insertWith (<>) (fromJust $ newickLabel node) (descendants node) mapping
         toList' node = node : ((=<<) toList' . descendants) node
 
@@ -235,18 +307,20 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
     -- return a Left value of type Either ParseError NewickNode to represent
     -- a parse error. It is assumed that cycles are note permitted in our
     -- PhyloGraph data structures.
-    joinNonUniqueLabeledNodes' :: (MonadParsec e s m, Token s ~ Char) => [Maybe String] -> NewickNode -> m NewickNode
+    joinNonUniqueLabeledNodes' :: (MonadParsec e s m, Token s ~ Char) => [Maybe ShortText] -> NewickNode -> m NewickNode
     joinNonUniqueLabeledNodes' stack node
-      | hasCycle      = fail cycleError
-      | null children = pure $ newNode []
-      | otherwise     = resultNode children
+      | hasCycle   = fail cycleError
+      | otherwise  =
+        case children of
+          [] -> pure node
+          xs -> resultNode $ fromList xs
       where
         label      = newickLabel node
         joinedList = label >>= (`lookup` joinedNodes)
         children   = fromMaybe (descendants node) joinedList
         gatherList = traverse (joinNonUniqueLabeledNodes' stack')
         resultNode = fmap newNode . gatherList
-        newNode x  = NewickNode x label (branchLength node)
+        newNode x  = NewickNode x (fold label) (branchLength node)
         stack'     = label : stack
         hasCycle   = isJust label
                   && (not . null . dropWhile (/=label)) stack

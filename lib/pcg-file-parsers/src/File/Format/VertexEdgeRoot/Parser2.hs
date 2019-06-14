@@ -1,8 +1,12 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module File.Format.VertexEdgeRoot.Parser2 where
 
+import Control.DeepSeq        (NFData)
 import Data.Char              (isSpace)
 import Data.Either            (partitionEithers)
 import Data.List              (delete, maximumBy, partition, sortBy)
@@ -11,6 +15,7 @@ import Data.Map               (Map, empty, insert, lookup)
 import Data.Maybe             (catMaybes, fromMaybe)
 import Data.Ord               (comparing)
 import Data.Set               (Set, elems, fromList, size)
+import GHC.Generics           (Generic)
 import Prelude                hiding (lookup)
 import Text.Megaparsec
 import Text.Megaparsec.Custom
@@ -22,12 +27,12 @@ data  VertexSetType
     = Verticies
     | Edges
     | Roots
-    deriving (Eq,Show)
+    deriving (Eq, Generic, NFData, Show)
 
 
 data  EdgeInfo
     = EdgeInfo (VertexLabel,VertexLabel) EdgeLength
-    deriving (Show,Eq,Ord)
+    deriving (Eq, Generic, NFData, Ord, Show)
 
 
 data  VertexEdgeRoot
@@ -35,7 +40,7 @@ data  VertexEdgeRoot
     { verticies :: Set VertexLabel
     , edges     :: Set EdgeInfo
     , roots     :: Set VertexLabel
-    } deriving (Show)
+    } deriving (Generic, NFData, Show)
 
 
 data  NodeSet
@@ -63,7 +68,7 @@ getNodes (Labeled s _) = s
 getNodes (Unlabeled s) = s
 
 
-edgeConnection :: EdgeInfo -> (VertexLabel,VertexLabel)
+edgeConnection :: EdgeInfo -> (VertexLabel, VertexLabel)
 edgeConnection (EdgeInfo (a,b) _)
   | a <= b    = (a,b)
   | otherwise = (b,a)

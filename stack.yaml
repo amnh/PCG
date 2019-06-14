@@ -5,7 +5,7 @@ compiler: ghc-8.6.5
 compiler-check: match-exact
 
 extra-deps:
-  - bv-little-1.0.0
+  - bv-little-1.0.1
   - compact-0.1.0.1
   - graphviz-2999.20.0.3
   - pretty-tree-0.1.0.0
@@ -13,6 +13,7 @@ extra-deps:
   - text-show-3.7.5
   - text-show-instances-3.7
   - mono-traversable-keys-0.1.0
+  - validation-1.1
 
 #ghc-options:
 #  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively -fexpose-all-unfoldings

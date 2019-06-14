@@ -410,7 +410,7 @@ insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
 insertNewGaps insertionIndicies character = constructDynamic . appendGaps . foldMapWithKey1 f . NE.fromList $ otoList character
   where
     len = olength character
-    gap = getGapElement $ character `indexStream` 0
+    gap = gapOfStream character
     appendGaps (x:|xs) = x :| (xs <> trailingGaps)
     trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
 
