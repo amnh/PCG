@@ -24,7 +24,9 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 module Data.FileSource
-  ( FileSource(..)
+  ( FileExtension()
+  , FileSource(..)
+  , extractExtension
   , toFileSource
   )
   where
@@ -32,6 +34,7 @@ module Data.FileSource
 import           Control.DeepSeq           (NFData)
 import           Data.Bifunctor            (first)
 import           Data.Binary
+import           Data.Char                 (toLower)
 --import           Data.Coerce           (Coercible, coerce)
 import           Data.Foldable
 import           Data.Hashable
@@ -43,12 +46,37 @@ import           Data.String
 import           Data.Text.Short           (ShortText, pack, unpack)
 import qualified Data.Text.Short           as TS
 import           GHC.Generics              (Generic)
+import           System.FilePath.Posix     (takeExtension)
 import           Test.QuickCheck           (Arbitrary (..), CoArbitrary (..))
 import           Text.Printf               (PrintfArg)
-import           TextShow
+import           TextShow                  (TextShow (..), fromText)
 
 
+-- |
+-- Represents the location of a file on disk.
+--
+-- Space efficient representation for in-memory storage.
+--
+-- Use exported functionality from 'Data.FileSource.IO' to interact with the disk.
 newtype FileSource = FileSource { toShortText :: ShortText }
+    deriving ( Binary
+             , Eq
+             , Generic
+             , Hashable
+             , IsString
+             , Monoid
+             , NFData
+             , Ord
+             , PrintfArg
+             , Read
+             , Semigroup
+             , Show
+             )
+
+
+-- |
+-- Extension of a 'FileSource'.
+newtype FileExtension = FileExtension { unwrapExtension :: ShortText }
     deriving ( Binary
              , Eq
              , Generic
@@ -219,3 +247,19 @@ toFileSource = FileSource . pack . otoList
 {-# RULES
 "toFileSource/ShortText"     forall (s :: ShortText).       toFileSource s = FileSource s
   #-}
+
+
+-- |
+-- /O(n)/
+--
+-- Get the normalizied extenstion of a FileSource.
+--
+-- The normalized form is a lower-case string with no leading '.'.
+--
+-- Returns @Nothing@ if there is no extension.
+extractExtension :: FileSource -> Maybe FileExtension
+extractExtension = fmap (FileExtension . fromString) . dropDot . fmap toLower . takeExtension . otoList
+  where
+    dropDot      []  = Nothing
+    dropDot ('.':xs) = Just xs
+    dropDot      xs  = Just xs

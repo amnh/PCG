@@ -34,6 +34,8 @@ import           Data.Maybe
 import           Data.Semigroup.Foldable
 import           Data.Set                (Set)
 import qualified Data.Set                as Set
+import           Data.String
+import           Data.Text.Short         (toString)
 import           Data.Vector             (Vector)
 import qualified Data.Vector             as V
 import           File.Format.Newick
@@ -328,9 +330,8 @@ translateTrees taxaList treeSet =
             -- Applies a translation of leaf label symbols to taxon labels over
             -- a forest.
             translateTree :: Map String String -> NewickNode -> NewickNode
-            translateTree mapping node
-              | isLeaf node = node { newickLabel = newickLabel node >>= (`M.lookup` mapping)  }
-              | otherwise   = node { descendants = translateTree mapping <$> descendants node }
+            translateTree mapping = mapLeafLabels (fromString . (mapping M.!) . toString)
+
 
             -- |
             -- Construct the leaf node symbol to taxon label mapping when there
@@ -397,7 +398,7 @@ translateTrees taxaList treeSet =
                 f :: NewickNode -> Set String
                 f node =
                   case descendants node of
-                    [] -> Set.fromList . toList $ newickLabel node
+                    [] -> Set.fromList . fmap toString . toList $ newickLabel node
                     xs -> foldMap f xs
 
 

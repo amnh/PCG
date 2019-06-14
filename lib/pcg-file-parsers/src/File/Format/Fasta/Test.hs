@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+-- {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Fasta.Test
@@ -6,12 +7,14 @@ module File.Format.Fasta.Test
   , validTaxonLines
   ) where
 
-import Control.Arrow              (second)
+import Control.Arrow              (first, second)
 import Data.Char                  (isSpace)
-import Data.Maybe                 (fromMaybe)
+import Data.Foldable
+import Data.String
+import Data.Text.Short            (ShortText, toString)
+import Data.Vector.Unboxed        (Vector, fromList)
 import File.Format.Fasta.Internal
 import File.Format.Fasta.Parser
-import Safe                       (headMay)
 import Test.Custom.Parse          (parseEquals, parseFailure, parserSatisfies)
 import Test.Tasty                 (TestTree, testGroup)
 import Test.Tasty.HUnit
@@ -35,25 +38,25 @@ identifier' = testGroup "identifier" [invariant, valid, invalid]
   where
     valid         = testGroup "Valid taxon labels"   $ success <$>   validTaxonLabels
     invalid       = testGroup "Invalid taxon labels" $ failure <$> invalidTaxonLabels
-    success str   = testCase (show str) $ parseEquals  (identifier <* eof) str str
-    failure str   = testCase (show str) $ parseFailure (identifier <* eof) str
+    success txt   = testCase (show $ toString txt) $ parseEquals  (identifier <* eof) (toString txt) (toString txt)
+    failure txt   = testCase (show $ toString txt) $ parseFailure (identifier <* eof) (toString txt)
     invalidTaxonLabels =
-      [ x <> [s] <> y |  e    <- validTaxonLabels
-                      ,  s    <- "$ \t\r\n"
-                      ,  i    <- [length e `div` 2]
-                      , (x,y) <- [i `splitAt` e]
+      [ fromString (x <> [s] <> y)
+      |  e    <- toString <$> validTaxonLabels
+      ,  s    <- "$ \t\r\n"
+      ,  i    <- [length e `div` 2]
+      , (x,y) <- [i `splitAt` e]
       ]
     invariant = testProperty "fastaLabel invariant" f
       where
---        f x = null str || parseEquals identifier str == res
         f x = null str || parserSatisfies identifier str (== res)
           where
             str = takeWhile validIdentifierChar x
             res = headOrEmpty $ words str
 
 
-validTaxonLabels :: [String]
-validTaxonLabels =
+validTaxonLabels :: [Identifier]
+validTaxonLabels = fromString <$>
     [ "Peripatidae"
     , "Colossendeis"
     , "Ammotheidae"
@@ -63,7 +66,11 @@ validTaxonLabels =
 
 
 commentBody' :: TestTree
-commentBody' = testGroup "commentBody" [generalComment, prependedDollarSign, validComments]
+commentBody' = testGroup "commentBody"
+    [ generalComment
+    , prependedDollarSign
+    , validComments
+    ]
   where
     generalComment :: TestTree
     generalComment = testProperty "General comment structure" f
@@ -72,9 +79,12 @@ commentBody' = testGroup "commentBody" [generalComment, prependedDollarSign, val
            || null res
            || parserSatisfies commentBody x (== res)
           where
-            res = unwords . words $ takeWhile (not.(`elem`"\n\r")) x
-            hasLeadingDollarSign = let y = dropWhile isSpace x
-                                   in  headMay y == Just '$'
+            res = unwords . words $ takeWhile (not . (`elem`"\n\r")) x
+            hasLeadingDollarSign =
+                case dropWhile isSpace x of
+                  []  -> False
+                  y:_ -> y == '$'
+
     prependedDollarSign :: TestTree
     prependedDollarSign = testProperty "Comments defined with leading dollar sign" $ prepended '$'
       where
@@ -88,13 +98,14 @@ commentBody' = testGroup "commentBody" [generalComment, prependedDollarSign, val
           where
             line  = takeWhile (not . (`elem`"\n\r")) x
             line' = unwords $ words line
-    validComments = testGroup "Valid comments" $ success <$> validCommentBodies
+
+    validComments = testGroup "Valid comments" $ success . toString <$> validCommentBodies
       where
         success str = testCase (show str) $ parseEquals (commentBody <* eof) str "A species of animal"
 
 
-validCommentBodies :: [String]
-validCommentBodies =
+validCommentBodies :: [ShortText]
+validCommentBodies = fromString <$>
     [ "$A species of animal"
     , " $A species of animal"
     , "$ A species of animal"
@@ -111,14 +122,14 @@ identifierLine' = testGroup "fastaLabelLine" [validWithoutComments, validWithCom
     success (res,str)    = testCase (show str) $ parseEquals (identifierLine <* eof) str res
 
 
-validTaxonCommentLines     :: [(String, String)]
+validTaxonCommentLines     :: [(Identifier, String)]
 validTaxonCommentLines     = zip validTaxonLabels validTaxonCommentedLabels
-validTaxonCommentlessLines :: [(String, String)]
-validTaxonCommentlessLines = zip  validTaxonLabels (inlineLabel <$> validTaxonLabels)
+validTaxonCommentlessLines :: [(Identifier, String)]
+validTaxonCommentlessLines = zip validTaxonLabels (inlineLabel <$> validTaxonLabels)
 validTaxonCommentedLabels  :: [String]
 validTaxonCommentedLabels  = inlineLabel <$> zipWith (<>) validTaxonLabels validCommentBodies
-inlineLabel :: String -> String
-inlineLabel x = concat ["> ", x, "\n"]
+inlineLabel :: Identifier -> String
+inlineLabel x = concat ["> ", toString x, "\n"]
 
 
 fastaSequence' :: TestTree
@@ -127,7 +138,7 @@ fastaSequence' = testGroup "fastaSequence" [valid,nonDNAValid]
     valid             = testGroup "Valid DNA sequences"     $ success <$> validSequences
     nonDNAValid       = testGroup "Valid non-DNA sequences" $ success <$> nonDNASequences
     success (res,str) = testCase (show str) $ parseEquals fastaSequence str res
-    nonDNASequences   =
+    nonDNASequences   = fromPairs
         [ ("-.?"                 , "-.?\n"                 ) -- Gap / Missing
         , ("#"                   , "#\n"                   ) -- Sequence Partition
         , ("RYSWKMBDHVN"         , "RYSWKMBDHVN\n"         ) -- IUPAC Ambiguity Codes
@@ -136,38 +147,43 @@ fastaSequence' = testGroup "fastaSequence" [valid,nonDNAValid]
 
 
 -- add X as ambiguity for AminoAcids
-validSequences :: [(String,String)]
-validSequences =
-    [ ("-GATACA-"            , "-GATACA-\n"            )
-    , ("-GATACA-"            , "- G ATA CA- \n"        )
-    , ("-GATACA-"            , "-GAT\nACA-\n"          )
-    , ("-GATACA-"            , " -G A\nT\n AC A- \n"   )
-    , ("-GATACA-"            , "-GA\n\nT\n \nACA-\n"   )
+validSequences :: [(Vector Char, String)]
+validSequences = fromPairs
+    [ ("-GATACA-", "-GATACA-\n"         )
+    , ("-GATACA-", "- G ATA CA- \n"     )
+    , ("-GATACA-", "-GAT\nACA-\n"       )
+    , ("-GATACA-", " -G A\nT\n AC A- \n")
+    , ("-GATACA-", "-GA\n\nT\n \nACA-\n")
     ]
+
+
+fromPairs :: [(String, a)] -> [(Vector Char, a)]
+fromPairs = fmap (first fromList)
 
 
 fastaTaxonSequenceDefinition' :: TestTree
 fastaTaxonSequenceDefinition' = testGroup "fastaTaxonSequenceDefinition" [valid]
   where
-    valid             = testGroup "Valid sequences" $ success <$> validTaxonSequences
-    success (res,str) = testCase (show str) $ parseEquals fastaTaxonSequenceDefinition str res
+    valid              = testGroup "Valid sequences" $ success <$> validTaxonSequences
+    success (res, str) = testCase (show str) $ parseEquals fastaTaxonSequenceDefinition str res
 
 
-validTaxonLines     :: [(String,String)]
+validTaxonLines     :: [(Identifier, String)]
 validTaxonLines     = validTaxonCommentLines <> validTaxonCommentlessLines
-validTaxonSequences :: [(FastaSequence,String)]
+validTaxonSequences :: [(FastaSequence, String)]
 validTaxonSequences = zipWith f validTaxonLines validSequences
   where
-    f (x,str) (y,seq')  = (FastaSequence x y, concat [str,"\n",seq'])
+    f (x, str) (y, seq') = (FastaSequence x y, fold [str, "\n", seq'])
 
 
 fastaStreamParser' :: TestTree
 fastaStreamParser' = testGroup "fastaStreamParser" [testGroup "Valid stream" [validStream]]
   where
     validStream = testCase "Concatenateed fasta stream" $ parseEquals fastaStreamParser str res
-    (res,str)   = second concat $ unzip validTaxonSequences
+    (res, str)  = second fold $ unzip validTaxonSequences
 
 
 headOrEmpty :: [[a]] -> [a]
-headOrEmpty = fromMaybe [] . headMay
+headOrEmpty    [] = []
+headOrEmpty (x:_) = x
 

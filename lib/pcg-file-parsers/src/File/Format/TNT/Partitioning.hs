@@ -20,8 +20,7 @@ module File.Format.TNT.Partitioning
   , gatherCommands
   ) where
 
-
-import Data.CaseInsensitive
+import Data.CaseInsensitive              (FoldCase)
 import Data.Char                         (isAlpha)
 import File.Format.TNT.Command.CCode
 import File.Format.TNT.Command.CNames
