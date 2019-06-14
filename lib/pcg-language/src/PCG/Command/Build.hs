@@ -82,7 +82,7 @@ constructionType = choiceFrom [ buildTree, buildNetwork, buildForest ] `withDefa
 
 clusterOptionType :: Ap SyntacticArgument ClusterOption
 clusterOptionType =
-  value "cluster" *> argList (ClusterOption <$> clusterLabelType <*> int)
+  (argId "cluster" . argList $ ClusterOption <$> clusterLabelType <*> int)
   `withDefault` ClusterOption NoCluster 1
 
 clusterLabelType :: Ap SyntacticArgument ClusterLabel
