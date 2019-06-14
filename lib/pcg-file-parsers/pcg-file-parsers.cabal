@@ -220,6 +220,7 @@ benchmark bench-space
   
   build-depends:
     pcg-file-parsers,
+    case-insensitive         >= 1.2.0     && < 1.3,
     criterion                >= 1.5       && < 2.0,
     deepseq                  >= 1.4       && < 2.0,
     filepath                 >= 1.4       && < 2.0,
@@ -236,6 +237,8 @@ benchmark bench-space
     Benchmark.Newick.Space
     Benchmark.TCM.Files            
     Benchmark.TCM.Space
+    Benchmark.VER.Files            
+    Benchmark.VER.Space
 
 
 benchmark bench-time
@@ -259,6 +262,7 @@ benchmark bench-time
   
   build-depends:
     pcg-file-parsers,
+    case-insensitive         >= 1.2.0     && < 1.3,
     criterion                >= 1.5       && < 2.0,
     deepseq                  >= 1.4       && < 2.0,
     filepath                 >= 1.4       && < 2.0,
@@ -275,6 +279,8 @@ benchmark bench-time
     Benchmark.Newick.Time
     Benchmark.TCM.Files            
     Benchmark.TCM.Time
+    Benchmark.VER.Files
+    Benchmark.VER.Time
 
 
 executable file-tests

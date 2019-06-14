@@ -13,8 +13,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE ApplicativeDo      #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module File.Format.VertexEdgeRoot.Parser
   ( VertexLabel
@@ -32,6 +36,7 @@ module File.Format.VertexEdgeRoot.Parser
   , edgeDefinition
   ) where
 
+import           Control.DeepSeq        (NFData)
 import           Data.CaseInsensitive   (FoldCase)
 import           Data.Char              (isSpace)
 import           Data.Either            (partitionEithers)
@@ -49,6 +54,7 @@ import           Data.Monoid
 import           Data.Ord               (comparing)
 import           Data.Set               (Set)
 import qualified Data.Set               as Set
+import           GHC.Generics           (Generic)
 import           Prelude                hiding (lookup)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -67,7 +73,7 @@ type  EdgeLength    = Maybe Double
 
 -- |
 -- The two types of sets of nodes present in a VER file
-data  VertexSetType = Vertices | Roots deriving (Eq,Show)
+data  VertexSetType = Vertices | Roots deriving (Eq, Generic, NFData, Show)
 
 
 -- |
@@ -79,7 +85,7 @@ data  EdgeInfo
     { edgeOrigin :: VertexLabel -- ^ Extract the origin of the directed edge
     , edgeTarget :: VertexLabel -- ^ Extract the destination of the directed edge
     , edgeLength :: EdgeLength  -- ^ Extract the /possibly/ present edge length
-    } deriving (Eq, Ord)
+    } deriving (Eq, Generic, NFData, Ord)
 
 
 -- |
@@ -89,7 +95,7 @@ data  VertexEdgeRoot
     { vertices :: Set VertexLabel
     , edges    :: Set EdgeInfo
     , roots    :: Set VertexLabel
-    } deriving (Show, Eq)
+    } deriving (Show, Generic, NFData, Eq)
 
 
 -- | (✔)
@@ -196,7 +202,7 @@ vertexSetDefinition = try labeledVertexSetDefinition <|> unlabeledVertexSetDefin
 -- A labeled vertex set contains a label followed by an unlabeled vertex set
 labeledVertexSetDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel )
 labeledVertexSetDefinition = do
-    setType <- vertexSetType
+    setType <- symbol vertexSetType
     _       <- symbol (char '=')
     (_,set) <- unlabeledVertexSetDefinition
     pure (Just setType, set)
@@ -222,7 +228,7 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
     unlabeledVertexSetDefinition' :: (MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, [VertexLabel])
     unlabeledVertexSetDefinition' = do
         _       <- symbol (char '{')
-        labels' <- vertexLabelDefinition `sepBy1` symbol (char ',')
+        labels' <- symbol $ vertexLabelDefinition `sepBy1` try (symbol (char ','))
         _       <- symbol (char '}')
         pure (Nothing, labels')
 --    validateVertexSet :: (MonadParsec e s m, Token s ~ Char) => (Maybe VertexSetType, [VertexLabel]) -> m (Maybe VertexSetType, Set VertexLabel)

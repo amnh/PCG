@@ -274,10 +274,12 @@ executable generate-data-set
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     optparse-applicative     >= 0.14      && < 0.15,
+    mtl                      >= 2.0       && < 3.0,
     mwc-random               >= 0.14      && < 1.0,                         
     random-shuffle           >= 0.0.4     && < 0.1,
     scientific               >= 0.3.6     && < 0.4,
     text                     >= 1.2       && < 2.0,
+    text-show                >= 3.0       && < 4.0,
     validation               >= 1.1       && < 2.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,

@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveFunctor       #-}
 {-# LANGUAGE DeriveTraversable   #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -12,6 +13,7 @@ import           Control.Arrow
 import           Control.DeepSeq
 import           Control.Monad
 import           Control.Monad.ST
+import           Control.Monad.State.Strict
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.Key
@@ -21,22 +23,23 @@ import           Data.Ratio
 import           Data.Scientific
 import           Data.Sequence                (Seq)
 import qualified Data.Sequence                as Seq
-import           Data.Set                     (Set)
+import           Data.Set                     (Set, singleton)
 import qualified Data.Set                     as S
-import           Data.String
-import           Data.Text.Lazy               (Text)
+import           Data.String                  (IsString(fromString))
+import           Data.Text.Lazy               (Text, intercalate, unlines, unwords)
 import qualified Data.Text.Lazy               as T
-import           Data.Text.Lazy.Builder       hiding (fromString)
-import           Data.Text.Lazy.IO            (writeFile)
+import           Data.Text.Lazy.Builder       hiding (fromString, singleton)
+import           Data.Text.Lazy.IO            (putStrLn, writeFile)
 import           Data.Validation
 import           Data.Vector.Unboxed          (Vector)
 import qualified Data.Vector.Unboxed          as V
 import           Data.Word
 import           Options.Applicative
-import           Prelude                      hiding (writeFile)
+import           Prelude                      hiding (putStrLn, unlines, unwords, writeFile)
 import           System.Random.MWC
 import           System.Random.Shuffle
 import           Text.PrettyPrint.ANSI.Leijen (string)
+import           TextShow                     (TextShow(showtl))
 
 
 data  Specification
@@ -44,12 +47,13 @@ data  Specification
     { specifiedAlphabet     :: Set Text
     , specifiedLeaves       :: Set Text
     , specifiedFASTA        :: FilePath
-    , specifiedNewick       :: FilePath
+    , specifiedTreeFile     :: FilePath
     , specifiedInsertion    :: Ratio Int
     , specifiedDeletion     :: Ratio Int
     , specifiedSubstitution :: Ratio Int
     , specifiedRootLength   :: Word
     , specifiedAlignedData  :: Bool
+    , specifiedRenderVER    :: Bool
     } deriving (Eq, Show)
 
 
@@ -58,12 +62,13 @@ data  UserInput
     { inputAlphabet     :: [String]
     , inputLeaves       :: [String]
     , inputFASTA        :: FilePath
-    , inputNewick       :: FilePath
+    , inputTreeFile       :: FilePath
     , inputInsertion    :: Scientific
     , inputDeletion     :: Scientific
     , inputSubstitution :: Scientific
     , inputRootLength   :: Word
     , inputAlignedData  :: Bool
+    , inputRenderVER    :: Bool
     } deriving (Eq, Show)
 
 
@@ -80,8 +85,9 @@ main = do
       Left errors -> putStrLn . unlines $ toList errors
       Right spec  -> do
         decoratedTree <- generateDecoratedTree spec
-        writeFile (specifiedNewick spec) $ toNewick decoratedTree
-        writeFile (specifiedFASTA  spec) $ toFASTA (specifiedAlphabet spec) decoratedTree
+        let treeRenderer = if specifiedRenderVER spec then toVER else toNewick
+        writeFile (specifiedTreeFile spec) $ treeRenderer decoratedTree
+        writeFile (specifiedFASTA    spec) $ toFASTA (specifiedAlphabet spec) decoratedTree
 
 
 getInDelContext :: Specification -> Maybe (Ratio Int, Ratio Int)
@@ -104,6 +110,7 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
         <*> argSpec 's' "substitution" "Substitution event probability   :: Double (0, 1)"
         <*> argSpec 'r' "root-length"  "Sequence length at the root node :: Word"
         <*> switch  (fold [long "aligned", help "Generate aligned output data"])
+        <*> switch  (fold [long "ver"    , help "Render VER instead of newick file"])
 
     argSpec :: Read a => Char -> String -> String -> Parser a
     argSpec c s h = option auto $ fold [short c, long s, help h]
@@ -120,18 +127,19 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
     preferences = prefs $ fold [showHelpOnError, showHelpOnEmpty]
 
 
-validateUserInput :: UserInput -> Validation (NonEmpty String) Specification
+validateUserInput :: UserInput -> Validation (NonEmpty Text) Specification
 validateUserInput userInput =
     Specification
       <$> (pure . S.fromList . fmap fromString . inputAlphabet) userInput
       <*> (pure . S.fromList . fmap fromString . inputLeaves  ) userInput
-      <*> (pure . inputFASTA ) userInput
-      <*> (pure . inputNewick) userInput
+      <*> (pure . inputFASTA   ) userInput
+      <*> (pure . inputTreeFile) userInput
       <*> validate (pure "insertion probability outside range (0, 1)")    validProbability (inputInsertion    userInput)
       <*> validate (pure "deletion probability outside range (0, 1)")     validProbability (inputDeletion     userInput)
       <*> validate (pure "substitution probability outside range (0, 1)") validProbability (inputSubstitution userInput)
       <*> (pure . inputRootLength ) userInput
       <*> (pure . inputAlignedData) userInput
+      <*> (pure . inputRenderVER  ) userInput
   where
     validProbability :: Scientific -> Maybe (Ratio Int)
     validProbability x
@@ -238,6 +246,35 @@ toNewick = (<>";\n") . go
   where
     go (Terminal _ x) = x
     go (Branch   l r) = fold ["(", go l, ",", go r, ")"]
+
+
+toVER :: BinaryTree a Text -> Text
+toVER = renderSets . getSets
+  where
+    renderSets :: (Set Text, Set (Text, Text), Set Text) -> Text
+    renderSets (vSet, eSet, rSet) = unlines
+        [ unwords [ {- "vertexset", "=", -} "{", intercalate ", " $       toList vSet, "}"]
+        , unwords [ {-   "edgeset", "=", -} "{", intercalate ", " $ f <$> toList eSet, "}"]
+        , unwords [ {-   "rootset", "=", -} "{", intercalate ", " $       toList rSet, "}"]
+        ]
+
+    f :: (Text, Text) -> Text
+    f (x,y) = fold ["(", x, ", ", y, ")"]
+    
+    getSets = \case
+        Terminal _ x -> (singleton x, mempty, singleton x)
+        Branch   l r -> let rSet         = singleton $ showtl (0 :: Word)
+                            initialState = (rSet, mempty)
+                            (vSet, eSet) = (`evalState` 1) $ go 0 l initialState >>= go 0 r
+                        in  (vSet, eSet, rSet) 
+
+    go :: Word -> BinaryTree a Text -> (Set Text, Set (Text, Text)) -> State Word (Set Text, Set (Text, Text))
+    go pNum (Terminal _ x) (vSet, eSet) = pure (vSet <> singleton x, eSet <> singleton (showtl pNum, x))
+    go pNum (Branch   l r) (vSet, eSet) = do
+        cNum <- get
+        modify succ
+        let newSets = (vSet <> singleton (showtl cNum), eSet <> singleton (showtl pNum, showtl cNum))
+        go cNum l newSets >>= go cNum r
 
 
 toFASTA :: Set Text -> BinaryTree (Vector Int) Text -> Text
