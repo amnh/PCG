@@ -69,7 +69,7 @@ developAlphabets :: NormalizedCharacters -> Vector (Alphabet ShortText)
 developAlphabets = VNE.fromNonEmpty . fmap (fromSymbols . foldMap f)
                  . transpose . fmap toNonEmpty . toList
   where
-    f (NormalizedContinuousCharacter _      ) = mempty
+    f  NormalizedContinuousCharacter {}       = mempty
     f (NormalizedDiscreteCharacter   static ) = foldMap toList static
     f (NormalizedDynamicCharacter    dynamic) = foldMap (foldMap toList) dynamic
 

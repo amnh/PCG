@@ -37,17 +37,11 @@ import qualified Data.Map                              as M
 import           Data.Maybe
 import           Data.Normalization.Character.Internal
 import           Data.Semigroup.Foldable               ()
---import           Data.Set                         (Set)
---import qualified Data.Set                         as S
---import           Data.ShortText.Custom            (intToShortText)
 import           Data.String                           (IsString (fromString))
 import           Data.Text.Short                       (ShortText)
---import           Data.Tree
 import           Data.Vector                           (Vector)
---import qualified Data.Vector                      as V
---import           Data.Vector.NonEmpty                  (Vector)
 import qualified Data.Vector.NonEmpty                  as VNE
---import           Data.Vector.Instances            ()
+import qualified Data.Vector.Unboxed                   as VU
 import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc                     hiding (Identifier)
@@ -86,12 +80,6 @@ class HasNormalizedCharacters a where
 instance HasNormalizedCharacters (DotGraph GraphID) where
 
     getNormalizedCharacters = const mempty
-{-      fromSet (const mempty) . S.map (fromString . toIdentifier) . leafNodeSet
-      where
-        -- Get the set of all nodes with out degree 0.
-        leafNodeSet :: Ord n => DotGraph n -> Set n
-        leafNodeSet = keysSet . M.filter null . dotChildMap
--}
 
 
 -- | (✔)
@@ -99,8 +87,11 @@ instance HasNormalizedCharacters FastaParseResult where
 
     getNormalizedCharacters = foldMap f
       where
-        f (FastaSequence _ s) = M.singleton (fromString s) (convertSeq (fromString s))
-        convertSeq = pure . parsedDynamicCharacterFromShortText
+        f (FastaSequence i s) = M.singleton i $ convertSeq s
+
+        convertSeq  = VNE.fromNonEmpty . NE.fromList . fmap convertChar . VU.toList
+
+        convertChar = parsedDynamicCharacterFromShortText . fromString . pure
 
 
 -- | (✔)
@@ -108,30 +99,19 @@ instance HasNormalizedCharacters FastcParseResult where
 
     getNormalizedCharacters = foldMap f
       where
-        f (FastcSequence label symbols) = M.singleton (fromString label) $ convertCharacterSequenceLikeFASTA symbols
+        f (FastcSequence label symbols) = M.singleton label $ convertCharacterSequenceLikeFASTA symbols
 
 
 -- | (✔)
 instance HasNormalizedCharacters TaxonSequenceMap where
 
-    getNormalizedCharacters = fmap convertCharacterSequenceLikeFASTA . M.mapKeysMonotonic fromString
+    getNormalizedCharacters = fmap convertCharacterSequenceLikeFASTA
 
 
 -- | (✔)
 instance HasNormalizedCharacters (NonEmpty NewickForest) where
 
     getNormalizedCharacters = const mempty
-{-
-      mergeMaps . foldMap1 (fmap f)
-      where
-        f :: NewickNode -> Map ShortText NormalizedCharacterCollection
-        f node =
-          case descendants node of
-            []   -> M.singleton nodeName mempty
-            x:xs -> foldMap1 f $ x:|xs
-          where
-            nodeName = fromMaybe "" $ newickLabelShort node
--}
 
 
 -- | (✔)

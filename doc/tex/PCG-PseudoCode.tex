@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
 \usepackage{setspace}
 \usepackage{graphicx}
+\graphicspath{{../diagrams/networks/}{../diagrams/display-trees/}}
 \usepackage{subfigure}
 \usepackage{lscape}
 \usepackage{flafter}  % Don't place floats before their definition
@@ -15,6 +16,7 @@
 \usepackage{float}
 \usepackage{fancyvrb}
 \usepackage{bera}
+\usepackage[section]{placeins}
 %\usepackage{fullpage}
 \bibliographystyle{cbe}
 \citestyle{aa}
@@ -353,7 +355,7 @@ Various combinations of forest, network, tree rearrangements.
 \newpage 
 
 \section{Candidate Network Edges}\label{Candidate Network Edges}
- As mentioned in \ref{Labelling of a single graph}, a PCG Network is a ``model'' phylogenetic network. This places incident degree constraints on the edges as well as ordering constraints on network edges. In order to formalise this we can think of a PCG network as having an implicit preordering  on the vertices $(N, \leq )$. 
+ As mentioned in \ref{Labelling of a single graph}, a PCG Network is a ``model'' phylogenetic network. This places incident degree constraints (see Display Tree Constraint) on the edges as well as ordering constraints on network edges. In order to formalise this we can think of a PCG network as having an implicit preordering  on the vertices $(N, \leq )$. 
 
 
 \vspace{2mm}
@@ -363,8 +365,7 @@ Various combinations of forest, network, tree rearrangements.
     \textbf{Notation:}
     \begin{itemize}
     \item We shall write $a \sim b$ if $a \leq b$ and $ b \leq a$.
-    \item We shall write $a < b$ if $a \leq b$ but $b \nleq a$
-    \end{itemize}
+    \item We shall write $a < b$ if $a \leq b$ but $b \nleq a$    \end{itemize}
     }%
 }
 \end{center}
@@ -378,28 +379,49 @@ Various combinations of forest, network, tree rearrangements.
 \vspace{2mm}
 
 
-\fbox{
-    \parbox{0.9\textwidth}{
-    \textbf{Network Ordering constraint:} If we have that $v < w$ then we cannot have a network node between $v$ and $w$.
-    }%
-}
+Given a PCG network we would like to find all the edges $e_1= (\mathrm{src}_1, \mathrm{tgt}_1)$ and $e_2 = (\mathrm{src}_2, \mathrm{tgt}_2)$ between which we could insert a new network (as depicted in figure 1) node so that we still have a valid PCG network.
+
+We say that any new network node added is compatible with the existing ordering if the new implied ordering satisfies the \textbf{Network Ordering Constraint}:
 
 \vspace{4mm}
+\fbox{
+    \parbox{0.9\textwidth}{
+    \textbf{Network Ordering constraint:} If we have that $v < w$ then we cannot have a network node child with parents $v$ and $w$.
+    }%
+}
+\vspace{4mm}
 
-Given a PCG network we would like to find all the edges $e_1= (\mathrm{src}_1, \mathrm{tgt}_1)$, $e_2 = (\mathrm{src}_2, \mathrm{tgt}_2)$ between which we could insert a new network node so that we still have a PCG network (as shown in figure 1).
+We say that any new network node has satisfies the \textbf{Display Tree Constraint} if:
 
-We say that any new network node added is compatible with the existing ordering if the new implied ordering satisfies the \textbf{Network Ordering Constraint}. In order for this to be the case we require the following conditions to be satisfied (using the notation from figure 1):
+\vspace{4mm}
+\fbox{
+    \parbox{0.9\textwidth}{
+    \textbf{Display Tree constraint:} Each associated display tree must be a Phylogenetic $\mathrm{X}-tree$ (for some \textit{fixed} X)  meaning there is a (given) bijection between $\mathrm{X}$ and the leaves $\mathrm{L}$ of the tree.
+    the incidence conditions:
+    \begin{itemize}
+      \item Each internal node is in-degree 1 and out-degree 2.
+      \item Any root node is in-degree 0 and out-degree 2.
+      \item Each leaf is in-degree 1 and out-degree 0.
+    \end{itemize}
+    }%
+}
+\vspace{4mm}
+
+\noindent We note in particular that the taxon set $X$ is fixed when a new network node has been added and so we cannot produce a network with a display tree containing \textit{new} leaf nodes.
+
+In order for this to be the case we require the following conditions to be satisfied (using the notation from figure 1):
 
 \begin{itemize}
 
-\item \textbf{Ancestral Edge Condition: }We cannot add  a descendent network node along edges which are ancestral to one another i.e. if it is the case that:
+\item \textbf{Ancestral Edge Condition: } We cannot insert a network node along edges which are ancestral to one another. In formal notation:
   \[ (\mathrm{tgt1} < \mathrm{src2})\; \bigvee \; (\mathrm{tgt2} < \mathrm{src1}) \]
 
-\item \textbf{Descendent Network Condition: }Denote by $\mathrm{DescNetNodes}(v)$ the collection of all network nodes that descend from $v$ and $\mathrm{RIA}(v)$ those nodes which are ancestral to $v$ and incident to a root node. We then write:
-\[ \mathrm{AncDescNetNodes}(v) = \bigcup_{a_{i}\in \mathrm{RIA}(v)} \mathrm{DescNetNodes} (a_i) \]
-We ask that the following two conditions are satisfied:
-\[ \mathrm{DescNetNodes}(\mathrm{src2})\; \bigcap \;\mathrm{AncDescNetNodes}(\mathrm{tgt1}) = \emptyset \]
-\[ \mathrm{DescNetNodes}(\mathrm{tgt1})\; \bigcap \;\mathrm{AncDescNetNodes}(\mathrm{tgt2}) = \emptyset  \]
+\item \textbf{Network Incident Node Condition: } We cannot add a network node along $e_2$ if either of its nodes is a network node.
+ 
+
+\item \textbf{Network Node Partner Condition: }
+Suppose that either $e_1=(\mathrm{src1}, \mathrm{tgt1})$ is a network edge i.e. that $\mathrm{tfgt1}$ is a network node or that $\mathrm{src2}$ is the parent of the network node (though not necessarily $\mathrm{tgt2}$, as ths is already covered by the \textbf{Network Incident Node Condition}). We shall denote the corresponding network parent to node $\mathrm{s}$ by $\mathrm{NetPar}(\mathrm{src})$. In order for the implied ordering to be compatible we must have that the following does not hold:
+ \[ (\mathrm{NetPar(src2)} < \mathrm{tgt1})\; \bigvee \; (\mathrm{NetPar(src1)} < \mathrm{tgt2}) \]
 
 \end{itemize}
 
@@ -427,8 +449,7 @@ We ask that the following two conditions are satisfied:
 \caption{Descendent network condition}
 \end{figure}
 
-\newpage
-
+\newpage 
 
 \begin{algorithm}
 		\caption{CandidateNetworkEdges}
@@ -468,6 +489,89 @@ We ask that the following two conditions are satisfied:
 
 		\Return{$CompatibleEdgePairs$} 					
 	\end{algorithm}
+
+
+\subsection{Examples}
+In this section we provide some diagrams in order to explain the network edge conditions outlines in the previous section. Suppose we start with the following base network:
+
+\begin{figure}
+  \begin{center}
+  \includegraphics[width=30mm, height=45mm]{base-network.png}
+  \caption{Starting Network}
+  \label{fig:base-network}
+  \end{center}
+\end{figure}
+
+
+
+\begin{figure}
+\noindent The following diagram illustrates a siutation ruled out by the \textbf{Ancestral Edge Condition} wherein we try to add an edge between two edges which are ancestral to one another:
+\vspace{2mm}
+  \begin{center}
+  \includegraphics[width=30mm, height=55mm]{e2AncestralEdgeNetwork.png}
+  \caption{Ancestral Edge Condition Violation 1}
+  \label{fig:e2AncestralEdgeNetwork}
+  \end{center}
+\end{figure}
+
+\FloatBarrier
+
+
+\begin{figure}
+\noindent Obversely we show the  \textbf{Ancestral Edge Condition} wherein the target edge has a node ancestral to the source edge.
+\vspace{2mm}
+  \begin{center}
+  \includegraphics[width=30mm, height=55mm]{e1HasE2SrcDescendantNodeNetwork.png}
+  \caption{Ancestral Edge Condition Violation 2}
+  \label{fig:e1HasE2SrcDescendantNodeNetwork.png}
+  \end{center}
+\end{figure}
+
+\begin{figure}
+\noindent This diagram illustrates an attempt to add a network edge where the target edge is incident to a network node i.e. a siutation rules out by the \textbf{Network Incident Node Condition}:
+\vspace{2mm}
+  \begin{center}
+  \includegraphics[width=30mm, height=45mm]{hasE2IncidentNetworkNode.png}
+  \caption{Network Incident Node Condition Violation}
+  \label{fig:hasE2IncidentNetworkNode}
+  \end{center}
+\end{figure}
+
+
+\begin{figure}
+\noindent Finally we illustrate the \textbf{Network Node Partner Condition}:
+\vspace{2mm}
+  \begin{center}
+  \includegraphics[width=30mm, height=45mm]{e2NetworkEdgeComplementNodeAncestralToE1.png}
+  \caption{Network Node Partner Condition}
+  \label{fig:e2NetworkEdgeComplementNodeAncestralToE1}
+  \end{center}
+\end{figure}
+
+
+\begin{figure}
+\subsubsection{Network Incident Node Condition}
+It is worth explaining this condition further. Suppose we were to allow such an edge to be added as follows:
+
+  \begin{center}
+  \includegraphics[width=40mm, height=65mm]{disallowed-display-network1.png}
+  \caption{Invalid Phylogenetic Network Configuration}
+  \label{fig:disallowed-display-network1}
+  \end{center}
+\end{figure}
+
+
+\begin{figure}
+This would then have the following display tree:
+  \begin{center}
+  \includegraphics[width=40mm, height=65mm]{disallowed-display-tree1.png}
+  \caption{Invalid Phylogenetic Tree}
+  \label{fig:disallowed-display-tree1.png}
+  \end{center}
+
+Note in partiucular that we have \textit{added} a new leaf node in this diaplay tree, something we wish to rule out.
+\end{figure}
+
 \newpage
 \singlespacing
 \bibliography{/users/ward/home/biblio/ward_new}

@@ -194,9 +194,7 @@ instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
 
 instance NFData (DiscreteWithTCMCharacterMetadataDec c) where
 
-    rnf val = rnf (metricRepresentation val)
-        `seq` rnf (discreteData   val)
-        `seq` ()
+    rnf val = rnf (metricRepresentation val) `seq` rnf (discreteData   val)
 
 
 instance Show (DiscreteWithTCMCharacterMetadataDec c) where

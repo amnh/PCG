@@ -20,7 +20,7 @@ module File.Format.TNT.Command.CCode
   , ccodeCharacterState
   ) where
 
-import Data.CaseInsensitive
+import Data.CaseInsensitive     (FoldCase)
 import Data.List.NonEmpty       (some1)
 import File.Format.TNT.Internal
 import Text.Megaparsec

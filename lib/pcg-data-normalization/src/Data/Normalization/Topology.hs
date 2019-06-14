@@ -77,7 +77,7 @@ type NormalizedForestSet = Maybe (NonEmpty (PhylogeneticForest NormalizedTree))
 
 -- |
 -- An internal type for representing a node with a unique numeric identifier.
-data NewickEnum = NE !Int (Maybe NodeLabel) (Maybe Double) [NewickEnum]
+data NewickEnum = NE !Int (Maybe NodeLabel) (Maybe Rational) [NewickEnum]
     deriving (Eq, Ord, Generic, NFData, Show)
 
 
@@ -163,7 +163,7 @@ instance HasNormalizedTopology (NonEmpty NewickForest) where
             f :: Map NodeLabel NewickEnum -> Int -> NewickNode -> (Map NodeLabel NewickEnum, Int, NewickEnum)
             f seen n node =
               let
-                nodelabel = coerce . newickLabelShort $ node
+                nodelabel = coerce . newickLabel $ node
               in
                 case nodelabel >>= (`lookup` seen) of
                   Just x  -> (seen, n, x)
@@ -173,7 +173,7 @@ instance HasNormalizedTopology (NonEmpty NewickForest) where
                                 seen'  =
                                   case newickLabel node of
                                     Nothing -> seen
-                                    Just x  -> seen <> Map.singleton (nodeLabelString  x) enumed
+                                    Just x  -> seen <> Map.singleton (nodeLabel x) enumed
                             in  (seen', n + 1, enumed)
                       xs -> let recursiveResult = NE.scanr (\e (x,y,_) -> f x y e) (seen, n+1, undefined) xs
                                 (seen', n', _)  = NE.head recursiveResult
@@ -182,7 +182,7 @@ instance HasNormalizedTopology (NonEmpty NewickForest) where
                                 seen''          =
                                   case newickLabel node of
                                     Nothing -> seen'
-                                    Just x  -> seen' <> Map.singleton (nodeLabelString x) enumed
+                                    Just x  -> seen' <> Map.singleton (nodeLabel x) enumed
                             in  (seen'', n', enumed)
 
         -- We use the unique indices from the 'enumerate' step to build a local connectivity map.
@@ -195,16 +195,16 @@ instance HasNormalizedTopology (NonEmpty NewickForest) where
                     -> IntMap ([(EdgeLength, Int)], Maybe NodeLabel, [(EdgeLength, Int)])
             subCall parentMay (NE ref labelMay costMay children) prevMap =
                 case ref `lookup` prevMap of
-                  Just (xs, datum, ys) -> IM.insert ref ((fromDoubleMay costMay, fromJust parentMay):xs, datum, ys) prevMap
+                  Just (xs, datum, ys) -> IM.insert ref ((fromRationalMay costMay, fromJust parentMay):xs, datum, ys) prevMap
                   Nothing              ->
                     let parentRefs =
                           case parentMay of
                             Nothing -> []
-                            Just x  -> [(fromDoubleMay costMay,x)]
+                            Just x  -> [(fromRationalMay costMay, x)]
                         currMap    = IM.insert ref (parentRefs, labelMay, f <$> children) prevMap
                     in  foldr (subCall (Just ref)) currMap children
               where
-                f (NE x _ y _) = (fromDoubleMay y,x)
+                f (NE x _ y _) = (fromRationalMay y,x)
 
 
 -- | (✔)

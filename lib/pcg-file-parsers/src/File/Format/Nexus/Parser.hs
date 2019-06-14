@@ -12,6 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE ApplicativeDo       #-}
 {-# LANGUAGE DoAndIfThenElse     #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -24,7 +25,7 @@ module File.Format.Nexus.Parser
   ( parseNexus
   ) where
 
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive                    (FoldCase)
 import           Data.Char                               (isSpace, toLower)
 import           Data.Functor
 import           Data.Maybe                              (fromMaybe, isJust)
@@ -156,7 +157,7 @@ assumptionFieldDef = symbol block
 -- > etc.
 -- and a StepMatrix, which is some metadata: the matrix name and the cardinality,
 -- as well as a TCMParseResult.
-tcmMatrixDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m StepMatrix
+tcmMatrixDefinition :: forall e s m . (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m StepMatrix
 tcmMatrixDefinition = do
         _            <- symbol $ string'' "usertype"
         matrixName   <- symbol $ somethingTill spaceChar
@@ -371,7 +372,7 @@ seqMatrixDefinition = do
     _         <- symbol $ char ';'
     pure $ filter (/= "") goodStuff
     where
-        c = whitespaceNoNewlines *> (char ';' <|> endOfLine) <* whitespace
+        c = whitespaceNoNewlines *> (void (char ';') <|> endOfLine) <* whitespace
 
 
 -- |
@@ -426,7 +427,7 @@ whitespace = (space *> optional (try . some $ commentDefinition *> space) $> ())
 -- Consumes whitespace (including multi-line comments) but not newlines outside
 -- of a comment definition.
 whitespaceNoNewlines :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m ()
-whitespaceNoNewlines = (inlineSpace *> optional (try . some $ commentDefinition *> inlineSpace) $> ())
+whitespaceNoNewlines = (inlinedSpace *> optional (try . some $ commentDefinition *> inlinedSpace) $> ())
           <?> "comments or non-newline whitespace"
 
 

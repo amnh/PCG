@@ -83,10 +83,18 @@
             [ Control.Evaluation.Test
             , Control.Monad.Trans.Validation.Test
             , System.ErrorPhase.Test
+            , Numeric.Cost.Test
             ]
           }
 
 - ignore: { name: Use >=>
+          , within:
+            [ Control.Evaluation.Test
+            , Control.Monad.Trans.Validation.Test
+            ]
+          }
+
+- ignore: { name: Use <$>
           , within:
             [ Control.Evaluation.Test
             , Control.Monad.Trans.Validation.Test
@@ -113,6 +121,13 @@
               , Control.Evaluation.Test
               , Control.Monad.Trans.Validation.Test
               ]
+          }
+
+- ignore: { name: Use null
+          , within:
+            [ Control.Evaluation.Test
+            , Control.Monad.Trans.Validation.Test
+            ]
           }
 
 

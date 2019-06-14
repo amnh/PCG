@@ -12,9 +12,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ApplicativeDo    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE ApplicativeDo       #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module File.Format.Fastc.Parser
   ( CharacterSequence
@@ -28,13 +32,24 @@ module File.Format.Fastc.Parser
   ) where
 
 
-import           Data.Char                  (isSpace)
-import           Data.List.NonEmpty         (NonEmpty)
-import qualified Data.List.NonEmpty         as NE
+import           Control.DeepSeq                    (NFData, force)
+import           Control.Monad.Combinators.NonEmpty
+import           Data.Char                          (isSpace)
+import           Data.List.NonEmpty                 (NonEmpty (..))
 import           Data.Maybe
-import qualified Data.Vector                as V
+import           Data.Proxy
+import           Data.Semigroup.Foldable
+import           Data.String
+import qualified Data.Text                          as T
+import qualified Data.Text.Lazy                     as LT
+import           Data.Text.Short                    (ShortText, toString)
+import qualified Data.Text.Short                    as ST
+import           Data.Vector.NonEmpty               (Vector)
+import qualified Data.Vector.NonEmpty               as V
+import           Data.Void
 import           File.Format.Fasta.Internal
-import           Text.Megaparsec
+import           GHC.Generics                       (Generic)
+import           Text.Megaparsec                    hiding (sepBy1, some)
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
 
@@ -48,74 +63,104 @@ type FastcParseResult = NonEmpty FastcSequence
 -- Pairing of taxa label with an unconverted sequence
 data FastcSequence
    = FastcSequence
-   { fastcLabel   :: Identifier
-   , fastcSymbols :: CharacterSequence
-   } deriving (Eq,Show)
+   { fastcLabel   :: {-# UNPACK #-} !Identifier
+   , fastcSymbols :: {-# UNPACK #-} !CharacterSequence
+   } deriving (Eq, Generic, NFData, Show)
 
 
 -- |
 -- Consumes a stream of 'Char's and parses the stream into a 'FastcParseResult'
+{-# INLINEABLE fastcStreamParser #-}
+{-# SPECIALISE fastcStreamParser :: Parsec Void  T.Text FastcParseResult #-}
+{-# SPECIALISE fastcStreamParser :: Parsec Void LT.Text FastcParseResult #-}
+{-# SPECIALISE fastcStreamParser :: Parsec Void  String FastcParseResult #-}
 fastcStreamParser :: (MonadParsec e s m, Token s ~ Char) => m FastcParseResult
-fastcStreamParser = NE.fromList <$> some fastcTaxonSequenceDefinition <* eof
+fastcStreamParser = some fastcTaxonSequenceDefinition <* eof
 
 
 -- |
 -- Parses a FASTC 'Identifier' and the associated sequence, discarding any
 -- comments
+{-# INLINEABLE fastcTaxonSequenceDefinition #-}
+{-# SPECIALISE fastcTaxonSequenceDefinition :: Parsec Void  T.Text FastcSequence #-}
+{-# SPECIALISE fastcTaxonSequenceDefinition :: Parsec Void LT.Text FastcSequence #-}
+{-# SPECIALISE fastcTaxonSequenceDefinition :: Parsec Void  String FastcSequence #-}
 fastcTaxonSequenceDefinition :: (MonadParsec e s m, Token s ~ Char) => m FastcSequence
 fastcTaxonSequenceDefinition = do
     name <- identifierLine
-    seq' <- try fastcSymbolSequence <?> ("Unable to read symbol sequence for label: '" <> name <> "'")
+    seq' <- try fastcSymbolSequence >>= toSequence name
     _    <- space
     pure $ FastcSequence name seq'
+  where
+    toSequence name    []  = fail $ "Empty character sequence for " <> toString name
+    toSequence    _ (x:xs) = pure . V.fromNonEmpty $ x:|xs
 
 
 -- |
 -- Parses a sequence of 'Symbol's represneted by a 'CharacterSequence'.
 -- Symbols can be multi-character and are assumed to be seperated by whitespace.
-fastcSymbolSequence :: (MonadParsec e s m, Token s ~ Char) => m CharacterSequence
-fastcSymbolSequence = V.fromList <$> (space *> fullSequence)
+{-# INLINEABLE fastcSymbolSequence #-}
+{-# SPECIALISE fastcSymbolSequence :: Parsec Void  T.Text [Vector ShortText] #-}
+{-# SPECIALISE fastcSymbolSequence :: Parsec Void LT.Text [Vector ShortText] #-}
+{-# SPECIALISE fastcSymbolSequence :: Parsec Void  String [Vector ShortText] #-}
+fastcSymbolSequence :: (MonadParsec e s m, Token s ~ Char) => m [Vector ShortText]
+fastcSymbolSequence = space *> fullSequence
   where
-    fullSequence = concat <$> some (inlineSpace *> sequenceLine)
-    sequenceLine = (symbolGroup <* inlineSpace) `manyTill` endOfLine
+    fullSequence = fold1 <$> some (inlinedSpace *> sequenceLine)
+    sequenceLine = (symbolGroup <* inlinedSpace) `manyTill` endOfLine
 
 
 -- |
 -- Parses either an ambiguity group of 'Symbol's or a single, unambiguous
 -- 'Symbol'.
-symbolGroup :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
+{-# INLINE symbolGroup #-}
+{-# SPECIALISE symbolGroup :: Parsec Void  T.Text (Vector ShortText) #-}
+{-# SPECIALISE symbolGroup :: Parsec Void LT.Text (Vector ShortText) #-}
+{-# SPECIALISE symbolGroup :: Parsec Void  String (Vector ShortText) #-}
+symbolGroup :: (MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
 symbolGroup = ambiguityGroup <|> (pure <$> validSymbol)
 
 
 -- |
 -- Parses an ambiguity group of symbols. Ambiguity groups are enclosed by square
 -- brackets and delimited by whitespace.
-ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
+{-# INLINE ambiguityGroup #-}
+{-# SPECIALISE ambiguityGroup :: Parsec Void  T.Text (Vector ShortText) #-}
+{-# SPECIALISE ambiguityGroup :: Parsec Void LT.Text (Vector ShortText) #-}
+{-# SPECIALISE ambiguityGroup :: Parsec Void  String (Vector ShortText) #-}
+ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
 ambiguityGroup = start *> group <* close
   where
-    start = char '[' <* inlineSpace
-    close = char ']' <* inlineSpace
-    group = NE.fromList <$> (validSymbol `sepBy1` inlineSpace)
+    start = char '[' <* inlinedSpace
+    close = char ']' <* inlinedSpace
+    group = force . V.fromNonEmpty <$> (validSymbol `sepBy1` inlinedSpace)
 
 
 -- |
 -- Parses a 'Symbol' token ending with whitespace and excluding the forbidden
 -- characters: '[\'>\',\'[\',\']\']'.
-validSymbol :: (MonadParsec e s m, Token s ~ Char) => m String
+{-# INLINE validSymbol #-}
+{-# SPECIALISE validSymbol :: Parsec Void  T.Text ShortText #-}
+{-# SPECIALISE validSymbol :: Parsec Void LT.Text ShortText #-}
+{-# SPECIALISE validSymbol :: Parsec Void  String ShortText #-}
+validSymbol :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ShortText
 validSymbol = do
     syn <- syntenyDefinition <* notFollowedBy space1
-    res <- validSymbolChars  <* inlineSpace
-    pure $ handleSynteny syn res
+    res <- validSymbolChars  <* inlinedSpace
+    pure . force $ handleSynteny syn res
   where
     syntenyDefinition = optional (char '~') <?> "synteny specification prefix: '~'"
 
     handleSynteny x
-      | isJust x  = reverse
+      | isJust x  = ST.reverse
       | otherwise = id
 
-    validSymbolChars = some validSymbolChar
+    validSymbolChars = fromString . chunkToTokens (Proxy :: Proxy s) <$> symbolStr
+      where
+        symbolStr = takeWhile1P Nothing validSymbolChar <?>
+            "printable characters that are not '>', ';', '[', or ']'"
 
-    -- Techniclly we could relax the grammar in the following ways:
+    -- Technically we could relax the grammar in the following ways:
     --   * To only reject '>' and '[' only as the first character of a symbol
     --   * To only reject ']' as the last charcter of a symbol
     --   * Always reject ';'
@@ -132,9 +177,9 @@ validSymbol = do
     --
     -- However, this dramatically complicates the BNF grammar definition.
     -- Consequently, I have opted to use the simpler definition.
-    validSymbolChar = satisfy ( \x -> x /= '>' -- need to be able to match new taxa lines
-                                   && x /= ';' -- need to be able to start comments
-                                   && x /= '[' -- need to be able to start an ambiguity list
-                                   && x /= ']' -- need to be able to end   an ambiguity list
-                                   && (not . isSpace) x
-                              ) <?> "printable character that is not '>', ';', '[', or ']'"
+    validSymbolChar x = x /= '>' -- need to be able to match new taxa lines
+                     && x /= ';' -- need to be able to start comments
+                     && x /= '[' -- need to be able to start an ambiguity list
+                     && x /= ']' -- need to be able to end   an ambiguity list
+                     && (not . isSpace) x
+

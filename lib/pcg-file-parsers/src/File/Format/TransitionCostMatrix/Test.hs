@@ -10,6 +10,8 @@ module File.Format.TransitionCostMatrix.Test
 --import Data.Alphabet
 import Data.Foldable                           (toList)
 import Data.List.NonEmpty                      (fromList)
+import Data.String
+import Data.Vector.NonEmpty                    (fromNonEmpty)
 import File.Format.TransitionCostMatrix.Parser
 import Test.Custom.Parse                       (parseEquals, parseFailure, parseSuccess)
 import Test.Tasty                              (TestTree, testGroup)
@@ -54,7 +56,7 @@ testTcmAlphabet = testGroup "testTcmAlphabet" [validLines, invalidLines]
   where
     validLines   = testGroup "Valid alphabet definition"   $ success <$> validAlphabets
     invalidLines = testGroup "Invalid alphabet definition" $ failure <$> invalidAlphabets
-    success str  = testCase (show str) $ parseEquals   (tcmAlphabet <* eof) str (fromList . words $ toList str)
+    success str  = testCase (show str) $ parseEquals   (tcmAlphabet <* eof) str (fromNonEmpty . fromList . fmap fromString . words $ toList str)
     failure str  = testCase (show str) $ parseFailure  (tcmAlphabet <* eof) str
 
 
