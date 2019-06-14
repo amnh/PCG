@@ -12,10 +12,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ApplicativeDo       #-}
-{-# LANGUAGE BangPatterns        #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE ApplicativeDo    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Fasta.Internal where
 

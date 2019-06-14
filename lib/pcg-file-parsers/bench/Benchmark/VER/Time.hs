@@ -5,13 +5,13 @@ module Benchmark.VER.Time
   ( benchTime
   ) where
 
-import           Benchmark.Internal               (measureParserTime)
+import           Benchmark.Internal         (measureParserTime)
 import           Benchmark.VER.Files
-import           Control.DeepSeq                  (NFData)
+import           Control.DeepSeq            (NFData)
 import           Criterion.Main
-import           Data.CaseInsensitive   (FoldCase)
+import           Data.CaseInsensitive       (FoldCase)
 import           Data.Foldable
-import qualified Data.Text.Lazy.IO                as TL
+import qualified Data.Text.Lazy.IO          as TL
 import           File.Format.VertexEdgeRoot
 import           Text.Megaparsec
 

@@ -16,6 +16,7 @@ Releases are available [on GitHub][2].
 * Documentation improvements
 * Added Travis CI build script
 * Added integration test suite
+* Added benchmarking suite for FASTA, FASTC, Newick, TCM, & VER file parsers
 * Added test suites for Data.List.Utility, Data.Alphabet, and Data.TCM
 * Added support for compact regions of phylogenetic solutions
 * Added SAVE and LOAD commands by serialising compact regions
@@ -51,13 +52,14 @@ Releases are available [on GitHub][2].
 * Improved efficiency of Wagner build from _O(n^3)_ to _O(n^2)_
 * Improved efficiency of Data.Vector.NonEmpty.fromNonEmpty, unfoldr, and traverse
 * Improved efficiency of three-way median and cost calculation (discrete metric, L1 norm, and small alphabet specialization)
-* Improved efficiency of FASTA file parser's time & memory usage
-* Improved readability of fmaster postorder and preorder functions
+* Improved efficiency of time & memory usage for FASTA, FASTC, Newick, & TCM file parsers
+* Improved readability of postorder and preorder functions
 * Improved readability of phylogeny pretty-printing
 * Improved representation of character & metadata sequences
 * Improved representation of Symbol Change Matrix (SCM) and Transition Cost Matrix (TCM)
 * Improved representation of character alphabet & character names
 * Improved representation of the types of postorder and preorder functions
+* Improved representation of FASTA, FASTC, Newick, & TCM file parser outputs (less memory)
 * Improved safety of data normalization and unification
 
 

@@ -12,13 +12,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ApplicativeDo      #-}
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE ApplicativeDo       #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module File.Format.TransitionCostMatrix.Parser
   ( TCM(..)
@@ -31,24 +31,24 @@ module File.Format.TransitionCostMatrix.Parser
 
 import           Control.Applicative.Combinators.NonEmpty
 import           Control.DeepSeq
-import           Data.Char              (isSpace)
+import           Data.Char                                (isSpace)
 import           Data.Foldable
-import           Data.List.NonEmpty     (NonEmpty)
-import           Data.List.Utility      (duplicates, mostCommon)
-import           Data.Matrix.NotStupid  (Matrix, ncols, nrows)
-import qualified Data.Matrix.NotStupid  as M (fromList)
-import           Data.Maybe             (catMaybes, fromJust)
+import           Data.List.NonEmpty                       (NonEmpty)
+import           Data.List.Utility                        (duplicates, mostCommon)
+import           Data.Matrix.NotStupid                    (Matrix, ncols, nrows)
+import qualified Data.Matrix.NotStupid                    as M (fromList)
+import           Data.Maybe                               (catMaybes, fromJust)
 import           Data.Proxy
-import Data.String
-import qualified Data.Text              as T
-import qualified Data.Text.Lazy         as LT
-import           Data.Text.Short        (ShortText)
-import           Data.Vector.NonEmpty   (Vector, fromNonEmpty)
+import           Data.String
+import qualified Data.Text                                as T
+import qualified Data.Text.Lazy                           as LT
+import           Data.Text.Short                          (ShortText)
+import           Data.Vector.NonEmpty                     (Vector, fromNonEmpty)
 import           Data.Void
 import           GHC.Generics
-import           Text.Megaparsec        hiding (someTill)
+import           Text.Megaparsec                          hiding (someTill)
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Char.Lexer (scientific)
+import           Text.Megaparsec.Char.Lexer               (scientific)
 import           Text.Megaparsec.Custom
 
 
@@ -87,7 +87,7 @@ data TCM
 {-# INLINEABLE tcmStreamParser #-}
 {-# SPECIALISE tcmStreamParser :: Parsec Void  T.Text TCM #-}
 {-# SPECIALISE tcmStreamParser :: Parsec Void LT.Text TCM #-}
-{-# SPECIALISE tcmStreamParser :: Parsec Void  String TCM #-}  
+{-# SPECIALISE tcmStreamParser :: Parsec Void  String TCM #-}
 tcmStreamParser :: (MonadParsec e s m, Token s ~ Char) => m TCM
 tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 

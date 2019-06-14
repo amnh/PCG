@@ -25,7 +25,7 @@ import           Data.Sequence                (Seq)
 import qualified Data.Sequence                as Seq
 import           Data.Set                     (Set, singleton)
 import qualified Data.Set                     as S
-import           Data.String                  (IsString(fromString))
+import           Data.String                  (IsString (fromString))
 import           Data.Text.Lazy               (Text, intercalate, unlines, unwords)
 import qualified Data.Text.Lazy               as T
 import           Data.Text.Lazy.Builder       hiding (fromString, singleton)
@@ -39,7 +39,7 @@ import           Prelude                      hiding (putStrLn, unlines, unwords
 import           System.Random.MWC
 import           System.Random.Shuffle
 import           Text.PrettyPrint.ANSI.Leijen (string)
-import           TextShow                     (TextShow(showtl))
+import           TextShow                     (TextShow (showtl))
 
 
 data  Specification
@@ -62,7 +62,7 @@ data  UserInput
     { inputAlphabet     :: [String]
     , inputLeaves       :: [String]
     , inputFASTA        :: FilePath
-    , inputTreeFile       :: FilePath
+    , inputTreeFile     :: FilePath
     , inputInsertion    :: Scientific
     , inputDeletion     :: Scientific
     , inputSubstitution :: Scientific
@@ -260,13 +260,13 @@ toVER = renderSets . getSets
 
     f :: (Text, Text) -> Text
     f (x,y) = fold ["(", x, ", ", y, ")"]
-    
+
     getSets = \case
         Terminal _ x -> (singleton x, mempty, singleton x)
         Branch   l r -> let rSet         = singleton $ showtl (0 :: Word)
                             initialState = (rSet, mempty)
                             (vSet, eSet) = (`evalState` 1) $ go 0 l initialState >>= go 0 r
-                        in  (vSet, eSet, rSet) 
+                        in  (vSet, eSet, rSet)
 
     go :: Word -> BinaryTree a Text -> (Set Text, Set (Text, Text)) -> State Word (Set Text, Set (Text, Text))
     go pNum (Terminal _ x) (vSet, eSet) = pure (vSet <> singleton x, eSet <> singleton (showtl pNum, x))

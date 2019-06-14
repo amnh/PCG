@@ -5,12 +5,12 @@ module Benchmark.VER.Space
   ( benchSpace
   ) where
 
-import           Benchmark.Internal               (measureParserSpace)
+import           Benchmark.Internal         (measureParserSpace)
 import           Benchmark.VER.Files
-import           Data.CaseInsensitive   (FoldCase)
+import           Data.CaseInsensitive       (FoldCase)
 import           Data.Foldable
 --import qualified Data.Text.IO          as T
-import qualified Data.Text.Lazy.IO                as TL
+import qualified Data.Text.Lazy.IO          as TL
 import           File.Format.VertexEdgeRoot
 import           Text.Megaparsec
 import           Weigh

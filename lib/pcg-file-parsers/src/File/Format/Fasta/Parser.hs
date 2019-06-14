@@ -58,9 +58,6 @@ import           GHC.Generics               (Generic)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Custom
-import           VectorBuilder.Builder      (Builder)
-import qualified VectorBuilder.Builder      as V
-import qualified VectorBuilder.Vector       as V
 
 
 -- |
