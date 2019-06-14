@@ -1,15 +1,15 @@
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
-{-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module PCG.Command.Build.Evaluate
   ( evaluate
   ) where
 
-import qualified Analysis.Clustering as AC
+import qualified Analysis.Clustering                           as AC
 import           Analysis.Parsimony.Additive
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Analysis.Parsimony.Fitch
@@ -24,9 +24,7 @@ import           Bio.Character.Decoration.Metric
 import           Bio.Graph
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG                     ( PostorderContextualData
-                                                               , setDefaultMetadata
-                                                               )
+import           Bio.Graph.PhylogeneticDAG                     (PostorderContextualData, setDefaultMetadata)
 import qualified Bio.Graph.ReferenceDAG                        as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
@@ -85,7 +83,7 @@ evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
                              ClusterOption WeightedLinkage n -> cluster AC.WeightedLinkage n
                              ClusterOption WardLinkage     n -> cluster AC.WardLinkage     n
                              ClusterOption KMedians        n -> cluster AC.KMedians        n
-                             
+
         bestNetwork <- clusterLogic v trajectoryCount
         liftIO . compact . Right $ toSolution bestNetwork
 

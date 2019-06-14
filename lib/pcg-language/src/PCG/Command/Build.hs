@@ -48,10 +48,10 @@ data  ConstructionType
 -- |
 -- Different possible types of clustering pre-pass.
 data ClusterLabel
-    = NoCluster      
-    | SingleLinkage  
+    = NoCluster
+    | SingleLinkage
     | CompleteLinkage
-    | UPGMALinkage   
+    | UPGMALinkage
     | WeightedLinkage
     | WardLinkage
     | KMedians
@@ -59,7 +59,7 @@ data ClusterLabel
 
 data ClusterOption = ClusterOption !ClusterLabel !Int
   deriving (Eq, Show)
-    
+
 -- |
 -- Defines the semantics of interpreting a valid \"BUILD\" command from the PCG
 -- scripting language syntax.
@@ -82,8 +82,8 @@ constructionType = choiceFrom [ buildTree, buildNetwork, buildForest ] `withDefa
 
 clusterOptionType :: Ap SyntacticArgument ClusterOption
 clusterOptionType =
-  value "cluster" *> (argList $ ClusterOption <$> clusterLabelType <*> int)
-  `withDefault` (ClusterOption NoCluster 1)
+  value "cluster" *> argList (ClusterOption <$> clusterLabelType <*> int)
+  `withDefault` ClusterOption NoCluster 1
 
 clusterLabelType :: Ap SyntacticArgument ClusterLabel
 clusterLabelType =
@@ -98,8 +98,8 @@ clusterLabelType =
       ]
       `withDefault` NoCluster
   where
-    noCluster       = value "no-cluster"       $> NoCluster 
-    singleLinkage   = value "single-linkage "  $> SingleLinkage 
+    noCluster       = value "no-cluster"       $> NoCluster
+    singleLinkage   = value "single-linkage "  $> SingleLinkage
     completeLinkage = value "complete-linkage" $> CompleteLinkage
     upgmaLinkage    = value "upgma-linkage"    $> UPGMALinkage
     weightedLinkage = value "weighted-linkage" $> WeightedLinkage
