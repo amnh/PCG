@@ -64,7 +64,7 @@ import           Data.Text.Lazy                    (Text)
 import qualified Data.Text.Lazy.IO                 as T
 import           Data.Typeable                     (Typeable)
 import           Data.Validation
-import           Pipes                             (await, for, runEffect, yield, (>~))
+import           Pipes                             (for, runEffect, yield)
 import           Prelude                           hiding (appendFile, getContents, readFile, writeFile)
 import           System.Directory
 import           System.FilePath.Glob
@@ -118,7 +118,7 @@ readSTDIN :: ValidationT InputStreamError IO Text
 readSTDIN = do
     nonEmptyStream <- liftIO $ hReady stdin
     if   nonEmptyStream
-    then liftIO . runEffect $ liftIO T.getContents >~ await
+    then liftIO T.getContents
     else invalid $ makeEmptyFileStream "STDIN"
 
 
@@ -356,7 +356,7 @@ outputErrorHandling filePath e
 safelyMoveFile :: FileSource -> IO ()
 safelyMoveFile fs = do
     absPath <- makeAbsolute fp
-    exists  <- doesFileExist absPAth
+    exists  <- doesFileExist absPath
     when exists $ do
         allFiles <- getDirectoryContents $ takeDirectory absPath
         let prefixed = getFilePathPrefixes     allFiles

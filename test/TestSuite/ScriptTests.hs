@@ -438,12 +438,14 @@ scriptDiffOutputFiles is os =
                                                         equalityOf id binStreams
 
 
+{-
 -- |
 -- Expects the PCG script to return a non-zero exitcode.
 scriptFailure :: String -> TestTree
 scriptFailure scriptPath = testCase scriptPath $ do
     v <- runScripts (scriptPath:|[]) []
     assertBool "Expected script failure, but script was successful..." $ isLeft v
+-}
 
 
 -- |

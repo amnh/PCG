@@ -27,35 +27,49 @@ module Data.FileSource.ParseStreamError
   , makeUnparsableFile
   ) where
 
-import Control.DeepSeq    (NFData)
---import Data.Data
-import Data.FileSource
-import Data.Foldable
-import Data.List.NonEmpty hiding (toList)
-import Data.Maybe         (catMaybes)
-import Data.String
-import Data.Text          (Text)
-import Data.Text.Short    (ShortText, toShortByteString)
-import GHC.Generics       (Generic)
-import Text.Megaparsec
-import TextShow           hiding (fromString)
-import TextShow.Custom
+import           Control.DeepSeq         (NFData)
+import           Data.Data
+import           Data.FileSource
+import           Data.Foldable
+import           Data.List               (sortOn)
+import           Data.List.NonEmpty      (NonEmpty (..))
+import           Data.Maybe              (catMaybes)
+import           Data.Semigroup.Foldable
+import           Data.String
+import           Data.Text               (Text)
+import           Data.Text.Short         (ShortText, toShortByteString)
+import           Data.Vector.Unboxed     (Vector, fromList)
+import qualified Data.Vector.Unboxed     as V
+import           GHC.Generics            (Generic)
+import           Text.Megaparsec
+import           TextShow                hiding (fromString)
+import           TextShow.Custom
 
 
 -- |
--- The various ways in which a 'Read' 'Command' from a POY script can fail.
--- A single 'Read' 'Command' can fail in multiple ways simultaneously.
--- To account for this the 'InputStreamError' type is a composable 'Semigroup' to allow
--- for the collection of possible sub errors to be coalesced into a single
--- 'InputStreamError' value. The `show` definition will render the 'Read Error' as a
--- human legible collection of errors that occured within the 'Read' 'Command'.
+-- The various ways in which iterpreting data read into PCG can fail.
+--
+-- Input streams can fail at interpreting the data in multiple ways. Only after
+-- all input streams were successfully reterived, will interpretation of the
+-- streams take place. All errors in interpreting input stream data should be
+-- reported together.
+--
+-- To account for this the 'ParseStreamError' type is a composable 'Semigroup' to
+-- allow for the collection of many possible interpretation errors to be
+-- coalesced into a single 'ParseStreamError' value.
+--
+-- The 'TextShow' instance should be used to render the 'ParseStreamError' as a
+-- human legible collection of "parse" errors that occured while
+-- attempting to interpretation data read into PCG.
+--
+-- The 'Show' instance should only be used for debugging purposes.
 newtype ParseStreamError = ParseStreamError (NonEmpty ParseStreamErrorMessage)
     deriving (Generic, NFData, Show)
 
 
 data  ParseStreamErrorMessage
-    = FileUnparsable     {-# UNPACK #-} !FileSource {-# UNPACK #-} ! Text
-    | InvalidPrealigned  {-# UNPACK #-} !FileSource {-# UNPACK #-} !(NonEmpty Word)
+    = FileUnparsable     {-# UNPACK #-} !FileSource {-# UNPACK #-} !Text
+    | InvalidPrealigned  {-# UNPACK #-} !FileSource {-# UNPACK #-} !(Vector Word)
     | FileBadDeserialize {-# UNPACK #-} !FileSource !DataSerializationFormat {-# UNPACK #-} !ShortText
     deriving (Generic, NFData, Show)
 
@@ -63,7 +77,7 @@ data  ParseStreamErrorMessage
 data  DataSerializationFormat
     = BinaryFormat
     | CompactFormat
-    deriving (Generic, NFData, Show)
+    deriving (Data, Generic, NFData, Show)
 
 
 instance Semigroup ParseStreamError where
@@ -82,7 +96,7 @@ instance TextShow ParseStreamError where
         (pErrors, aErrors, dErrors) = partitionParseStreamErrors errors
 
         showUnparsable =
-            case pErrors of
+            case sortOn fst pErrors of
               []   -> Nothing
               x:xs -> Just $ unlinesB
                   [ preamble      $ fst <$> (x:|xs)
@@ -102,8 +116,8 @@ instance TextShow ParseStreamError where
               [x] -> Just $ unlinesB   [ "The file was specified as prealigned," , "but not all characters had the same length.", showInvalidPrealigned x ]
               xs  -> Just . unlinesB $ [ "The following files were specified as prealigned,", "but not all characters had the same length:"] <> (showInvalidPrealigned <$> xs)
           where
-            showInvalidPrealigned :: (FileSource, NonEmpty Word) -> Builder
-            showInvalidPrealigned (path, cols) = fold ["  ", showb path, ", has characters of lengths ", intercalateB ", " $ showb <$> cols]
+            showInvalidPrealigned :: (FileSource, Vector Word) -> Builder
+            showInvalidPrealigned (path, cols) = fold ["  ", showb path, ", has characters of lengths ", intercalateB ", " $ showb <$> V.toList cols]
 
         showDeserializationFailures =
             case dErrors of
@@ -134,9 +148,9 @@ makeUnparsableFile path =
 
 -- |
 -- Remark that the file was marked as prealigned but the data within was not aligned.
-makeInvalidPrealigned :: Integral i => FileSource -> NonEmpty i -> ParseStreamError
+makeInvalidPrealigned :: (Foldable1 f, Integral i) => FileSource -> f i -> ParseStreamError
 makeInvalidPrealigned path =
-    ParseStreamError . pure . InvalidPrealigned path . fmap (fromIntegral . abs)
+    ParseStreamError . pure . InvalidPrealigned path . fromList . fmap (fromIntegral . abs) . toList . toNonEmpty
 
 
 -- |

@@ -27,7 +27,7 @@ module File.Format.TNT.Command.XRead
 
 import           Data.Bifunctor           (second)
 import           Data.Bits
-import           Data.CaseInsensitive
+import           Data.CaseInsensitive     (FoldCase)
 import           Data.Char                (isSpace)
 import           Data.DList               (DList, append)
 import qualified Data.DList               as DL (concat, fromList)
@@ -300,7 +300,7 @@ discreteToProtein character = foldl (.|.) zeroBits <$> mapM f flags
 -- |
 -- Represents the terminal character sequence for a chatacter sequence.
 -- Nomenclature ambiguities /are fun!/
-segmentTerminal :: (MonadParsec e s m, Token s ~ Char) => m Char
+segmentTerminal :: (MonadParsec e s m, Token s ~ Char) => m ()
 segmentTerminal = whitespaceInline *> endOfLine <* whitespace
 
 

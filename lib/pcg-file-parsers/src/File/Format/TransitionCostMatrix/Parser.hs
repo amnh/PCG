@@ -12,8 +12,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE ApplicativeDo       #-}
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module File.Format.TransitionCostMatrix.Parser
   ( TCM(..)
@@ -24,23 +29,33 @@ module File.Format.TransitionCostMatrix.Parser
   , matrixBlock
   ) where
 
-import           Data.Char              (isSpace)
+import           Control.Applicative.Combinators.NonEmpty
+import           Control.DeepSeq
+import           Data.Char                                (isSpace)
 import           Data.Foldable
-import           Data.List.NonEmpty     (NonEmpty)
-import qualified Data.List.NonEmpty     as NE (fromList)
-import           Data.List.Utility      (duplicates, mostCommon)
-import           Data.Matrix.NotStupid  (Matrix, ncols, nrows)
-import qualified Data.Matrix.NotStupid  as M (fromList)
-import           Data.Maybe             (catMaybes, fromJust)
-import           Text.Megaparsec
+import           Data.List.NonEmpty                       (NonEmpty)
+import           Data.List.Utility                        (duplicates, mostCommon)
+import           Data.Matrix.NotStupid                    (Matrix, ncols, nrows)
+import qualified Data.Matrix.NotStupid                    as M (fromList)
+import           Data.Maybe                               (catMaybes, fromJust)
+import           Data.Proxy
+import           Data.String
+import qualified Data.Text                                as T
+import qualified Data.Text.Lazy                           as LT
+import           Data.Text.Short                          (ShortText)
+import           Data.Vector.NonEmpty                     (Vector, fromNonEmpty)
+import           Data.Void
+import           GHC.Generics
+import           Text.Megaparsec                          hiding (someTill)
 import           Text.Megaparsec.Char
+import           Text.Megaparsec.Char.Lexer               (scientific)
 import           Text.Megaparsec.Custom
 
 
 -- |
---Intermediate parse result prior to consistancy validation
+-- Intermediate parse result prior to consistancy validation
 data TCMParseResult
-   = TCMParseResult (NonEmpty String) (Matrix Double) deriving (Show)
+   = TCMParseResult (Vector ShortText) (Matrix Rational) deriving (Show)
 
 
 -- |
@@ -58,10 +73,10 @@ data TCMParseResult
 data TCM
    = TCM
    { -- | The custom alphabet of 'Symbols' for which the TCM matrix is defined
-     customAlphabet  :: NonEmpty String
+     customAlphabet  :: Vector ShortText
      -- | The cost to transition between any two symbols, square but not necessarily symetric
-   , transitionCosts :: Matrix Double -- n+1 X n+1 matrix where n = length customAlphabet
-   } deriving (Show)
+   , transitionCosts :: Matrix Rational -- n+1 X n+1 matrix where n = length customAlphabet
+   } deriving (Eq, Generic, NFData, Show)
 
 
 -- |
@@ -69,6 +84,10 @@ data TCM
 -- The result will contain an Alphabet with no duplicate elements
 -- and a square Matrix with dimension @(n+1) x (n+1)@ where @n@ is
 -- the length of the Alphabet.
+{-# INLINEABLE tcmStreamParser #-}
+{-# SPECIALISE tcmStreamParser :: Parsec Void  T.Text TCM #-}
+{-# SPECIALISE tcmStreamParser :: Parsec Void LT.Text TCM #-}
+{-# SPECIALISE tcmStreamParser :: Parsec Void  String TCM #-}
 tcmStreamParser :: (MonadParsec e s m, Token s ~ Char) => m TCM
 tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 
@@ -79,6 +98,10 @@ tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 -- consistencey, but no validation has been performed to ensure that the
 -- dimensions of the Matrix and the length of the Alphabet are consistant
 -- with each other.
+{-# INLINE tcmDefinition #-}
+{-# SPECIALISE tcmDefinition :: Parsec Void  T.Text TCMParseResult #-}
+{-# SPECIALISE tcmDefinition :: Parsec Void LT.Text TCMParseResult #-}
+{-# SPECIALISE tcmDefinition :: Parsec Void  String TCMParseResult #-}
 tcmDefinition :: (MonadParsec e s m, Token s ~ Char) => m TCMParseResult
 tcmDefinition = do
     _        <- space
@@ -89,16 +112,24 @@ tcmDefinition = do
 
 -- |
 -- Shorthand for the expected format of the alphabet lin in a TCM file.
--- The same as 'alphabetLine inlineSpace'.
-tcmAlphabet :: (MonadParsec e s m, Token s ~ Char) => m (NonEmpty String)
-tcmAlphabet = alphabetLine inlineSpace
+-- The same as 'alphabetLine inlinedSpace'.
+{-# INLINEABLE tcmAlphabet #-}
+{-# SPECIALISE tcmAlphabet :: Parsec Void  T.Text (Vector ShortText) #-}
+{-# SPECIALISE tcmAlphabet :: Parsec Void LT.Text (Vector ShortText) #-}
+{-# SPECIALISE tcmAlphabet :: Parsec Void  String (Vector ShortText) #-}
+tcmAlphabet :: (MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
+tcmAlphabet = alphabetLine inlinedSpace
 
 
 -- |
 -- Shorthand for the expected format of the matrix block in a TCM file
--- The same as 'matrixBlock inlineSpace'.
-tcmMatrix   :: (MonadParsec e s m, Token s ~ Char) => m (Matrix Double)
-tcmMatrix   = matrixBlock  inlineSpace
+-- The same as 'matrixBlock inlinedSpace'.
+{-# INLINEABLE tcmMatrix #-}
+{-# SPECIALISE tcmMatrix :: Parsec Void  T.Text (Matrix Rational) #-}
+{-# SPECIALISE tcmMatrix :: Parsec Void LT.Text (Matrix Rational) #-}
+{-# SPECIALISE tcmMatrix :: Parsec Void  String (Matrix Rational) #-}
+tcmMatrix :: (MonadParsec e s m, Token s ~ Char) => m (Matrix Rational)
+tcmMatrix = matrixBlock inlinedSpace
 
 
 -- |
@@ -109,27 +140,30 @@ tcmMatrix   = matrixBlock  inlineSpace
 --
 -- Basic usage:
 --
--- >>> parse (alphabetLine inlineSpace) "" "a b c d\n"
+-- >>> parse (alphabetLine inlinedSpace) "" "a b c d\n"
 -- Right ["a","b","c","d"]
 --
--- >>> parse (alphabetLine (inlineSpace *> char '|' <* inlineSpace)) "" "2 | 3 | 5 | 7\n"
+-- >>> parse (alphabetLine (inlinedSpace *> char '|' <* inlinedSpace)) "" "2 | 3 | 5 | 7\n"
 -- Right ["2","3","5","7"]
-alphabetLine :: (MonadParsec e s m, Token s ~ Char) => m () -> m (NonEmpty String)
-alphabetLine spacing = validateAlphabet =<< NE.fromList <$> ((alphabetSymbol <* spacing) `someTill` endOfLine)
+{-# INLINEABLE alphabetLine #-}
+{-# SPECIALISE alphabetLine :: Parsec Void  T.Text () -> Parsec Void  T.Text (Vector ShortText) #-}
+{-# SPECIALISE alphabetLine :: Parsec Void LT.Text () -> Parsec Void LT.Text (Vector ShortText) #-}
+{-# SPECIALISE alphabetLine :: Parsec Void  String () -> Parsec Void  String (Vector ShortText) #-}
+alphabetLine :: (MonadParsec e s m, Token s ~ Char) => m () -> m (Vector ShortText)
+alphabetLine spacing = validateAlphabet =<< ((alphabetSymbol <* spacing) `someTill` endOfLine)
   where
-    alphabetSymbol = some nonSpace
-    nonSpace       = satisfy (not . isSpace)
+    alphabetSymbol = takeWhile1P Nothing (not . isSpace)
 
 
 -- |
 -- The 'matrixBlock' function takes a combinator to consume delimiters between
--- entries in a line of the matrix and returns a square 'Matrix Double'.
+-- entries in a line of the matrix and returns a square 'Matrix Rational'.
 --
 -- ==== __Examples__
 --
 -- Basic usage:
 --
--- >>> parse (matrixBlock inlineSpace) "" "1 2 3 \n 4 5 6\n7 8 9\n"
+-- >>> parse (matrixBlock inlinedSpace) "" "1 2 3 \n 4 5 6\n7 8 9\n"
 -- Right (( 1 2 3 )
 --        ( 4 5 6 )
 --        ( 7 8 9 ))
@@ -137,17 +171,25 @@ alphabetLine spacing = validateAlphabet =<< NE.fromList <$> ((alphabetSymbol <* 
 -- >>> parse (matrixBlock (char ':') "" "1.0:1.0\n1.0:0.0"
 -- Right (( 1 2 )
 --        ( 3 4 ))
-matrixBlock :: (MonadParsec e s m, Token s ~ Char) => m () -> m (Matrix Double)
+{-# INLINEABLE matrixBlock #-}
+{-# SPECIALISE matrixBlock :: Parsec Void  T.Text () -> Parsec Void  T.Text (Matrix Rational) #-}
+{-# SPECIALISE matrixBlock :: Parsec Void LT.Text () -> Parsec Void LT.Text (Matrix Rational) #-}
+{-# SPECIALISE matrixBlock :: Parsec Void  String () -> Parsec Void  String (Matrix Rational) #-}
+matrixBlock :: (MonadParsec e s m, Token s ~ Char) => m () -> m (Matrix Rational)
 matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
   where
     matrixRow   = (spacing *> matrixEntry <* spacing) `manyTill` endOfLine
-    matrixEntry = double
+    matrixEntry = toRational <$> scientific
 
 
 -- |
 -- Validates that the dimensions of the Matrix are @(n+1) x (n+1)@
 -- where @n@ is the length of the Alphabet.
-validateTCMParseResult :: (MonadParsec e s m {- , Token s ~ Char -}) => TCMParseResult -> m TCM
+{-# INLINE validateTCMParseResult #-}
+{-# SPECIALISE validateTCMParseResult :: TCMParseResult -> Parsec Void  T.Text TCM #-}
+{-# SPECIALISE validateTCMParseResult :: TCMParseResult -> Parsec Void LT.Text TCM #-}
+{-# SPECIALISE validateTCMParseResult :: TCMParseResult -> Parsec Void  String TCM #-}
+validateTCMParseResult :: MonadParsec e s m => TCMParseResult -> m TCM
 validateTCMParseResult (TCMParseResult alphabet matrix)
   | dimMismatch  = fail errorMessage
   | otherwise    = pure $ TCM alphabet matrix
@@ -177,18 +219,22 @@ validateTCMParseResult (TCMParseResult alphabet matrix)
 --
 -- Ensures that the Alphabet:
 --
---   * Is not empty
---
 --   * Contains no duplicate elements
 --
-validateAlphabet :: (MonadParsec e s m, Token s ~ Char) => NonEmpty String -> m (NonEmpty String)
+{-# INLINE validateAlphabet #-}
+{-# SPECIALISE validateAlphabet :: NonEmpty  T.Text -> Parsec Void  T.Text (Vector ShortText) #-}
+{-# SPECIALISE validateAlphabet :: NonEmpty LT.Text -> Parsec Void LT.Text (Vector ShortText) #-}
+{-# SPECIALISE validateAlphabet :: NonEmpty  String -> Parsec Void  String (Vector ShortText) #-}
+validateAlphabet :: forall e s m . (MonadParsec e s m, Token s ~ Char) => NonEmpty (Tokens s) -> m (Vector ShortText)
 validateAlphabet alphabet
-  | duplicatesExist = fail $ "The following symbols were listed multiple times in the custom alphabet: " <> show dupes
-  | otherwise       = pure alphabet
+  | duplicatesExist = fail $ "The following symbols were listed multiple times in the custom alphabet: " <> shownDuplicates
+  | otherwise       = pure . fromNonEmpty $ toShortText <$> alphabet
   where
     duplicatesExist = not $ null dupes
     dupes           = duplicates $ toList alphabet
-
+    shownDuplicates = show $ chunkToTokens pxy <$> dupes
+    toShortText     = fromString . chunkToTokens pxy
+    pxy = Proxy :: Proxy s
 
 -- |
 -- Validates the information contained in the Matrix constitutes a square matrix.
@@ -201,7 +247,11 @@ validateAlphabet alphabet
 --
 --   * The number of rows match the number of columns
 --
-validateMatrix :: (MonadParsec e s m {- , Token s ~ Char -}) => [[Double]] -> m (Matrix Double)
+{-# INLINEABLE validateMatrix #-}
+{-# SPECIALISE validateMatrix :: [[Rational]] -> Parsec Void  T.Text (Matrix Rational) #-}
+{-# SPECIALISE validateMatrix :: [[Rational]] -> Parsec Void LT.Text (Matrix Rational) #-}
+{-# SPECIALISE validateMatrix :: [[Rational]] -> Parsec Void  String (Matrix Rational) #-}
+validateMatrix :: MonadParsec e s m => [[Rational]] -> m (Matrix Rational)
 validateMatrix matrix
   | null matrix        = fail "No matrix specified"
   | null matrixErrors  = pure . M.fromList rows cols $ concat matrix
@@ -227,5 +277,9 @@ validateMatrix matrix
 
 -- |
 -- Whitespace consuming combinator wrapper
+{-# INLINE symbol #-}
+{-# SPECIALISE symbol :: Parsec Void  T.Text a -> Parsec Void  T.Text a #-}
+{-# SPECIALISE symbol :: Parsec Void LT.Text a -> Parsec Void LT.Text a #-}
+{-# SPECIALISE symbol :: Parsec Void  String a -> Parsec Void  String a #-}
 symbol  :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol  x = x <* space

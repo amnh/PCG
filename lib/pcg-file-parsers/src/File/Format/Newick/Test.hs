@@ -1,11 +1,16 @@
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE TypeFamilies      #-}
+--{-# LANGUAGE OverloadedLists   #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module File.Format.Newick.Test
   ( testSuite
   ) where
 
+import Data.Foldable
+import Data.String
+import Data.Text.Short             (ShortText)
 import Data.Void
 import File.Format.Newick.Internal
 import File.Format.Newick.Parser
@@ -55,7 +60,7 @@ unquotedLabel' = testGroup "unquotedLabel" [validLabels,invalidLabels]
   where
     validLabels   = testGroup "Valid unquoted labels"   $ success <$> validUnquotedLabels
     invalidLabels = testGroup "Invalid unquoted labels" $ failure <$> invalidUnquotedLabels
-    success str   = testCase (show str) $ parseEquals   (unquotedLabel <* eof) str str
+    success str   = testCase (show str) $ parseEquals   (unquotedLabel <* eof) str (fromString str)
     failure str   = testCase (show str) $ parseFailure  (unquotedLabel <* eof) str
 
 
@@ -67,17 +72,22 @@ quotedLabel' = testGroup "quotedLabel" [validSpecialChars,validEscaping,validEnd
     validEndingEscaping = testGroup "Valid enquoted string with escaped last character" [ success ("prime'","'prime'''") ]
     success (res,str)   = testCase (show str) $ parseEquals  (quotedLabel <* eof) str res
 
+    validSpecialLabels :: [(ShortText, String)]
     validSpecialLabels  =
-        [ (r,s) | r <- filter ('\''`notElem`) invalidUnquotedLabels
-                , s <- ["'"<>r<>"'"]
+        [ (fromString r, s)
+        | r <- filter ('\''`notElem`) invalidUnquotedLabels
+        , s <- ["'"<>r<>"'"]
         ]
 
+
+    validEscapedLabels :: [(ShortText, String)]
     validEscapedLabels =
-        [ (r,s) |  e    <- validUnquotedLabels
-                ,  i    <- [length e `div` 2]
-                , (x,y) <- [i `splitAt` e]
-                ,  r    <- [x <>"'"<> y]
-                ,  s    <- ["'"<>x<>"''"<>y<>"'"]
+        [ (fromString r, s)
+        |  e    <- validUnquotedLabels
+        ,  i    <- [length e `div` 2]
+        , (x,y) <- [i `splitAt` e]
+        ,  r    <- [x <>"'"<> y]
+        ,  s    <- ["'"<>x<>"''"<>y<>"'"]
         ]
 
     enquotedInvariant :: TestTree
@@ -100,16 +110,16 @@ newickLeaf' :: TestTree
 newickLeaf' = testGroup "newickLeafDefinition'" [invariant]
   where
     invariant = testProperty "Injective invariant" f
-    f :: (String, Double) -> Property
+    f :: (String, Rational) -> Property
     f (str,num) = validLabel ==> validLeaf
       where
         validLabel = parserSatisfies (newickLabelDefinition <* eof) str (const True)
-        labelValue = rightToMaybe $ parse (newickLabelDefinition <* eof :: Parsec Void String String) "" str
-        validLeaf  = parserSatisfies newickLeafDefinition target (== NewickNode [] labelValue (Just num))
+        labelValue = rightToMaybe $ parse (newickLabelDefinition <* eof :: Parsec Void String ShortText) "" str
+        validLeaf  = parserSatisfies newickLeafDefinition target (== NewickNode mempty labelValue (Just num))
         target     = str <> ":" <> show num
 
-        rightToMaybe (Left  _) = Nothing
-        rightToMaybe (Right x) = Just x
+        rightToMaybe (Left  _) = mempty
+        rightToMaybe (Right x) = x
 
 
 descendantList' :: TestTree
@@ -179,7 +189,7 @@ newickForestDefinition' = testGroup "newickForestDefinition" [valid,invalid]
     invalid        = testGroup "Invalid Newick trees" $ failure <$> invalidForests
     success str    = testCase (show str) $ parseSuccess (newickForestDefinition <* eof) str
     failure str    = testCase (show str) $ parseFailure (newickForestDefinition <* eof) str
-    validForests   = [concat ["<", concat validStandardTrees, concat validExtendedTrees, ">"]]
+    validForests   = fromString <$> [fold ["<", fold validStandardTrees, fold validExtendedTrees, ">"]]
 
     invalidForests =
         [ "(((1,2),X),((3,4)X,5));" -- no angle braces

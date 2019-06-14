@@ -149,11 +149,11 @@ directOptimization
 directOptimization char1 char2 overlapFunction matrixFunction =
     handleMissingCharacter char1 char2 alignment
   where
-    (swapped, longerChar, shorterChar)   = measureCharacters char1 char2
-    traversalMatrix                      = matrixFunction longerChar shorterChar overlapFunction
-    (alignmentCost, gapped, left, right) = traceback traversalMatrix longerChar shorterChar
+    (swapped, longerChar, shorterChar) = measureCharacters char1 char2
+    traversalMatrix = matrixFunction longerChar shorterChar overlapFunction
+    (alignmentCost, ungapped, gapped, left, right) = traceback traversalMatrix longerChar shorterChar
     alignment = (alignmentCost, ungapped, gapped, alignedChar1, alignedChar2)
-    ungapped  = filterGaps gapped
+--    ungapped  = filterGaps gapped
     (alignedChar1, alignedChar2)
       | swapped   = (right, left )
       | otherwise = (left , right)
@@ -381,15 +381,16 @@ traceback :: ( DOCharConstraint s
           => f (Cost, Direction, Element s)
           -> s
           -> s
-          -> (Word, s, s, s)
+          -> (Word, s, s, s, s)
 traceback alignMatrix longerChar lesserChar =
     ( unsafeToFinite cost
+    , constructDynamic . NE.fromList $ toList ungappedMedianStates
     , constructDynamic . NE.fromList $ toList medianStates
     , constructDynamic . NE.fromList $ toList alignedLongerChar
     , constructDynamic . NE.fromList $ toList alignedLesserChar
     )
   where
-      (medianStates, alignedLongerChar, alignedLesserChar) = go lastCell
+      (ungappedMedianStates, medianStates, alignedLongerChar, alignedLesserChar) = go lastCell
       lastCell     = (row, col)
       (cost, _, _) = alignMatrix ! lastCell
 
@@ -398,13 +399,16 @@ traceback alignMatrix longerChar lesserChar =
       gap = gapOfStream longerChar
 
       go p@(i, j)
-        | p == (0,0) = (mempty, mempty, mempty)
-        | otherwise  = ( previousMedianCharElements `snoc` medianElement
+        | p == (0,0) = (mempty, mempty, mempty, mempty)
+        | otherwise  = ( if   medianElement == gap
+                         then previousUngapped
+                         else previousUngapped      `snoc` medianElement
+                       , previousMedianCharElements `snoc` medianElement
                        , previousLongerCharElements `snoc` longerElement
                        , previousLesserCharElements `snoc` lesserElement
                        )
         where
-          (previousMedianCharElements, previousLongerCharElements, previousLesserCharElements) = go (row', col')
+          (previousUngapped, previousMedianCharElements, previousLongerCharElements, previousLesserCharElements) = go (row', col')
 
           (_, directionArrow, medianElement) = alignMatrix ! p
 

@@ -12,23 +12,37 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
+{-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings     #-}
 
 module File.Format.Newick.Internal
   ( NewickForest
   , NewickNode(..)
+  -- * Queries
+  , branchLength
+  , descendants
+  , newickLabel
   , isLeaf
+  -- * Other
+  , mapLeafLabels
   , newickNode
   , renderNewickForest
-  , newickLabelShort
   ) where
 
 
-import Data.List.NonEmpty (NonEmpty, toList)
-import Data.Maybe
-import Data.String        (IsString (fromString))
-import Data.Text.Short    (ShortText)
-import Data.Tree
+import           Control.DeepSeq    (NFData)
+import           Data.Foldable
+import           Data.List.NonEmpty (NonEmpty (..))
+import           Data.String        (IsString (fromString))
+import           Data.Text          (Text)
+import           Data.Text.Short    (ShortText, toString)
+import qualified Data.Text.Short    as T
+import           Data.Tree
+import           Data.Vector        (Vector, fromList, fromListN)
+import           GHC.Generics       (Generic)
 
 
 {----
@@ -60,62 +74,91 @@ type NewickForest = NonEmpty NewickNode
 
 -- |
 -- A node in a "Phylogenetic Forest"
-data NewickNode
-   = NewickNode
-   { descendants  :: [NewickNode] -- ^ List of node's children, leaf nodes are empty lists
-   , newickLabel  :: Maybe String -- ^ The node's possibly included label, leaf nodes will always be Just-valued
-   , branchLength :: Maybe Double -- ^ The node's possibly included branch length
-   } deriving (Eq,Ord)
+data  NewickNode
+    = NewickNode
+    { childNodes     :: {-# UNPACK #-} !(Vector NewickNode)
+    , internalName   :: {-# UNPACK #-} !ShortText
+    , internalLength :: !(Maybe Rational)
+    } deriving (Eq, Generic, NFData, Ord)
 
 
-instance Show NewickNode where
+-- |
+-- Apply a transformation over the leaf labels of a 'newickNode'.
+mapLeafLabels :: (ShortText -> ShortText) -> NewickNode -> NewickNode
+mapLeafLabels f (NewickNode d x y) = NewickNode (mapLeafLabels f <$> d) x y
 
-    show (NewickNode d n b) = name <> len <> " " <> show d
-      where
-        name = maybe "Node" show n
-        len  = maybe "" (\x -> ':' : show x) b
+
+-- |
+-- Retrieve the direct descendants of the 'NewickNode'.
+{-# INLINE descendants #-}
+descendants :: NewickNode -> [NewickNode]
+descendants (NewickNode x _ _) = toList x
+
+
+-- |
+-- Retrieve the label (if any) of the 'NewickNode'.
+--
+-- Will always return a @Just@ value for a leaf node.
+--
+-- > isLeaf ==> isJust . newickLabel
+{-# INLINE newickLabel #-}
+newickLabel :: NewickNode -> Maybe ShortText
+newickLabel (NewickNode _ x _)
+  | T.null x  = Nothing
+  | otherwise = Just x
+
+
+-- |
+-- Retrieve the branch length (if any) of the 'NewickNode'.
+{-# INLINE branchLength #-}
+branchLength :: NewickNode -> Maybe Rational
+branchLength (NewickNode _ _ x) = x
 
 
 instance Semigroup NewickNode where
 
+    {-# INLINEABLE (<>) #-}
     lhs <> rhs =
         NewickNode
-        { descendants  = [lhs,rhs]
-        , newickLabel  = Nothing
-        , branchLength = Nothing
+        { childNodes     = fromListN 2 [lhs, rhs]
+        , internalName   = ""
+        , internalLength = Nothing
         }
+
+
+instance Show NewickNode where
+
+    show (NewickNode d n b) = fold [name, len, " ", show d]
+      where
+        name = (\x -> if null x then "Node" else x) $ toString n
+        len  = maybe "" (\x -> ':' : show x) b
 
 
 -- |
 -- Renders the 'NewickForest' to a 'String'. If the forest contains a DAG with
 -- in-degree  greater than one, then the shared subtree in a DAG will be rendered
 -- multiple times.
-renderNewickForest :: NewickForest -> String
-renderNewickForest = drawForest . unfoldForest f . toList
+{-# INLINEABLE renderNewickForest #-}
+renderNewickForest :: NewickForest -> Text
+renderNewickForest = fromString . drawForest . unfoldForest f . toList
   where
-    f = (,) <$> fromMaybe "X" . newickLabel <*> descendants
+    f = (,) <$> maybe "X" toString . newickLabel <*> descendants
 
 
 -- |
 -- Smart constructor for a 'NewickNode' preseriving the invariant:
 --
 -- > null nodes ==> isJust . label
-newickNode :: [NewickNode] -> Maybe String -> Maybe Double -> Maybe NewickNode
-newickNode nodes label length'
-  | null nodes && isNothing label = Nothing
-  | otherwise = Just $ NewickNode nodes label length'
+{-# INLINEABLE newickNode #-}
+newickNode :: [NewickNode] -> Maybe ShortText -> Maybe Rational -> Maybe NewickNode
+newickNode nodes label length' =
+  case (nodes, label) of
+    (  [], Nothing) -> Nothing
+    _               -> Just $ NewickNode (fromList nodes) (fold label) length'
 
 
 -- |
 -- Determines whether a given 'NewickNode' is a leaf node in the tree.
+{-# INLINEABLE isLeaf #-}
 isLeaf :: NewickNode -> Bool
-isLeaf node = (null . descendants) node && (isJust . newickLabel) node
-
--- |
--- Extracts a newick label (if it exists) and converts to ShortText
-{-# INLINE newickLabelShort #-}
-newickLabelShort :: NewickNode -> Maybe ShortText
-newickLabelShort = fmap fromString . newickLabel
-
-
-
+isLeaf (NewickNode x y _) = null x && not (T.null y)

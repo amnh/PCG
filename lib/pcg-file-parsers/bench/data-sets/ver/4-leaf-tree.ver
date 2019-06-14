@@ -1,0 +1,3 @@
+vertexset = { 0, 1, 2, A, B, C, D }
+edgeset = { (0, 1), (0, B), (1, 2), (1, C), (2, A), (2, D) }
+rootset = { 0 }
