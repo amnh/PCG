@@ -22,6 +22,7 @@ module Bio.Graph
   , DecoratedCharacterNode
   , FinalDecorationDAG
   , FinalCharacterNode
+  , FinalMetadata
   , GlobalSettings
   , GraphState
   , HasPhylogeneticForest(..)
