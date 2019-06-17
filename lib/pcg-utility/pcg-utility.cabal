@@ -31,9 +31,12 @@ common ghc-flags
   ghc-options:
     -- Optimization flags
     -O2
+    -fexcess-precision
     -fexpose-all-unfoldings
+    -flate-specialise
     -foptimal-applicative-do
     -fspecialize-aggressively
+    -fstatic-argument-transformation
     -- Usability flags
     -fdiagnostics-color=always
     -fhide-source-paths
