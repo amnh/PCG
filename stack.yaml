@@ -2,7 +2,7 @@ allow-newer: true
 
 #compiler: ghc-8.6.5
 #compiler: ghc-8.8.1
-compiler: ghc-8.8.0.20190424
+compiler: 8.8.0.20190613
 
 compiler-check: match-exact
 
@@ -18,6 +18,14 @@ extra-deps:
   - text-show-instances-3.7
   - mono-traversable-keys-0.1.0
   - validation-1.1
+  - git: git@github.com:haskell/cabal
+    commit: 9c31d9c760468719c881d0f137c66e62b02a1164
+  - git: git@github.com:haskell/primitive
+    commit: 47c4341f4e0f6fbbc3c53f23ca71e588c9515e6d
+  - git: git@github.com:nick8325/quickcheck
+    commit: c963bec774dbb92e1a49b66e21365eae70989981
+  - git: git@github.com:GaloisInc/cereal
+    commit: 3396176a36284d7aa53ffcb34a905a91a576832c
 
 #ghc-options:
 #  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively -fexpose-all-unfoldings
@@ -40,18 +48,6 @@ packages:
   - lib/pcg-tcm-memo
   - lib/pcg-utility
   - lib/pcg-validation-transformer
-  - location:
-      git: git@github.com:haskell/cabal
-      commit: 9c31d9c760468719c881d0f137c66e62b02a1164
-  - location:
-      git: git@github.com:haskell/primitive
-      commit: 47c4341f4e0f6fbbc3c53f23ca71e588c9515e6d
-  - location:
-      git: git@github.com:nick8325/quickcheck
-      commit: c963bec774dbb92e1a49b66e21365eae70989981
-  - location:
-      git: git@github.com:GaloisInc/cereal
-      commit: 3396176a36284d7aa53ffcb34a905a91a576832c
 
 require-stack-version: ">=1.9.1"
 
@@ -62,39 +58,32 @@ resolver: nightly-2019-05-30
 setup-info:
   ghc:
     linux32:
-        8.8.0.20190424:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha1/ghc-8.8.0.20190424-i386-deb9-linux.tar.xz"
-            content-length: 203254336
-            sha1: f935b0aef56d14d5ca8d0510c9de17b8eb31213b
-            sha256: eacce449f2a2a0a5d9d37d1b37f0e1dc5992456eed8c889a7b741cb7645a459a
+        8.8.0.20190613:
+            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-i386-deb9-linux.tar.xz"
+            content-length: 204060792
+            sha1: 0fe7fc95073602078e0677ae623dd02f46ae3a5b
+            sha256: 77d23afaf035775c99b48f0c78117a8073682dde3c6104b8ced4d5d062287772
     macosx:
-        8.8.0.20190424:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha1/ghc-8.8.0.20190424-x86_64-apple-darwin.tar.xz"
-            content-length: 184567176
-            sha1: 9f179398d07d826cd2106c203c645f9843c8a577
-            sha256: 563e34bb2d8a48fa5630136c5acc059bab0e807bf4f02b23d0fbc75f38500feb
-    linux64-gmp4:
-        8.8.0.20190424:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha1/ghc-8.8.0.20190424-x86_64-centos7-linux.tar.xz"
-            content-length: 193236252
-            sha1: ea037a8575a147587d7f76d3e826f32418fbfa88
-            sha256: 2409bff7b1058ad3205c5b198e63a6376ff9c57d134da5ce47c385269f8c89dc
+        8.8.0.20190613:
+            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-apple-darwin.tar.xz"
+            content-length: 184846152
+            sha1: 116bdaadcde045f78adcf1ffce291c79fb1c3eb6
+            sha256: 04b5b4dc35db2bc26f5e4d46946409a5d21f47a7923bf69ee31b093b7e71e889
     linux64:
-        8.8.0.20190424:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha1/ghc-8.8.0.20190424-x86_64-deb9-linux.tar.xz"
-            content-length: 198981344
-            sha1: 66edf432ad258255c6bc7d4bcb0157a26dc66815
-            sha256: 549a377887f7592a72c8ed77bacd4053deeacb4b0a7d22cffb6958037eb0d165
+        8.8.0.20190613:
+            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-deb9-linux.tar.xz"
+            content-length: 199898532
+            sha1: 11360a17f61da02c82d0f64f07e124479cedecc4
+            sha256: ff532d0b700fcd9c5343a942eab35450cd9d70ce5c5064ca4dfe7af94b05616e
     linux64-tinfo6:
-        8.8.0.20190424:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha1/ghc-8.8.0.20190424-x86_64-fedora27-linux.tar.xz"
-            content-length: 200928192
-            sha1: 58a9d1d9abbc287bf6500f382f27783242381cb2
-            sha256: e924eb7932ac0f9911fcba9ee5c4d9cf4ec89225b584d8e156a9a954e5d75f64
+        8.8.0.20190613:
+            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-fedora27-linux.tar.xz"
+            content-length: 201560804
+            sha1: 07eb8ab473f2aa3c21ac2b497142a01466ace5ee
+            sha256: cf972265333244c8648b99fd1bcf90e1a3e7b5335c0a418f6bc9849382de8f48
     windows64:
-        8.8.0.20190424:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha1/ghc-8.8.0.20190424-x86_64-unknown-mingw32.tar.xz"
-            content-length: 392807120
-            sha1: e7d4e59eed777af2405721943d00b99d8b835853
-            sha256: 1b5ff7995a07e7251b26b3c7dadba57906b7e6d236d0e94c4e92d9b5b8ee3300
-
+        8.8.0.20190613:
+            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-unknown-mingw32.tar.xz"
+            content-length: 224468920
+            sha1: b4a3b2b45625eb32dd7f892246da9a602d9ce7db
+sha256: 83b4c89d01c711c0f64bcc5abda287678c027b1b0d44ada17036917aeae588eb
