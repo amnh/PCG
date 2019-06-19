@@ -62,23 +62,17 @@ evaluate (Computation (x:|xs)) = foldl' f z xs
              SAVE   c -> s >>=   Save.evaluate c
 
 
-renderSearchState :: Evaluation a -> (ExitCode, Text)
+renderSearchState :: EvaluationResult a -> (ExitCode, Text)
 renderSearchState = fmap (<>"\n") . either id val . renderError
   where
     val _ = (ExitSuccess, "[✔] Computation complete!")
 
 
-renderError :: Evaluation a -> Either (ExitCode, Text) a
-renderError eval = evaluation (\p -> Left . err p) Right eval
+renderError :: EvaluationResult a -> Either (ExitCode, Text) a
+renderError = evaluateResult (\p -> Left . err p) Right
   where
-    renderedNotifications = f <$> notifications eval
-      where
-        f :: Notification -> Text
-        f (Information s) = "[-] " <> s
-        f (Warning     s) = "[!] " <> s
-
     err errPhase errMsg =
-      (errorPhaseToCode errPhase, T.unlines renderedNotifications <> "[✘] Error: "<> trimR errMsg)
+      (errorPhaseToCode errPhase, "[✘] Error: "<> trimR errMsg)
 
     trimR = T.dropWhileEnd isSpace
 

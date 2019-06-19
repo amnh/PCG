@@ -16,70 +16,119 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 -- This is needed due to the functional dependency in MonadReader.
 {-# LANGUAGE UndecidableInstances  #-}
 
 module Control.Evaluation.Trans
-  ( EvaluationT(..)
-  , impure
+  ( Evaluation()
+  , EvaluationT()
+  -- * Run computation
+  , runEvaluation
+  , runEvaluationT
+  -- * Other
+  , failWithPhase
   , showRun
-  , state
   ) where
 
 import           Control.Applicative
 import           Control.DeepSeq
-import           Control.Evaluation.Internal
-import           Control.Evaluation.Unit
-import           Control.Monad.Fail          (MonadFail)
-import qualified Control.Monad.Fail          as F
-import           Control.Monad.Fix           (MonadFix (..))
+import           Control.Evaluation.Notification
+import           Control.Evaluation.Result
+import           Control.Monad.Fail              (MonadFail)
+import qualified Control.Monad.Fail              as F
+import           Control.Monad.Fix               (MonadFix (..))
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
-import           Control.Monad.Reader        (MonadReader (..))
+import           Control.Monad.Reader            (MonadReader (..))
 import           Control.Monad.Trans.Class
-import           Control.Monad.Writer.Strict (MonadWriter (..))
-import           Control.Monad.Zip           (MonadZip (..))
-import           Data.DList                  (DList)
-import           Data.Functor.Alt            (Alt (..))
-import           Data.Functor.Apply          (Apply (..))
-import           Data.Functor.Bind           (Bind (..))
-import           Data.Functor.Classes        (Eq1 (..), Ord1 (..), Show1 (..))
+import           Control.Monad.Trans.RWS.CPS     (RWST, evalRWST, runRWST, rwsT)
+import qualified Control.Monad.Trans.RWS.CPS     as RWS
+import           Control.Monad.Zip               (MonadZip (..))
+import           Data.Functor.Alt                (Alt (..))
+import           Data.Functor.Apply              (Apply (..))
+import           Data.Functor.Bind               (Bind (..))
+--import           Data.Functor.Classes        (Eq1 (..), Ord1 (..), Show1 (..))
+import           Data.Functor.Identity
+import           Data.Sequence                   (Seq, fromList)
+import           Data.String
+import           Data.Tuple                      (swap)
 import           GHC.Generics
 import           Test.QuickCheck
+import           TextShow                        (TextShow)
 
 
 -- |
--- A monad transformer of 'Evaluation'.
-newtype EvaluationT m a
+-- A computational ``evaluation.''
+--
+-- An evaluation has global state @r@, accessible to it's computation.
+--
+-- An evaluation can be in one of two states, ``successful'' or ``failure''.
+-- Use 'pure' to place a value inside a successful computational context.
+-- Use 'fail' to indicate a computational failure.
+--
+-- A computational evaluation short-circuits at the first failure encountered.
+-- The semigroup operator '(<>)' reflects this.
+-- The alternative operator '(<!>)' inverts this logic, short-circuiting at the first sucess.
+-- The following should hold:
+--
+-- > foldr1 (<>)  [fail x, fail y, pure z] === fail x
+-- > foldr1 (<!>) [fail x, fail y, pure z] === pure z
+--
+-- A computation also stores an ordered log of 'Notifications'.
+-- Use the information operator '(<?>)' and the warning operator '(<@>)' to log computational notes.
+--
+-- Use 'runEvaluationT' to get the result of the computation.
+type Evaluation r a = EvaluationT r Identity a
+
+
+-- |
+-- A computational ``evaluation'' monad transformer.
+--
+newtype EvaluationT r m a
       = EvaluationT
       { -- | Run the 'EvaluationT' monad transformer
-        runEvaluation :: m (Evaluation a)
+        unwrapEvaluationT :: RWST r (Seq Notification) () m (EvaluationResult a)
       } deriving (Generic)
 
 
-instance Alt m => Alt (EvaluationT m) where
+-- |
+-- Exists to assist in defining the 'Arbitrary' instance for 'EvaluationT'.
+newtype EvalHelper m a
+      = EvalHelper { runEvalHelper :: m (EvaluationResult a, Seq Notification) }
+
+
+instance Monad m => Alt (EvaluationT r m) where
 
     {-# INLINEABLE (<!>) #-}
 
-    (<!>) x y = EvaluationT $ runEvaluation x <!> runEvaluation y
+    (<!>) x y = EvaluationT $ rwsT f
+      where
+        f r s =
+          let v = runRWST (unwrapEvaluationT x) r s
+          in do (e,_,_) <- v
+                case runEvaluationResult e of
+                  Left  _ -> runRWST (unwrapEvaluationT y) r s
+                  Right _ -> v
 
 
-instance Monad m => Applicative (EvaluationT m) where
+instance Monad m => Applicative (EvaluationT r m) where
 
     {-# INLINEABLE (<*>) #-}
     {-# INLINE     (*>)  #-}
     {-# INLINE     pure  #-}
 
-    pure = state . pure
+    pure = EvaluationT . pure . pure
 
     (<*>) = apply
 
     (*>)  = propogate
 
 
-instance Monad m => Apply (EvaluationT m) where
+instance Monad m => Apply (EvaluationT r m) where
 
     {-# INLINEABLE (<.>) #-}
     {-# INLINE     (.>)  #-}
@@ -89,66 +138,65 @@ instance Monad m => Apply (EvaluationT m) where
     (.>)  = propogate
 
 
-instance (Arbitrary a, Arbitrary1 m) => Arbitrary (EvaluationT m a) where
 
-    {-# INLINE arbitrary #-}
+instance (Arbitrary a, Arbitrary1 m) => Arbitrary (EvalHelper m a) where
 
-    arbitrary = EvaluationT <$> liftArbitrary arbitrary
+    {-# INLINEABLE arbitrary #-}
+
+    arbitrary = do
+      notificationList <- fromList <$> arbitrary
+      evalUnit         <- arbitrary
+      let pairArb = pure (evalUnit, notificationList)
+      EvalHelper <$> liftArbitrary pairArb
 
 
-instance (Apply m, Monad m) => Bind (EvaluationT m) where
+instance (Arbitrary a, Arbitrary1 m, CoArbitrary r, Function r, Functor m) => Arbitrary (EvaluationT r m a) where
+
+    {-# INLINEABLE arbitrary #-}
+
+    arbitrary = do
+      rToEvalHelper <- applyFun <$> arbitrary
+      pure . EvaluationT . rwsT . handleState $ runEvalHelper <$> rToEvalHelper
+
+      where
+        handleState :: (r -> m (EvaluationResult a, w)) -> (r -> () -> m (EvaluationResult a, (), w))
+        handleState rmaw r _ = f <$> rmaw r
+
+        f (a,w) = (a, (), w)
+
+
+instance (Apply m, Monad m) => Bind (EvaluationT r m) where
 
     {-# INLINEABLE (>>-) #-}
 
     (>>-) = bind
 
 
-instance Foldable m => Foldable (EvaluationT m) where
-
-    {-# INLINEABLE foldMap #-}
-
-    foldMap f = foldMap (foldMap f) . runEvaluation
-
-
-instance (Eq a, Eq1 m) => Eq (EvaluationT m a) where
-
-    {-# INLINE (==) #-}
-
-    (==) x = liftEq (==) (runEvaluation x) . runEvaluation
-
-
-instance Eq1 m => Eq1 (EvaluationT m) where
-
-    {-# INLINE liftEq #-}
-
-    liftEq f lhs = liftEq (liftEq f) (runEvaluation lhs) . runEvaluation
-
-
-instance Functor m => Functor (EvaluationT m) where
+instance Functor m => Functor (EvaluationT r m) where
 
     {-# INLINEABLE fmap #-}
 
-    fmap f x = EvaluationT . fmap (fmap f) $ runEvaluation x
+    fmap f x = EvaluationT . fmap (fmap f) $ unwrapEvaluationT x
 
 
-instance Monad m => Logger (EvaluationT m) a where
+instance Monad m => Logger (EvaluationT r m) a where
 
     {-# INLINE (<?>) #-}
     {-# INLINE (<@>) #-}
 
-    x <?> s = EvaluationT $ (<?> s) <$> runEvaluation x
+    (<?>) = appendNote Information
 
-    x <@> s = EvaluationT $ (<@> s) <$> runEvaluation x
+    (<@>) = appendNote Warning
 
 
-instance (Monad m, NFData a) => NFData (EvaluationT m a) where
+instance (Monad m, NFData a) => NFData (EvaluationT r m a) where
 
     {-# INLINE rnf #-}
 
-    rnf (EvaluationT x) = (force <$> x) `seq` ()
+    rnf (EvaluationT x) = (rnf <$> x) `seq` ()
 
 
-instance Monad m => Monad (EvaluationT m) where
+instance Monad m => Monad (EvaluationT r m) where
 
     {-# INLINEABLE (>>=)  #-}
     {-# INLINE     (>>)   #-}
@@ -164,51 +212,46 @@ instance Monad m => Monad (EvaluationT m) where
     fail   = F.fail
 
 
-instance Monad m => MonadFail (EvaluationT m) where
+instance Monad m => MonadFail (EvaluationT r m) where
 
     {-# INLINE fail #-}
 
-    fail = state . fail
+    fail = EvaluationT . pure . fail
 
 
-instance Monad m => MonadFix (EvaluationT m) where
+instance Monad m => MonadFix (EvaluationT r m) where
 
     mfix f = let a = a >>= f in a
 
 
-instance MonadIO m => MonadIO (EvaluationT m) where
+instance MonadIO m => MonadIO (EvaluationT r m) where
 
     {-# INLINE liftIO #-}
 
     liftIO = lift . liftIO
 
 
-instance MonadReader r m => MonadReader r (EvaluationT m) where
+instance MonadReader r m => MonadReader r (EvaluationT r m) where
 
-    ask    = lift ask
+    {-# INLINEABLE local #-}
+    {-# INLINE ask       #-}
+    {-# INLINE reader    #-}
 
-    local  = mapEvaluationT . local
+    ask     = lift ask
 
-    reader = lift . reader
+    local f = EvaluationT . RWS.local f . unwrapEvaluationT
+
+    reader  = lift . reader
 
 
-instance MonadTrans EvaluationT where
+instance MonadTrans (EvaluationT r) where
 
     {-# INLINE lift #-}
 
-    lift = EvaluationT . fmap pure
+    lift = EvaluationT . lift . fmap pure
 
 
-instance Monad m => MonadWriter (DList Notification) (EvaluationT m) where
-
-    writer = EvaluationT . pure . writer
-
-    listen = EvaluationT . fmap listen . runEvaluation
-
-    pass   = EvaluationT . fmap pass . runEvaluation
-
-
-instance Monad m => MonadZip (EvaluationT m) where
+instance Monad m => MonadZip (EvaluationT r m) where
 
     {-# INLINEABLE mzip     #-}
     {-# INLINEABLE munzip   #-}
@@ -218,93 +261,113 @@ instance Monad m => MonadZip (EvaluationT m) where
 
     mzipWith = liftA2
 
-    munzip x = let !v = runEvaluation x in (f fst v, f snd v)
-      where
-        f t = EvaluationT . fmap (t . munzip)
+    munzip !x = (fst <$> x, snd <$> x)
 
 
-instance (Ord1 m, Ord a) => Ord (EvaluationT m a) where
+{-
+instance (Ord1 m, Ord a) => Ord (EvaluationT r m a) where
 
     {-# INLINE compare #-}
 
     compare = liftCompare compare
 
 
-instance Ord1 m => Ord1 (EvaluationT m) where
+instance Ord1 m => Ord1 (EvaluationT r m) where
 
     {-# INLINE liftCompare #-}
 
-    liftCompare cmp lhs = liftCompare (liftCompare cmp) (runEvaluation lhs) . runEvaluation
+    liftCompare cmp lhs = liftCompare (liftCompare cmp) (unwrapEvaluationT lhs) . unwrapEvaluationT
+-}
 
 
-instance Applicative m => Semigroup (EvaluationT m a) where
+instance Monad m => Semigroup (EvaluationT r m a) where
 
     {-# INLINE (<>) #-}
 
-    x <> y = EvaluationT $ liftA2 (<>) (runEvaluation x) (runEvaluation y)
+    x <> y = EvaluationT $ liftA2 (<>) (unwrapEvaluationT x) (unwrapEvaluationT y)
 
 
-instance (Show a, Show1 m) => Show (EvaluationT m a) where
+{-
+instance (Traversable m) => Traversable (EvaluationT r m) where
 
-    showsPrec n = liftShowsPrec showsPrec showList n . runEvaluation
-
-
-instance (Traversable m) => Traversable (EvaluationT m) where
-
-    traverse f = fmap EvaluationT . traverse (traverse f) . runEvaluation
+    traverse f = fmap EvaluationT . traverse (traverse f) . unwrapEvaluationT
+-}
 
 
 -- |
--- Takes an 'IO' value and lifts it into the evaluation context.
-impure :: IO a -> EvaluationT IO a
-impure = liftIO
+-- Run the 'Evaluation' computation.
+runEvaluation :: r -> Evaluation r a -> (Seq Notification, EvaluationResult a)
+runEvaluation r = runIdentity . runEvaluationT r
 
 
 -- |
--- Takes an 'Evaluation' and lifts it into the transformer context.
-{-# INLINE state #-}
-state :: Applicative m => Evaluation a -> EvaluationT m a
-state = EvaluationT . pure
+-- Run the monad transformer for the 'EvaluationT' computation.
+runEvaluationT :: Monad m => r -> EvaluationT r m a -> m (Seq Notification, EvaluationResult a)
+runEvaluationT r = fmap swap . (\e -> evalRWST e r ()) . unwrapEvaluationT
+
+
+-- |
+-- Fail and indicate the phase in which the failure occured.
+failWithPhase :: (Monad m, TextShow s) => ErrorPhase -> s -> EvaluationT r m a
+failWithPhase p = EvaluationT . pure . evalUnitWithPhase p
 
 
 -- |
 -- Prints an 'IO' parameterized transformer of 'Evaluation' context to
 -- the STDOUT.
-showRun :: Show a => EvaluationT IO a -> IO ()
-showRun = (print =<<) . runEvaluation
+showRun :: Show a => r -> EvaluationT r IO a -> IO ()
+showRun r = (print . fst =<<) . (\e -> evalRWST e r ()) . unwrapEvaluationT
 
 
+{-
 -- |
 -- Map between two `EvaluationT` computations.
-mapEvaluationT :: (m (Evaluation a) -> n (Evaluation b)) -> EvaluationT m a -> EvaluationT n b
-mapEvaluationT f = EvaluationT . f . runEvaluation
+mapEvaluationT :: (m (Evaluation a) -> n (Evaluation b)) -> EvaluationT r m a -> EvaluationT r n b
+mapEvaluationT f = EvaluationT . f . unwrapEvaluationT
+-}
 
 
-bind :: Monad m => EvaluationT m a -> (a -> EvaluationT m b) -> EvaluationT m b
+bind :: Monad m => EvaluationT r m a -> (a -> EvaluationT r m b) -> EvaluationT r m b
 bind x f = EvaluationT $ do
-    (Evaluation ns y) <- runEvaluation x           -- :: Evaluation a
-    case runEvalUnit y of
-      Left  s -> pure . Evaluation ns . EU $ Left s
-      Right v -> (`prependNotifications` ns) <$> runEvaluation (f v)
+    y <- unwrapEvaluationT x
+    case runEvaluationResult y of
+      Left  s -> pure . EU $ Left s
+      Right v -> unwrapEvaluationT (f v)
 
 
-apply :: Monad m => EvaluationT m (t -> a) -> EvaluationT m t -> EvaluationT m a
+apply :: Monad m => EvaluationT r m (t -> a) -> EvaluationT r m t -> EvaluationT r m a
 apply lhs rhs = EvaluationT $ do
-    (Evaluation ms x) <- runEvaluation lhs
-    case runEvalUnit x of
-      Left  s -> pure . Evaluation ms . EU $ Left s
+    x <- unwrapEvaluationT lhs
+    case runEvaluationResult x of
+      Left  s -> pure . EU $ Left s
       Right f -> do
-          (Evaluation ns y) <- runEvaluation rhs
-          pure . Evaluation (ms <> ns) . EU $ case runEvalUnit y of
-                                                Left  s -> Left s
-                                                Right v -> Right $ f v
+          y <- unwrapEvaluationT rhs
+          pure . EU $ case runEvaluationResult y of
+                        Left  s -> Left s
+                        Right v -> Right $ f v
 
 
-propogate :: Monad m => EvaluationT m a -> EvaluationT m b -> EvaluationT m b
+propogate :: Monad m => EvaluationT r m a -> EvaluationT r m b -> EvaluationT r m b
 propogate lhs rhs = EvaluationT $ do
-    (Evaluation ms x) <- runEvaluation lhs
-    case runEvalUnit x of
-      Left  s -> pure . Evaluation ms . EU $ Left s
-      Right _ -> do
-          (Evaluation ns y) <- runEvaluation rhs
-          pure $ Evaluation (ms <> ns) y
+    x <- unwrapEvaluationT lhs
+    case runEvaluationResult x of
+      Left  s -> pure . EU $ Left s
+      Right _ -> unwrapEvaluationT rhs
+
+
+appendNote
+  :: ( IsString s
+     , Monad m
+     )
+  => (s -> Notification)
+  -> EvaluationT r m a
+  -> String -> EvaluationT r m a
+appendNote f x = \case
+    [] -> x
+    ys -> let rwst = unwrapEvaluationT x
+          in  EvaluationT $ rwst >>= \e ->
+                case runEvaluationResult e of
+                  Left  _ -> rwst
+                  _       -> let note = pure . f $ fromString ys
+                             in  rwst <* RWS.tell note
+

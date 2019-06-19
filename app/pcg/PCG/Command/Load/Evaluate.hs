@@ -19,6 +19,6 @@ evaluate (LoadCommand filePath) = do
       Success gVal -> pure gVal :: SearchState
       Failure eVal ->
         case eVal of
-          Left  iErr-> state $ failWithPhase Inputing iErr
-          Right pErr-> state $ failWithPhase  Parsing pErr
+          Left  iErr-> failWithPhase Inputing iErr
+          Right pErr-> failWithPhase  Parsing pErr
 

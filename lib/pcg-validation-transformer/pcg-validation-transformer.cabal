@@ -27,7 +27,7 @@ common dependencies
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
     semigroups               >= 0.18      && < 1.0,
-    transformers             >= 0.5.5     && < 1.0,
+    transformers             >= 0.5.6     && < 1.0,
 
 
 -- A litany of GHC warnings designed to alert us during the build of any common

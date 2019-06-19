@@ -44,6 +44,7 @@ Releases are available [on GitHub][2].
 * Enhanced REPORT command to move files by default if new output would overwrite an old file
 * Enhanced READ command grammar to allow for more specific TCM specification
 * Enhanced Evaluation monad to disallow NoOp state
+* Enhanced Evaluation monad to have a read-only, "global settings" type variable
 * Enhanced I/O stream input to consistently use "file-globs" when locating an input file source
 * Enhanced I/O stream input and output to consistently indicate failures in a well-type manner
 * Enhanced I/O stream parsing to consistently report parse errors and deserialization errors

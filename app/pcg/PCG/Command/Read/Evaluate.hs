@@ -34,10 +34,10 @@ evaluate (ReadCommand fileSpecs) = do
                       InputError {} -> Inputing
                       ParseError {} ->  Parsing
                       UnifyError {} -> Unifying
-        in  state $ failWithPhase phase pErr
+        in  failWithPhase phase pErr
       Success pRes ->
         case decoration . unifyPartialInputs $ transformation <$> fold1 pRes of
-          Failure uErr -> state $ failWithPhase Unifying uErr   -- Report structural errors here.
+          Failure uErr -> failWithPhase Unifying uErr   -- Report structural errors here.
           -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
           Success g    ->  liftIO $ compact g
                          -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g

@@ -56,7 +56,6 @@ import Bio.Sequence
 import Control.Evaluation
 import Control.Lens.Combinators            (mapped)
 import Control.Lens.Operators              ((%~), (.~), (^.))
-import Control.Monad.Reader                (ReaderT)
 import Data.Compact
 import Data.EdgeLength
 import Data.Function                       ((&))
@@ -89,7 +88,7 @@ type CharacterResult = PhylogeneticSolution CharacterDAG
 
 -- |
 -- Simple monad transformer stack for evaluating a phylogenetic search.
-type SearchState = EvaluationT (ReaderT GlobalSettings IO) GraphState
+type SearchState = EvaluationT GlobalSettings IO GraphState
 
 
 -- |
