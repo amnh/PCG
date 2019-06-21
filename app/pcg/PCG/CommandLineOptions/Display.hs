@@ -134,7 +134,7 @@ printExitCodeDocumentation = putStrLn . intercalate "\n" . (preamble:) . foldMap
     g  Inputing = "PCG attempted to retrieve input streams"
     g   Parsing = "interpreting input streams that were successfully retrieved"
     g  Unifying = "combining multiple data sets into a coherent composite"
-    g Computing = "running PCG, please report at github.com/amnh/PCG/issues"
+    g Computing = "running PCG, please report at https://github.com/amnh/PCG/issues"
     g Outputing = "outputing data streams from PCG"
 
     preamble = intercalate "\n" $ ("  "<>) <$>
