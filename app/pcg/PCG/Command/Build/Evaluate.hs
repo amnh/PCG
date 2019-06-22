@@ -31,7 +31,7 @@ import           Bio.Sequence
 import           Control.Arrow                                 ((&&&))
 import           Control.DeepSeq
 import           Control.Evaluation
-import           Control.Lens
+import           Control.Lens hiding (_head, snoc)
 import           Control.Monad                                 (replicateM)
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader                          (ReaderT)
@@ -49,12 +49,18 @@ import qualified Data.Map                                      as M
 import           Data.NodeLabel
 import           Data.Ord                                      (comparing)
 import           Data.Semigroup.Foldable
-import           Data.Vector                                   (Vector)
+import           Data.Vector                                   (Vector, snoc)
 import           Data.Vector.NonEmpty                          (unsafeFromVector)
 import qualified Data.Vector.NonEmpty                          as NE
 import           Immutable.Shuffle                             (shuffleM)
 import           PCG.Command.Build
-
+import           Control.Monad.State
+import Control.Monad(foldM)
+import           Debug.Trace
+import Data.List.Utility (HasHead(_head))
+import Data.ShortText.Custom
+import Data.Word
+import Data.Text.Short (ShortText, toShortByteString)
 
 
 evaluate
@@ -65,32 +71,50 @@ evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
     case getCompact cpctInState of
       Left  _ -> pure cpctInState
       Right v -> do
-        let buildLogic = case buildType of
-                           WagnerTree     -> wagnerBuildLogic
-                           WheelerNetwork -> networkBuildLogic
-                           WheelerForest  -> forestBuildLogic
-        let buildMethod = case buildType of
-                           WagnerTree     -> naiveWagnerBuild @NE.Vector
-                           WheelerNetwork -> naiveNetworkBuild
-                           WheelerForest  -> naiveForestBuild
+        let buildLogic =
+              case buildType of
+                WagnerTree     -> wagnerBuildLogic
+                WheelerNetwork -> networkBuildLogic
+                WheelerForest  -> forestBuildLogic
+        let buildMethod =
+              case buildType of
+                WagnerTree     -> naiveWagnerBuild @NE.Vector
+                WheelerNetwork -> naiveNetworkBuild
+                WheelerForest  -> naiveForestBuild
         let cluster = clusterBuildLogic buildMethod
-        let clusterLogic = case clusterType of
-                             ClusterOption _ 1               -> buildLogic
-                             ClusterOption NoCluster       n -> cluster AC.NoCluster       n
-                             ClusterOption SingleLinkage   n -> cluster AC.SingleLinkage   n
-                             ClusterOption CompleteLinkage n -> cluster AC.CompleteLinkage n
-                             ClusterOption UPGMALinkage    n -> cluster AC.UPGMALinkage    n
-                             ClusterOption WeightedLinkage n -> cluster AC.WeightedLinkage n
-                             ClusterOption WardLinkage     n -> cluster AC.WardLinkage     n
-                             ClusterOption KMedians        n -> cluster AC.KMedians        n
-
-        bestNetwork <- clusterLogic v trajectoryCount
-        liftIO . compact . Right $ toSolution bestNetwork
+        let clusterLogic =
+              case clusterType of
+                ClusterOption _ 1               -> buildLogic
+                ClusterOption NoCluster       n -> cluster AC.NoCluster       n
+                ClusterOption SingleLinkage   n -> cluster AC.SingleLinkage   n
+                ClusterOption CompleteLinkage n -> cluster AC.CompleteLinkage n
+                ClusterOption UPGMALinkage    n -> cluster AC.UPGMALinkage    n
+                ClusterOption WeightedLinkage n -> cluster AC.WeightedLinkage n
+                ClusterOption WardLinkage     n -> cluster AC.WardLinkage     n
+                ClusterOption KMedians        n -> cluster AC.KMedians        n
+        case (clusterCount < 1) of
+          True  -> do
+            fail "A non-positive number was supplied to the number of BUILD trajectories."
+          False -> do
+            bestNetwork <- clusterLogic v trajectoryCount
+            liftIO . compact . Right $ toSolution bestNetwork
 
   where
     toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
 
+    clusterCount :: Int
+    clusterCount = numberOfClusters clusterType
+
+type BuildType m =
+     MetadataSequence m
+  -> NE.Vector FinalCharacterNode
+  -> FinalDecorationDAG
+
+type ParallelBuildType m
+  =  MetadataSequence m
+  -> NE.NonEmpty (NE.Vector FinalCharacterNode)
+  -> NE.NonEmpty (FinalDecorationDAG)
 
 wagnerBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
@@ -117,7 +141,7 @@ forestBuildLogic _ _ = fail "The BUILD command type 'Forest' is not yet implemen
 
 
 clusterBuildLogic
-   :: (MetadataSequence FinalMetadata -> NE.Vector FinalCharacterNode -> FinalDecorationDAG)
+  :: BuildType FinalMetadata
   -> AC.ClusterOptions
   -> Int
   -> PhylogeneticSolution FinalDecorationDAG
@@ -128,10 +152,7 @@ clusterBuildLogic buildMethod clusterOption numberOfClusters
 
 
 buildLogicMethod
-  :: (  MetadataSequence FinalMetadata
-     -> NonEmpty (NE.Vector FinalCharacterNode)
-     -> NonEmpty FinalDecorationDAG
-     )
+  :: ParallelBuildType FinalMetadata
   -> PhylogeneticSolution FinalDecorationDAG
   -> Int
   -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
@@ -168,30 +189,31 @@ naiveWagnerParallelBuild
      )
   => MetadataSequence m
   -> t (f FinalCharacterNode)
-  -> t FinalDecorationDAG
+  -> t (FinalDecorationDAG)
 naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
 
 
 clusterParallelBuild
   :: (Traversable t)
-  => (MetadataSequence FinalMetadata -> NE.Vector FinalCharacterNode -> FinalDecorationDAG)
+  => BuildType FinalMetadata
   -> AC.ClusterOptions
   -> Int
   -> MetadataSequence FinalMetadata
-  -> t (NE.Vector FinalCharacterNode)
-  -> t FinalDecorationDAG
+  -> t (NE.Vector (FinalCharacterNode))
+  -> t (FinalDecorationDAG)
 clusterParallelBuild buildMethod clusterOptions numberOfClusters m
   = parmap rpar (clusterBuildMethod buildMethod clusterOptions numberOfClusters m)
 
 
 naiveWagnerBuild
-  :: Foldable1 f
+  :: (Foldable1 f)
   => MetadataSequence m
-  -> f FinalCharacterNode
+  -> f (FinalCharacterNode)
   -> FinalDecorationDAG
 naiveWagnerBuild metaSeq ns =
    case toNonEmpty ns of
-      x:|[]  -> fromRefDAG $ DAG.fromList
+      x:|[]  -> fromRefDAG $
+                  DAG.fromList
                   [ ( mempty        , wipeNode False x, mempty )
                   ]
       x:|[y] -> fromRefDAG $ DAG.fromList
@@ -208,7 +230,9 @@ naiveWagnerBuild metaSeq ns =
                   , ( IS.singleton 0, wipeNode False z, mempty )
                   ]
 --          in  iterativeBuild (trace ("Leaves remaining: " <> show (length xs) <> "\n"<> show initTree) initTree) xs
-          in  foldl' iterativeBuild initTree xs
+          in
+--            (\x -> trace ("naiveWag: " <> (show x)) x) $
+            foldl' iterativeBuild initTree xs
 
   where
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
@@ -230,7 +254,7 @@ naiveForestBuild = error "Naive forest build not yet implemented!"
 
 
 clusterBuildMethod
-  :: (MetadataSequence m -> NE.Vector FinalCharacterNode -> FinalDecorationDAG)
+  :: BuildType m
   -> AC.ClusterOptions
   -> Int
   -> MetadataSequence m
@@ -247,59 +271,114 @@ clusterBuildMethod buildMethod option numberOfClusters meta leafSetV
 
 
 parallelClusterMethod
-  :: (MetadataSequence m -> NE.Vector FinalCharacterNode -> FinalDecorationDAG)
+  :: BuildType m
   -> MetadataSequence m
   -> NE.Vector (NE.Vector (DecoratedCharacterNode Identity))
   -> FinalDecorationDAG
 parallelClusterMethod buildMethod meta clusters =
   let
     finalDecClusters :: NE.Vector (NE.Vector FinalCharacterNode)
-    finalDecClusters = coerce clusters
+    finalDecClusters  = -- (\x -> trace ("clusters: " <> (show $ fmap (show . length) $ x)) x) $
+      coerce clusters
 
     clusterTrees :: NE.Vector FinalDecorationDAG
-    clusterTrees = parmap rpar (buildMethod meta) finalDecClusters
+    clusterTrees = (\x -> trace ("cluster trees: "
+                                 <> (show $ ((^. _phylogeneticForest)) <$> x)) x) $
+      
+      parmap rpar (buildMethod meta) finalDecClusters
   in
     subTreeMethod buildMethod meta clusterTrees
 
 
 subTreeMethod
-  :: (MetadataSequence m -> NE.Vector FinalCharacterNode -> FinalDecorationDAG)
+  :: BuildType m
   -> MetadataSequence m
   -> NE.Vector FinalDecorationDAG
   -> FinalDecorationDAG
 subTreeMethod buildMethod meta subTrees =
   let
-    p :: (M.Map NodeLabel FinalDecorationDAG, [NodeLabel])
-    p =
-      foldMap (\t -> (M.singleton (getRootName t) t, pure (getRootName t))) subTrees
+    subTreeDict    :: M.Map NodeLabel FinalDecorationDAG
+    rootCharNodesV :: Vector FinalCharacterNode
+    (subTreeDict, rootCharNodesV) = makeTemporaryNameDict subTrees
 
-    (subTreeDict, rootNodeLabels) = p
+ -- This is safe as we are passing in a non-empty vector of trees.
     rootCharNodes :: NE.Vector FinalCharacterNode
-    rootCharNodes = fmap getRootDecoration subTrees
+    rootCharNodes = unsafeFromVector rootCharNodesV
 
+    f = (toShortByteString . coerce)
+
+    rootNodeLabels :: [NodeLabel] 
+    rootNodeLabels = (\x -> trace ("rootNodes: " <> show (f <$> x)) x) $
+      M.keys subTreeDict
+    
     rootNodeTree :: FinalDecorationDAG
-    rootNodeTree = buildMethod meta rootCharNodes
+    rootNodeTree =  (\x -> trace ("ROOT NODE TREE: "
+                                 <> (show $ ((^. _phylogeneticForest)) x)) x) $
+      
+      buildMethod meta rootCharNodes
 
     namedContext :: M.Map NodeLabel Int
-    namedContext = rootNodeTree `getNamedContext` rootNodeLabels
+    namedContext = (\x -> trace ("rootNodes: " <> show (M.mapKeys f x)) x) $
+      rootNodeTree `getNamedContext` rootNodeLabels
   in
+    (\x -> trace ("TOTAL TREE: "
+                                 <> (show $ ((^. _phylogeneticForest)) x)) x) $
     substituteDAGs namedContext subTreeDict rootNodeTree
   where
-    getRootDecoration :: FinalDecorationDAG -> FinalCharacterNode
-    {-# INLINE getRootDecoration #-}
-    getRootDecoration dag =
+    getRootNode :: FinalDecorationDAG -> FinalCharacterNode
+    {-# INLINE getRootNode #-}
+    getRootNode dag =
       let
-        refDAG  = dag ^. _phylogeneticForest
-        rootInd = NE.head (refDAG ^. _rootRefs)
+        refDAG  = -- (\x -> trace ("DAG: " <> (show (length x))) x) $
+                     dag ^. _phylogeneticForest
+--        refs :: FinalReferenceVector
+        refs    = refDAG ^. _references
+        rootInd :: Int
+        rootInd = -- (\x -> trac e("rootInd: " <> (show x)) x) $
+                     refDAG ^. _rootRefs . _head
       in
-        (refDAG ^. _references) ! rootInd ^. _nodeDecoration
+        (refs ! rootInd) ^. _nodeDecoration
 
     getRootName :: FinalDecorationDAG -> NodeLabel
     {-# INLINE getRootName #-}
-    getRootName dag = getRootDecoration dag ^. _nodeDecorationDatum
+    getRootName dag = getRootNode dag ^. _nodeDecorationDatum
+
+    makeTemporaryNameDict
+      :: NE.Vector FinalDecorationDAG
+      -> (M.Map NodeLabel FinalDecorationDAG, Vector FinalCharacterNode)
+    {-# INLINE makeTemporaryNameDict #-}
+    makeTemporaryNameDict subTrees
+        = (foldM labelSubTree (mempty, mempty) subTrees) `evalState` 0
+      where
+        labelSubTree
+          :: ( M.Map NodeLabel FinalDecorationDAG
+             , Vector FinalCharacterNode
+             )
+          -> FinalDecorationDAG
+          -> State Word64 (M.Map NodeLabel FinalDecorationDAG, Vector FinalCharacterNode)
+        {-# INLINE labelSubTree #-}
+        labelSubTree (currDict, currNodes) dag = do
+          currLabel <- get
+          let tempLabel    = nodeLabel . makeIllegalShortText $ currLabel
+          let rootNode     = getRootNode dag
+          let tempRootNode = giveTemporaryName rootNode tempLabel
+          let newDict      = M.insert tempLabel dag currDict
+          let newNodes     = currNodes `snoc` tempRootNode
+          put (currLabel + 1)
+          pure (newDict, newNodes)
+    
+        giveTemporaryName
+          :: FinalCharacterNode
+          -> NodeLabel
+          -> FinalCharacterNode
+        {-# INLINE giveTemporaryName #-}
+        giveTemporaryName node label = node & _nodeDecorationDatum .~ label
 
 
-iterativeBuild :: FinalDecorationDAG -> FinalCharacterNode -> FinalDecorationDAG
+iterativeBuild
+  :: FinalDecorationDAG
+  -> FinalCharacterNode
+  -> FinalDecorationDAG
 iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
   where
     (PDAG2 dag _) = wipeScoring currentTree
@@ -344,7 +423,9 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
 
-iterativeNetworkBuild :: FinalDecorationDAG -> FinalDecorationDAG
+iterativeNetworkBuild
+  :: FinalDecorationDAG
+  -> FinalDecorationDAG
 iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
     case toList $ DAG.candidateNetworkEdges inputDag of
       []   -> currentNetwork
@@ -375,6 +456,11 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
     connectEdge'
       = uncurry (connectEdge resetDAG deriveOriginEdgeNode deriveTargetEdgeNode)
 
+    deriveOriginEdgeNode
+      :: DecoratedCharacterNode Maybe
+      -> DecoratedCharacterNode Maybe
+      -> DecoratedCharacterNode Maybe
+      -> DecoratedCharacterNode Maybe
     deriveOriginEdgeNode parentDatum oldChildDatum _newChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
 
@@ -387,3 +473,5 @@ resetMetadata ref = ref & _graphData %~ setDefaultMetadata
 
 resetEdgeData :: ReferenceDAG d (e,a) n -> ReferenceDAG d e n
 resetEdgeData ref = ref & _references . (mapped . _childRefs . mapped) %~ fst
+
+

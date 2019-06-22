@@ -16,21 +16,26 @@
 module Bio.Graph.PhylogeneticDAG.Substitute where
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG
-import           Control.Lens
+import           Control.Lens hiding (_head)
 import qualified Data.Map                           as M
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG.Internal    (IndexData)
 import           Bio.Graph.ReferenceDAG.Utility     (incrementRefVector)
 import           Bio.Sequence
-import           Bio.Sequence.Metadata
 import           Data.Foldable
-import           Data.IntMap.Lazy                   (keys)
+import           Data.IntMap.Lazy                   (IntMap, keys)
+import qualified Data.IntMap.Lazy as IM
+import Data.IntSet (IntSet)
 import qualified Data.IntSet                        as IS
-import qualified Data.List.NonEmpty                 as NE
 import           Data.Monoid                        (First (..))
 import           Data.Vector                        (Vector, (!))
 import qualified Data.Vector                        as V
 import           Prelude                            hiding (length, zip)
+import Data.List.Utility
+import Control.Monad.State.Strict (State, MonadState(..))
+
+import Debug.Trace
+import Data.Key (foldrWithKeyM)
 
 
 type CharacterIndexData e n u v w x y z = (IndexData e (PhylogeneticNode (CharacterSequence u v w x y z) n))
@@ -74,60 +79,81 @@ getIndexFromName dag name =
     snd <$> ind
 
 substituteSingle
-  :: forall m e n u v w x y z . (Ord n)
-  => M.Map n Int
-  -> n
+  :: forall m e n u v w x y z . (Ord n, Monoid n)
+  => n
   -> PhylogeneticDAG m e n u v w x y z
-  -> PhylogeneticDAG m e n u v w x y z -> PhylogeneticDAG m e n u v w x y z
-substituteSingle namedContext nodeName subGraph totalGraph =
+  -> PhylogeneticDAG m e n u v w x y z
+  -> State (M.Map n Int) (PhylogeneticDAG m e n u v w x y z)
+substituteSingle nodeName subGraph totalGraph = do
+  namedContext <- get
   let relevantIndexOpt = nodeName `M.lookup` namedContext in
-  case relevantIndexOpt of
-    Nothing  -> totalGraph
-    Just ind ->
+    case relevantIndexOpt of
+      Nothing  -> pure totalGraph
+      Just subInd -> do
+        currentNamedContext <- get
+        let rootInd          = subGraph ^. _phylogeneticForest . _rootRefs . _head
+        let subReferences    = subGraph ^. _phylogeneticForest .  _references
+        let sizeOfSubGraph   = length subReferences
+        let totalReferences  = totalGraph ^. _phylogeneticForest . _references
+        let incrementedTotalRef = incrementRefVector (sizeOfSubGraph - 1) totalReferences
+        let incrementedInd   = subInd + (sizeOfSubGraph - 1)
+        let rootChildData    = (subReferences ! rootInd) ^. _childRefs
+        let rootChildRefs    = keys rootChildData
+        let updateParentIndsSubRef
+              = foldr
+                  (\key refs -> refs & ix key . _parentRefs .~ IS.singleton incrementedInd)
+                  subReferences
+                  rootChildRefs
+        let removeRootNodeSub = deleteAtV rootInd updateParentIndsSubRef
+        let newSubGraphRefs   = removeRootNodeSub
+    
+        let incTotalRefNewChild
+              = incrementedTotalRef
+              & ix subInd -- this is still the old index!
+              . _childRefs
+              .~ rootChildData
+  
+       -- This allows us to freely give temporary names to the leaves in the total graph which
+       -- are then replaced when we perform the substitution
+        let oldRootName
+              =  subReferences
+              ^. (ix rootInd
+              . _nodeDecoration
+              . _nodeDecorationDatum
+                 )
+            
+  
+        let renamedUpdatedTotalRefs
+               = incTotalRefNewChild
+               & ix subInd
+               . _nodeDecoration
+               . _nodeDecorationDatum
+               .~ oldRootName
+  
+        let newTotalGraphRefs      = renamedUpdatedTotalRefs
+        let updatedReferenceVector = newSubGraphRefs <> newTotalGraphRefs
+  
+        let totReferenceDAG = totalGraph ^. _phylogeneticForest
 
-      let
-        rootInd          = NE.head $ subGraph ^. _phylogeneticForest . _rootRefs
-        subReferences    = subGraph ^. _phylogeneticForest .  _references
-        sizeOfSubGraph   = length subReferences
-        totalReferences  = totalGraph ^. _phylogeneticForest . _references
-        incrementedTotalRef = incrementRefVector (sizeOfSubGraph - 1) totalReferences
-        incrementedInd   = ind + (sizeOfSubGraph - 1)
-        rootChildData    = (subReferences ! rootInd) ^. _childRefs
-        rootChildRefs    = keys rootChildData
-        updateParentIndsSubRef
-          = foldr
-              (\key refs -> refs & ix key . _parentRefs .~ IS.singleton incrementedInd)
-              subReferences
-              rootChildRefs
-        removeRootNodeSub = deleteAtV rootInd updateParentIndsSubRef
-        newSubGraphRefs   = removeRootNodeSub
+        let newReferenceDAG
+              = totReferenceDAG
+        -- TODO: fix this -->  & _graphData .~ updateGraphMetadata
+              & _references .~ updatedReferenceVector
 
-        incTotalRefNewChild
-          = incrementedTotalRef
-          & ix ind -- this is still the old index!
-          . _childRefs
-          .~ rootChildData
+        pure $ totalGraph & _phylogeneticForest .~ newReferenceDAG
+  
 
-        newTotalGraphRefs = incTotalRefNewChild
-        updatedReferenceVector = newSubGraphRefs <> newTotalGraphRefs
-
-        subMetadataSequence = subGraph ^. _columnMetadata
-        totMetadataSequence = totalGraph ^. _columnMetadata
-        totReferenceDAG = totalGraph ^. _phylogeneticForest
-        newReferenceDAG :: PhylogeneticRefDAG e n u v w x y z
-        newReferenceDAG = totReferenceDAG
-      -- TODO: fix this -->  & _graphData .~ updateGraphMetadata
-                        & _references .~ updatedReferenceVector
-        newMetadataSequence = substituteMetadataSequence ind subMetadataSequence totMetadataSequence
-      in
-        PDAG2 { phylogeneticForest = newReferenceDAG , columnMetadata = newMetadataSequence }
+substituteDAGs :: (Ord n, Show e, Show n, Monoid n) => M.Map n (PhylogeneticDAG m e n u v w x y z) -> PhylogeneticDAG m e n u v w x y z -> State (M.Map n Int) (PhylogeneticDAG m e n u v w x y z)
+substituteDAGs namedSubGraphs totalGraph
+  = --(\x -> trace (unlines
+    --[ "namedContext" <> (show namedContext)
+    --, "totalGraph: " <> f totalGraph
+    --, "subgraphs: "  <> (fold $ fmap f (M.elems namedSubGraphs))
+    --, "finalRes: "   <> (f x)
+    --]) x) $
+  foldrWithKeyM substituteSingle totalGraph namedSubGraphs
 
 
-substituteDAGs :: (Ord n) => M.Map n Int -> M.Map n (PhylogeneticDAG m e n u v w x y z) -> PhylogeneticDAG m e n u v w x y z -> PhylogeneticDAG m e n u v w x y z
-substituteDAGs namedContext namedSubGraphs totalGraph
-  = M.foldrWithKey (substituteSingle namedContext) totalGraph namedSubGraphs
-
--- Function taken from: http://hackage.haskell.org/package/ilist-0.3.1.0/docs/Data-List-Index.html
 deleteAt :: Int -> [a] -> [a]
 deleteAt i ls
   | i < 0 = ls
@@ -141,5 +167,31 @@ deleteAt i ls
 deleteAtV :: Int -> Vector a -> Vector a
 deleteAtV i = V.fromList . deleteAt i . toList
 
+-- |
+-- This function takes an index of the deleted root node 
+-- and decrements all index information of indices greater than
+-- this node.
+decrementAfterIndex :: Int -> Vector (IndexData e n) -> Vector (IndexData e n)
+decrementAfterIndex ind = fmap updateIndexData
+  where
+    f :: Int -> Int
+    f n = case n <= ind of
+      True  -> n
+      False -> n - 1
 
+    updateParentRefs :: IntSet -> IntSet
+    updateParentRefs = IS.map f
+
+    updateChildRefs :: IntMap a -> IntMap a
+    updateChildRefs = IM.mapKeys f
+
+    updateIndexData :: IndexData e' n' -> IndexData e' n'
+    updateIndexData i = i & _parentRefs %~ updateParentRefs
+                          & _childRefs  %~ updateChildRefs
+
+--f :: (Show e) => (PhylogeneticDAG m e n u v w x y z) -> String
+--f dag = show $ fmap g (dag ^. _phylogeneticForest . _references)
+--  where
+--    g :: IndexData e' n' -> (IS.IntSet, [Int])
+--    g ind = (ind ^. _parentRefs, keys $ ind ^. _childRefs)
 
