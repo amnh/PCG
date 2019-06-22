@@ -28,9 +28,7 @@ module Bio.Sequence.Block.Internal
   , HasMetricBin(..)
   , HasNonMetricBin(..)
   , HasDynamicBin(..)
-  , substituteBlock
   ) where
-
 
 import           Control.DeepSeq
 import           Control.Lens
@@ -41,7 +39,6 @@ import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import qualified Data.Text                   as T (Text, lines, unlines)
 import           Data.Vector                 (Vector, fromListN)
-import           Data.Vector.Custom
 import           Data.Vector.Instances       ()
 import           GHC.Generics
 import           Text.XML
@@ -331,21 +328,3 @@ blockParWithStrat strat (Block u v w x y z) =
     y' <- strat y
     z' <- strat z
     pure (Block u' v' w' x' y' z')
-
-
-
--- | This function takes an index corresponding to a node and substitutes
-substituteBlock :: Int -> Block u v w x y z -> Block u v w x y z -> Block u v w x y z
-{-# INLINE substituteBlock #-}
-substituteBlock
-  ind
-  (Block sCont sNonAdd sAdd sMet sNonMet sDyn)
-  (Block tCont tNonAdd tAdd tMet tNonMet tDyn)
-  = Block
-  { _continuousBin  = subAt ind sCont tCont
-  , _nonAdditiveBin = subAt ind sNonAdd tNonAdd
-  , _additiveBin    = subAt ind sAdd tAdd
-  , _metricBin      = subAt ind sMet tMet
-  , _nonMetricBin   = subAt ind sNonMet tNonMet
-  , _dynamicBin     = subAt ind sDyn tDyn
-  } `using` blockParWithStrat (rparWith rseq)

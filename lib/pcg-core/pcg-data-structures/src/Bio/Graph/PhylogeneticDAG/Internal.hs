@@ -227,9 +227,9 @@ instance HasMinimalNetworkContext (PostorderContextualData t) (Maybe (NonEmpty (
 
 instance HasPhylogeneticForest
            (PhylogeneticDAG m e n u v w x y z)
-           (PhylogeneticDAG m e n u' v' w' x' y' z')
+           (PhylogeneticDAG m e' n' u' v' w' x' y' z')
            (ReferenceDAG (PostorderContextualData (CharacterSequence u v w x y z)) e (PhylogeneticNode (CharacterSequence u v w x y z) n))
-           (ReferenceDAG (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e (PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n)) where
+           (ReferenceDAG (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e' (PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n')) where
 
     {-# INLINE _phylogeneticForest #-}
     _phylogeneticForest = lens phylogeneticForest (\p pf -> p {phylogeneticForest = pf})

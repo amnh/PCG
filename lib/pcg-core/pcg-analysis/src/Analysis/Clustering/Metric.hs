@@ -27,7 +27,6 @@ import           Bio.Character
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
-import           Bio.Character.Encodable
 import           Bio.Metadata
 import           Bio.Metadata.Metric
 import           Bio.Sequence

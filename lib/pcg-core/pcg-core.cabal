@@ -208,6 +208,7 @@ library pcg-analysis
     mtl                      >= 2.0       && < 3.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
+    text-show                >= 3.0       && < 4.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
     -- >=3.4 required for corrected definition of (!) & index
