@@ -21,14 +21,17 @@ module Bio.Graph.Constructions
   , CharacterNode
   , DecoratedCharacterResult
   , DecoratedCharacterNode
+  , EdgeAnnotation
   , FinalDecorationDAG
   , FinalCharacterNode
+  , FinalCharacterSequence
   , FinalMetadata
+  , FinalReferenceVector
   , GlobalSettings
   , GraphState
   , PhylogeneticFreeDAG(..)
   , PhylogeneticDAG(..)
-  , PreOrderDecorationDAG
+  , PreorderDecorationDAG
   , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
@@ -128,12 +131,14 @@ type DecoratedCharacterNode (f :: * -> *) =
 
 -- |
 -- Removes the Identity wrappers from a 'DecoratedCharacterNode'.
-convertToFinalCharacterSequence :: DecoratedCharacterNode Identity -> FinalCharacterNode
+convertToFinalCharacterSequence
+  :: DecoratedCharacterNode Identity-> FinalCharacterNode
 convertToFinalCharacterSequence = coerce
 
 -- |
 -- Adds in Identity wrappers to a 'FinalCharacterNode'.
-convertFromFinalCharacterSequence :: FinalCharacterNode -> DecoratedCharacterNode Identity
+convertFromFinalCharacterSequence
+  :: FinalCharacterNode -> DecoratedCharacterNode Identity
 convertFromFinalCharacterSequence = coerce
 
 -- |
@@ -175,8 +180,12 @@ type FinalMetadata = (TraversalTopology, Double, Double, Double, Data.Vector.Vec
 
 
 -- |
+-- The Reference Vector on a 'FinalDecorationDAG' after a pre-order traversal.
+type FinalReferenceVector = Vector (IndexData EdgeAnnotation FinalCharacterNode)
+
+-- |
 -- Decoration of a phylogenetic DAG after a pre-order traversal AND after the edge data has been finalized.
-type FinalDecorationDAG =
+type FinalDecorationDAG = 
        PhylogeneticDAG
          FinalMetadata
          EdgeAnnotation
@@ -189,11 +198,12 @@ type FinalDecorationDAG =
          (DynamicDecorationDirectOptimization DynamicCharacter)
 
 
+
 -- |
 -- Decoration of a phylogenetic DAG after a pre-order traversal.
-type PreOrderDecorationDAG =
+type PreorderDecorationDAG =
        PhylogeneticDAG
-         (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+         FinalMetadata
          EdgeLength
          NodeLabel
          (ContinuousOptimizationDecoration ContinuousCharacter)
@@ -202,7 +212,6 @@ type PreOrderDecorationDAG =
          (SankoffOptimizationDecoration        StaticCharacter)
          (SankoffOptimizationDecoration        StaticCharacter)
          (DynamicDecorationDirectOptimization DynamicCharacter)
-
 
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
@@ -217,7 +226,6 @@ type PostorderDecorationDAG m =
          (SankoffOptimizationDecoration     StaticCharacter)
          (SankoffOptimizationDecoration     StaticCharacter)
          (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
-
 
 -- |
 -- A "heterogenous" character block after being read in from a READ command.
@@ -329,6 +337,7 @@ type EdgeAnnotation =
         (SankoffOptimizationDecoration     StaticCharacter)
         (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
     )
+
 
 
 extractReferenceDAG

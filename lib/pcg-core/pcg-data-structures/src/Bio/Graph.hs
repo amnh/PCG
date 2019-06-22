@@ -20,9 +20,12 @@ module Bio.Graph
   , CharacterNode
   , DecoratedCharacterResult
   , DecoratedCharacterNode
+  , EdgeAnnotation
   , FinalDecorationDAG
   , FinalCharacterNode
+  , FinalCharacterSequence
   , FinalMetadata
+  , FinalReferenceVector
   , GlobalSettings
   , GraphState
   , HasPhylogeneticForest(..)
@@ -31,7 +34,7 @@ module Bio.Graph
   , PhylogeneticDAGish(..)
   , PhylogeneticForest(..)
   , PhylogeneticSolution(..)
-  , PreOrderDecorationDAG
+  , PreorderDecorationDAG
   , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
