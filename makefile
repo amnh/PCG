@@ -16,7 +16,7 @@ sub-libs      = pcg-file-parsers pcg-language pcg-utility
 
 # file paths
 
-cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.6.3/phylogenetic-component-graph-0.1.0.1/x/pcg/build/pcg/pcg
+cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.6.4/phylogenetic-component-graph-0.1.0.1/x/pcg/build/pcg/pcg
 
 
 # Target aliases for easy CLI use
