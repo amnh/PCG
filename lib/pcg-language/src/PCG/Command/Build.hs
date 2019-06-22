@@ -22,6 +22,7 @@ module PCG.Command.Build
   , ClusterLabel(..)
   , ClusterOption(..)
   , buildCommandSpecification
+  , numberOfClusters
   ) where
 
 
@@ -59,6 +60,11 @@ data ClusterLabel
 
 data ClusterOption = ClusterOption !ClusterLabel !Int
   deriving (Eq, Show)
+
+-- |
+-- Get the number of clusters from a 'ClusterOption'.
+numberOfClusters :: ClusterOption -> Int
+numberOfClusters (ClusterOption _ n) = n
 
 -- |
 -- Defines the semantics of interpreting a valid \"BUILD\" command from the PCG
