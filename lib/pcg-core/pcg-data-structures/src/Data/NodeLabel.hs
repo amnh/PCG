@@ -19,6 +19,7 @@
 
 module Data.NodeLabel
   ( NodeLabel(NL)
+  , isEmpty
   , nodeLabel
   , nodeLabelString
   ) where
@@ -32,6 +33,7 @@ import Data.String          (IsString)
 import Data.Text.Short      as TS
 import GHC.Generics
 import TextShow             (TextShow (showb))
+import Data.Coerce          (coerce)
 
 
 -- |
@@ -59,6 +61,11 @@ nodeLabel = NL
 -- Construct a 'NodeLabel' from a 'String'
 nodeLabelString :: String -> NodeLabel
 nodeLabelString = NL. fromString
+
+-- |
+-- Check if a NodeLabel is empty.
+isEmpty :: NodeLabel -> Bool
+isEmpty = coerce TS.null
 
 
 instance Default NodeLabel where
