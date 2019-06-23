@@ -1,6 +1,8 @@
 <style>
 .reveal section img { background:none; border:none; box-shadow:none; }
 .w { color: white; }
+
+});
 </style>
 
 <!-- .slide: data-background="#134EA2" -->
@@ -14,30 +16,53 @@
 
 ---
 
- * What is phylogenetics
+### What we'll be covering:
 
- * What is the phylogenetic user story
+ * What is phylogenetics?
 
- * How to organize a large scale Haskell project
+ * Who are the users?
 
- * Computaional challenges and Haskell
+ * How we organize a large scale Haskell project?
+
+ * Challenges of Haskell?
 
 ---
 
 ### What is phylogenetics?
 
- * Taxon set
 
- * Character observations
+<img src="emoji-phylogenetics.jpg" height="50%" width="50%">
 
- * Binary trees
+ <font color="FF4500">The phylogenetic tree of emoji parrots</font> 
 
-Note:
-What is the most likey explaination of how a collection of animals are related to each other given a set of observations.
 
-Note:
-Binary trees, hirerarchical
 
+----
+
+ *  <font color ="F9FAE1"> <b> Taxon set </b> : </font> <font color="FF4500">emoji parrots</font>
+  <p>
+   <font color="#50CB78">
+     <i> More generally: </i> Groups of organisms
+     , languages etc.
+   </font>
+  </p>
+
+ * <font color ="F9FAE1"> <b> Character observations </b> : </font>  <font color="FF4500">colour of feathers</font>
+<p>
+   <font color="#50CB78">
+     <i>More generally: </i> Other morphological characteristics
+     , DNA characters etc.
+   </font>
+  </p>
+
+
+ * <font color ="F9FAE1"> <b> Binary tree </b> : </font>  <font color="FF4500"> hypothesized evolutionary tree of emoji parrots. </font>
+<p>
+   <font color="#50CB78">
+   The <i> "best" </i> (see next slide) tree 
+   to explain the relationships between this data. 
+   </font>
+  </p>
 ---
 
 ### What is parsimony?
@@ -46,9 +71,11 @@ Binary trees, hirerarchical
 
  * Optimality criterion
 
-Note: Occam's razor, which states that—all else being equal—the simplest hypothesis that explains the data should be selected
+Note: 
+Occam's razor, which states that—all else being equal—the simplest hypothesis that explains the data should be selected
 
-Note: Minimizes the total number of character-state changes is to be preferred
+Note: 
+Minimizes the total number of character-state changes is to be preferred
 
 ---
 
@@ -107,3 +134,14 @@ Note: Minimizes the total number of character-state changes is to be preferred
  * Collect and colate all issues
 
  * Suggest holistic solutions
+
+
+---
+
+### Challenges
+
+<section>
+	<pre><code data-trim data-noescape>
+data Graph = Vector (IndexData e n)
+	</code></pre>
+</section>
