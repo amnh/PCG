@@ -47,15 +47,15 @@ Haskell program and libraries for general phylogenetic graph search
 
 [latest-release]: https://github.com/amnh/PCG/releases/latest
 
-[   author-img]: https://img.shields.io/badge/author-Ward%20Wheeler-blue.svg
+[   author-img]: https://img.shields.io/badge/author-Ward%20Wheeler-blue.svg?color=134EA2
 [   author-ref]: https://www.amnh.org/research/staff-directory/ward-wheeler
-[  license-img]: https://img.shields.io/badge/license-BSD3-blue.svg
+[  license-img]: https://img.shields.io/badge/license-BSD3-blue.svg?color=134EA2
 [  license-ref]: https://github.com/amnh/PCG/blob/master/LICENSE
 [   travis-img]: https://travis-ci.org/amnh/PCG.svg?branch=master
 [   travis-ref]: https://travis-ci.org/amnh/PCG
-[code-size-img]: https://img.shields.io/github/languages/code-size/amnh/PCG.svg?style=popout
+[code-size-img]: https://img.shields.io/github/languages/code-size/amnh/PCG.svg?style=popout&color=yellowgreen
 [code-size-ref]: https://github.com/amnh/PCG/archive/master.zip
-[  commits-img]: https://img.shields.io/github/commits-since/amnh/PCG/v0.1.0.1.svg?style=popout
+[  commits-img]: https://img.shields.io/github/commits-since/amnh/PCG/v0.1.0.1.svg?style=popout&color=yellowgreen
 [  commits-ref]: https://github.com/amnh/PCG/commits/master
 [  release-img]: https://img.shields.io/github/release-pre/amnh/PCG.svg
 [ tag-date-img]: https://img.shields.io/github/release-date-pre/amnh/PCG.svg?style=popout
