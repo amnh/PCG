@@ -328,6 +328,7 @@ executable graphviz-examples
   other-modules:
     DisplayTree
     NetworkEdges
+    ProjectOverview
 
   build-depends:
     base                     >= 4.11      && < 5.0,
