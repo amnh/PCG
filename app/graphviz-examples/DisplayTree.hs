@@ -128,6 +128,7 @@ networkGraphParameters = G.defaultParams {
 displayTrees :: [(Network, FilePath)]
 displayTrees = [ (doubleNetworkNodes  , "disallowed-display-network1")
                , (doubleNetworkNodesDT, "disallowed-display-tree1"   )
+               , (allowedNetworkNode,   "allowed-network1"           )
                ]
 
 -- Inconsistent display tree
@@ -217,5 +218,41 @@ doubleNetworkNodesDT =
             , deletedE <$> [ ("c", "e"), ("e", "f") ]
             ]
 
+--          [...]
+--            |
+--            o
+--           / \
+--          /   \
+--         o     o
+--        / \   / \
+--       /   \ /  [..]
+--     [..]   o
+--            |
+--           [..]
+
+-- |
+-- Example of allowed phylogenetic network.
+allowedNetworkNode :: Network
+allowedNetworkNode =
+    (nodes, edges)
+  where
+    nodes :: [Node]
+    nodes = fold
+            [ realN    <$>  ["a", "b", "c", "d"]
+            , ignoredN <$> ["sub-tree-1", "sub-tree-2", "sub-tree-3", "sub-tree-4"]
+
+            ]
 
 
+    edges :: [Edge]
+    edges = fold
+            [ edgeE    <$> [ ("sub-tree-1", "a"), ("a", "b"), ("a", "c")
+                           , ("b", "sub-tree-2")
+                           , ("c", "sub-tree-3")
+                           , ("d", "sub-tree-4")
+                           ]
+            , netE     <$> [  ("b", "d") ,  ("c", "d")
+                           ]
+            , keptE    <$> []
+            , deletedE <$> []
+            ]
