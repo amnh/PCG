@@ -414,4 +414,14 @@ in a single pass over a graph. </font>
 
 ---
 
+### Project funding provided by:
+
+  * American Museum of Natural History
+
+  * DARPA SIMPLEX
+
+  * Kleberg Foundation
+
+---
+
 ## Thank you for listening!

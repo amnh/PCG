@@ -77,22 +77,27 @@ projectOverview =
   where
     nodes :: [Node]
     nodes = node <$>
-             [scriptingLanguage, parsing, unification, treeSearch, serialisation]
+             [inputLayer, scriptingLanguage, parsing, unification, treeSearch, serialisation]
             
 
     edges :: [Edge]
     edges = edge <$>
-            [ (scriptingLanguage, parsing)
+            [ (inputLayer, scriptingLanguage)
+            , (scriptingLanguage, parsing)
             , (parsing, unification)
             , (unification, treeSearch)
             , (treeSearch, treeSearch)
             , (treeSearch, serialisation)
             ]
 
-    scriptingLanguage, parsing, unification, treeSearch, serialisation :: String
+    inputLayer, scriptingLanguage, parsing, unification, treeSearch, serialisation :: String
+    inputLayer = unlines
+      [ "Data Input"
+      , "  Custom I/O layer"
+      ]
     scriptingLanguage = unlines
       [ "Scripting language"
-      , "  Based on optparse-applicative"
+      , "  Based on free applicative"
       ]
 
     parsing = unlines
@@ -102,7 +107,7 @@ projectOverview =
 
     unification = unlines
       [ "Unification"
-      , "  Process and validate user input"
+      , "  Collate and validate user input"
       ]
 
     treeSearch = unlines
@@ -113,5 +118,5 @@ projectOverview =
 
     serialisation = unlines
       [ "Serialisation"
-      , " - Output formats: textual, dot, newick, csv, binary etc."
+      , "  Output formats: textual, dot, newick, csv, binary etc."
       ]
