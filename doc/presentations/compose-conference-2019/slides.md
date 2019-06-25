@@ -181,17 +181,12 @@
 
 <font color ="FF7417"> Don't stop at the first error, collect all the errors in a given <i> phase </i>: </font>
 
-<section>
-	<pre><code data-trim data-noescape>
-data  ErrorPhase
-    = Inputing  -- ^ Cannot get information off the disk
-    | Parsing   -- ^ Cannot understand the information
-    | Unifying  -- ^ Collectively incoherent information
-    | Computing -- ^ We messed up, our bad
-    | Outputing -- ^ Cannot write out information to disk
-	</code></pre>
-</section>
-
+    data  ErrorPhase
+        = Inputing  -- ^ Cannot get information off the disk
+        | Parsing   -- ^ Cannot understand the information
+        | Unifying  -- ^ Collectively incoherent information
+        | Computing -- ^ We messed up, our bad
+        | Outputing -- ^ Cannot write out information to disk
 
 ----
 
@@ -199,35 +194,21 @@ data  ErrorPhase
 
 <font color ="FF7417"> Collect errors using `validation` package: </font>
 
-<section>
-        <pre><code data-trim data-noescape >
-data  Either b a
-    = Left b
-    | Right a
+<section><pre><code data-trim data-noescape>
+    data Either b a     = Left b    | Right a
 
-data  Validation e a
-    = Failure e
-    | Success a
+    data Validation e a = Failure e | Success a
 </code></pre></section>
 
-----
+    instance Applicative (Either b) where
+        Right f <\*> r = fmap f r
+        Left  e <\*> _ = Left e
 
-### Error Handling (cont.)
-
-<font color ="FF7417"> Choosing the data-type with the right instance </font>
-
-<section>
-        <pre><code data-trim data-noescape >
-instance Applicative (Either b) where
-    Right f <\*> r = fmap f r
-    Left  e <\*> _ = Left e
-
-instance Semigroup e => Applicative (Validation e) where
-    Success f  <\*> r = fmap f r
-    Failure e1 <\*> b = Failure $ case b of
-      Failure e2 -> e1 <> e2
-      Success \_ -> e1
-</code></pre></section>
+    instance Semigroup e => Applicative (Validation e) where
+        Success f  <\*> r = fmap f r
+        Failure e1 <\*> b = Failure $ case b of
+          Failure e2 -> e1 <> e2
+          Success \_ -> e1
 
 ----
 
@@ -235,20 +216,15 @@ instance Semigroup e => Applicative (Validation e) where
 
 <font color ="FF7417"> Use a custom semigroup for I/O errors </font>
 
-<section> 
-  <pre><code data-trim data-noescape>
-newtype InputError = InputError (NonEmpty InputErrorMessage)
-  deriving Semigroup
+    newtype InputError = InputError (NonEmpty InputErrorMessage)
+      deriving Semigroup
 
-data InputErrorMessage = 
-      FileAlreadyInUse   FileSource
-    | FileAmbiguous      FileSource (NonEmpty FileSource)
-    | FileBadPermissions FileSource
-    | FileEmptyStream    FileSource
-    | FileUnfindable     FileSource
-  </code></pre>
-</section>
-
+    data InputErrorMessage = 
+          FileAlreadyInUse   FileSource
+        | FileAmbiguous      FileSource (NonEmpty FileSource)
+        | FileBadPermissions FileSource
+        | FileEmptyStream    FileSource
+        | FileUnfindable     FileSource
 
 ----
 
