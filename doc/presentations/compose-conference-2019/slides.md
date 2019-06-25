@@ -192,10 +192,10 @@
 
 ### Error Handling 
 
-<font color ="FF7417"> Collect errors using `validation` package: </font>
+<font color ="FF7417"> Collect errors using `validation` package: </font> 
 
 <section><pre><code data-trim data-noescape>
-    data Either b a     = Left b    | Right a
+    data Either b       = Left b    | Right a
 
     data Validation e a = Failure e | Success a
 </code></pre></section>
