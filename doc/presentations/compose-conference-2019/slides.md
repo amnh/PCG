@@ -169,14 +169,11 @@
 
 ### Mechanically this looks like
 
- *  <font color ="FF7417"> Devlop a falsifiable hypothesis </font>
+ * <font color ="FF7417"> Create a lot of large files</font>
 
- * <font color ="FF7417"> Create a lot of large files for input into phylogenetic software</font>
+ * <font color ="FF7417"> Set a lot of configuration options </font>
 
- *  <font color ="FF7417"> Set a lot of configuration options </font>
-
- * <font color ="FF7417"> Wait a very long time: this is <i> important, </i> it means error handling
-   must be carefully dealt with.
+ * <font color ="FF7417"> Wait a very long time</font>
 
 ---
 
@@ -198,27 +195,41 @@ data  ErrorPhase
 
 ----
 
-### Error Handling (cont.)
+### Error Handling 
 
 <font color ="FF7417"> Collect errors using `validation` package: </font>
 
-<section> <pre><code data-trim data-noescape>
-data  Validation err a
-    = Failure err
+<section>
+        <pre><code data-trim data-noescape >
+data  Either b a
+    = Left b
+    | Right a
+
+data  Validation e a
+    = Failure e
     | Success a
+</code></pre></section>
 
-instance Semigroup err => Applicative (Validation err) where
+----
 
-    pure = Success
+### Error Handling (cont.)
 
+<font color ="FF7417"> Choosing the data-type with the right instance </font>
+
+<section>
+        <pre><code data-trim data-noescape >
+instance Applicative (Either b) where
+    Right f <\*> r = fmap f r
+    Left  e <\*> _ = Left e
+
+instance Semigroup e => Applicative (Validation e) where
+    Success f  <\*> r = fmap f r
     Failure e1 <\*> b = Failure $ case b of
       Failure e2 -> e1 <> e2
       Success \_ -> e1
-    Success \_  <\*> Failure e2 = Failure e2
-    Success f  <\*> Success a  = Success (f a)
 </code></pre></section>
 
----
+----
 
 ### I/O Errors
 
