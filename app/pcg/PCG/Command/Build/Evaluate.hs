@@ -54,7 +54,7 @@ import           Data.Vector.NonEmpty                          (unsafeFromVector
 import qualified Data.Vector.NonEmpty                          as NE
 import           Immutable.Shuffle                             (shuffleM)
 import           PCG.Command.Build
-import           Control.Monad.State
+import           Control.Monad.State.Strict
 import Control.Monad(foldM)
 import           Debug.Trace
 import Data.List.Utility (HasHead(_head))
@@ -323,7 +323,7 @@ subTreeMethod buildMethod meta subTrees =
   in
     (\x -> trace ("TOTAL TREE: "
                                  <> (show $ ((^. _phylogeneticForest)) x)) x) $
-    substituteDAGs namedContext subTreeDict rootNodeTree
+    (substituteDAGs subTreeDict rootNodeTree) `evalState` namedContext
   where
     getRootNode :: FinalDecorationDAG -> FinalCharacterNode
     {-# INLINE getRootNode #-}

@@ -91,56 +91,65 @@ substituteSingle nodeName subGraph totalGraph = do
       Nothing  -> pure totalGraph
       Just subInd -> do
         currentNamedContext <- get
-        let rootInd          = subGraph ^. _phylogeneticForest . _rootRefs . _head
-        let subReferences    = subGraph ^. _phylogeneticForest .  _references
-        let sizeOfSubGraph   = length subReferences
-        let totalReferences  = totalGraph ^. _phylogeneticForest . _references
-        let incrementedTotalRef = incrementRefVector (sizeOfSubGraph - 1) totalReferences
-        let incrementedInd   = subInd + (sizeOfSubGraph - 1)
-        let rootChildData    = (subReferences ! rootInd) ^. _childRefs
-        let rootChildRefs    = keys rootChildData
-        let updateParentIndsSubRef
+        let
+          rootInd          = subGraph ^. _phylogeneticForest . _rootRefs . _head
+          subReferences    = subGraph ^. _phylogeneticForest .  _references
+          sizeOfSubGraph   = length subReferences
+          sizeOfNewSubGraph = length subReferences - 1
+          totalReferences  = totalGraph ^. _phylogeneticForest . _references
+          incrementedTotalRef = incrementRefVector (sizeOfSubGraph - 1) totalReferences
+          incrementedInd   = subInd + (sizeOfSubGraph - 1)
+          rootChildData    = (subReferences ! rootInd) ^. _childRefs
+          rootChildRefs    = keys rootChildData
+          updateParentIndsSubRef
               = foldr
                   (\key refs -> refs & ix key . _parentRefs .~ IS.singleton incrementedInd)
                   subReferences
                   rootChildRefs
-        let removeRootNodeSub = deleteAtV rootInd updateParentIndsSubRef
-        let newSubGraphRefs   = removeRootNodeSub
-    
-        let incTotalRefNewChild
-              = incrementedTotalRef
-              & ix subInd -- this is still the old index!
-              . _childRefs
-              .~ rootChildData
+          updatedForDeletionSubNodes = decrementAfterIndex rootInd updateParentIndsSubRef
+          removeRootNodeSub = deleteAtV rootInd updatedForDeletionSubNodes
+          newSubGraphRefs   = removeRootNodeSub
+
+          updatedRootChildData    = (updatedForDeletionSubNodes ! rootInd) ^. _childRefs
+          incTotalRefNewChild
+            = incrementedTotalRef
+            & ix subInd -- this is still the old index!
+            . _childRefs
+            .~ updatedRootChildData
   
        -- This allows us to freely give temporary names to the leaves in the total graph which
        -- are then replaced when we perform the substitution
-        let oldRootName
-              =  subReferences
-              ^. (ix rootInd
-              . _nodeDecoration
-              . _nodeDecorationDatum
-                 )
+          oldRootName
+            =  subReferences
+            ^. (ix rootInd
+            . _nodeDecoration
+            . _nodeDecorationDatum
+               )
             
   
-        let renamedUpdatedTotalRefs
-               = incTotalRefNewChild
-               & ix subInd
-               . _nodeDecoration
-               . _nodeDecorationDatum
-               .~ oldRootName
+          renamedUpdatedTotalRefs
+            = incTotalRefNewChild
+            & ix subInd
+            . _nodeDecoration
+            . _nodeDecorationDatum
+            .~ oldRootName
   
-        let newTotalGraphRefs      = renamedUpdatedTotalRefs
-        let updatedReferenceVector = newSubGraphRefs <> newTotalGraphRefs
+          newTotalGraphRefs      = renamedUpdatedTotalRefs
+          updatedReferenceVector = newSubGraphRefs <> newTotalGraphRefs
   
-        let totReferenceDAG = totalGraph ^. _phylogeneticForest
+          totReferenceDAG = totalGraph ^. _phylogeneticForest
+--          updatedRootRefs =   _rootRefs %~ (fmap (\n -> n + sizeOfNewSubGraph))
 
-        let newReferenceDAG
-              = totReferenceDAG
+          newReferenceDAG
+            = totReferenceDAG
         -- TODO: fix this -->  & _graphData .~ updateGraphMetadata
-              & _references .~ updatedReferenceVector
-
-        pure $ totalGraph & _phylogeneticForest .~ newReferenceDAG
+            &  _references .~ updatedReferenceVector
+            &  _rootRefs %~ (fmap (\n -> n + sizeOfNewSubGraph))
+          updatedNamedContext = fmap (\n -> n + sizeOfNewSubGraph) namedContext
+          in
+            do
+              pure updatedNamedContext
+              pure $ totalGraph & _phylogeneticForest .~ newReferenceDAG
   
 
 substituteDAGs :: (Ord n, Show e, Show n, Monoid n) => M.Map n (PhylogeneticDAG m e n u v w x y z) -> PhylogeneticDAG m e n u v w x y z -> State (M.Map n Int) (PhylogeneticDAG m e n u v w x y z)
@@ -168,24 +177,29 @@ deleteAtV :: Int -> Vector a -> Vector a
 deleteAtV i = V.fromList . deleteAt i . toList
 
 -- |
--- This function takes an index of the deleted root node 
--- and decrements all index information of indices greater than
--- this node.
+-- This function takes an index of a deleted node and appropriately
+-- decrements all index information of indices greater than
+-- this node. This is to be used /before/ the node has been deleted.
 decrementAfterIndex :: Int -> Vector (IndexData e n) -> Vector (IndexData e n)
+{-# inline decrementAfterIndex #-}
 decrementAfterIndex ind = fmap updateIndexData
   where
     f :: Int -> Int
+    {-# INLINE f #-}
     f n = case n <= ind of
       True  -> n
       False -> n - 1
 
     updateParentRefs :: IntSet -> IntSet
+    {-# INLINE updateParentRefs #-}
     updateParentRefs = IS.map f
 
     updateChildRefs :: IntMap a -> IntMap a
+    {-# INLINE updateChildRefs #-}
     updateChildRefs = IM.mapKeys f
 
     updateIndexData :: IndexData e' n' -> IndexData e' n'
+    {-# INLINE updateIndexData #-}
     updateIndexData i = i & _parentRefs %~ updateParentRefs
                           & _childRefs  %~ updateChildRefs
 
