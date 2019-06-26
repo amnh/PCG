@@ -98,11 +98,11 @@
 
 ### Our project: Phylogenetic Component Graph (PCG)
 
- * Completely available at: 
+ * <font color="FF7417"> Completely available at:  </font> 
      
       <p align="center"> https://github.com/amnh/PCG </p>
 
- * Code statistics:
+ * <font color="FF7417"> Code statistics: </font>
 
  <table style="width:5%" "height:5%">
   <tr>
