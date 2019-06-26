@@ -169,14 +169,11 @@
 
 ### Mechanically this looks like
 
- *  <font color ="FF7417"> Devlop a falsifiable hypothesis </font>
+ * <font color ="FF7417"> Create a lot of large files</font>
 
- * <font color ="FF7417"> Create a lot of large files for input into phylogenetic software</font>
+ * <font color ="FF7417"> Set a lot of configuration options </font>
 
- *  <font color ="FF7417"> Set a lot of configuration options </font>
-
- * <font color ="FF7417"> Wait a very long time: this is <i> important, </i> it means error handling
-   must be carefully dealt with.
+ * <font color ="FF7417"> Wait a very long time</font>
 
 ---
 
@@ -184,60 +181,50 @@
 
 <font color ="FF7417"> Don't stop at the first error, collect all the errors in a given <i> phase </i>: </font>
 
-<section>
-	<pre><code data-trim data-noescape>
-data  ErrorPhase
-    = Inputing  -- ^ Cannot get information off the disk
-    | Parsing   -- ^ Cannot understand the information
-    | Unifying  -- ^ Collectively incoherent information
-    | Computing -- ^ We messed up, our bad
-    | Outputing -- ^ Cannot write out information to disk
-	</code></pre>
-</section>
-
+    data  ErrorPhase
+        = Inputing  -- ^ Cannot get information off the disk
+        | Parsing   -- ^ Cannot understand the information
+        | Unifying  -- ^ Collectively incoherent information
+        | Computing -- ^ We messed up, our bad
+        | Outputing -- ^ Cannot write out information to disk
 
 ----
 
-### Error Handling (cont.)
+### Error Handling 
 
-<font color ="FF7417"> Collect errors using `validation` package: </font>
+<font color ="FF7417"> Collect errors using `validation` package: </font> 
 
-<section> <pre><code data-trim data-noescape>
-data  Validation err a
-    = Failure err
-    | Success a
+<section><pre><code data-trim data-noescape>
+    data Either b       = Left b    | Right a
 
-instance Semigroup err => Applicative (Validation err) where
-
-    pure = Success
-
-    Failure e1 <\*> b = Failure $ case b of
-      Failure e2 -> e1 <> e2
-      Success \_ -> e1
-    Success \_  <\*> Failure e2 = Failure e2
-    Success f  <\*> Success a  = Success (f a)
+    data Validation e a = Failure e | Success a
 </code></pre></section>
 
----
+    instance Applicative (Either b) where
+        Right f <\*> r = fmap f r
+        Left  e <\*> _ = Left e
+
+    instance Semigroup e => Applicative (Validation e) where
+        Success f  <\*> r = fmap f r
+        Failure e1 <\*> b = Failure $ case b of
+          Failure e2 -> e1 <> e2
+          Success \_ -> e1
+
+----
 
 ### I/O Errors
 
 <font color ="FF7417"> Use a custom semigroup for I/O errors </font>
 
-<section> 
-  <pre><code data-trim data-noescape>
-newtype InputError = InputError (NonEmpty InputErrorMessage)
-  deriving Semigroup
+    newtype InputError = InputError (NonEmpty InputErrorMessage)
+      deriving Semigroup
 
-data InputErrorMessage = 
-      FileAlreadyInUse   FileSource
-    | FileAmbiguous      FileSource (NonEmpty FileSource)
-    | FileBadPermissions FileSource
-    | FileEmptyStream    FileSource
-    | FileUnfindable     FileSource
-  </code></pre>
-</section>
-
+    data InputErrorMessage = 
+          FileAlreadyInUse   FileSource
+        | FileAmbiguous      FileSource (NonEmpty FileSource)
+        | FileBadPermissions FileSource
+        | FileEmptyStream    FileSource
+        | FileUnfindable     FileSource
 
 ----
 
@@ -411,6 +398,16 @@ instance ExpFunctor MemoVector where
 
 <font color ="FF7417"> This allows us to build combinations of memoized vectors which are computed
 in a single pass over a graph. </font>
+
+---
+
+### Project funding provided by:
+
+  * American Museum of Natural History
+
+  * DARPA SIMPLEX
+
+  * Kleberg Foundation
 
 ---
 
