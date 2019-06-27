@@ -24,6 +24,7 @@ module Numeric.Extended.Real
   , ExtendedNumber(..)
   , Finite
   , (~==)
+  , addPositive
   ) where
 
 import Control.DeepSeq
@@ -183,6 +184,13 @@ nan = 0 / 0
 
 epsilon :: ExtendedReal
 epsilon = Cost 2.2204460492503131e-16
+
+
+-- |
+-- This function finds the sum of costs treating any negative costs as zero.
+addPositive :: ExtendedReal -> ExtendedReal -> ExtendedReal
+{-# INLINABLE addPositive #-}
+addPositive x y = max 0 x + max 0 y
 
 
 infix 4 ~==
