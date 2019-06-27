@@ -138,6 +138,24 @@ data PostorderContextualData t = PostorderContextualData
     , Traversable
     )
 
+instance Semigroup (PostorderContextualData t) where
+   (<>)
+     PostorderContextualData
+       { virtualNodeMapping    = v1
+       , contextualNodeDatum   = c1
+       , minimalNetworkContext = m1
+       }
+     PostorderContextualData
+       { virtualNodeMapping    = v2
+       , contextualNodeDatum   = c2
+       , minimalNetworkContext = m2
+       }
+    = PostorderContextualData
+        { virtualNodeMapping    = v1 <> v2
+        , contextualNodeDatum   = c1 <> c2
+        , minimalNetworkContext = m1 <> m2
+        }
+
 
 defaultPostorderContextualData :: PostorderContextualData t
 defaultPostorderContextualData =
