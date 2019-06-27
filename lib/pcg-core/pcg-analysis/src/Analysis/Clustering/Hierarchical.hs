@@ -20,14 +20,12 @@ import           AI.Clustering.Hierarchical
 import           Analysis.Clustering.Metric
 import           Bio.Graph.Constructions
 import           Bio.Graph.LeafSet
-import           Bio.Graph.Node
-import           Bio.Graph.PhylogeneticDAG
+import Bio.Graph.Node (HasSequenceDecoration(..))
 import           Bio.Sequence
 import           Control.Lens
 import           Control.Monad.ST
 import           Data.Coerce
 import           Data.DList                 (DList)
-import qualified Data.DList                 as DL (toList)
 import           Data.Monoid                (Sum (..))
 import           Data.Vector
 import           Data.Vector.Mutable        (STVector)
@@ -105,7 +103,7 @@ dendroToVectorClusters
   -> Int
   -> NE.Vector (NE.Vector a)
 {-# INLINE dendroToVectorClusters #-}
-dendroToVectorClusters d 0 = error "Cannot return zero clusers"
+dendroToVectorClusters _ 0 = error "Cannot return zero clusers"
 dendroToVectorClusters d n = case d of
     Leaf a -> pure $ pure a
     b@(Branch total _ left right) ->

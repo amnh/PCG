@@ -27,13 +27,13 @@ module Data.NodeLabel
 
 import Control.DeepSeq
 import Data.Binary
+import Data.Coerce          (coerce)
 import Data.Default
 import Data.MonoTraversable
 import Data.String          (IsString)
 import Data.Text.Short      as TS
 import GHC.Generics
 import TextShow             (TextShow (showb))
-import Data.Coerce          (coerce)
 
 
 -- |

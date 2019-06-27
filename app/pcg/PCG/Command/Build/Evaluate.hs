@@ -31,10 +31,11 @@ import           Bio.Sequence
 import           Control.Arrow                                 ((&&&))
 import           Control.DeepSeq
 import           Control.Evaluation
-import           Control.Lens hiding (_head, snoc)
-import           Control.Monad                                 (replicateM)
+import           Control.Lens                                  hiding (snoc, _head)
+import           Control.Monad                                 (foldM, replicateM)
 import           Control.Monad.IO.Class
 import           Control.Monad.Reader                          (ReaderT)
+import           Control.Monad.State.Strict
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Coerce                                   (coerce)
@@ -45,22 +46,18 @@ import qualified Data.IntSet                                   as IS
 import           Data.Key
 import           Data.List.NonEmpty                            (NonEmpty (..))
 import qualified Data.List.NonEmpty                            as NE
+import           Data.List.Utility                             (HasHead (_head))
 import qualified Data.Map                                      as M
 import           Data.NodeLabel
 import           Data.Ord                                      (comparing)
 import           Data.Semigroup.Foldable
+import           Data.ShortText.Custom
 import           Data.Vector                                   (Vector, snoc)
 import           Data.Vector.NonEmpty                          (unsafeFromVector)
 import qualified Data.Vector.NonEmpty                          as NE
+import           Data.Word
 import           Immutable.Shuffle                             (shuffleM)
 import           PCG.Command.Build
-import           Control.Monad.State.Strict
-import Control.Monad(foldM)
-import           Debug.Trace
-import Data.List.Utility (HasHead(_head))
-import Data.ShortText.Custom
-import Data.Word
-import Data.Text.Short (ShortText, toShortByteString)
 
 
 evaluate
@@ -92,10 +89,10 @@ evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
                 ClusterOption WeightedLinkage n -> cluster AC.WeightedLinkage n
                 ClusterOption WardLinkage     n -> cluster AC.WardLinkage     n
                 ClusterOption KMedians        n -> cluster AC.KMedians        n
-        case (clusterCount < 1) of
-          True  -> do
-            fail "A non-positive number was supplied to the number of BUILD trajectories."
-          False -> do
+        if clusterCount < 1 then
+          fail "A non-positive number was supplied to the number of BUILD trajectories."
+        else
+          do
             bestNetwork <- clusterLogic v trajectoryCount
             liftIO . compact . Right $ toSolution bestNetwork
 
@@ -114,7 +111,7 @@ type BuildType m =
 type ParallelBuildType m
   =  MetadataSequence m
   -> NE.NonEmpty (NE.Vector FinalCharacterNode)
-  -> NE.NonEmpty (FinalDecorationDAG)
+  -> NE.NonEmpty FinalDecorationDAG
 
 wagnerBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
@@ -147,8 +144,8 @@ clusterBuildLogic
   -> PhylogeneticSolution FinalDecorationDAG
   -> Int
   -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
-clusterBuildLogic buildMethod clusterOption numberOfClusters
-  = buildLogicMethod (clusterParallelBuild buildMethod clusterOption numberOfClusters)
+clusterBuildLogic buildMethod clusterOption totalClusters
+  = buildLogicMethod (clusterParallelBuild buildMethod clusterOption totalClusters)
 
 
 buildLogicMethod
@@ -189,7 +186,7 @@ naiveWagnerParallelBuild
      )
   => MetadataSequence m
   -> t (f FinalCharacterNode)
-  -> t (FinalDecorationDAG)
+  -> t FinalDecorationDAG
 naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
 
 
@@ -199,16 +196,16 @@ clusterParallelBuild
   -> AC.ClusterOptions
   -> Int
   -> MetadataSequence FinalMetadata
-  -> t (NE.Vector (FinalCharacterNode))
-  -> t (FinalDecorationDAG)
-clusterParallelBuild buildMethod clusterOptions numberOfClusters m
-  = parmap rpar (clusterBuildMethod buildMethod clusterOptions numberOfClusters m)
+  -> t (NE.Vector FinalCharacterNode)
+  -> t FinalDecorationDAG
+clusterParallelBuild buildMethod clusterOptions totalClusters m
+  = parmap rpar (clusterBuildMethod buildMethod clusterOptions totalClusters m)
 
 
 naiveWagnerBuild
   :: (Foldable1 f)
   => MetadataSequence m
-  -> f (FinalCharacterNode)
+  -> f FinalCharacterNode
   -> FinalDecorationDAG
 naiveWagnerBuild metaSeq ns =
    case toNonEmpty ns of
@@ -229,9 +226,7 @@ naiveWagnerBuild metaSeq ns =
                   , ( IS.singleton 1, wipeNode False y, mempty )
                   , ( IS.singleton 0, wipeNode False z, mempty )
                   ]
---          in  iterativeBuild (trace ("Leaves remaining: " <> show (length xs) <> "\n"<> show initTree) initTree) xs
           in
---            (\x -> trace ("naiveWag: " <> (show x)) x) $
             foldl' iterativeBuild initTree xs
 
   where
@@ -260,14 +255,14 @@ clusterBuildMethod
   -> MetadataSequence m
   -> NE.Vector FinalCharacterNode
   -> FinalDecorationDAG
-clusterBuildMethod buildMethod option numberOfClusters meta leafSetV
+clusterBuildMethod buildMethod option totalClusters meta leafSetV
     = parallelClusterMethod buildMethod meta clusters
   where
     leafSetId :: LeafSet (DecoratedCharacterNode Identity)
     leafSetId = coerce leafSetV
 
     clusters :: NE.Vector (NE.Vector (DecoratedCharacterNode Identity))
-    clusters = AC.clusterIntoGroups meta leafSetId option numberOfClusters
+    clusters = AC.clusterIntoGroups meta leafSetId option totalClusters
 
 
 parallelClusterMethod
@@ -278,13 +273,10 @@ parallelClusterMethod
 parallelClusterMethod buildMethod meta clusters =
   let
     finalDecClusters :: NE.Vector (NE.Vector FinalCharacterNode)
-    finalDecClusters  = -- (\x -> trace ("clusters: " <> (show $ fmap (show . length) $ x)) x) $
-      coerce clusters
+    finalDecClusters  = coerce clusters
 
     clusterTrees :: NE.Vector FinalDecorationDAG
-    clusterTrees = (\x -> trace ("cluster trees: "
-                                 <> (show $ ((^. _phylogeneticForest)) <$> x)) x) $
-      
+    clusterTrees =
       parmap rpar (buildMethod meta) finalDecClusters
   in
     subTreeMethod buildMethod meta clusterTrees
@@ -305,50 +297,40 @@ subTreeMethod buildMethod meta subTrees =
     rootCharNodes :: NE.Vector FinalCharacterNode
     rootCharNodes = unsafeFromVector rootCharNodesV
 
-    f = (toShortByteString . coerce)
-
-    rootNodeLabels :: [NodeLabel] 
-    rootNodeLabels = (\x -> trace ("rootNodes: " <> show (f <$> x)) x) $
+    rootNodeLabels :: [NodeLabel]
+    rootNodeLabels =
       M.keys subTreeDict
-    
+
     rootNodeTree :: FinalDecorationDAG
-    rootNodeTree =  (\x -> trace ("ROOT NODE TREE: "
-                                 <> (show $ ((^. _phylogeneticForest)) x)) x) $
-      
+    rootNodeTree =
       buildMethod meta rootCharNodes
 
     namedContext :: M.Map NodeLabel Int
-    namedContext = (\x -> trace ("rootNodes: " <> show (M.mapKeys f x)) x) $
+    namedContext =
       rootNodeTree `getNamedContext` rootNodeLabels
   in
-    (\x -> trace ("TOTAL TREE: "
-                                 <> (show $ ((^. _phylogeneticForest)) x)) x) $
-    (substituteDAGs subTreeDict rootNodeTree) `evalState` namedContext
+    substituteDAGs subTreeDict rootNodeTree `evalState` namedContext
   where
     getRootNode :: FinalDecorationDAG -> FinalCharacterNode
     {-# INLINE getRootNode #-}
     getRootNode dag =
       let
-        refDAG  = -- (\x -> trace ("DAG: " <> (show (length x))) x) $
-                     dag ^. _phylogeneticForest
---        refs :: FinalReferenceVector
+        refDAG  = dag ^. _phylogeneticForest
+
+        refs :: FinalReferenceVector
         refs    = refDAG ^. _references
+
         rootInd :: Int
-        rootInd = -- (\x -> trac e("rootInd: " <> (show x)) x) $
-                     refDAG ^. _rootRefs . _head
+        rootInd = refDAG ^. _rootRefs . _head
       in
         (refs ! rootInd) ^. _nodeDecoration
-
-    getRootName :: FinalDecorationDAG -> NodeLabel
-    {-# INLINE getRootName #-}
-    getRootName dag = getRootNode dag ^. _nodeDecorationDatum
 
     makeTemporaryNameDict
       :: NE.Vector FinalDecorationDAG
       -> (M.Map NodeLabel FinalDecorationDAG, Vector FinalCharacterNode)
     {-# INLINE makeTemporaryNameDict #-}
-    makeTemporaryNameDict subTrees
-        = (foldM labelSubTree (mempty, mempty) subTrees) `evalState` 0
+    makeTemporaryNameDict subT
+        = foldM labelSubTree (mempty, mempty) subT `evalState` 0
       where
         labelSubTree
           :: ( M.Map NodeLabel FinalDecorationDAG
@@ -366,7 +348,7 @@ subTreeMethod buildMethod meta subTrees =
           let newNodes     = currNodes `snoc` tempRootNode
           put (currLabel + 1)
           pure (newDict, newNodes)
-    
+
         giveTemporaryName
           :: FinalCharacterNode
           -> NodeLabel

@@ -28,7 +28,6 @@ import qualified AI.Clustering.Hierarchical       as H
 import qualified Analysis.Clustering.Hierarchical as CH
 import           Bio.Graph.Constructions
 import           Bio.Graph.LeafSet
-import           Bio.Graph.Node
 import           Bio.Sequence
 import qualified Data.Vector.NonEmpty             as NE
 
@@ -69,10 +68,10 @@ clusterIntoGroups
   -> ClusterOptions
   -> Int
   -> NE.Vector (NE.Vector (DecoratedCharacterNode f))
-clusterIntoGroups meta leafSet clusterOption numberOfClusters =
+clusterIntoGroups meta leaves clusterOption numberOfClusters =
   case clusterOption of
     Hierarchical hierarchicalOpt
-      -> CH.clusterIntoGroups meta leafSet hierarchicalOpt numberOfClusters
+      -> CH.clusterIntoGroups meta leaves hierarchicalOpt numberOfClusters
 
     Median -> error "Median clustering not yet implemented."
-    NoCluster -> error "ToDO"
+    None   -> error "ToDO"

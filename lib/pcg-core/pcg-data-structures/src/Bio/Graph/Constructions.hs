@@ -185,7 +185,7 @@ type FinalReferenceVector = Vector (IndexData EdgeAnnotation FinalCharacterNode)
 
 -- |
 -- Decoration of a phylogenetic DAG after a pre-order traversal AND after the edge data has been finalized.
-type FinalDecorationDAG = 
+type FinalDecorationDAG =
        PhylogeneticDAG
          FinalMetadata
          EdgeAnnotation

@@ -500,8 +500,8 @@ instance Semigroup d => Semigroup (GraphData d) where
     (GraphData dagCost1 networkEdgeCost1 rootingCost1 totalBlockCost1 graphMetadata1)
     (GraphData dagCost2 networkEdgeCost2 rootingCost2 totalBlockCost2 graphMetadata2)
       = GraphData
-          (dagCost1         + dagCost2        )
-          (networkEdgeCost1 + networkEdgeCost2)
+          (dagCost1         `addPositive` dagCost2)
+          (networkEdgeCost1 `addPositive` networkEdgeCost2)
           (rootingCost1     + rootingCost2    )
           (totalBlockCost1  + totalBlockCost2 )
           (graphMetadata1  <> graphMetadata2  )

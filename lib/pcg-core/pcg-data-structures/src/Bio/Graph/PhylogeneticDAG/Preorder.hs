@@ -363,7 +363,7 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
              & _graphData  %~ buildMetaData
 
     newReferences = case nodeCount of
-      1 -> singleRef <$> (dag ^. _references) 
+      1 -> singleRef <$> (dag ^. _references)
       n -> V.generate n g
       where
         g i = (refs ! i) & _nodeDecoration .~ (memo ! i)
@@ -375,7 +375,7 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
         newResolution    = pure . updateDynamicCharactersInSequence $ NE.head datumResolutions
         datumResolutions = resolutions $ nodeDecoration node
         dynCharGen m x = transformation m (RootContext x)
-        
+
         updateDynamicCharactersInSequence
            :: ResolutionInformation (CharacterSequence u1 v1 w1 x1 y1 z)
            -> ResolutionInformation (CharacterSequence u1 v1 w1 x1 y1 z')
@@ -391,7 +391,7 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                where
                  updatedDynamicCharacters :: Vector z'
                  updatedDynamicCharacters = zipWith dynCharGen (mBlock ^. dynamicBin) (cBlock ^. dynamicBin)
-      
+
     buildMetaData
       :: GraphData (PostorderContextualData (CharacterSequence u' v' w' x' y' z))
       -> GraphData (PostorderContextualData (CharacterSequence u' v' w' x' y' z'))

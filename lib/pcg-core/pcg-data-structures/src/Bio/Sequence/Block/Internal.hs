@@ -28,6 +28,7 @@ module Bio.Sequence.Block.Internal
   , HasMetricBin(..)
   , HasNonMetricBin(..)
   , HasDynamicBin(..)
+  , blockParWithStrat
   ) where
 
 import           Control.DeepSeq

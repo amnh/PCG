@@ -19,12 +19,12 @@ module Data.ShortText.Custom
   , convertToBytes
   ) where
 
-import Data.Text.Short (ShortText, fromString)
-import Data.ByteString.Short hiding (unpack)
-import Data.Text.Short.Unsafe (fromShortByteStringUnsafe)
-import Data.Word
 import Data.ByteString.Builder
-import Data.ByteString.Lazy (unpack)
+import Data.ByteString.Lazy    (unpack)
+import Data.ByteString.Short   hiding (unpack)
+import Data.Text.Short         (ShortText, fromString)
+import Data.Text.Short.Unsafe  (fromShortByteStringUnsafe)
+import Data.Word
 
 
 

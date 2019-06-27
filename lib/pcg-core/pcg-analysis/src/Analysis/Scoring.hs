@@ -15,8 +15,8 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 --{-# LANGUAGE NoMonoLocalBinds      #-}
 
@@ -43,14 +43,14 @@ import           Bio.Graph.Node.Context
 import           Bio.Graph.PhylogeneticDAG                     (setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Lens.Operators                        ((%~), (^.), (.~))
+import           Control.Lens.Operators                        ((%~), (.~), (^.))
 import           Data.Default
 import           Data.EdgeLength
 import           Data.Function                                 ((&))
+import           Data.IntMap                                   (IntMap)
 import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
 import           Data.Vector                                   (Vector)
-import Data.IntMap (IntMap)
 
 
 -- |
@@ -146,7 +146,7 @@ performDecoration x =
 
         newRefs :: FinalReferenceVector
         newRefs = setEmptyEdgeAnnotation <$> (dag ^. _references)
-        emptyEdgeAnnotation :: IntMap (EdgeAnnotation)
+        emptyEdgeAnnotation :: IntMap EdgeAnnotation
         emptyEdgeAnnotation = mempty
 
         setEmptyEdgeAnnotation :: IndexData e n -> IndexData EdgeAnnotation n

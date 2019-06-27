@@ -76,7 +76,7 @@ printAuthorList = putStrLn $ renderedHeaderLines <> renderedAuthorLines
       , ""
       ]
     renderedAuthorLines = (<>"\n\n") . intercalate "\n\n" $ fmap ("    • " <>) rawAuthorLines
-    rawAuthorLines = mempty --  $(authorsList)
+    rawAuthorLines = mempty -- $(authorsList)
 
 
 printFunderList :: IO ()
@@ -88,5 +88,5 @@ printFunderList = putStrLn $ renderedHeaderLines <> renderedFundingSources
       , ""
       ]
     renderedFundingSources = (<>"\n") . intercalate "\n\n" $ renderSource <$> rawFundingSources
-    rawFundingSources = mempty -- $(fundingList)
+    rawFundingSources = mempty --  $(fundingList)
     renderSource (src, url) = "    • " <> src <> maybe "" ("\n      › " <>) url

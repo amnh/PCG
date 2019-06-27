@@ -44,7 +44,6 @@ import           Bio.Sequence.Internal
 import           Control.DeepSeq
 import           Control.Lens
 import           Data.Foldable
-import           Data.Key
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Data.Vector.NonEmpty         (Vector)
