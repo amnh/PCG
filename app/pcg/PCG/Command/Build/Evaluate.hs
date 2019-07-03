@@ -34,11 +34,7 @@ import           Control.Evaluation
 import           Control.Lens                                  hiding (snoc, _head)
 import           Control.Monad                                 (foldM, replicateM)
 import           Control.Monad.IO.Class
-<<<<<<< HEAD
-=======
-import           Control.Monad.Reader                          (ReaderT)
 import           Control.Monad.State.Strict
->>>>>>> character-clustering
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Coerce                                   (coerce)
@@ -119,24 +115,8 @@ type ParallelBuildType m
 wagnerBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
   -> Int
-<<<<<<< HEAD
   -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
-wagnerBuildLogic v count =
-    case toList $ v ^. leafSet of
-      []   -> fail "There are no nodes with which to build a tree."
-      y:ys ->
-        if count < 1
-        then fail "A non-positive number was supplied to the number of BUILD trajectories."
-        else let (PDAG2 _ m) = NE.head . toNonEmpty . NE.head $ phylogeneticForests v
-             in  do trajectories <- case count of
-                                      1 -> pure $ (y:|ys):|[]
-                                      n -> liftIO . fmap (NE.fromList . fmap NE.fromList)
-                                             $ replicateM n (shuffleM (y:ys))
-                    pure $ naiveWagnerParallelBuild m trajectories
-=======
-  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
 wagnerBuildLogic = buildLogicMethod naiveWagnerParallelBuild
->>>>>>> character-clustering
 
 
 networkBuildLogic
@@ -162,7 +142,7 @@ clusterBuildLogic
   -> Int
   -> PhylogeneticSolution FinalDecorationDAG
   -> Int
-  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
+  -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
 clusterBuildLogic buildMethod clusterOption totalClusters
   = buildLogicMethod (clusterParallelBuild buildMethod clusterOption totalClusters)
 
@@ -171,7 +151,7 @@ buildLogicMethod
   :: ParallelBuildType FinalMetadata
   -> PhylogeneticSolution FinalDecorationDAG
   -> Int
-  -> EvaluationT (ReaderT GlobalSettings IO) (NonEmpty FinalDecorationDAG)
+  -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
 buildLogicMethod parallelBuildLogic v count =
     let
       leaves = fromLeafSet $ v ^. leafSet

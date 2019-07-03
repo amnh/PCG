@@ -11,12 +11,11 @@ extra-deps:
   - graphviz-2999.20.0.3
   - matrices-0.5.0
   - mono-traversable-keys-0.1.0
+  - perfect-vector-shuffle-0.1.0
   - pretty-tree-0.1.0.0
   - tasty-rerun-1.1.14
   - text-show-3.7.5
   - text-show-instances-3.7
-  - mono-traversable-keys-0.1.0
-  - perfect-vector-shuffle-0.1.0
   - validation-1.1
 
 #ghc-options:

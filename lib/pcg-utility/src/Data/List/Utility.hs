@@ -403,7 +403,7 @@ minimaBy cmp = foldr f []
                 GT -> es
                 LT -> [e]
 
- -- |
+-- |
 -- /O(min(n,m))/
 --
 -- Perform a simulatanous zipWith and fold where the zip function takes values
