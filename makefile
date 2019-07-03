@@ -114,11 +114,11 @@ stack-build-test: phylogenetic-component-graph.cabal stack.yaml
 	stack build --test --ta "--rerun-update"
 
 # Builds and runs integration tests after a standard build.
-stack-build-test-integration: phylogenetic-component-graph.cabal stack.yaml standard-build
+stack-build-test-integration: phylogenetic-component-graph.cabal stack.yaml stack-standard-build
 	stack build phylogenetic-component-graph:test:integration-tests
 
 # Builds and runs unit tests after a standard build.
-stack-build-test-unit: phylogenetic-component-graph.cabal stack.yaml standard-build
+stack-build-test-unit: phylogenetic-component-graph.cabal stack.yaml stack-standard-build
 	stack build phylogenetic-component-graph:test:unit-tests
 
 # Builds tests and re-runs those that failed
