@@ -1,4 +1,7 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns           #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.List.Utility
@@ -15,15 +18,18 @@
 
 module Data.List.Utility where
 
-import Data.Foldable
-import Data.Key                (Zip (..))
-import Data.List               (sort, sortBy)
-import Data.List.NonEmpty      (NonEmpty (..), nonEmpty)
-import Data.Map                (assocs, empty, insertWith)
-import Data.Maybe              (catMaybes, maybe)
-import Data.Ord                (comparing)
-import Data.Semigroup.Foldable
-import Data.Set                (insert, intersection)
+import           Control.Lens            (Lens', lens)
+import           Data.Foldable
+import           Data.Key                (Zip (..))
+import           Data.List               (sort, sortBy)
+import           Data.List.NonEmpty      (NonEmpty (..), nonEmpty)
+import qualified Data.List.NonEmpty      as NE
+import           Data.Map                (assocs, empty, insertWith)
+import           Data.Maybe              (catMaybes, maybe)
+import           Data.Ord                (comparing)
+import           Data.Semigroup.Foldable
+import           Data.Set                (insert, intersection)
+import           Prelude                 hiding (zipWith)
 
 
 -- |
@@ -396,3 +402,45 @@ minimaBy cmp = foldr f []
                 EQ -> e:es
                 GT -> es
                 LT -> [e]
+
+ -- |
+-- /O(min(n,m))/
+--
+-- Perform a simulatanous zipWith and fold where the zip function takes values
+-- in some monoid.
+foldZipWith
+  :: (Monoid m, Foldable f, Foldable t)
+  => (a -> b -> m) -> f a -> t b -> m
+foldZipWith f fa tb =
+  let
+    la = toList fa
+    lb = toList tb
+  in
+    fold (zipWith f la lb)
+
+-- |
+-- \( \mathcal{O} \left( \mathrm{min} (n_1, n_2, n_3) \right) \)
+--
+-- Perform a simulatanous zipWith3 and fold where the zip function takes values
+-- in some monoid.
+foldZipWith3
+  :: (Monoid m, Foldable f1, Foldable f2, Foldable f3)
+  => (a -> b -> c -> m) -> f1 a -> f2 b -> f3 c -> m
+foldZipWith3 f fa fb fc =
+  let
+    la = toList fa
+    lb = toList fb
+    lc = toList fc
+  in
+    fold (zipWith3 f la lb lc)
+
+-- |
+-- A class with a 'Lens' to access the head field of a structure
+class HasHead s a | s -> a where
+  _head :: Lens' s a
+
+-- |
+-- An instance of 'HasHead' for 'NonEmpty'.
+instance HasHead (NonEmpty a) a where
+  _head = lens NE.head (\ls a' -> a' :| NE.tail ls)
+

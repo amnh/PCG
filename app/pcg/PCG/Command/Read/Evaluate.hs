@@ -45,5 +45,14 @@ evaluate (ReadCommand fileSpecs) = do
                          -- (liftIO . putStrLn $ show g) $> g
   where
     transformation = id -- expandIUPAC
-    decoration     = fmap (fmap initializeDecorations2)
+
+    decoration
+      :: Validation UnificationError (Either TopologicalResult CharacterResult)
+      -> Validation UnificationError
+           (Either
+              TopologicalResult (PhylogeneticSolution FinalDecorationDAG))
+    decoration     = fmapCharDAG initializeDecorations2
+
+    fmapCharDAG = fmap . fmap
+
 

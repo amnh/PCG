@@ -19,23 +19,24 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 
 
 module Bio.Graph.LeafSet
   ( LeafSet(..)
   , HasLeafSet (..)
+  , fromLeafSet
   ) where
 
 
 import Control.Lens
-import Data.List       (union)
---import Text.Newick.Class ()
+import Data.Coerce
+import Data.Vector
 import Text.XML.Custom ()
-
 
 -- |
 -- Set of unique leaf labels.
-newtype LeafSet n = LeafSet [n]
+newtype LeafSet n = LeafSet (Vector n)
     deriving (Foldable, Functor, Show)
 
 
@@ -50,17 +51,8 @@ class HasLeafSet s a | s -> a where
 -- | (✔)
 instance Eq n => Semigroup (LeafSet n) where
 
-    (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ union lhs rhs
+    (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ (<>) lhs rhs
 
 
-{--
-instance ToXML (LeafSet (Maybe String)) where
-
-    toXML (LeafSet lst) = xmlElement "Leaf_set" attrs contents
-        where
-            attrs    = []
-            contents = [Left ("Leaves", foldr leafStr "" lst)]
-
-            leafStr input accum = case input of Just item -> item <> ", " <> accum
-                                                Nothing   -> accum
---}
+fromLeafSet :: forall n .  LeafSet n -> Vector n
+fromLeafSet = coerce

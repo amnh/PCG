@@ -42,6 +42,9 @@ module Bio.Graph.PhylogeneticDAG
   , nodePreorderFold
   , nodePostorderFold
   , setDefaultMetadata
+  -- * Substitution functions
+  , getNamedContext
+  , substituteDAGs
   ) where
 
 
@@ -52,6 +55,7 @@ import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
 import           Bio.Graph.PhylogeneticDAG.Postorder
 import           Bio.Graph.PhylogeneticDAG.Preorder
+import           Bio.Graph.PhylogeneticDAG.Substitute
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Data.Key

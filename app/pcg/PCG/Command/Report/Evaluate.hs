@@ -38,6 +38,7 @@ evaluate (ReportCommand format target) stateValue = reportStreams $> stateValue
   where
     reportStreams =
       case generateOutput stateValue format of
+<<<<<<< HEAD
            ErrorCase    errMsg  -> failWithPhase Outputing errMsg
            MultiStream  streams -> renderMultiStream streams
            SingleStream output  -> renderSingleStream target output

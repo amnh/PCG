@@ -60,7 +60,7 @@ import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
 import           Data.Vector.Instances              ()
 import qualified Data.Vector.NonEmpty               as NEV
-import           Prelude                            hiding (lookup, zip)
+import           Prelude                            hiding (lookup, zip, zipWith)
 import           TextShow
 
 
@@ -362,10 +362,35 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
          dag & _references .~ newReferences
              & _graphData  %~ buildMetaData
 
-    newReferences = V.generate nodeCount g
+    newReferences = case nodeCount of
+      1 -> singleRef <$> (dag ^. _references)
+      n -> V.generate n g
       where
         g i = (refs ! i) & _nodeDecoration .~ (memo ! i)
 
+    singleRef node = node & _nodeDecoration .~ updatedNode
+      where
+        updatedNode = (node ^. _nodeDecoration) & _resolutions .~ newResolution
+        newResolution :: ResolutionCache (CharacterSequence u' v' w' x' y' z')
+        newResolution    = pure . updateDynamicCharactersInSequence $ NE.head datumResolutions
+        datumResolutions = resolutions $ nodeDecoration node
+        dynCharGen m x = transformation m (RootContext x)
+
+        updateDynamicCharactersInSequence
+           :: ResolutionInformation (CharacterSequence u1 v1 w1 x1 y1 z)
+           -> ResolutionInformation (CharacterSequence u1 v1 w1 x1 y1 z')
+        updateDynamicCharactersInSequence resInfo
+           = resInfo { characterSequence = updatedCharacterSequence }
+           where
+             updatedCharacterSequence =
+               over blockSequence
+               (zipWith blockGen (meta ^. blockSequence))
+               $ characterSequence resInfo
+
+             blockGen mBlock cBlock = cBlock & dynamicBin .~ updatedDynamicCharacters
+               where
+                 updatedDynamicCharacters :: Vector z'
+                 updatedDynamicCharacters = zipWith dynCharGen (mBlock ^. dynamicBin) (cBlock ^. dynamicBin)
 
     buildMetaData
       :: GraphData (PostorderContextualData (CharacterSequence u' v' w' x' y' z))
