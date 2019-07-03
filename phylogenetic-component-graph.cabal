@@ -144,10 +144,7 @@ executable pcg
     th-lift-instances        >= 0.1       && < 1.0,            
     transformers             >= 0.5.5     && < 1.0,
     validation               >= 1.1       && < 2.0,
-<<<<<<< HEAD
-=======
     vector                   >= 0.12.0.2  && < 0.13,
->>>>>>> character-clustering
     xml                      >= 1.3.14    && < 1.4,
 
   other-modules:
