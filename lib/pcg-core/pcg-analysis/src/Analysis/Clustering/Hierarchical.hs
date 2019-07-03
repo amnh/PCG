@@ -13,6 +13,8 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE PatternSynonyms  #-}
 
 module Analysis.Clustering.Hierarchical where
 
@@ -27,11 +29,15 @@ import           Control.Monad.ST
 import           Data.Coerce
 import           Data.DList                 (DList)
 import           Data.Monoid                (Sum (..))
-import           Data.Vector
-import           Data.Vector.Mutable        (STVector)
-import qualified Data.Vector.Mutable        as MV
+import           Data.Vector hiding (length, toList)
 import qualified Data.Vector.NonEmpty       as NE
-
+import VectorBuilder.Builder (Builder)
+import qualified VectorBuilder.Builder as VB
+import VectorBuilder.Vector (build)
+import Prelude hiding (length)
+import Data.Foldable
+import Data.Clustering.Hierarchical as H
+import Debug.Trace
 
 clusterLeaves
   :: forall f m . (Applicative f, Foldable f)
@@ -43,7 +49,7 @@ clusterLeaves
 clusterLeaves meta leaves opt = dendro
   where
     leafSetVector :: Vector (DecoratedCharacterNode f)
-    leafSetVector = fromLeafSet leaves
+    leafSetVector = force $ fromLeafSet leaves
 
     distance :: DecoratedCharacterNode f -> DecoratedCharacterNode f -> Double
     distance node1 node2 =
@@ -54,7 +60,8 @@ clusterLeaves meta leaves opt = dendro
         getSum $ characterSequenceDistance @f meta charSeq1 charSeq2
 
     dendro :: Dendrogram (DecoratedCharacterNode f)
-    dendro = hclust opt leafSetVector distance
+    dendro =
+      hclust opt (toList leafSetVector) distance
 
 
 clusterShuffle
@@ -73,7 +80,8 @@ clusterIntoGroups
   -> Linkage
   -> Int
   -> NE.Vector (NE.Vector (DecoratedCharacterNode f))
-clusterIntoGroups meta leaves link = dendroToVectorClusters dendro
+clusterIntoGroups meta leaves link n =
+    dendroToVectorClusters dendro n
   where
     dendro = clusterLeaves meta leaves link
 
@@ -87,7 +95,14 @@ dendroToList = \case
 dendroToVector
   :: Dendrogram a
   -> Vector a
-dendroToVector dendro = create $ dendroToMVector dendro
+dendroToVector = foldMap pure
+--    build . vectorBuilder
+--  where
+--    vectorBuilder :: Dendrogram a -> Builder a
+--    vectorBuilder = \case
+--      Leaf a -> VB.singleton a
+--      Branch _ _ d1 d2 -> vectorBuilder d1 <> vectorBuilder d2
+  -- create $ dendroToMVector dendro
 
 
 dendroToNonEmptyVector
@@ -103,31 +118,39 @@ dendroToVectorClusters
   -> Int
   -> NE.Vector (NE.Vector a)
 {-# INLINE dendroToVectorClusters #-}
-dendroToVectorClusters _ 0 = error "Cannot return zero clusers"
+dendroToVectorClusters _ 0 = error "Cannot return zero clusters"
 dendroToVectorClusters d n = case d of
     Leaf a -> pure $ pure a
-    b@(Branch total _ left right) ->
+    b@(Branch totalNumber _ leftTree rightTree) ->
       case n of
         1 -> pure $ dendroToNonEmptyVector b
         k ->
           let
-            lSize, tSize, k' :: Double
-            lSize = fromIntegral (size left)
-            tSize = fromIntegral total
-            k'    = fromIntegral k
+            leftSize, rightSize, totalSize, k' :: Double
+            leftSize = fromIntegral $ size leftTree
+            totalSize = fromIntegral totalNumber
+            rightSize = fromIntegral $ size rightTree
+            k' = fromIntegral k
+            
+            reOrder = if rightSize > leftSize then (\(a,b) -> (b,a)) else id
+            (largerTree, smallerTree) = reOrder (leftTree, rightTree)
+            (largerSize, smallerSize) = reOrder (leftSize, rightSize)
+            
 
-            leftAmount :: Int
-            leftAmount = floor . (* k') $ lSize / tSize
-            rightAmount :: Int
-            rightAmount = k - leftAmount
+            largerAmount :: Int
+            largerAmount = floor . (* k') $ largerSize / totalSize
+            smallerAmount :: Int
+            smallerAmount = k - largerAmount
+            
 
-            leftClusters  =  dendroToVectorClusters left leftAmount
-            rightClusters = dendroToVectorClusters right rightAmount
+            largerClusters  =  dendroToVectorClusters largerTree  largerAmount
+            smallerClusters =  dendroToVectorClusters smallerTree smallerAmount
           in
-            if rightAmount == 0
-            then leftClusters
-            else leftClusters <> rightClusters
+            if smallerAmount == 0
+            then largerClusters
+            else largerClusters <> smallerClusters
 
+{-
 dendroToMVector
   :: forall a s
   .  Dendrogram a
@@ -172,5 +195,4 @@ unsafeAppendMVector tot sl v1 v2 =
     MV.copy (MV.drop sl result) v2
     pure result
 
-
-
+-}
