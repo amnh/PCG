@@ -154,6 +154,7 @@ substituteDAGs namedSubGraphs totalGraph =
 
 
 deleteAt :: Int -> [a] -> [a]
+{-# INLINE deleteAt #-}
 deleteAt i ls
   | i < 0 = ls
   | otherwise = go i ls
@@ -161,11 +162,11 @@ deleteAt i ls
     go 0 (_:xs) = xs
     go n (x:xs) = x : go (n-1) xs
     go _ []     = []
-{-# INLINE deleteAt #-}
+
 
 deleteAtV :: Int -> Vector a -> Vector a
 {-# INLINE deleteAtV #-}
-deleteAtV i = V.fromList . deleteAt i . toList
+deleteAtV i = V.force . V.fromList . deleteAt i . toList
 
 -- |
 -- This function takes an index of a deleted node and appropriately
