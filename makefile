@@ -160,7 +160,7 @@ install-cabal:
 
 
 cabal-setup: phylogenetic-component-graph.cabal cabal.project
-	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests
+	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests --with-compiler=ghc-8.6.5
 
 # Builds with no extra generated features and no optimizations
 cabal-build-quick: phylogenetic-component-graph.cabal cabal.project
