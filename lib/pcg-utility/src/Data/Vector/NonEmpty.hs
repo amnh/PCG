@@ -15,6 +15,10 @@
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
@@ -31,10 +35,12 @@ module Data.Vector.NonEmpty
   , unsafeFromVector
   -- * Deconstruction
   , uncons
+  -- * Evaluation
+  , force
   ) where
 
 
-import           Control.DeepSeq
+import           Control.DeepSeq hiding (force)
 import qualified Control.Foldl              as L
 import           Data.Data
 import           Data.Foldable
@@ -53,6 +59,7 @@ import           Data.Vector.Instances      ()
 import           Test.QuickCheck            hiding (generate)
 import           TextShow                   (TextShow)
 import           TextShow.Instances         ()
+import Data.Coerce
 
 
 -- |
@@ -239,3 +246,7 @@ uncons (NEV v) = (first, stream)
       | otherwise = Just . NEV $ V.slice 1 (len-1) v
     first = v ! 0
     len   = length v
+
+
+force :: forall a . Vector a -> Vector a
+force = coerce $ V.force @a
