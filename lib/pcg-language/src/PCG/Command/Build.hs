@@ -104,10 +104,10 @@ clusterLabelType =
       ]
       `withDefault` NoCluster
   where
-    noCluster       = value "no-cluster"       $> NoCluster
-    singleLinkage   = value "single-linkage "  $> SingleLinkage
-    completeLinkage = value "complete-linkage" $> CompleteLinkage
-    upgmaLinkage    = value "upgma-linkage"    $> UPGMALinkage
-    weightedLinkage = value "weighted-linkage" $> WeightedLinkage
-    wardLinkage     = value "ward-linkage"     $> WardLinkage
-    kMedians        = value "k-medians"        $> KMedians
+    noCluster       = value "no-cluster" $> NoCluster
+    singleLinkage   = value "single "    $> SingleLinkage
+    completeLinkage = value "complete"   $> CompleteLinkage
+    upgmaLinkage    = value "upgma"      $> UPGMALinkage
+    weightedLinkage = value "weighted"   $> WeightedLinkage
+    wardLinkage     = value "ward"       $> WardLinkage
+    kMedians        = value "k-medians"  $> KMedians
