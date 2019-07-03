@@ -14,10 +14,10 @@
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
@@ -40,8 +40,9 @@ module Data.Vector.NonEmpty
   ) where
 
 
-import           Control.DeepSeq hiding (force)
+import           Control.DeepSeq            hiding (force)
 import qualified Control.Foldl              as L
+import           Data.Coerce
 import           Data.Data
 import           Data.Foldable
 import           Data.Functor.Alt
@@ -59,7 +60,6 @@ import           Data.Vector.Instances      ()
 import           Test.QuickCheck            hiding (generate)
 import           TextShow                   (TextShow)
 import           TextShow.Instances         ()
-import Data.Coerce
 
 
 -- |
