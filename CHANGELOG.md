@@ -7,6 +7,8 @@ Releases are available [on GitHub][2].
 
 ## _v0.2.0_ - Unreleased Changes
 
+* Fixed defect with decorating single node graphs
+* Added new option to perform hierarchical clustering in wagner build options
 * Using semantic versioning
 * Modularized sub-libraries
 * Reorganized build process
