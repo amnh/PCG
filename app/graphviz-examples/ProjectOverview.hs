@@ -1,8 +1,5 @@
-{-# LANGUAGE LambdaCase #-}
-
 module ProjectOverview where
 
-import           Data.Foldable
 import qualified Data.GraphViz                     as G
 import qualified Data.GraphViz.Attributes.Complete as G
 import qualified Data.Text.Lazy                    as TL
@@ -36,32 +33,26 @@ type Network = ([Node], [Edge])
 -- Parameters for how to render a display tree for a network.
 networkGraphParameters
  :: G.GraphvizParams
-       String          -- vertex type
-       ()              -- vertex label type
+       String -- vertex type
+       ()     -- vertex label type
        ()     -- edge label type
-       ()              -- cluster type
-       ()              -- cluster label type
-networkGraphParameters = G.defaultParams {
-    G.fmtNode = const $  colorAttribute  green <> box
-    ,
-    G.fmtEdge = const $ colorAttribute blue
+       ()     -- cluster type
+       ()     -- cluster label type
+networkGraphParameters = G.defaultParams
+    { G.fmtNode = const $ colorAttribute green <> box
+    , G.fmtEdge = const $ colorAttribute blue
     }
   where
     colorAttribute color = [ G.Color $ G.toColorList [color] ]
-    black = G.RGB 0 0 0
-    blue   = G.RGB 30 144 255
-    green = G.RGB 0 100 0
-    red  = G.RGB 204 2 2
-    dotted = [G.Style [G.SItem G.Dashed mempty]]
-    noArrow = [G.ArrowHead $ G.AType [(G.noMods, G.NoArrow)]]
-    point = [G.Shape G.PointShape]
-    box   = [G.Shape G.BoxShape] <> [G.Area 0.5]
-
+    blue    = G.RGB 30 144 255
+    green   = G.RGB 0 100 0
+    box     = [G.Shape G.BoxShape] <> [G.Area 0.5]
 
 
 --------------------------------------
 --            Examples              --
 --------------------------------------
+
 
 -- |
 -- A high-level diagram of our project
@@ -78,7 +69,7 @@ projectOverview =
     nodes :: [Node]
     nodes = node <$>
              [inputLayer, scriptingLanguage, parsing, unification, treeSearch, serialisation]
-            
+
 
     edges :: [Edge]
     edges = edge <$>

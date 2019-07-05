@@ -11,6 +11,7 @@
 -- Typeclas for a parsed sequence
 --
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}

@@ -12,12 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE OverloadedStrings  #-}
-{-# LANGUAGE UnboxedSums        #-}
+{-# LANGUAGE DeriveAnyClass    #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UnboxedSums       #-}
 
 module Data.FileSource.OutputStreamError
   ( OutputStreamError()
@@ -29,8 +28,6 @@ module Data.FileSource.OutputStreamError
   ) where
 
 import Control.DeepSeq    (NFData)
---import           Data.Coerce               (Coercible, coerce)
---import           Data.Data                 (Data)
 import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty hiding (toList)

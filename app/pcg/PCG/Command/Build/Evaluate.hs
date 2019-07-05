@@ -59,6 +59,18 @@ import           Immutable.Shuffle                             (shuffleM)
 import           PCG.Command.Build
 
 
+type BuildType m =
+     MetadataSequence m
+  -> NE.Vector FinalCharacterNode
+  -> FinalDecorationDAG
+
+
+type ParallelBuildType m
+  =  MetadataSequence m
+  -> NE.NonEmpty (NE.Vector FinalCharacterNode)
+  -> NE.NonEmpty FinalDecorationDAG
+
+
 evaluate
   :: BuildCommand
   -> GraphState
@@ -102,15 +114,6 @@ evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
     clusterCount :: Int
     clusterCount = numberOfClusters clusterType
 
-type BuildType m =
-     MetadataSequence m
-  -> NE.Vector FinalCharacterNode
-  -> FinalDecorationDAG
-
-type ParallelBuildType m
-  =  MetadataSequence m
-  -> NE.NonEmpty (NE.Vector FinalCharacterNode)
-  -> NE.NonEmpty FinalDecorationDAG
 
 wagnerBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
@@ -128,6 +131,7 @@ networkBuildLogic v _ = do
     liftIO $ putStrLn "Beginning network construction."
     pure $ parmap rpar iterativeNetworkBuild bestTrees
 --  pure $ fmap iterativeNetworkBuild bestTrees
+
 
 forestBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
@@ -231,17 +235,16 @@ naiveWagnerBuild metaSeq ns =
   where
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
+
 naiveNetworkBuild
-  :: Foldable1 f
-  => MetadataSequence m
+  :: MetadataSequence m
   -> f FinalCharacterNode
   -> FinalDecorationDAG
 naiveNetworkBuild = error "Naive network build not yet implemented!"
 
 
 naiveForestBuild
-  :: Foldable1 f
-  => MetadataSequence m
+  :: MetadataSequence m
   -> f FinalCharacterNode
   -> FinalDecorationDAG
 naiveForestBuild = error "Naive forest build not yet implemented!"

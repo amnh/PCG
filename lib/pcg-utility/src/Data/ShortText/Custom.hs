@@ -40,11 +40,13 @@ intToShortText = fromString . show
 makeIllegalShortText :: Word64 -> ShortText
 makeIllegalShortText = fromShortByteStringUnsafe . makeNonUTFByteString
 
+
 -- |
 -- Creates a ByteString which is invalid UTF8
 makeNonUTFByteString :: Word64 -> ShortByteString
-                        -- 192 is not allowed as a starting code point in UTF-8
-makeNonUTFByteString = pack . (\bytes -> 192 : bytes) . convertToBytes
+makeNonUTFByteString = pack . (badByte:) . convertToBytes
+  where
+    badByte = 192 -- 192 is not allowed as a starting code point in UTF-8
 
 
 convertToBytes :: Word64 -> [Word8]

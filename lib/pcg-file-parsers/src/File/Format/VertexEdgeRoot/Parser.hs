@@ -13,12 +13,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ApplicativeDo      #-}
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE ApplicativeDo    #-}
+{-# LANGUAGE DeriveAnyClass   #-}
+{-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.VertexEdgeRoot.Parser
   ( VertexLabel

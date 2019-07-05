@@ -1,7 +1,5 @@
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 
 module PCG.CommandLineOptions.Display
   ( gatherDisplayInformation
@@ -17,7 +15,6 @@ import Data.Semigroup               ((<>))
 import Data.Text                    hiding (filter, intersperse, replicate)
 import Data.Text.IO
 import PCG.CommandLineOptions.Types
-import PCG.Software.Credits
 import PCG.Software.Metadata
 import Prelude                      hiding (putStrLn, unlines, unwords)
 import System.ErrorPhase

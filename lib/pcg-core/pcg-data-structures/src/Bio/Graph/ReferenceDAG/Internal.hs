@@ -1325,7 +1325,7 @@ getDotContext uniqueIdentifierBase mostSignificantDigit dag =
     toAttributes :: TextShow a => a -> Attributes
     toAttributes x =
       let txt = showt x
-      in  if T.null txt then [] else [ toLabel $ T.unpack txt ]
+      in  [ toLabel $ T.unpack txt | not (T.null txt) ]
 
     f :: TextShow n => Int -> IndexData e n -> [(DotNode GraphID, [DotEdge GraphID])]
     f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]
