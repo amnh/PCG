@@ -1,8 +1,6 @@
 allow-newer: true
 
-#compiler: ghc-8.6.5
-#compiler: ghc-8.8.1
-compiler: 8.8.0.20190613
+compiler: ghc-8.8.0.20190613
 
 compiler-check: match-exact
 
@@ -18,14 +16,32 @@ extra-deps:
   - text-show-instances-3.7
   - mono-traversable-keys-0.1.0
   - validation-1.1
-  - git: git@github.com:haskell/cabal
-    commit: 9c31d9c760468719c881d0f137c66e62b02a1164
-  - git: git@github.com:haskell/primitive
-    commit: 47c4341f4e0f6fbbc3c53f23ca71e588c9515e6d
-  - git: git@github.com:nick8325/quickcheck
-    commit: c963bec774dbb92e1a49b66e21365eae70989981
-  - git: git@github.com:GaloisInc/cereal
+  - git: https://github.com/haskell/cabal
+    commit: 27221efc89e25069f3ded141310aa0e63df9d8f5
+    subdirs:
+    - Cabal
+  - git: https://github.com/phadej/cabal-doctest
+    commit: 0db20e302caf205ce1e0ab960df8e0b63b7921f3
+  - git: https://github.com/GaloisInc/cereal
     commit: 3396176a36284d7aa53ffcb34a905a91a576832c
+  - git: https://github.com/spl/dlist
+    commit: 66dd57cc124df917f8cb1ae6eb1e6092ec18eea2
+  - git: https://github.com/monadfix/microlens
+    commit: 537b9a55f158b375f76f2abda455319772277694
+    subdirs:
+    - microlens
+  - git: https://github.com/pcapriotti/optparse-applicative
+    commit: 114e6ecaf390120508bca0f99c6f4fd4f5d0b233
+  - git: https://github.com/Gabriel439/Haskell-Pipes-Library
+    commit: 37e4b33b24c4b0dfb26d424bced00af6f4c11333
+  - git: https://github.com/haskell/primitive
+    commit: 47c4341f4e0f6fbbc3c53f23ca71e588c9515e6d
+  - git: https://github.com/nick8325/quickcheck
+    commit: af14a56beda3bb02239ffb0ef7f8e9b393fec8e4
+  - git: https://github.com/phadej/qc-instances
+    commit: d39d60ed0a9673073d2a8e67947a7c7d99ffb41f
+  - git: https://github.com/glguy/th-abstraction
+    commit: 00fcd437f35c3049ccca70ff644bdf38e8dce8d0
 
 #ghc-options:
 #  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively -fexpose-all-unfoldings
@@ -49,11 +65,9 @@ packages:
   - lib/pcg-utility
   - lib/pcg-validation-transformer
 
-require-stack-version: ">=1.9.1"
+require-stack-version: ">=2.1.1"
 
-#resolver: lts-13.23
-resolver: nightly-2019-05-30
-#resolver: ghc-8.8.0.20190424
+resolver: nightly-2019-07-04
 
 setup-info:
   ghc:
@@ -62,28 +76,24 @@ setup-info:
             url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-i386-deb9-linux.tar.xz"
             content-length: 204060792
             sha1: 0fe7fc95073602078e0677ae623dd02f46ae3a5b
-            sha256: 77d23afaf035775c99b48f0c78117a8073682dde3c6104b8ced4d5d062287772
     macosx:
         8.8.0.20190613:
             url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-apple-darwin.tar.xz"
             content-length: 184846152
             sha1: 116bdaadcde045f78adcf1ffce291c79fb1c3eb6
-            sha256: 04b5b4dc35db2bc26f5e4d46946409a5d21f47a7923bf69ee31b093b7e71e889
     linux64:
         8.8.0.20190613:
             url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-deb9-linux.tar.xz"
             content-length: 199898532
             sha1: 11360a17f61da02c82d0f64f07e124479cedecc4
-            sha256: ff532d0b700fcd9c5343a942eab35450cd9d70ce5c5064ca4dfe7af94b05616e
     linux64-tinfo6:
         8.8.0.20190613:
             url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-fedora27-linux.tar.xz"
             content-length: 201560804
             sha1: 07eb8ab473f2aa3c21ac2b497142a01466ace5ee
-            sha256: cf972265333244c8648b99fd1bcf90e1a3e7b5335c0a418f6bc9849382de8f48
     windows64:
         8.8.0.20190613:
             url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-unknown-mingw32.tar.xz"
             content-length: 224468920
             sha1: b4a3b2b45625eb32dd7f892246da9a602d9ce7db
-sha256: 83b4c89d01c711c0f64bcc5abda287678c027b1b0d44ada17036917aeae588eb
+
