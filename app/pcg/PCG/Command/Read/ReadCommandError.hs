@@ -24,6 +24,7 @@ module PCG.Command.Read.ReadCommandError
   , unparsable
   ) where
 
+
 import Control.DeepSeq                  (NFData)
 import GHC.Generics                     (Generic)
 --import Data.Data

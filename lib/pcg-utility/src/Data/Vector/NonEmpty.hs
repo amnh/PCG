@@ -14,12 +14,16 @@
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
+
 
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 
 module Data.Vector.NonEmpty
-  ( Vector()
+  ( Vector(..)
   -- * Construction
   , fromNonEmpty
   , generate
@@ -28,13 +32,17 @@ module Data.Vector.NonEmpty
   -- * Conversion
   , toVector
   , fromVector
+  , unsafeFromVector
   -- * Deconstruction
   , uncons
+  -- * Evaluation
+  , force
   ) where
 
 
-import           Control.DeepSeq
+import           Control.DeepSeq            hiding (force)
 import qualified Control.Foldl              as L
+import           Data.Coerce
 import           Data.Data
 import           Data.Foldable
 import           Data.Functor.Alt
@@ -206,11 +214,24 @@ toVector = unwrap
 -- |
 -- /O(1)/
 --
--- Attempt to conver a 'V.Vector' to a non-empty 'Vector'.
+-- Attempt to convert a 'V.Vector' to a non-empty 'Vector'.
 fromVector :: V.Vector a -> Maybe (Vector a)
 fromVector v
   | V.null v  = Nothing
   | otherwise = Just $ NEV v
+
+
+-- |
+-- /O(1)/
+--
+-- Attempt to convert a 'V.Vector' to a non-empty 'Vector' throwing an
+-- error if the vector received is empty.
+unsafeFromVector :: V.Vector a -> Vector a
+unsafeFromVector v
+  | V.null v  = error "NonEmpty.unsafeFromVector: empty vector"
+  | otherwise = NEV v
+
+
 
 
 -- | /O(n)/
@@ -225,3 +246,7 @@ uncons (NEV v) = (first, stream)
       | otherwise = Just . NEV $ V.slice 1 (len-1) v
     first = v ! 0
     len   = length v
+
+
+force :: forall a . Vector a -> Vector a
+force = coerce $ V.force @a

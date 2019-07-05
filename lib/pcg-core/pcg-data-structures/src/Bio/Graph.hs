@@ -17,16 +17,24 @@
 module Bio.Graph
   ( CharacterResult
   , CharacterDAG
+  , CharacterNode
   , DecoratedCharacterResult
+  , DecoratedCharacterNode
+  , EdgeAnnotation
   , FinalDecorationDAG
+  , FinalCharacterNode
+  , FinalCharacterSequence
+  , FinalMetadata
+  , FinalReferenceVector
   , GlobalSettings
   , GraphState
+  , HasPhylogeneticForest(..)
   , PhylogeneticFreeDAG(..)
   , PhylogeneticDAG(..)
   , PhylogeneticDAGish(..)
   , PhylogeneticForest(..)
   , PhylogeneticSolution(..)
-  , PreOrderDecorationDAG
+  , PreorderDecorationDAG
   , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
@@ -63,6 +71,9 @@ module Bio.Graph
   , nodePostorderMap
   , nodePreorderFold
   , nodePostorderFold
+  -- * Substitution functions
+  , getNamedContext
+  , substituteDAGs
   ) where
 
 
