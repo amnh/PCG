@@ -9,7 +9,7 @@
 
 ## <span class="w"> Phylogenetic Software </span> </br> <span class="w"> in Haskell </span>
 
-<span class="w"> Alex Washburn, Callan McGill </span> </br>
+<span class="w"> Callan McGill, Alex Washburn </span> </br>
 <span class="w"> Ward Wheeler </span>
 
 ![American Museum of Natural History](amnh-logo.png)
@@ -90,7 +90,7 @@
 ### Problems of phylogenetics (Cont.)
 
 <p>
- <b> <font color ="F9FAE1"> Generalized Tree Alignment Problem (GTAP) : </font> </b>  <font color="FF7417"> Among all possible trees and all possible extensions find those which minimise the overall cost. </font>
+ <b> <font color ="F9FAE1"> Generalized Tree Alignment Problem (GTAP) : </font> </b>  <font color="FF7417"> Among all possible trees and all possible extensions find those which minimize the overall cost. </font>
 </p>
  <font color="#50CB78"> (This is extra NP-hard.) </font>
 
@@ -195,7 +195,9 @@
 <font color ="FF7417"> Collect errors using `validation` package: </font> 
 
 <section><pre><code data-trim data-noescape>
-    data Either b       = Left b    | Right a
+    type
+    
+    data Either b a     = Left b    | Right a
 
     data Validation e a = Failure e | Success a
 </code></pre></section>
