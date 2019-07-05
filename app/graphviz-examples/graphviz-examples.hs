@@ -6,11 +6,11 @@ import           System.Directory (createDirectoryIfMissing, setCurrentDirectory
 
 import qualified DisplayTree      as DT
 import qualified NetworkEdges     as NE
+import qualified ProjectOverview  as PO
 
 
 main :: IO ()
 main = do
-    putStrLn "Graph"
     createDirectoryIfMissing False "graphviz-examples"
     setCurrentDirectory "graphviz-examples"
     createDirectoryIfMissing False "networks"
@@ -20,3 +20,8 @@ main = do
     createDirectoryIfMissing False "display-trees"
     setCurrentDirectory "display-trees"
     traverse_ DT.makeDotFile DT.displayTrees
+    setCurrentDirectory ".."
+    createDirectoryIfMissing False "project"
+    setCurrentDirectory "project"
+    traverse_ PO.makeDotFile PO.overview
+

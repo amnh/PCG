@@ -13,47 +13,44 @@
 -----------------------------------------------------------------------------
 
 module Control.Evaluation
-  ( EvaluationT(..)
+  ( EvaluationT()
   , Evaluation()
+  , EvaluationResult()
   , Notification(..)
   , ErrorPhase(..)
-  , evalEither
-  , evalIO
-  , evaluation
+  -- * Run evaluation
+  , runEvaluation
+  , runEvaluationT
+  -- * Elimination function
+  , evaluateResult
+  -- * Evaluation constructors
+  , evaluateEither
   , failWithPhase
-  , impure
-  , notifications
-  , state
+  -- * Rendering
   , showRun
   ) where
 
-import Control.Evaluation.Internal
+import Control.Evaluation.Notification
+import Control.Evaluation.Result
 import Control.Evaluation.Trans
-import Control.Evaluation.Unit
 import Data.Text.Lazy
 
 
 -- |
--- Synonym for 'impure'
-evalIO :: IO a -> EvaluationT IO a
-evalIO = impure
-
-
--- |
 -- Lifts an 'Either' with a `Show` error condition into the 'Evaluation' context.
-evalEither :: Show s => Either s b -> Evaluation b
-evalEither (Left  e) = fail $ show e
-evalEither (Right x) = pure x
+evaluateEither :: Show s => Either s b -> Evaluation r b
+evaluateEither (Left  e) = fail $ show e
+evaluateEither (Right x) = pure x
 
 
 -- |
 -- Elimination function for the 'Evaluation' type.
-evaluation
+evaluateResult
   :: (ErrorPhase -> Text -> b) -- ^ How to consume the error message when an error has occured
   -> (a -> b)                  -- ^ How to transform the stored value
-  -> Evaluation a
+  -> EvaluationResult a
   -> b
-evaluation err val (Evaluation _ x) =
-    case runEvalUnit x of
+evaluateResult err val x =
+    case runEvaluationResult x of
       Left  (p,s) -> err p s
       Right v     -> val v

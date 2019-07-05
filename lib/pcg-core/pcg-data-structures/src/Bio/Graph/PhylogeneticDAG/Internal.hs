@@ -44,6 +44,7 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , HasMinimalNetworkContext(..)
   , HasVirtualNodeMapping(..)
   , setDefaultMetadata
+  , zeroPhylogeneticGraphData
   ) where
 
 
@@ -137,6 +138,36 @@ data PostorderContextualData t = PostorderContextualData
     , Traversable
     )
 
+instance Semigroup (PostorderContextualData t) where
+   (<>)
+     PostorderContextualData
+       { virtualNodeMapping    = v1
+       , contextualNodeDatum   = c1
+       , minimalNetworkContext = m1
+       }
+     PostorderContextualData
+       { virtualNodeMapping    = v2
+       , contextualNodeDatum   = c2
+       , minimalNetworkContext = m2
+       }
+    = PostorderContextualData
+        { virtualNodeMapping    = v1 <> v2
+        , contextualNodeDatum   = c1 <> c2
+        , minimalNetworkContext = m1 <> m2
+        }
+
+
+defaultPostorderContextualData :: PostorderContextualData t
+defaultPostorderContextualData =
+  PostorderContextualData
+    { virtualNodeMapping    = mempty
+    , contextualNodeDatum   = mempty
+    , minimalNetworkContext = Nothing
+    }
+
+
+zeroPhylogeneticGraphData :: GraphData (PostorderContextualData t)
+zeroPhylogeneticGraphData = zeroGraphMetadataWith defaultPostorderContextualData
 
 -- | (✔)
 instance NFData t => NFData (PostorderContextualData t)
@@ -214,9 +245,9 @@ instance HasMinimalNetworkContext (PostorderContextualData t) (Maybe (NonEmpty (
 
 instance HasPhylogeneticForest
            (PhylogeneticDAG m e n u v w x y z)
-           (PhylogeneticDAG m e n u' v' w' x' y' z')
+           (PhylogeneticDAG m e' n' u' v' w' x' y' z')
            (ReferenceDAG (PostorderContextualData (CharacterSequence u v w x y z)) e (PhylogeneticNode (CharacterSequence u v w x y z) n))
-           (ReferenceDAG (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e (PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n)) where
+           (ReferenceDAG (PostorderContextualData (CharacterSequence u' v' w' x' y' z')) e' (PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n')) where
 
     {-# INLINE _phylogeneticForest #-}
     _phylogeneticForest = lens phylogeneticForest (\p pf -> p {phylogeneticForest = pf})

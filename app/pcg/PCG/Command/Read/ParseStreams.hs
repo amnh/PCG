@@ -23,6 +23,7 @@ module PCG.Command.Read.ParseStreams
 import           Control.Monad.Trans.Validation
 import           Data.Alphabet
 import           Data.Bifunctor                    (first)
+import           Data.Char                         (toLower)
 import           Data.FileSource
 import           Data.Foldable
 import           Data.Functor
@@ -41,6 +42,7 @@ import           Data.Normalization.Topology
 import           Data.Ord                          (comparing)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.String                       (IsString (fromString))
 import           Data.TCM                          (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                          as TCM
 import           Data.Unification

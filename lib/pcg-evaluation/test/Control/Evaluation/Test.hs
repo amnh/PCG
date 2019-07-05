@@ -13,12 +13,12 @@ module Control.Evaluation.Test
 import Control.Arrow            ((***))
 import Control.DeepSeq
 import Control.Evaluation
-import Control.Evaluation.Unit
 import Control.Monad            (void)
 import Control.Monad.Fail       (MonadFail)
 import Control.Monad.Logger     (Logger (..))
 import Control.Monad.Trans      (MonadTrans (..))
 import Control.Monad.Zip        (MonadZip (..))
+import Data.Bifunctor           (bimap)
 import Data.Foldable
 import Data.Functor.Alt         (Alt (..))
 import Data.Functor.Apply       (Apply (..))
@@ -35,90 +35,70 @@ import Test.Tasty.QuickCheck    hiding ((=/=))
 -- This alias exists for brevity in type signatures
 type W = Word
 
+-- |
+-- This alias exists for brevity in type signatures
+type M = Maybe
+
 
 testSuite :: TestTree
-testSuite = testGroup "Evaluation Monad"
-    [ evalUnitLaws
-    , evaluationLaws
+testSuite = testGroup "Computational Evaluation Monad"
+    [ notificationLaws
+    , evaluationResultLaws
     , evaluationTLaws
     ]
 
 
-evalUnitLaws :: TestTree
-evalUnitLaws = testGroup "EvalUnit"
--- Basic control structures
-    [ functorLaws        @EvalUnit
-    , applicativeLaws    @EvalUnit
-    , monadLaws          @EvalUnit
--- Extended control structures
-    , monadFailLaws      @EvalUnit
-    , monadZipLaws       @EvalUnit
--- Refined control structures
-    , altLaws            @EvalUnit
-    , applyLaws          @EvalUnit
-    , bindLaws           @EvalUnit
--- Ordered container structures
-    , foldableLaws       @EvalUnit
-    , traversableLaws    @EvalUnit
--- Data structures
-    , equalityLaws       @(EvalUnit W)
-    , normalFormDataLaws @(EvalUnit W)
-    , orderingLaws       @(EvalUnit W)
-    , semigroupLaws      @(EvalUnit W)
-    , showProperties     @(EvalUnit W)
+notificationLaws :: TestTree
+notificationLaws = testGroup "Notification"
+    [ equalityLaws       @Notification
+    , normalFormDataLaws @Notification
+    , orderingLaws       @Notification
+    , showProperties     @Notification
     ]
 
 
-evaluationLaws :: TestTree
-evaluationLaws = testGroup "Evaluation"
+evaluationResultLaws :: TestTree
+evaluationResultLaws = testGroup "EvaluationResult"
 -- Basic control structures
-    [ functorLaws        @Evaluation
-    , applicativeLaws    @Evaluation
-    , monadLaws          @Evaluation
+    [ functorLaws        @EvaluationResult
+    , applicativeLaws    @EvaluationResult
+    , monadLaws          @EvaluationResult
 -- Extended control structures
-    , monadFailLaws      @Evaluation
-    , monadLoggerLaws    @Evaluation
-    , monadZipLaws       @Evaluation
+    , monadFailLaws      @EvaluationResult
+    , monadZipLaws       @EvaluationResult
 -- Refined control structures
-    , altLaws            @Evaluation
-    , applyLaws          @Evaluation
-    , bindLaws           @Evaluation
+    , altLaws            @EvaluationResult
+    , applyLaws          @EvaluationResult
+    , bindLaws           @EvaluationResult
 -- Ordered container structures
-    , foldableLaws       @Evaluation
-    , traversableLaws    @Evaluation
+    , foldableLaws       @EvaluationResult
+    , traversableLaws    @EvaluationResult
 -- Data structures
-    , equalityLaws       @(Evaluation W)
-    , normalFormDataLaws @(Evaluation W)
-    , orderingLaws       @(Evaluation W)
-    , semigroupLaws      @(Evaluation W)
-    , showProperties     @(Evaluation W)
+    , equalityLaws       @(EvaluationResult W)
+    , normalFormDataLaws @(EvaluationResult W)
+    , orderingLaws       @(EvaluationResult W)
+    , semigroupLaws      @(EvaluationResult W)
+    , showProperties     @(EvaluationResult W)
     ]
 
 
 evaluationTLaws :: TestTree
 evaluationTLaws = testGroup "EvaluationT"
 -- Basic control structures
-    [ functorLaws        @(EvaluationT Maybe)
-    , applicativeLaws    @(EvaluationT Maybe)
-    , monadLaws          @(EvaluationT Maybe)
+    [ functorLaws'
+    , applicativeLaws'
+    , monadLaws'
 -- Extended control structures
-    , monadFailLaws      @(EvaluationT Maybe)
-    , monadLoggerLaws    @(EvaluationT Maybe)
-    , monadTransLaws     @EvaluationT @Maybe
-    , monadZipLaws       @(EvaluationT Maybe)
+    , monadFailLaws'
+    , monadLoggerLaws'
+    , monadTransLaws'
+    , monadZipLaws'
 -- Refined control structures
-    , altLaws            @(EvaluationT Maybe)
-    , applyLaws          @(EvaluationT Maybe)
-    , bindLaws           @(EvaluationT Maybe)
--- Ordered container structures
-    , foldableLaws       @(EvaluationT Maybe)
-    , traversableLaws    @(EvaluationT Maybe)
+    , altLaws'
+    , applyLaws'
+    , bindLaws'
 -- Data structures
-    , equalityLaws       @(EvaluationT Maybe W)
-    , normalFormDataLaws @(EvaluationT Maybe W)
-    , orderingLaws       @(EvaluationT Maybe W)
-    , semigroupLaws      @(EvaluationT Maybe W)
-    , showProperties     @(EvaluationT Maybe W)
+    , semigroupLaws'
     ]
 
 
@@ -142,6 +122,22 @@ functorLaws = testGroup "Functor Laws"
     functorComposition :: f W -> Fun W W -> Fun W W -> Property
     functorComposition x (apply -> f) (apply -> g) =
         fmap (g . f) x === (fmap g . fmap f $ x)
+
+
+functorLaws'
+  :: TestTree
+functorLaws' = testGroup "Functor Laws"
+    [ testLaw functorIdentity    "Identity"    "fmap id === id"
+    , testLaw functorComposition "Composition" "fmap (f . g) === fmap f . fmap g"
+    ]
+  where
+    functorIdentity :: W -> Blind (EvaluationT W M W) -> Property
+    functorIdentity w (Blind x) =
+        runEvaluationT w (fmap id x) === runEvaluationT w x
+
+    functorComposition :: W -> Blind (EvaluationT W M W) -> Fun W W -> Fun W W -> Property
+    functorComposition w (Blind x) (apply -> f) (apply -> g) =
+        runEvaluationT w (fmap (g . f) x) === runEvaluationT w ((fmap g . fmap f) x)
 
 
 applicativeLaws
@@ -178,6 +174,31 @@ applicativeLaws = testGroup "Applicative Laws"
         (pure f <*> pure x) === (pure (f x) :: f W)
 
 
+applicativeLaws' :: TestTree
+applicativeLaws' = testGroup "Applicative Laws"
+    [ testLaw applicativeIdentity     "Identity"     "pure id <*> v === v"
+    , testLaw applicativeComposition  "Composition"  "pure (.) <*> u <*> v <*> w === u <*> (v <*> w)"
+    , testLaw applicativeHomomorphism "Homomorphism" "pure f <*> pure x = pure (f x)"
+    , testLaw applicativeInterchange  "Interchange"  "u <*> pure y === pure ($ y) <*> u"
+    ]
+  where
+    applicativeIdentity :: W -> Blind (EvaluationT W M W) -> Property
+    applicativeIdentity w (Blind x) =
+        runEvaluationT w (pure id <*> x) === runEvaluationT w x
+
+    applicativeComposition :: W -> Blind (EvaluationT W M (Fun W W)) -> Blind (EvaluationT W Maybe (Fun W W)) -> Blind (EvaluationT W Maybe W) -> Property
+    applicativeComposition w (Blind (fmap apply -> x)) (Blind (fmap apply -> y)) (Blind z) =
+        runEvaluationT w (pure (.) <*> x <*> y <*> z) === runEvaluationT w (x <*> (y <*> z))
+
+    applicativeInterchange :: W -> Blind (EvaluationT W M (Fun W W)) -> W -> Property
+    applicativeInterchange w (Blind (fmap apply -> x)) y =
+        runEvaluationT w (x <*> pure y) === runEvaluationT w (pure ($ y) <*> x)
+
+    applicativeHomomorphism :: W -> Fun W W -> W -> Property
+    applicativeHomomorphism w (apply -> f) x =
+        runEvaluationT w (pure f <*> pure x) === runEvaluationT w (pure (f x) :: EvaluationT W M W)
+
+
 monadLaws
   :: forall m.
      ( Arbitrary (m W)
@@ -205,6 +226,29 @@ monadLaws = testGroup "Monad Laws"
         ((x >>= f) >>= g) === (x >>= (\x' -> f x' >>= g))
 
 
+monadLaws' :: TestTree
+monadLaws' = testGroup "Monad Laws"
+    [ testLaw monadLeftIdentity  "Left Identity"  "return a >>= k === k a"
+    , testLaw monadRightIdentity "Right Identity" "m >>= return === m"
+    , testLaw monadAssociativity "Associativity"  "m >>= (x -> k x >>= h) === (m >>= k) >>= h"
+    ]
+  where
+    monadRightIdentity :: W -> Blind (EvaluationT W M W) -> Property
+    monadRightIdentity w (Blind x) =
+        runEvaluationT w (x >>= pure) === runEvaluationT w x
+
+    monadLeftIdentity  :: W -> W -> Fun W (Blind (EvaluationT W M W)) -> Property
+    monadLeftIdentity w x (fmap getBlind . apply -> f) =
+        runEvaluationT w (pure x >>= f) === runEvaluationT w (f x)
+
+    monadAssociativity :: W -> Blind (EvaluationT W M W)
+                       -> Fun W (Blind (EvaluationT W M W))
+                       -> Fun W (Blind (EvaluationT W M W))
+                       -> Property
+    monadAssociativity w (Blind x) (fmap getBlind . apply -> f) (fmap getBlind . apply -> g) =
+        runEvaluationT w ((x >>= f) >>= g) === runEvaluationT w (x >>= (\x' -> f x' >>= g))
+
+
 monadFailLaws
   :: forall m.
      ( Arbitrary (m W)
@@ -222,15 +266,18 @@ monadFailLaws = testGroup "MonadFail Laws"
         (fail s >>= f) === (fail s :: m W)
 
 
-monadLoggerLaws
-  :: forall m.
-     ( Arbitrary (m W)
-     , Eq (m W)
-     , Logger m W
-     , Show (m W)
-     )
-  => TestTree
-monadLoggerLaws = testGroup "MonadLogger Laws"
+monadFailLaws' :: TestTree
+monadFailLaws' = testGroup "MonadFail Laws"
+    [ testLaw leftNullification "Left Nullification" "fail s >>= f === fail s"
+    ]
+  where
+    leftNullification :: W -> Fun W (Blind (EvaluationT W M W)) -> String -> Property
+    leftNullification w (fmap getBlind . apply -> f) s =
+        runEvaluationT w (fail s >>= f) === runEvaluationT w (fail s :: EvaluationT W M W)
+
+
+monadLoggerLaws' :: TestTree
+monadLoggerLaws' = testGroup "MonadLogger Laws"
     [ testLaw failureInfoNullification "Info Nullification"
         "fail x <?> y === fail x"
     , testLaw failureWarnNullification "Warn Nullification"
@@ -241,49 +288,39 @@ monadLoggerLaws = testGroup "MonadLogger Laws"
         "let a = v <@> x in a <@> y <@> z === let a = v <@> x <@> y in a <@> z"
     ]
   where
-    failureInfoNullification :: String -> String -> Property
-    failureInfoNullification x y =
-        (fail x <?> y) === (fail x :: m W)
+    failureInfoNullification :: W -> String -> String -> Property
+    failureInfoNullification w x y =
+        runEvaluationT w (fail x <?> y) === runEvaluationT w (fail x :: EvaluationT W M W)
 
-    failureWarnNullification :: String -> String -> Property
-    failureWarnNullification x y =
-        (fail x <@> y) === (fail x :: m W)
+    failureWarnNullification :: W -> String -> String -> Property
+    failureWarnNullification w x y =
+        runEvaluationT w (fail x <@> y) === runEvaluationT w (fail x :: EvaluationT W M W)
 
-    associativityInfo :: m W -> String -> String -> String -> Property
-    associativityInfo e x y z =
-        (let v = e <?> x in v <?> y <?> z) === (let v = e <?> x <?> y in v <?> z)
-
-
-    associativityWarn :: m W -> String -> String -> String -> Property
-    associativityWarn e x y z =
-        (let v = e <@> x in v <@> y <@> z) === (let v = e <@> x <@> y in v <@> z)
+    associativityInfo :: W -> Blind (EvaluationT W M W) -> String -> String -> String -> Property
+    associativityInfo w (Blind e) x y z =
+        runEvaluationT w (let v = e <?> x in v <?> y <?> z) === runEvaluationT w (let v = e <?> x <?> y in v <?> z)
 
 
-monadTransLaws
-  :: forall t m.
-     ( Arbitrary (m W)
-     , Eq (t m W)
-     , Monad m
-     , Monad (t m)
-     , MonadTrans t
-     , Show (m W)
-     , Show (t m W)
-     )
-  => TestTree
-monadTransLaws = testGroup "MonadTrans Laws"
+    associativityWarn :: W -> Blind (EvaluationT W M W) -> String -> String -> String -> Property
+    associativityWarn w (Blind e) x y z =
+        runEvaluationT w (let v = e <@> x in v <@> y <@> z) === runEvaluationT w (let v = e <@> x <@> y in v <@> z)
+
+
+monadTransLaws' :: TestTree
+monadTransLaws' = testGroup "MonadTrans Laws"
     [ testLaw liftedPure "Lifted Pure"
         "lift . pure === pure"
     , testLaw bindComposition "Bind Composition"
         "lift (x >>= f) === lift x >>= (lift . f)"
     ]
   where
-    liftedPure :: W -> Property
-    liftedPure x =
-        (lift . pure) x === (pure x :: t m W)
+    liftedPure :: W -> W -> Property
+    liftedPure w x =
+        runEvaluationT w (lift $ pure x) === runEvaluationT w (pure x :: EvaluationT W M W)
 
-    bindComposition :: m W -> Fun W (m W) -> Property
-    bindComposition x (apply -> f) =
-        lift (x >>= f) === ((lift x >>= (lift . f)) :: t m W)
+    bindComposition :: W -> M W -> Fun W (M W) -> Property
+    bindComposition w x (apply -> f) =
+        runEvaluationT w (lift (x >>= f)) === runEvaluationT w ((lift x >>= (lift . f)) :: EvaluationT W M W)
 
 
 monadZipLaws
@@ -313,6 +350,26 @@ monadZipLaws = testGroup "MonadZip Laws"
     infoPreservation x y =
         (void x =/= void y) .||.
             (munzip (mzip x y) === (x, y))
+
+
+monadZipLaws' :: TestTree
+monadZipLaws' = testGroup "MonadZip Laws"
+    [ testLaw naturality       "Naturality"
+        "fmap (f *** g) (mzip ma mb) === mzip (fmap f ma) (fmap g mb)"
+    , testLaw infoPreservation "Information preservation"
+        "fmap (const ()) ma === fmap (const ()) mb ==> munzip (mzip ma mb) === (ma, mb)"
+    ]
+  where
+    naturality :: W -> Fun W W -> Fun W W -> Blind (EvaluationT W M W) -> Blind (EvaluationT W M W) -> Property
+    naturality w (apply -> f) (apply -> g) (Blind x) (Blind y) =
+        runEvaluationT w (fmap (f *** g) (mzip x y)) === runEvaluationT w (mzip (fmap f x) (fmap g y))
+
+    infoPreservation :: W -> Blind (EvaluationT W M W) -> Blind (EvaluationT W M W) -> Property
+    infoPreservation w (Blind x) (Blind y) =
+        (runEvaluationT w (void x) =/= runEvaluationT w (void y)) .||.
+          f (munzip (mzip x y)) === f (x, y)
+      where
+        f = bimap (runEvaluationT w) (runEvaluationT w)
 
 
 altLaws
@@ -345,6 +402,30 @@ altLaws = testGroup "Alt Laws"
     altLeftDistributivity1 :: Fun W W -> f W -> f W -> Property
     altLeftDistributivity1 (apply -> f) x y =
         (f <$> (x <!> y)) === ((f <$> x) <!> (f <$> y))
+
+
+altLaws' :: TestTree
+altLaws' = testGroup "Alt Laws"
+    [ testLaw altAssociativity       "Associativity"          "x <!> (y <!> z) === (x <!> y) <!> z"
+    , testLaw altLeftCatch           "Left Catch"             "pure x <!> y = pure x"
+    , testLaw altLeftDistributivity1 "Left Distributivity I"  "f <$> (x <!> y) === (f <$> x) <!> (f <$> y)"
+-- These laws do not hold for our 'Either-like' data type.
+-- This is okay (apparently) since the 'Left Catch' law holds.
+--    , "Left Distributivity II" "(x <!> y) <.> z === (x <.> z) <!> (y <.> z)"
+--    , "Right Distributivity"   "(m <!> n) >>- f === (m >>- f) <!> (m >>- f)"
+    ]
+  where
+    altAssociativity :: W -> Blind (EvaluationT W M W) -> Blind (EvaluationT W M W) -> Blind (EvaluationT W M W) -> Property
+    altAssociativity w (Blind x) (Blind y) (Blind z) =
+        runEvaluationT w ((x <!> y) <!> z) === runEvaluationT w (x <!> (y <!> z))
+
+    altLeftCatch :: W -> W -> Blind (EvaluationT W M W) -> Property
+    altLeftCatch w x (Blind y) =
+        runEvaluationT w (pure x <!> y) === runEvaluationT w (pure x)
+
+    altLeftDistributivity1 :: W -> Fun W W -> Blind (EvaluationT W M W) -> Blind (EvaluationT W M W) -> Property
+    altLeftDistributivity1 w (apply -> f) (Blind x) (Blind y) =
+        runEvaluationT w (f <$> (x <!> y)) === runEvaluationT w ((f <$> x) <!> (f <$> y))
 
 
 applyLaws
@@ -389,6 +470,37 @@ applyLaws = testGroup "Apply Laws"
         ((f <$> m) <. (g <$> n)) === (f <$> (m <. n))
 
 
+applyLaws' :: TestTree
+applyLaws' = testGroup "Apply Laws"
+    [ testLaw composition        "Composition"         "(.) <$> u <.> v <.> w = u <.> (v <.> w)"
+    , testLaw leftInterchange    "Left Interchange"    "x <.> (f <$> y) = (. f) <$> x <.> y"
+    , testLaw rightInterchange   "Right Interchange"   "f <$> (x <.> y) = (f .) <$> x <.> y"
+    , testLaw leftNullification  "Left Nullification"  "(mf <$> m) .> (nf <$> n) = nf <$> (m .> n)"
+    , testLaw rightNullification "Right Nullification" "(mf <$> m) <. (nf <$> n) = mf <$> (m <. n)"
+    ]
+  where
+    composition :: W -> Blind (EvaluationT W M (Fun W W)) -> Blind (EvaluationT W M (Fun W W))
+                -> Blind (EvaluationT W M W) -> Property
+    composition w (fmap apply . getBlind -> x) (fmap apply . getBlind -> y) (Blind z) =
+        runEvaluationT w ((.) <$> x <.> y <.> z) === runEvaluationT w (x <.> (y <.> z))
+
+    leftInterchange :: W -> Fun W W -> Blind (EvaluationT W M (Fun W W)) -> Blind (EvaluationT W M W) -> Property
+    leftInterchange w (apply -> f) (fmap apply . getBlind -> x) (Blind y) =
+        runEvaluationT w (x <.> (f <$> y)) === runEvaluationT w ((. f) <$> x <.> y)
+
+    rightInterchange :: W -> Fun W (Blind (EvaluationT W M W)) -> Blind (EvaluationT W M (Fun W W)) -> Blind (EvaluationT W M W) -> Property
+    rightInterchange w (fmap getBlind . apply -> f) (fmap apply . getBlind -> x) (Blind y) =
+        runEvaluationT w ( runEvaluationT w <$> (f <$> (x <.> y)) ) === runEvaluationT w ( runEvaluationT w <$> ((f .) <$> x <.> y) )
+
+    leftNullification :: W -> Fun W W -> Fun W W -> Blind (EvaluationT W M W) -> Blind (EvaluationT W M W) -> Property
+    leftNullification w (apply -> f) (apply -> g) (Blind m) (Blind n) =
+        runEvaluationT w ((f <$> m) .> (g <$> n)) === runEvaluationT w (g <$> (m .> n))
+
+    rightNullification :: W -> Fun W W -> Fun W W -> Blind (EvaluationT W M W) -> Blind (EvaluationT W M W) -> Property
+    rightNullification w (apply -> f) (apply -> g) (Blind m) (Blind n) =
+        runEvaluationT w ((f <$> m) <. (g <$> n)) === runEvaluationT w (f <$> (m <. n))
+
+
 bindLaws
   :: forall m.
      ( Arbitrary (m W)
@@ -430,6 +542,36 @@ bindLaws = testGroup "Bind Laws"
     associativity2 :: m (m (m W)) -> Property
     associativity2 x =
         (join . join) x === (join . fmap join) x
+
+
+bindLaws' :: TestTree
+bindLaws' = testGroup "Bind Laws"
+    [ testLaw defJoin        "Definition of join"  "join === (>>- id)"
+    , testLaw defBind        "Definition of bind"  "m >>- f === join (fmap f m)"
+    , testLaw defApply       "Definition of apply" "f <.> x === f >>- (<$> x)"
+    , testLaw associativity1 "Associativity I"     "(m >>- f) >>- g === m >>- (\\x -> f x >>- g)"
+    , testLaw associativity2 "Associativity II"    "join . join === join . mmap join"
+    ]
+  where
+    defJoin :: W -> Blind (EvaluationT W M (EvaluationT W M W)) -> Property
+    defJoin w (Blind x) =
+        runEvaluationT w (join x) === runEvaluationT w ((>>- id) x)
+
+    defBind :: W -> Fun W (Blind (EvaluationT W M W)) -> Blind (EvaluationT W M W) -> Property
+    defBind w (fmap getBlind . apply -> f) (Blind x) =
+        runEvaluationT w (x >>- f) === runEvaluationT w (join (fmap f x))
+
+    defApply :: W -> Blind (EvaluationT W M (Fun W W)) -> Blind (EvaluationT W M W) -> Property
+    defApply w (fmap apply . getBlind -> f) (Blind x) =
+        runEvaluationT w (f <.> x) === runEvaluationT w (f >>- (<$> x))
+
+    associativity1 :: W -> Fun W (Blind (EvaluationT W M W)) -> Fun W (Blind (EvaluationT W M W)) -> Blind (EvaluationT W M W) -> Property
+    associativity1 w (fmap getBlind . apply -> f) (fmap getBlind . apply -> g) (Blind x) =
+        runEvaluationT w ((x >>- f) >>- g) === runEvaluationT w (x >>- (\a -> f a >>- g))
+
+    associativity2 :: W -> Blind (EvaluationT W M (EvaluationT W M (EvaluationT W M W))) -> Property
+    associativity2 w (Blind x) =
+        runEvaluationT w ((join . join) x) === runEvaluationT w ((join . fmap join) x)
 
 
 equalityLaws
@@ -524,6 +666,16 @@ semigroupLaws = testGroup "Semigroup Laws"
     semigroupAssociativity :: a -> a -> a -> Property
     semigroupAssociativity x y z =
         (x <> (y <> z)) === ((x <> y) <> z)
+
+
+semigroupLaws' :: TestTree
+semigroupLaws' = testGroup "Semigroup Laws"
+    [ testLaw semigroupAssociativity "Associativity" "x <> (y <> z) === (x <> y) <> z"
+    ]
+  where
+    semigroupAssociativity :: W -> Blind (EvaluationT W M W) -> Blind (EvaluationT W M W) -> Blind (EvaluationT W M W) -> Property
+    semigroupAssociativity w (Blind x) (Blind y) (Blind z) =
+        runEvaluationT w (x <> (y <> z)) === runEvaluationT w ((x <> y) <> z)
 
 
 showProperties

@@ -87,7 +87,7 @@ printAuthorList = putStrLn $ renderedHeaderLines <> renderedAuthorLines
       , ""
       ]
     renderedAuthorLines = (<>"\n\n") . intercalate "\n\n" $ fmap ("    • " <>) rawAuthorLines
-    rawAuthorLines = $(authorsList)
+    rawAuthorLines = mempty -- $(authorsList)
 
 
 printFunderList :: IO ()
@@ -99,7 +99,7 @@ printFunderList = putStrLn $ renderedHeaderLines <> renderedFundingSources
       , ""
       ]
     renderedFundingSources = (<>"\n") . intercalate "\n\n" $ renderSource <$> rawFundingSources
-    rawFundingSources = $(fundingList)
+    rawFundingSources = mempty --  $(fundingList)
     renderSource (src, url) = "    • " <> src <> maybe "" ("\n      › " <>) url
 
 
@@ -134,7 +134,7 @@ printExitCodeDocumentation = putStrLn . intercalate "\n" . (preamble:) . foldMap
     g  Inputing = "PCG attempted to retrieve input streams"
     g   Parsing = "interpreting input streams that were successfully retrieved"
     g  Unifying = "combining multiple data sets into a coherent composite"
-    g Computing = "running PCG, please report at github.com/amnh/PCG/issues"
+    g Computing = "running PCG, please report at https://github.com/amnh/PCG/issues"
     g Outputing = "outputing data streams from PCG"
 
     preamble = intercalate "\n" $ ("  "<>) <$>

@@ -6,7 +6,6 @@ module PCG.Command.Save.Evaluate
 import Bio.Graph
 import Control.Evaluation
 import Control.Monad.IO.Class         (liftIO)
-import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Validation
 import Data.Compact                   (getCompact)
 import Data.FileSource                (FileSource)
@@ -23,18 +22,18 @@ evaluate (SaveCommand fileSource serial) g =
       Compact -> writeOutCompactRegion  fileSource g $> g
 
 
-writeOutBinaryEncoding :: FileSource -> GraphState -> EvaluationT (ReaderT GlobalSettings IO) ()
+writeOutBinaryEncoding :: FileSource -> GraphState -> EvaluationT GlobalSettings IO ()
 writeOutBinaryEncoding path g = do
     let refDAG = extractReferenceDAG $ getCompact g
     result <- liftIO . runValidationT $ serializeBinary path refDAG
     case result of
       Success _    -> pure ()
-      Failure oErr -> state $ failWithPhase Outputing oErr
+      Failure oErr -> failWithPhase Outputing oErr
 
 
-writeOutCompactRegion :: FileSource -> GraphState -> EvaluationT (ReaderT GlobalSettings IO) ()
+writeOutCompactRegion :: FileSource -> GraphState -> EvaluationT GlobalSettings IO ()
 writeOutCompactRegion path g = do
     result <- liftIO . runValidationT $ serializeCompact path g
     case result of
       Success _    -> pure ()
-      Failure oErr -> state $ failWithPhase Outputing oErr
+      Failure oErr -> failWithPhase Outputing oErr

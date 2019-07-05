@@ -71,6 +71,9 @@ phylogeneticForests (PhylogeneticSolution x) = x
 extractSolution :: PhylogeneticSolution a -> a
 extractSolution = NE.head . getPhylogeneticForest . NE.head . getPhylogeneticSolution
 
+instance Functor PhylogeneticSolution where
+  fmap f = PhylogeneticSolution . fmap (fmap f) . getPhylogeneticSolution
+
 
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticSolution a) b where
 

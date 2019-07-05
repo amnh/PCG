@@ -19,6 +19,7 @@ module Bio.Graph.Node
   , ResolutionInformation(..)
   , ResolutionMetadata(..)
   , HasNodeDecorationDatum(..)
+  , HasSequenceDecoration(..)
   , HasResolutions(..)
   , HasTotalSubtreeCost(..)
   , HasLocalSequenceCost(..)

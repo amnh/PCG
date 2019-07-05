@@ -1,5 +1,6 @@
-Phylogenetic Component Graph
-=============
+# Phylogenetic Component Graph
+
+Haskell program and libraries for general phylogenetic graph search
 
 [![Build Status][   travis-img]][   travis-ref]
 [![Maintained  ][ maintain-img]][ maintain-ref]
@@ -7,16 +8,13 @@ Phylogenetic Component Graph
 [![Release     ][  release-img]][latest-release]
 [![Release Date][ tag-date-img]][latest-release]
 
-[![BSD3 License][  license-img]][  license-ref]
-[![Code Size   ][code-size-img]][code-size-ref]
 [![New Commits ][  commits-img]][  commits-ref]
+[![Code Size   ][code-size-img]][code-size-ref]
 
+[![Author      ][   author-img]][   author-ref]
+[![BSD3 License][  license-img]][  license-ref]
 
-Haskell program and libraries for general phylogenetic graph search
-
-**Project status:**  [Alpha release][latest-release]
-
-**Project manager:** [Ward Wheeler](mailto:wheeler@amnh.org)
+### Codebase structure
 
 | Directory         | Description of Contents
 |:----------------- |:--------------------------------------- |
@@ -49,13 +47,15 @@ Haskell program and libraries for general phylogenetic graph search
 
 [latest-release]: https://github.com/amnh/PCG/releases/latest
 
-[  license-img]: https://img.shields.io/badge/license-BSD3-blue.svg
+[   author-img]: https://img.shields.io/badge/author-Ward%20Wheeler-blue.svg?color=134EA2
+[   author-ref]: https://www.amnh.org/research/staff-directory/ward-wheeler
+[  license-img]: https://img.shields.io/badge/license-BSD3-blue.svg?color=134EA2
 [  license-ref]: https://github.com/amnh/PCG/blob/master/LICENSE
 [   travis-img]: https://travis-ci.org/amnh/PCG.svg?branch=master
 [   travis-ref]: https://travis-ci.org/amnh/PCG
-[code-size-img]: https://img.shields.io/github/languages/code-size/amnh/PCG.svg?style=popout
+[code-size-img]: https://img.shields.io/github/languages/code-size/amnh/PCG.svg?style=popout&color=yellowgreen
 [code-size-ref]: https://github.com/amnh/PCG/archive/master.zip
-[  commits-img]: https://img.shields.io/github/commits-since/amnh/PCG/v0.1.0.1.svg?style=popout
+[  commits-img]: https://img.shields.io/github/commits-since/amnh/PCG/v0.1.0.1.svg?style=popout&color=yellowgreen
 [  commits-ref]: https://github.com/amnh/PCG/commits/master
 [  release-img]: https://img.shields.io/github/release-pre/amnh/PCG.svg
 [ tag-date-img]: https://img.shields.io/github/release-date-pre/amnh/PCG.svg?style=popout

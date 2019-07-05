@@ -35,7 +35,6 @@ import           Control.DeepSeq           (NFData)
 import           Data.Bifunctor            (first)
 import           Data.Binary
 import           Data.Char                 (toLower)
---import           Data.Coerce           (Coercible, coerce)
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Key

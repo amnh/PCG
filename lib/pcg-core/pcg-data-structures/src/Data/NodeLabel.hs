@@ -19,6 +19,7 @@
 
 module Data.NodeLabel
   ( NodeLabel(NL)
+  , isEmpty
   , nodeLabel
   , nodeLabelString
   ) where
@@ -26,6 +27,7 @@ module Data.NodeLabel
 
 import Control.DeepSeq
 import Data.Binary
+import Data.Coerce          (coerce)
 import Data.Default
 import Data.MonoTraversable
 import Data.String          (IsString)
@@ -59,6 +61,11 @@ nodeLabel = NL
 -- Construct a 'NodeLabel' from a 'String'
 nodeLabelString :: String -> NodeLabel
 nodeLabelString = NL. fromString
+
+-- |
+-- Check if a NodeLabel is empty.
+isEmpty :: NodeLabel -> Bool
+isEmpty = coerce TS.null
 
 
 instance Default NodeLabel where

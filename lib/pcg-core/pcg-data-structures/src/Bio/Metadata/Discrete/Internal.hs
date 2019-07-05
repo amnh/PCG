@@ -30,14 +30,16 @@ module Bio.Metadata.Discrete.Internal
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete.Class
 import Bio.Metadata.General
+import Bio.Metadata.Metric
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
+import Data.Bits
 import Data.FileSource
 import Data.List                   (intercalate)
-import GHC.Generics
+import Data.MetricRepresentation
+import GHC.Generics                hiding (to)
 import Text.XML
-
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
@@ -92,6 +94,12 @@ instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = generalData
+
+-- | (✔)
+instance (Bits c, Num b) =>
+  GetPairwiseTransitionCostMatrix DiscreteCharacterMetadataDec c b where
+
+    pairwiseTransitionCostMatrix = to $ const discreteMetricPairwiseLogic
 
 
 -- | (✔)

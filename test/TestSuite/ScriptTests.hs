@@ -485,7 +485,6 @@ scriptWithExitCode expPhase description scriptPath = testCase scriptPath $ do
                                         ]
                       in  assertBool errMsg $ ec == expVal
 
-
 -- |
 -- Expects the each of the PCG scripts to succeed.
 scriptsAllSucceed :: [FilePath] -> TestTree

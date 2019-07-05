@@ -23,7 +23,7 @@
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Bio.Character.Encodable.Static.Internal
-  ( StaticCharacter()
+  ( StaticCharacter(SC)
   , StaticCharacterBlock()
   ) where
 
@@ -32,6 +32,7 @@ import           Bio.Character.Encodable.Static.Class
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable
 import           Control.DeepSeq
+import           Control.Lens
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                           as B
@@ -168,6 +169,26 @@ instance Enum StaticCharacter where
     toEnum i = SC $ fromNumber dim i
       where
         dim = toEnum $ finiteBitSize i - countLeadingZeros i
+
+
+instance Exportable StaticCharacter where
+
+    toExportableBuffer e@(SC bv) = ExportableCharacterSequence 1 widthValue $ bitVectorToBufferChunks 1 widthValue bv
+      where
+        widthValue = symbolCount e
+
+    fromExportableBuffer ecs = SC newBitVec
+      where
+        newBitVec = bufferChunksToBitVector 1 elemWidth $ exportedBufferChunks ecs
+        elemWidth = ecs ^. exportedElementWidth
+
+    toExportableElements e@(SC bv)
+      | bitsInElement > bitsInLocalWord = Nothing
+      | otherwise                       = Just $ ExportableCharacterElements 1 bitsInElement [toUnsignedNumber bv]
+      where
+        bitsInElement   = symbolCount e
+
+    fromExportableElements = SC . exportableCharacterElementsHeadToBitVector
 
 
 instance Exportable StaticCharacterBlock where

@@ -187,7 +187,7 @@ instance GetSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> 
 -- |
 -- A 'Lens' for the 'pairwiseTransitionCostMatrix' field
 instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
-    => GetPairwiseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (c -> c -> (c, Word)) where
+    => GetPairwiseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) c Word where
 
     pairwiseTransitionCostMatrix = to (retreivePairwiseTCM (const getMedianAndCost2D) . metricRepresentation)
 
