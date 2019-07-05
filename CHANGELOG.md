@@ -5,10 +5,8 @@ PCG uses [PVP Versioning][1].
 Releases are available [on GitHub][2].
 
 
-## _v0.2.0_ - Unreleased Changes
+## [_0.2.0_][5] - Unreleased Changes
 
-* Fixed defect with decorating single node graphs
-* Added new option to perform hierarchical clustering in wagner build options
 * Using semantic versioning
 * Modularized sub-libraries
 * Reorganized build process
@@ -30,6 +28,7 @@ Releases are available [on GitHub][2].
 * Added Validation monad transformer (for error handling)
 * Added Cost data-type for perfect precision, non-negative rational number accumulation
 * Added specific exit codes to indicate in which phase of the runtime failure(s) occured
+* Added option to perform hierarchical clustering in wagner build options
 * Corrected defect in handling of prealigned input data
 * Corrected defect in FFI resulting in a space leak
 * Corrected defect in Data.Range value construction
@@ -38,6 +37,7 @@ Releases are available [on GitHub][2].
 * Corrected defect in headEx & lastEx of several MonoFoldable instances
 * Corrected defect in omap over missing dynamic characters
 * Corrected defect in candidateNetworkEdges to not return inconsistent edges
+* Corrected defect in decorating single node graphs
 * Enhanced command line option parsing and error reporting
 * Enhanced file parser selection to intelligently look at the file extension
 * Enhanced BUILD command to add network edges to input graphs rather than wagner build a new tree first
@@ -66,7 +66,7 @@ Releases are available [on GitHub][2].
 * Improved safety of data normalization and unification
 
 
-## [v0.1.0.1][4] - 2018-03-23
+## [0.1.1][4] - 2018-03-23
 
 * Removed space leaks in the C & C++ FFI bindings
 * Expanded memoized TCM to accept both pairs and triples of elements
@@ -77,7 +77,7 @@ Releases are available [on GitHub][2].
 * Documentation improvements
 
 
-## [v0.1.0.0][3] - 2018-03-01
+## [0.1.0][3] - 2018-03-01
 
 * Supports naive phylogenetic network construction
 * Added file parsers for DOT, Fasta, Fastc, Newick, Nexus, and TNT inputs
@@ -89,12 +89,13 @@ Releases are available [on GitHub][2].
 * Computes rooting cost
 
 
-## v0.0.1.0 - 2014-11-17
+## 0.0.1 - 2014-11-17
 
 * Initially created
 
 
 [1]: https://pvp.haskell.org
 [2]: https://github.com/amnh/PCG/releases
-[3]: https://github.com/amnh/PCG/releases/tag/v0.1.0.0
-[4]: https://github.com/amnh/PCG/releases/tag/v0.1.0.1
+[3]: https://github.com/amnh/PCG/releases/tag/0.1.0
+[4]: https://github.com/amnh/PCG/releases/tag/0.1.1
+[5]: https://github.com/amnh/PCG/releases/tag/0.2.0
