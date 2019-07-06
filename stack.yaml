@@ -30,7 +30,7 @@ extra-deps:
   - git: https://github.com/spl/dlist
     commit: 66dd57cc124df917f8cb1ae6eb1e6092ec18eea2
   - git: https://github.com/monadfix/microlens
-    commit: 537b9a55f158b375f76f2abda455319772277694
+    commit: 0033b78a005bef20e37d033d2b34809ebe6f9e1b
     subdirs:
     - microlens
   - git: https://github.com/pcapriotti/optparse-applicative
