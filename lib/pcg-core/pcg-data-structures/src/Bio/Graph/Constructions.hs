@@ -13,17 +13,25 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE KindSignatures   #-}
 
 module Bio.Graph.Constructions
   ( CharacterResult
   , CharacterDAG
+  , CharacterNode
   , DecoratedCharacterResult
+  , DecoratedCharacterNode
+  , EdgeAnnotation
   , FinalDecorationDAG
+  , FinalCharacterNode
+  , FinalCharacterSequence
+  , FinalMetadata
+  , FinalReferenceVector
   , GlobalSettings
   , GraphState
   , PhylogeneticFreeDAG(..)
   , PhylogeneticDAG(..)
-  , PreOrderDecorationDAG
+  , PreorderDecorationDAG
   , PostorderDecorationDAG
   , SearchState
   , TopologicalResult
@@ -31,6 +39,7 @@ module Bio.Graph.Constructions
   , UnifiedBlock
   , UnifiedSequences
   , UnifiedCharacterBlock
+  , UnifiedCharacterNode
   , UnifiedCharacterSequence
   , UnifiedContinuousCharacter
   , UnifiedDiscreteCharacter
@@ -39,6 +48,8 @@ module Bio.Graph.Constructions
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
   , extractReferenceDAG
+  , convertToFinalCharacterSequence
+  , convertFromFinalCharacterSequence
   ) where
 
 import Bio.Character
@@ -56,10 +67,11 @@ import Bio.Sequence
 import Control.Evaluation
 import Control.Lens.Combinators            (mapped)
 import Control.Lens.Operators              ((%~), (.~), (^.))
-import Control.Monad.Reader                (ReaderT)
+import Data.Coerce                         (coerce)
 import Data.Compact
 import Data.EdgeLength
 import Data.Function                       ((&))
+import Data.Functor.Identity               (Identity (..))
 import Data.List.NonEmpty
 import Data.NodeLabel
 import Data.Vector                         (Vector)
@@ -79,6 +91,55 @@ type CharacterDAG =
          UnifiedDiscreteCharacter
          UnifiedDynamicCharacter
 
+
+-- |
+-- A Phylogenetic Node within a 'CharacterDAG'.
+type CharacterNode = PhylogeneticNode UnifiedCharacterSequence NodeLabel
+
+
+-- |
+-- A Phylogenetic Node within a 'FinalDecorationDAG'.
+type FinalCharacterNode = PhylogeneticNode FinalCharacterSequence NodeLabel
+
+
+-- |
+-- A final character sequence after decoration.
+type FinalCharacterSequence =
+     CharacterSequence
+      (ContinuousOptimizationDecoration ContinuousCharacter)
+      (FitchOptimizationDecoration   StaticCharacter)
+      (AdditiveOptimizationDecoration StaticCharacter)
+      (SankoffOptimizationDecoration StaticCharacter)
+      (SankoffOptimizationDecoration StaticCharacter)
+      (DynamicDecorationDirectOptimization DynamicCharacter)
+
+
+-- |
+-- A Phylogenetic Node within a decorations parameterized by a functor.
+type DecoratedCharacterNode (f :: * -> *) =
+  PhylogeneticNode
+    (CharacterSequence
+      (f (ContinuousOptimizationDecoration ContinuousCharacter))
+      (f (FitchOptimizationDecoration   StaticCharacter))
+      (f (AdditiveOptimizationDecoration StaticCharacter))
+      (f (SankoffOptimizationDecoration StaticCharacter))
+      (f (SankoffOptimizationDecoration StaticCharacter))
+      (f (DynamicDecorationDirectOptimization DynamicCharacter))
+    )
+    NodeLabel
+
+-- |
+-- Removes the Identity wrappers from a 'DecoratedCharacterNode'.
+convertToFinalCharacterSequence
+  :: DecoratedCharacterNode Identity-> FinalCharacterNode
+convertToFinalCharacterSequence = coerce
+
+-- |
+-- Adds in Identity wrappers to a 'FinalCharacterNode'.
+convertFromFinalCharacterSequence
+  :: FinalCharacterNode -> DecoratedCharacterNode Identity
+convertFromFinalCharacterSequence = coerce
+
 -- |
 -- A context type for global settings during evaluation
 type GlobalSettings = ()
@@ -89,7 +150,7 @@ type CharacterResult = PhylogeneticSolution CharacterDAG
 
 -- |
 -- Simple monad transformer stack for evaluating a phylogenetic search.
-type SearchState = EvaluationT (ReaderT GlobalSettings IO) GraphState
+type SearchState = EvaluationT GlobalSettings IO GraphState
 
 
 -- |
@@ -113,10 +174,19 @@ type DecoratedCharacterResult = PhylogeneticSolution FinalDecorationDAG
 
 
 -- |
+-- The Metadata on a 'FinalDecorationDAG' after a pre-order traversal.
+type FinalMetadata = (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+
+
+-- |
+-- The Reference Vector on a 'FinalDecorationDAG' after a pre-order traversal.
+type FinalReferenceVector = Vector (IndexData EdgeAnnotation FinalCharacterNode)
+
+-- |
 -- Decoration of a phylogenetic DAG after a pre-order traversal AND after the edge data has been finalized.
 type FinalDecorationDAG =
        PhylogeneticDAG
-         (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+         FinalMetadata
          EdgeAnnotation
          NodeLabel
          (ContinuousOptimizationDecoration ContinuousCharacter)
@@ -127,11 +197,12 @@ type FinalDecorationDAG =
          (DynamicDecorationDirectOptimization DynamicCharacter)
 
 
+
 -- |
 -- Decoration of a phylogenetic DAG after a pre-order traversal.
-type PreOrderDecorationDAG =
+type PreorderDecorationDAG =
        PhylogeneticDAG
-         (TraversalTopology, Double, Double, Double, Data.Vector.Vector (NonEmpty TraversalFocusEdge))
+         FinalMetadata
          EdgeLength
          NodeLabel
          (ContinuousOptimizationDecoration ContinuousCharacter)
@@ -140,7 +211,6 @@ type PreOrderDecorationDAG =
          (SankoffOptimizationDecoration        StaticCharacter)
          (SankoffOptimizationDecoration        StaticCharacter)
          (DynamicDecorationDirectOptimization DynamicCharacter)
-
 
 -- |
 -- Decoration of a phylogenetic DAG after a post-order traversal.
@@ -156,7 +226,6 @@ type PostorderDecorationDAG m =
          (SankoffOptimizationDecoration     StaticCharacter)
          (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
 
-
 -- |
 -- A "heterogenous" character block after being read in from a READ command.
 type  UnifiedBlock =
@@ -166,7 +235,7 @@ type  UnifiedBlock =
 
 
 -- |
--- A character block resulting fro the READ command.
+-- A character block resulting from the READ command.
 type  UnifiedCharacterBlock
     = CharacterBlock
         UnifiedContinuousCharacter
@@ -178,7 +247,7 @@ type  UnifiedCharacterBlock
 
 
 -- |
--- A metadata block resulting fro the READ command.
+-- A metadata block resulting from the READ command.
 type  UnifiedMetadataBlock = MetadataBlock ()
 
 
@@ -197,7 +266,7 @@ type  UnifiedSequences =
 
 
 -- |
--- A character sequence resulting fro the READ command.
+-- A character sequence resulting from the READ command.
 type  UnifiedCharacterSequence
     = CharacterSequence
         UnifiedContinuousCharacter
@@ -209,8 +278,14 @@ type  UnifiedCharacterSequence
 
 
 -- |
--- A metadata sequence resulting fro the READ command.
+-- A metadata sequence resulting from the READ command.
 type  UnifiedMetadataSequence = MetadataSequence ()
+
+
+-- |
+-- A Phylogenetic Node within a unified character DAG.
+
+type UnifiedCharacterNode = PhylogeneticFreeNode NodeLabel UnifiedCharacterSequence
 
 
 -- |
@@ -261,6 +336,7 @@ type EdgeAnnotation =
         (SankoffOptimizationDecoration     StaticCharacter)
         (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
     )
+
 
 
 extractReferenceDAG

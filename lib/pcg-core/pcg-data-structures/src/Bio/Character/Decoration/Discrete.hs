@@ -10,19 +10,19 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass         #-}
-{-# LANGUAGE DeriveGeneric          #-}
-{-# LANGUAGE FlexibleContexts       #-}
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 -- For derived instance of PossiblyMissingCharacter
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE UndecidableInstances  #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Bio.Character.Decoration.Discrete
-  ( DiscreteDecoration()
+  ( DiscreteDecoration(DiscreteDec)
   , DiscreteCharacterDecoration()
   , DiscreteCharacterMetadata()
   , GeneralCharacterMetadata()
@@ -37,6 +37,7 @@ module Bio.Character.Decoration.Discrete
   ) where
 
 
+import Bio.Character.Decoration.Discrete.Class
 import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Metadata.Discrete
@@ -47,34 +48,14 @@ import Data.Range
 import GHC.Generics
 import Numeric.Extended
 import Text.XML
-import TextShow                        (TextShow (showb))
-
+import TextShow                                (TextShow (showb))
 
 -- |
+
 -- General, concrete type for 'Discrete' characters.
 newtype DiscreteDecoration c = DiscreteDec { discreteDecorationCharacter :: c }
-    deriving (Generic, NFData)
-
--- |
--- A 'Lens' for the 'discreteCharacter' field
-class HasDiscreteCharacter s a | s -> a where
-
-    discreteCharacter :: Lens' s a
-    {-# MINIMAL discreteCharacter #-}
-
-
--- | (✔)
-class ( HasDiscreteCharacter s a
-      , EncodableStaticCharacter a
-      ) => DiscreteCharacterDecoration s a | s -> a where
-
-
--- | (✔)
-class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a | s -> a where
-
-    toDiscreteCharacterDecoration :: (x -> a) -> x -> s
-    {-# MINIMAL toDiscreteCharacterDecoration #-}
-
+    deriving stock    (Eq, Generic)
+    deriving anyclass  NFData
 
 
 instance Show c => Show (DiscreteDecoration c) where

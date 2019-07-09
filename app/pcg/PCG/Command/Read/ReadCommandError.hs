@@ -12,10 +12,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass     #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE UnboxedSums        #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE UnboxedSums    #-}
 
 module PCG.Command.Read.ReadCommandError
   ( ReadCommandError(..)
@@ -24,15 +23,15 @@ module PCG.Command.Read.ReadCommandError
   , unparsable
   ) where
 
+
 import Control.DeepSeq                  (NFData)
-import GHC.Generics                     (Generic)
---import Data.Data
 import Data.FileSource                  (FileSource)
 import Data.FileSource.InputStreamError
 import Data.FileSource.ParseStreamError
 import Data.List.NonEmpty               (NonEmpty (..))
 import Data.Semigroup.Foldable
 import Data.Unification
+import GHC.Generics                     (Generic)
 import Text.Megaparsec
 import TextShow
 

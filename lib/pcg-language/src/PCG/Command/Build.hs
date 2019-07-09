@@ -19,7 +19,10 @@
 module PCG.Command.Build
   ( BuildCommand(..)
   , ConstructionType(..)
+  , ClusterLabel(..)
+  , ClusterOption(..)
   , buildCommandSpecification
+  , numberOfClusters
   ) where
 
 
@@ -32,7 +35,7 @@ import PCG.Syntax.Combinators
 -- The \"BUILD\" command specifying how a component graph should be constructed.
 -- output should be directed.
 data  BuildCommand
-    = BuildCommand {-# UNPACK #-} !Int !ConstructionType
+    = BuildCommand {-# UNPACK #-} !Int !ConstructionType !ClusterOption
     deriving (Show)
 
 -- |
@@ -45,10 +48,35 @@ data  ConstructionType
 
 
 -- |
+-- Different possible types of clustering pre-pass.
+data  ClusterLabel
+    = NoCluster
+    | SingleLinkage
+    | CompleteLinkage
+    | UPGMALinkage
+    | WeightedLinkage
+    | WardLinkage
+    | KMedians
+    deriving (Eq, Show)
+
+
+-- |
+-- A clustering specification with type and grouping.
+data ClusterOption = ClusterOption !ClusterLabel !Int
+    deriving (Eq, Show)
+
+
+-- |
+-- Get the number of clusters from a 'ClusterOption'.
+numberOfClusters :: ClusterOption -> Int
+numberOfClusters (ClusterOption _ n) = n
+
+-- |
 -- Defines the semantics of interpreting a valid \"BUILD\" command from the PCG
 -- scripting language syntax.
 buildCommandSpecification :: CommandSpecification BuildCommand
-buildCommandSpecification = command "build" . argList $ BuildCommand <$> trajectoryCount <*> constructionType
+buildCommandSpecification = command "build" . argList $
+  BuildCommand <$> trajectoryCount <*> constructionType <*> clusterOptionType
 
 
 trajectoryCount :: Ap SyntacticArgument Int
@@ -61,3 +89,30 @@ constructionType = choiceFrom [ buildTree, buildNetwork, buildForest ] `withDefa
     buildTree    = value "tree"    $> WagnerTree
     buildNetwork = value "network" $> WheelerNetwork
     buildForest  = value "forest"  $> WheelerForest
+
+
+clusterOptionType :: Ap SyntacticArgument ClusterOption
+clusterOptionType =
+  (argId "cluster" . argList $ ClusterOption <$> clusterLabelType <*> int)
+  `withDefault` ClusterOption NoCluster 1
+
+clusterLabelType :: Ap SyntacticArgument ClusterLabel
+clusterLabelType =
+    choiceFrom
+      [ noCluster
+      , singleLinkage
+      , completeLinkage
+      , upgmaLinkage
+      , weightedLinkage
+      , wardLinkage
+      , kMedians
+      ]
+      `withDefault` NoCluster
+  where
+    noCluster       = value "no-cluster" $> NoCluster
+    singleLinkage   = value "single "    $> SingleLinkage
+    completeLinkage = value "complete"   $> CompleteLinkage
+    upgmaLinkage    = value "upgma"      $> UPGMALinkage
+    weightedLinkage = value "weighted"   $> WeightedLinkage
+    wardLinkage     = value "ward"       $> WardLinkage
+    kMedians        = value "k-medians"  $> KMedians

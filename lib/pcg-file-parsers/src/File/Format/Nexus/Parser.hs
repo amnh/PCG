@@ -43,15 +43,11 @@ import           Text.Megaparsec.Custom
 
 
 -- |
--- A fully parametric Nexus file parser. An alias for 'nexusFileDefinition'.
-parseNexus :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m NexusParseResult
-parseNexus = nexusFileDefinition
-
-
--- |
+-- A fully parametric Nexus file parser.
+--
 -- The high-level specification of the Nexus file format.
-nexusFileDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m NexusParseResult
-nexusFileDefinition = do
+parseNexus :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m NexusParseResult
+parseNexus = do
     _           <- optional $ string'' "#NEXUS" <* space
     _           <- optional . many $ commentDefinition <* space
     (v,w,x,y,z) <- partitionNexusBlocks <$> many nexusBlock
@@ -75,7 +71,7 @@ ignoredBlockDefinition = do
 
 
 -- |
--- 'blockend' is a parser than matched the end of a Nexus block.
+-- A parser than matched the end of a Nexus block.
 -- This should be "end;", but "endblock;" is also accepted, as it was used at
 -- some point by someone. There is a test in the test suite.
 blockend :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m (Tokens s)

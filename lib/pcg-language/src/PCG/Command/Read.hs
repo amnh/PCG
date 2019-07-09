@@ -96,7 +96,7 @@ fileSpec = choiceFrom
 
 
 -- |
--- Definition of a 'FileSource' in the 'Free' context.
+-- Definition of a 'FileSource' in the free context.
 filePath :: Ap SyntacticArgument FileSource
 filePath = FileSource <$> text
 

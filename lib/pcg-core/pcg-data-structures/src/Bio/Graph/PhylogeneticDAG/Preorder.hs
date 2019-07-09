@@ -60,7 +60,7 @@ import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
 import           Data.Vector.Instances              ()
 import qualified Data.Vector.NonEmpty               as NEV
-import           Prelude                            hiding (lookup, zip)
+import           Prelude                            hiding (lookup, zip, zipWith)
 import           TextShow
 
 
@@ -337,6 +337,13 @@ generateDotFile :: TextShow n => PhylogeneticDAG m e n u v w x y z -> String
 generateDotFile = (<> "\n") . L.unpack . renderDot . toDot
 
 
+adjustResolution
+  :: (ResolutionInformation (CharacterSequence u v w x y z) -> ResolutionInformation (CharacterSequence u v w x y z'))
+  -> IndexData e (PhylogeneticNode (CharacterSequence u v w x y z) n)
+  -> ResolutionCache (CharacterSequence u v w x y z')
+adjustResolution f = pure . f . NE.head . resolutions . nodeDecoration
+
+
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
 --
@@ -362,10 +369,36 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
          dag & _references .~ newReferences
              & _graphData  %~ buildMetaData
 
-    newReferences = V.generate nodeCount g
+    newReferences = case nodeCount of
+      1 -> singleRef <$> (dag ^. _references)
+      n -> V.generate n g
       where
         g i = (refs ! i) & _nodeDecoration .~ (memo ! i)
 
+    singleRef node = node & _nodeDecoration .~ updatedNode
+      where
+        updatedNode = (node ^. _nodeDecoration) & _resolutions .~ newResolution
+
+        newResolution :: ResolutionCache (CharacterSequence u' v' w' x' y' z')
+        newResolution = adjustResolution updateDynamicCharactersInSequence node
+
+        dynCharGen m x = transformation m (RootContext x)
+
+        updateDynamicCharactersInSequence
+           :: ResolutionInformation (CharacterSequence u1 v1 w1 x1 y1 z)
+           -> ResolutionInformation (CharacterSequence u1 v1 w1 x1 y1 z')
+        updateDynamicCharactersInSequence resInfo
+           = resInfo { characterSequence = updatedCharacterSequence }
+           where
+             updatedCharacterSequence =
+               over blockSequence
+               (zipWith blockGen (meta ^. blockSequence))
+               $ characterSequence resInfo
+
+             blockGen mBlock cBlock = cBlock & dynamicBin .~ updatedDynamicCharacters
+               where
+                 updatedDynamicCharacters :: Vector z'
+                 updatedDynamicCharacters = zipWith dynCharGen (mBlock ^. dynamicBin) (cBlock ^. dynamicBin)
 
     buildMetaData
       :: GraphData (PostorderContextualData (CharacterSequence u' v' w' x' y' z))
@@ -504,15 +537,11 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
             -- PhylogeneticNode type requirements. It is the part that gets
             -- updated, and requires a bunch of work to be performed.
             -- Remember, this only updates the dynamic characters.
+            newResolution = adjustResolution updateDynamicCharactersInSequence node
 
-            newResolution :: ResolutionCache (CharacterSequence u' v' w' x' y' z')
-            newResolution    = pure . updateDynamicCharactersInSequence $ NE.head datumResolutions
+            node          = refs ! i
 
-            datumResolutions = resolutions $ nodeDecoration node
-
-            node             = refs ! i
-
-            kids             = IM.keys $ childRefs node
+            kids          = IM.keys $ childRefs node
 
             updateDynamicCharactersInSequence
               :: ResolutionInformation (CharacterSequence u1 v1 w1 x1 y1 z)

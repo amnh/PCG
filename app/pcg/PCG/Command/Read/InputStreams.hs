@@ -65,6 +65,7 @@ getSpecifiedContent (WithSpecifiedTCM   fs tcm) = do
     SpecContent fs' <- getSpecifiedContent fs
     tcm'            <- getSpecifiedTcm tcm
     pure . SpecContent $ (DataContent <$> dataFile <*> const (Just tcm')) <$> fs'
+
 getSpecifiedContent (CustomAlphabetFile xs tcm) = do
     xs'  <- getSpecifiedFileContents xs
     tcm' <- getSpecifiedTcm tcm
@@ -94,3 +95,4 @@ getSpecifiedContentSimple = fmap (SpecContent . fmap (`DataContent` Nothing)) . 
 -- Reads in the contents of the given FilePath, correctly interpolating glob paths
 getFileContents :: FileSource -> ValidationT ReadCommandError IO (NonEmpty FileResult)
 getFileContents = emap InputError . readFiles
+

@@ -144,7 +144,7 @@ instance Ord a => Monoid (Min a) where
 
 
 -- |
--- There is an explanation in 'base' for why this is needed.
+-- There is an explanation in 'Data.Coerce' for why this is needed.
 {-# INLINE (#.) #-}
 (#.) :: Coercible b c => (b -> c) -> (a -> b) -> (a -> c)
 (#.) _f = coerce

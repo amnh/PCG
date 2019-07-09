@@ -10,7 +10,6 @@ module PCG.Command.Report.Evaluate
 import Bio.Graph
 import Control.Evaluation
 import Control.Monad.IO.Class
-import Control.Monad.Reader
 import Control.Monad.Trans.Validation
 import Data.Compact                   (getCompact)
 import Data.FileSource                (FileSource)
@@ -39,16 +38,16 @@ evaluate (ReportCommand format target) stateValue = reportStreams $> stateValue
   where
     reportStreams =
       case generateOutput stateValue format of
-           ErrorCase    errMsg  -> state $ failWithPhase Outputing errMsg
+           ErrorCase    errMsg  -> failWithPhase Outputing errMsg
            MultiStream  streams -> renderMultiStream streams
            SingleStream output  -> renderSingleStream target output
 
 
-renderMultiStream :: NonEmpty (FileSource, FileStream) -> EvaluationT (ReaderT GlobalSettings IO) ()
+renderMultiStream :: NonEmpty (FileSource, FileStream) -> EvaluationT GlobalSettings IO ()
 renderMultiStream = runOutputStream . traverse_ (uncurry writeFile)
 
 
-renderSingleStream :: OutputTarget -> FileStream -> EvaluationT (ReaderT GlobalSettings IO) ()
+renderSingleStream :: OutputTarget -> FileStream -> EvaluationT GlobalSettings IO ()
 renderSingleStream target output = runOutputStream $
     case target of
       OutputToStdout   -> writeSTDOUT output
@@ -59,11 +58,11 @@ renderSingleStream target output = runOutputStream $
           Move      ->  writeFileWithMove f output
 
 
-runOutputStream :: ValidationT OutputStreamError IO () -> EvaluationT (ReaderT GlobalSettings IO) ()
+runOutputStream :: ValidationT OutputStreamError IO () -> EvaluationT GlobalSettings IO ()
 runOutputStream outputValidation = do
     result <- liftIO $ runValidationT outputValidation
     case result of
-      Failure errMsg -> state $ failWithPhase Outputing errMsg
+      Failure errMsg -> failWithPhase Outputing errMsg
       Success _      -> pure ()
 
 

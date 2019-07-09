@@ -14,16 +14,20 @@
 {-# LANGUAGE DeriveFoldable   #-}
 {-# LANGUAGE DeriveFunctor    #-}
 {-# LANGUAGE DeriveGeneric    #-}
+{-# LANGUAGE ExplicitForAll   #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE StrictData       #-}
 {-# LANGUAGE TypeFamilies     #-}
 {-# LANGUAGE UnboxedSums      #-}
+
 
 module Data.MetricRepresentation
   ( MetricRepresentation(..)
   , retreiveSCM
   , retreivePairwiseTCM
   , retreiveThreewayTCM
+  , discreteMetricPairwiseLogic
+  , firstLinearNormPairwiseLogic
   ) where
 
 import Control.DeepSeq
@@ -71,7 +75,7 @@ retreivePairwiseTCM
   -> c
   -> (c, Word)
 retreivePairwiseTCM f (ExplicitLayout a b) = f a b
-retreivePairwiseTCM _ DiscreteMetric       =  discreteMetricPairwiseLogic
+retreivePairwiseTCM _ DiscreteMetric       = discreteMetricPairwiseLogic
 retreivePairwiseTCM _ LinearNorm           = firstLinearNormPairwiseLogic
 
 
@@ -133,7 +137,8 @@ discreteMetricThreewayLogic x y z
 
 
 firstLinearNormPairwiseLogic
-  :: ( Ord (Bound a)
+  :: forall a b c
+  .  ( Ord (Bound a)
      , Ranged a
      , Ranged b
      , Ranged c

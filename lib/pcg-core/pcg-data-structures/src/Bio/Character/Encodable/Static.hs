@@ -13,7 +13,7 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Encodable.Static
-  ( StaticCharacter()
+  ( StaticCharacter(SC)
   , StaticCharacterBlock()
   , EncodedAmbiguityGroupContainer(..)
   , EncodableStaticCharacter(..)

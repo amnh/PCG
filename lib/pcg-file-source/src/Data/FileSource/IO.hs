@@ -381,8 +381,7 @@ safelyMoveFile fs = do
 
 
 -- |
--- Streams text to a file in constant memory for any type with a `TextShow`
--- instance.
+-- Streams text from a file in constant memory.
 streamfromFile :: FileSource -> IO Text
 streamfromFile = T.readFile . otoList
 -- This streaming from file doesn't work...
@@ -395,8 +394,7 @@ streamfromFile filePath = do
 -}
 
 -- |
--- Streams text to a file in constant memory for any type with a `TextShow`
--- instance.
+-- Streams text to a file in constant memory.
 streamToFile :: IOMode -> FileSource -> FileStream -> IO ()
 streamToFile m fs = \case T txt -> runStream  T.hPutStr m fs txt
                           B bts -> runStream BS.hPutStr m fs bts

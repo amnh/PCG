@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Control.Evaluation.Unit
+-- Module      :  Control.Evaluation.Result
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- The core semigroupoid state of an 'Evaluation' monad.
+-- The core semigroupoid state of an 'Control.Evaluation.Evaluation' monad.
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveDataTypeable         #-}
@@ -21,7 +21,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-module Control.Evaluation.Unit where
+module Control.Evaluation.Result where
 
 import           Control.DeepSeq
 import           Control.Monad.Fail        (MonadFail)
@@ -33,9 +33,9 @@ import           Data.Functor.Alt          (Alt (..))
 import           Data.Functor.Apply        (Apply (..))
 import           Data.Functor.Bind         (Bind (..))
 import           Data.Functor.Classes      (Eq1, Ord1 (..), Show1)
+import           Data.Semigroup            (Semigroup (..))
 import           Data.Text.Lazy            (Text, pack)
 import           GHC.Generics
-import           System.ErrorPhase
 import           Test.QuickCheck
 import           Test.QuickCheck.Instances ()
 import           TextShow
@@ -52,11 +52,11 @@ import           TextShow
 -- Note that multiple errors can be aggregated before calling 'fail' or
 -- 'evalUnitWithPhase' using another 'Applicative' or 'Monad' locally. We will
 -- use the @Validation@ type to collect many error of the same "phase" before
--- failing in the 'Evaluation' monad. Consequently, the textual error message can
+-- failing in the 'Control.Evaluation' monad. Consequently, the textual error message can
 -- be quite long, representing the entire list of aggregated failures. We use
 -- 'Text' instead of 'String' to store the error message to save space and
 -- efficient rendering.
-newtype EvalUnit a = EU { runEvalUnit :: Either (ErrorPhase, Text) a }
+newtype EvaluationResult a = EU { runEvaluationResult :: Either (ErrorPhase, Text) a }
    deriving ( Applicative
             , Apply
             , Data
@@ -68,30 +68,49 @@ newtype EvalUnit a = EU { runEvalUnit :: Either (ErrorPhase, Text) a }
             , Generic1
             , MonadFix
             , NFData
-            , Semigroup
             , Show
             , Show1
             , Traversable
             )
 
-instance Alt EvalUnit where
+-- |
+-- Keep track of which phase of the evaluation th error occured in.
+--
+-- This allows use to use custom exit codes.
+data  ErrorPhase
+    = Inputing
+    | Parsing
+    | Unifying
+    | Computing
+    | Outputing
+    deriving (Data, Eq, Generic, Ord, Read, Show)
+
+
+instance Alt EvaluationResult where
 
     {-# INLINEABLE (<!>) #-}
 
     lhs <!> rhs =
-        case runEvalUnit lhs of
+        case runEvaluationResult lhs of
           Right _ -> lhs
           _       -> rhs
 
 
-instance Arbitrary a => Arbitrary (EvalUnit a) where
+instance Arbitrary ErrorPhase where
+
+    {-# INLINE arbitrary #-}
+
+    arbitrary = elements [ Inputing, Parsing, Unifying, Computing, Outputing ]
+
+
+instance Arbitrary a => Arbitrary (EvaluationResult a) where
 
     {-# INLINE arbitrary #-}
 
     arbitrary = liftArbitrary arbitrary
 
 
-instance Arbitrary1 EvalUnit where
+instance Arbitrary1 EvaluationResult where
 
     {-# INLINE liftArbitrary #-}
 
@@ -105,30 +124,37 @@ instance Arbitrary1 EvalUnit where
         errorMessage = "Error Description"
 
 
-instance CoArbitrary a => CoArbitrary (EvalUnit a) where
+instance CoArbitrary a => CoArbitrary (EvaluationResult a) where
 
     {-# INLINE coarbitrary #-}
 
     coarbitrary = genericCoarbitrary
 
 
-instance Bind EvalUnit where
+instance CoArbitrary ErrorPhase where
 
-    {-# INLINEABLE (>>-)  #-}
-    {-# INLINE   join  #-}
+    {-# INLINE coarbitrary #-}
+
+    coarbitrary = genericCoarbitrary
+
+
+instance Bind EvaluationResult where
+
+    {-# INLINEABLE (>>-) #-}
+    {-# INLINE     join  #-}
 
     e >>- f =
-        case runEvalUnit e of
+        case runEvaluationResult e of
           Left  l -> EU . Left $ l
           Right v -> f v
 
     join e =
-        case runEvalUnit e of
+        case runEvaluationResult e of
           Left  l -> EU . Left $ l
           Right v -> v
 
 
-instance Monad EvalUnit where
+instance Monad EvaluationResult where
 
     {-# INLINEABLE (>>=)  #-}
     {-# INLINE     (>>)   #-}
@@ -144,7 +170,7 @@ instance Monad EvalUnit where
     fail   = F.fail
 
 
-instance MonadFail EvalUnit where
+instance MonadFail EvaluationResult where
 
     {-# INLINE fail #-}
 
@@ -154,7 +180,7 @@ instance MonadFail EvalUnit where
            x:xs -> pack $ x:xs
 
 
-instance MonadZip EvalUnit where
+instance MonadZip EvaluationResult where
 
     {-# INLINEABLE mzip     #-}
     {-# INLINEABLE munzip   #-}
@@ -165,35 +191,53 @@ instance MonadZip EvalUnit where
     mzipWith = liftF2
 
     munzip x =
-        case runEvalUnit x of
+        case runEvaluationResult x of
           Left  s     -> (EU $ Left s, EU $ Left s)
           Right (a,b) -> (pure a, pure b)
 
 
-instance Ord a => Ord (EvalUnit a) where
+instance NFData ErrorPhase where
+
+    {-# INLINE rnf #-}
+
+    rnf x = x `seq` ()
+
+
+instance Ord a => Ord (EvaluationResult a) where
 
     {-# INLINE compare #-}
 
     compare  = liftCompare compare
 
 
-instance Ord1 EvalUnit where
+instance Ord1 EvaluationResult where
 
     {-# INLINE liftCompare #-}
 
     liftCompare cmp lhs rhs =
-        case (runEvalUnit lhs, runEvalUnit rhs) of
+        case (runEvaluationResult lhs, runEvaluationResult rhs) of
           (Left  x, Left  y) -> x `compare` y
           (Left  _, Right _) -> GT
           (Right _, Left  _) -> LT
           (Right x, Right y) -> x `cmp` y
 
 
+instance Semigroup (EvaluationResult a) where
+
+   lhs <> rhs =
+       case lhs of
+         EU (Left _) -> lhs
+         _           -> rhs
+
+   stimes _ e = e
+
+
 -- |
--- Produce a failure state while additionally indicating the phase in which the
--- failure occurred.
+-- Create a failure result with a specified 'ErrorPhase'.
+--
+-- Use in place of 'fail' when you want to the associated 'ErrorPhase' to be a value other than 'Computing'.
 {-# INLINE[1] evalUnitWithPhase #-}
-evalUnitWithPhase :: TextShow s => ErrorPhase -> s -> EvalUnit a
+evalUnitWithPhase :: TextShow s => ErrorPhase -> s -> EvaluationResult a
 evalUnitWithPhase p s = EU $ Left (p, showtl s)
 {-# RULES
 "evalUnitWithPhase/Text" forall p (s :: Text). evalUnitWithPhase p s = EU $ Left (p, s)

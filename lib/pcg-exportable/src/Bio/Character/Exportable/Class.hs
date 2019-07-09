@@ -27,14 +27,14 @@ module Bio.Character.Exportable.Class
   , HasExportedElementWidth(..)
   ) where
 
-import Control.Lens
+import Control.Lens (Lens', lens)
 import Foreign.C.Types
 
 
 -- |
 -- A structure used for FFI calls.
 --
--- 'bufferChunks' contains the bit-packed representation of the character sequence.
+-- 'exportedBufferChunks' contains the bit-packed representation of the character sequence.
 data ExportableCharacterSequence
    = ExportableCharacterSequence
    { exportedElementCountSequence :: {-# UNPACK #-} !Word
@@ -45,7 +45,7 @@ data ExportableCharacterSequence
 
 -- |
 -- A structure used for FFI calls--
--- 'characterElements' contains the integral value for each character element.
+-- 'exportedCharacterElements' contains the integral value for each character element.
 data ExportableCharacterElements
    = ExportableCharacterElements
    { exportedElementCountElements :: {-# UNPACK #-} !Word
@@ -67,7 +67,7 @@ class Exportable c where
 
 
 -- |
--- A 'Lens' for the 'exportedElementCount' field
+-- A 'Control.Lens.Type.Lens' for the 'exportedElementCount' field
 class HasExportedElementCount s a | s -> a where
     {-# MINIMAL exportedElementCount #-}
 
@@ -75,32 +75,28 @@ class HasExportedElementCount s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'exportedElementWidth' field
+-- A 'Control.Lens.Type.Lens' for the 'exportedElementWidth' field
 class HasExportedElementWidth s a | s -> a where
     {-# MINIMAL exportedElementWidth #-}
 
     exportedElementWidth :: Lens' s a
 
 
--- | (✔)
 instance HasExportedElementCount ExportableCharacterSequence Word where
 
     exportedElementCount = lens exportedElementCountSequence (\e x -> e { exportedElementCountSequence = x })
 
 
--- | (✔)
 instance HasExportedElementCount ExportableCharacterElements Word where
 
     exportedElementCount = lens exportedElementCountElements (\e x -> e { exportedElementCountElements = x })
 
 
--- | (✔)
 instance HasExportedElementWidth ExportableCharacterSequence Word where
 
     exportedElementWidth = lens exportedElementWidthSequence (\e x -> e { exportedElementWidthSequence = x })
 
 
--- | (✔)
 instance HasExportedElementWidth ExportableCharacterElements Word where
 
     exportedElementWidth = lens exportedElementWidthElements (\e x -> e { exportedElementWidthElements = x })

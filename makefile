@@ -16,7 +16,7 @@ sub-libs      = pcg-file-parsers pcg-language pcg-utility
 
 # file paths
 
-cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.6.3/phylogenetic-component-graph-0.1.0.1/x/pcg/build/pcg/pcg
+cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.6.5/phylogenetic-component-graph-0.1.0.1/x/pcg/build/pcg/pcg
 
 
 # Target aliases for easy CLI use
@@ -114,11 +114,11 @@ stack-build-test: phylogenetic-component-graph.cabal stack.yaml
 	stack build --test --ta "--rerun-update"
 
 # Builds and runs integration tests after a standard build.
-stack-build-test-integration: phylogenetic-component-graph.cabal stack.yaml standard-build
+stack-build-test-integration: phylogenetic-component-graph.cabal stack.yaml stack-standard-build
 	stack build phylogenetic-component-graph:test:integration-tests
 
 # Builds and runs unit tests after a standard build.
-stack-build-test-unit: phylogenetic-component-graph.cabal stack.yaml standard-build
+stack-build-test-unit: phylogenetic-component-graph.cabal stack.yaml stack-standard-build
 	stack build phylogenetic-component-graph:test:unit-tests
 
 # Builds tests and re-runs those that failed
@@ -160,7 +160,7 @@ install-cabal:
 
 
 cabal-setup: phylogenetic-component-graph.cabal cabal.project
-	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests
+	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests --with-compiler=ghc-8.6.5
 
 # Builds with no extra generated features and no optimizations
 cabal-build-quick: phylogenetic-component-graph.cabal cabal.project

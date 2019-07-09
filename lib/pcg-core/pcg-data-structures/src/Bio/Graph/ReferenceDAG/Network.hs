@@ -19,7 +19,7 @@ import           Bio.Graph.Node.Context
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.ReferenceDAG.Traversal
 import           Control.Applicative              as Alt (Alternative (empty, (<|>)))
-import           Control.Lens.Operators           ((^.))
+import           Control.Lens
 import           Control.Monad                    (guard)
 import           Data.EdgeSet
 import           Data.Foldable
@@ -32,7 +32,6 @@ import           Data.Monoid                      hiding ((<>))
 import           Data.MonoTraversable
 import           Data.Set                         (Set)
 import qualified Data.Set                         as S
-import           Data.Tuple.Utility
 import           Data.Vector                      (Vector)
 import           Data.Vector.Memo                 as Memo
 
@@ -136,15 +135,15 @@ descendantEdgesContextFn childDescendantEdges (currInd, indData) =
 
     OneChild descendantEdges    ->
       let
-        children = keys $ childRefs indData
-        newEdges = (\c -> (currInd, c)) <$> children
+        childrenInds = keys $ childRefs indData
+        newEdges = (\c -> (currInd, c)) <$> childrenInds
       in
         S.fromList newEdges <> descendantEdges
 
     TwoChildren descendantEdges1 descendantEdges2 ->
       let
-        children = keys $ childRefs indData
-        newEdges = (\c -> (currInd, c)) <$> children
+        childrenInds = keys $ childRefs indData
+        newEdges = (\c -> (currInd, c)) <$> childrenInds
       in
         S.fromList newEdges <> descendantEdges1 <> descendantEdges2
 
@@ -292,7 +291,7 @@ candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
             let
 
               getAncestralNodes :: Int -> IntSet
-              getAncestralNodes node = proj4_3 $ networkInformation ! node
+              getAncestralNodes node = (^. _3) $ networkInformation ! node
 
               getAncestralNetworkPairs :: IntSet -> IntSet
               getAncestralNetworkPairs =
@@ -342,8 +341,8 @@ candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
           let
          -- Network Information
 
-            e1TgtAncestralNodes = proj4_3 $ networkInformation ! tgt1
-            e2TgtAncestralNodes = proj4_3 $ networkInformation ! tgt2
+            e1TgtAncestralNodes = (^. _3) $ networkInformation ! tgt1
+            e2TgtAncestralNodes = (^. _3) $ networkInformation ! tgt2
 
             networkParentSource2Test :: Int -> IntSet -> Bool
             networkParentSource2Test _src1 e2TgtAncNodes =
@@ -424,7 +423,7 @@ gatherDescendantNetworkNodes
   -> Vector (a, IntSet, c, d)  -- ^ Vector tuple with network node indices
   -> IntSet                    -- ^ All descendant network nodes
 gatherDescendantNetworkNodes inds vect
-  = ofoldMap (\ind -> proj4_2 $ vect ! ind) inds
+  = ofoldMap (\ind -> (^. _2) $ vect ! ind) inds
 
 -- |
 -- Helper function to get all descendent network contexts from an `IntSet` of nodes.
@@ -433,7 +432,7 @@ gatherAncestralNetworkContexts
   -> Vector (a, b, c, Set NetworkContext)  -- ^ Vector tuple with network node indices
   -> Set NetworkContext                    -- ^ All descendant network nodes
 gatherAncestralNetworkContexts inds vect
-  = ofoldMap (\ind -> proj4_4 $ vect ! ind) inds
+  = ofoldMap (\ind -> (^. _4) $ vect ! ind) inds
 
 
 

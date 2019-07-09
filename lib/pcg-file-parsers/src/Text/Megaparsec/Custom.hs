@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Custom utility combinators for 'Megaparsec' parser construction
+-- Custom utility combinators for 'Text.Megaparsec' parser construction.
 --
 -----------------------------------------------------------------------------
 
@@ -120,7 +120,7 @@ somethingTill c = do
 -- Coerces the collection to a sorted, unboxed vector and performs a binary
 -- search on the elements to determine if a 'Token s' is part of the collection.
 --
--- Preferable to 'someOf'.
+-- Preferable to 'Text.Megaparsec.someOf'.
 {-# INLINE someOfThese #-}
 {-# SPECIALISE someOfThese :: Foldable f => f Char -> Parsec Void  T.Text  T.Text #-}
 {-# SPECIALISE someOfThese :: Foldable f => f Char -> Parsec Void LT.Text LT.Text #-}
@@ -223,7 +223,7 @@ inlinedSpace = void $ takeWhileP (Just "inline space") isInlinedSpace
 
 
 -- |
--- Returns @True@ if the 'Char' is a space value but not a ``newline'' character.
+-- Returns @True@ if the 'Char' is a space value but not a "newline" character.
 {-# INLINE isInlinedSpace #-}
 isInlinedSpace :: Char -> Bool
 isInlinedSpace c = isSpace c && c /= '\n' && c /= '\r'
