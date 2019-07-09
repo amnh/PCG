@@ -13,12 +13,13 @@
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeApplications #-}
 
 
 
 module Analysis.Clustering.KMedians where
 
-import Data.Vector (Vector, MVector)
+import Data.Vector (Vector)
 import qualified Data.Vector as V
 import Data.Monoid (Sum)
 import VectorBuilder.Builder (Builder)
@@ -31,7 +32,6 @@ import VectorBuilder.Vector (build)
 
 class HasDistance a where
   dist :: a -> a -> Sum Double
-
 
 data MediansCluster a = MediansCluster
   { clusterPoints :: Vector (Int, a)
@@ -51,19 +51,29 @@ kMediansCluster
   -> Vector (Vector a)
 kMediansCluster kMedians inputs opts =
   let
-     init  = initialAssignment kMedians inputs opts
-     final = lloydMedians kMedians inputs opts init
+     initial  = initialAssignment kMedians inputs opts
+     final    = lloydMedians kMedians inputs opts initial
   in
     build <$> (assignment final)
 
 
 initialAssignment
-  :: forall a . (HasDistance a)
-  => (Vector a -> a)
+  :: forall a 
+  . (Vector a -> a)
   -> Vector a
   -> MedianOpts
   -> MediansCluster a
-initialAssignment = undefined
+initialAssignment kMedians inputs MedianOpts{..} =
+  let
+    inputSize = length inputs
+    chunkSize = ceiling $ fromIntegral @_ @Double inputSize / fromIntegral @_ @Double numberOfClusters
+    chunks = chunksOf chunkSize inputs
+    clusterPoints = kMedians <$> chunks
+  in
+    MediansCluster
+    { clusterPoints = V.indexed clusterPoints
+    , assignment    = VB.vector <$> chunks
+    }
 
 
 lloydMedians
@@ -101,8 +111,8 @@ assignClusters
   -> MediansCluster a
 assignClusters clusterPoints inputs = MediansCluster{..}
   where
-    assignments :: Vector (Builder a)
-    assignments  = V.create $ do
+    assignment :: Vector (Builder a)
+    assignment  = V.create $ do
       let numberOfClusters = length clusterPoints
       vec <- MVector.replicate numberOfClusters VB.empty
       let
@@ -119,3 +129,19 @@ assignClusters clusterPoints inputs = MediansCluster{..}
         f inp (_, clusterPoint) = dist inp clusterPoint
       traverse_ addPoint inputs
       pure vec
+
+
+chunksOf :: Int -> Vector a -> Vector (Vector a)
+chunksOf chunk vec = 
+  let
+    len = length vec
+  in
+    build $ go len chunk vec
+  where
+    go :: Int -> Int -> Vector a -> Builder (Vector a)
+    go l c v =
+      if l >= c then
+        VB.singleton (V.take c v) <> (go (l - c) c (V.drop c v))
+      else
+        VB.singleton v
+                
