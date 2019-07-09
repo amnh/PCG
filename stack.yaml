@@ -6,14 +6,16 @@ compiler-check: match-exact
 
 extra-deps:
   - bv-little-1.0.1
+  - clustering-0.4.1
   - compact-0.1.0.1
-#  - graphviz-2999.20.0.2@sha256:5fad513f27c6fa4ee92f27461bb7386a5541b6b7edd601483fe693d4ac3963c5
   - graphviz-2999.20.0.3
+  - matrices-0.5.0
+  - mono-traversable-keys-0.1.0
+  - perfect-vector-shuffle-0.1.0
   - pretty-tree-0.1.0.0
   - tasty-rerun-1.1.14
   - text-show-3.7.5
   - text-show-instances-3.7
-  - mono-traversable-keys-0.1.0
   - validation-1.1
 
 #ghc-options:
@@ -24,7 +26,7 @@ local-bin-path: bin
 
 require-stack-version: ">=1.9.1"
 
-resolver: lts-13.20
+resolver: lts-13.27
 
 dump-logs: all
 

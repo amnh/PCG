@@ -11,8 +11,8 @@
 -- Functionality to output a matrix stating which taxa are present in which files.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE TypeSynonymInstances #-}
+
+{-# LANGUAGE FlexibleInstances #-}
 
 module PCG.Command.Types.Report.TaxonMatrix where
 
@@ -38,26 +38,26 @@ type TaxaPresence = (Presence, [String], [String])
 
 taxonReferenceOutput :: StandardSolution -> [FilePath] -> String
 taxonReferenceOutput sol files = printIt $ makeRef sol files
-    where
-        makeRef :: StandardSolution -> [FilePath] -> TaxaPresence
-        makeRef inSolution inFilter = (presenceMatrix, toList allNodes, toList finalFiles)
-                                    --(V.foldr (\n acc -> acc <-> rowVector (oneRow n)) mempty (V.fromList allNodes), allNodes, files)
-            where
-                presenceMatrix = matrix (length allNodes) (length checkPos) gen
-                gen :: (Int,Int) -> Bool
-                --gen (i,j) | trace ("gen on row " <> show i <> " " <> show (length (allSeqs ! (allNodes V.! i))) <> " " <> show (checkPos V.! j)) False = undefined
-                gen (i,j) = isJust $ (allSeqs ! (allNodes V.! i)) V.! (checkPos V.! j)
+  where
+    makeRef :: StandardSolution -> [FilePath] -> TaxaPresence
+    makeRef inSolution inFilter = (presenceMatrix, toList allNodes, toList finalFiles)
+      where
+        presenceMatrix = matrix (length allNodes) (length checkPos) gen
+        gen :: (Int,Int) -> Bool
+        gen (i,j) = isJust $ (allSeqs ! (allNodes V.! i)) V.! (checkPos V.! j)
 
-                filterNames taxonName = null inFilter || taxonName `elem` inFilter
-                fileNames = takeWhile (/=':') . name <$> metadata inSolution
-                (checkPos, finalFiles) = (V.fromList *** V.fromList)
-                                       . unzip
-                                       . nubBy ((==) `on` snd)
-                                       . toList
-                                       $ V.ifoldr (\i n acc -> if filterNames n then (i, n) `cons` acc else acc) mempty fileNames
-                allSeqs = parsedChars inSolution
-                allNodes = V.fromList $ HM.keys allSeqs
---                oneRow curNode = ifoldr (\i s acc -> if i `elem` checkPos then isJust s `cons` acc else acc) mempty (allSeqs ! curNode)
+        filterNames taxonName = null inFilter || taxonName `elem` inFilter
+        fileNames = takeWhile (/=':') . name <$> metadata inSolution
+        (checkPos, finalFiles) = (V.fromList *** V.fromList)
+                               . unzip
+                               . nubBy ((==) `on` snd)
+                               . toList
+                               $ V.ifoldr (\i n acc -> if filterNames n
+                                                       then (i, n) `cons` acc
+                                                       else acc
+                                          ) mempty fileNames
+        allSeqs = parsedChars inSolution
+        allNodes = V.fromList $ HM.keys allSeqs
 
 
 printIt :: TaxaPresence -> String

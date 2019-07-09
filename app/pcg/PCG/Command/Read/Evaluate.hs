@@ -34,10 +34,10 @@ evaluate (ReadCommand fileSpecs) = do
                       InputError {} -> Inputing
                       ParseError {} ->  Parsing
                       UnifyError {} -> Unifying
-        in  state $ failWithPhase phase pErr
+        in  failWithPhase phase pErr
       Success pRes ->
         case decoration . unifyPartialInputs $ transformation <$> fold1 pRes of
-          Failure uErr -> state $ failWithPhase Unifying uErr   -- Report structural errors here.
+          Failure uErr -> failWithPhase Unifying uErr   -- Report structural errors here.
           -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
           Success g    ->  liftIO $ compact g
                          -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
@@ -45,5 +45,14 @@ evaluate (ReadCommand fileSpecs) = do
                          -- (liftIO . putStrLn $ show g) $> g
   where
     transformation = id -- expandIUPAC
-    decoration     = fmap (fmap initializeDecorations2)
+
+    decoration
+      :: Validation UnificationError (Either TopologicalResult CharacterResult)
+      -> Validation UnificationError
+           (Either
+              TopologicalResult (PhylogeneticSolution FinalDecorationDAG))
+    decoration     = fmapCharDAG initializeDecorations2
+
+    fmapCharDAG = fmap . fmap
+
 

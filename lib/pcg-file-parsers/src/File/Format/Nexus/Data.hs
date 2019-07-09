@@ -36,7 +36,7 @@ module File.Format.Nexus.Data
   , SeqSubBlock(Matrix, Format, Dims, Eliminate, CharLabels, IgnSSB, Taxa)
   , StepMatrix(..)
   , TaxaSpecification(..)
---  , TreeName
+  , TreeName
 --  , SerializedTree
   , TreeBlock(..)
   , TreeField(..)

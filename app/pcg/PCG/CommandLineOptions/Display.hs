@@ -1,7 +1,5 @@
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TemplateHaskell   #-}
 
 module PCG.CommandLineOptions.Display
   ( gatherDisplayInformation
@@ -17,7 +15,6 @@ import Data.Semigroup               ((<>))
 import Data.Text                    hiding (filter, intersperse, replicate)
 import Data.Text.IO
 import PCG.CommandLineOptions.Types
-import PCG.Software.Credits
 import PCG.Software.Metadata
 import Prelude                      hiding (putStrLn, unlines, unwords)
 import System.ErrorPhase
@@ -87,7 +84,7 @@ printAuthorList = putStrLn $ renderedHeaderLines <> renderedAuthorLines
       , ""
       ]
     renderedAuthorLines = (<>"\n\n") . intercalate "\n\n" $ fmap ("    • " <>) rawAuthorLines
-    rawAuthorLines = $(authorsList)
+    rawAuthorLines = mempty -- $(authorsList)
 
 
 printFunderList :: IO ()
@@ -99,7 +96,7 @@ printFunderList = putStrLn $ renderedHeaderLines <> renderedFundingSources
       , ""
       ]
     renderedFundingSources = (<>"\n") . intercalate "\n\n" $ renderSource <$> rawFundingSources
-    rawFundingSources = $(fundingList)
+    rawFundingSources = mempty --  $(fundingList)
     renderSource (src, url) = "    • " <> src <> maybe "" ("\n      › " <>) url
 
 
@@ -134,7 +131,7 @@ printExitCodeDocumentation = putStrLn . intercalate "\n" . (preamble:) . foldMap
     g  Inputing = "PCG attempted to retrieve input streams"
     g   Parsing = "interpreting input streams that were successfully retrieved"
     g  Unifying = "combining multiple data sets into a coherent composite"
-    g Computing = "running PCG, please report at github.com/amnh/PCG/issues"
+    g Computing = "running PCG, please report at https://github.com/amnh/PCG/issues"
     g Outputing = "outputing data streams from PCG"
 
     preamble = intercalate "\n" $ ("  "<>) <$>

@@ -28,7 +28,6 @@ module File.Format.Dot
   , toIdentifier
   ) where
 
-
 import           Control.Arrow                     ((&&&))
 import           Control.Monad.State
 import           Data.Foldable
@@ -49,7 +48,7 @@ import           Text.Megaparsec                   (MonadParsec, Token, chunkToT
 
 
 -- |
--- Parses the 'Text' stream from a DOT file.
+-- Parses the 'L.Text' stream from a DOT file.
 
 -- (MonadParsec e s m, Token s ~ Char) => m
 --dotParse :: Text -> Either String (DotGraph GraphID)
@@ -134,9 +133,6 @@ relabelDotGraph g =
                        | otherwise            = fromNode edge
 
 
-type EdgeIdentifier n = (n , n)
-
-
 -- |
 -- Takes a 'DotGraph' parse result and returns a set of unique node identifiers.
 dotNodeSet :: Ord n => DotGraph n -> Set n
@@ -159,7 +155,7 @@ dotNodeSet = foldMap (S.singleton . nodeID) . graphNodes
 
 -- |
 -- Takes a 'DotGraph' parse result and returns a set of unique edge identifiers.
-dotEdgeSet :: Ord n => DotGraph n -> Set (EdgeIdentifier n)
+dotEdgeSet :: Ord n => DotGraph n -> Set ((n, n))
 dotEdgeSet = foldMap (S.singleton . toEdgeIdentifier) . graphEdges
   where
 
@@ -185,7 +181,8 @@ dotParentMap = sharedWork directionality
 
 
 -- |
--- Intelligently render a 'NodeLabel' of a 'GraphID' to a 'String' for output.
+-- Intelligently render a 'Data.GraphViz.Attributes.Complete.NodeLabel' of a
+-- 'GraphID' to a 'String' for output.
 toIdentifier :: GraphID -> String
 toIdentifier (Str x) = L.unpack x
 toIdentifier (Num x) = show x
@@ -196,7 +193,7 @@ toIdentifier (Num x) = show x
 -- functions.
 sharedWork
   :: forall n. Ord n
-  => (EdgeIdentifier n -> Map n (Set n) -> Map n (Set n))
+  => ((n, n) -> Map n (Set n) -> Map n (Set n))
   -> DotGraph n
   -> Map n (Set n)
 sharedWork logic dot = fromSet getAdjacency setOfNodes

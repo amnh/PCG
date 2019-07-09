@@ -46,16 +46,15 @@
 # Replace a $ b $ c with a . b $ c
 - group: { name: dollar, enabled: true }
 
-
 # Generalise map to fmap, ++ to <>
 - group: { name: generalise, enabled: true }
-
 
 # Generalise Maybe, Either functions to fold, foldMap
 - group: { name: generalise-for-conciseness, enabled: true }
 
-# I don't like the TupleSections language extension, so we will ignore the hints
+# The TupleSections language extension's syntax can be confusing, so we will ignore the hints
 - ignore: { name: Use tuple-section }
+
 
 # Ignore some builtin hint in test modules where we need to test the hint.
 # These hints are inapplicable within test modules since the test-suites are
@@ -171,3 +170,4 @@
 - ignore: { name: Use camelCase
           , within: TestSuite.ScriptTests
           }
+

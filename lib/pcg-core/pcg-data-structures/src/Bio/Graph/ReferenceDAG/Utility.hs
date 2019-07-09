@@ -31,7 +31,6 @@ import           Data.Key                        ((!))
 import qualified Data.List.NonEmpty              as NE
 import           Data.Set                        (Set, (\\))
 import qualified Data.Set                        as Set
-import           Data.Tuple.Utility
 import           Data.Vector                     (Vector)
 import           Test.QuickCheck
 
@@ -115,7 +114,7 @@ makeBranchedNetwork
   => ReferenceDAG d () n   -- ^ n0
   -> ReferenceDAG d () n   -- ^ n1
   -> ReferenceDAG d () n
-makeBranchedNetwork n0 n1 = proj3_1 $ makeBranchedNetworkWithInfo n0 n1
+makeBranchedNetwork n0 n1 = (^. _1) $ makeBranchedNetworkWithInfo n0 n1
 
 -- |
 -- This function takes valid networks n0, n1 and n2 and forms the network:
@@ -303,7 +302,7 @@ makeBranchedNetworkWithNetworkEvent
   -> ReferenceDAG d () n   -- ^ n3
   -> ReferenceDAG d () n
 makeBranchedNetworkWithNetworkEvent n0 n1 n2 n3
-  = proj4_1 $ makeBranchedNetworkWithNetworkEventWithInfo n0 n1 n2 n3
+  = (^. _1) $ makeBranchedNetworkWithNetworkEventWithInfo n0 n1 n2 n3
 
 
 -- |

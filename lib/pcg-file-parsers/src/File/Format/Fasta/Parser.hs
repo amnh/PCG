@@ -15,7 +15,6 @@
 {-# LANGUAGE ApplicativeDo       #-}
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE DeriveAnyClass      #-}
-{-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric       #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -35,7 +34,6 @@ import           Control.Monad              ((<=<))
 import           Data.Alphabet.IUPAC
 import           Data.Bimap                 (Bimap, toMap)
 import           Data.Char                  (isLower, isUpper, toLower, toUpper)
---import           Data.Data                  (Data)
 import           Data.Foldable
 import           Data.Functor
 import           Data.List                  (partition)
@@ -119,7 +117,7 @@ fastaTaxonName = identifierLine
 fastaSequence :: forall e s m . (MonadParsec e s m, Monoid (Tokens s), Token s ~ Char) => m (Vector Char)
 fastaSequence = space *> fullSequence
   where
-    fullSequence = buildVector . mconcat <$> some taxonContentLine
+    fullSequence = buildVector . fold <$> some taxonContentLine
 
     -- A line in the "taxon contents" can start with zero or more "inline whitespace" characters.
     -- After all leading whitespace has been consumed on the line, what remains must be either:
@@ -131,7 +129,7 @@ fastaSequence = space *> fullSequence
     taxonContentLine = inlinedSpace *> (sequenceLine <|> (endOfLine $> mempty))
 
     -- Defines the contents of a taxon line which contains sequence data
-    sequenceLine = mconcat <$> ((seqChunk <* inlinedSpace) `someTill` flexEOL)
+    sequenceLine = fold <$> ((seqChunk <* inlinedSpace) `someTill` flexEOL)
       where
         seqChunk = someOfThese alphabet
 

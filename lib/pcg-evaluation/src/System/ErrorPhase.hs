@@ -87,7 +87,7 @@ instance TextShow ErrorPhase where
 -- Definition of the unique mapping between 'ErrorPhase' and 'ExitCode'.
 --
 -- The 'ExitCode' returned from this function will return an 8 bit value.
--- 'ExitCode' exposes a 'Int', and not a 'Word8' or 'Int8' as described, however
+-- 'ExitCode' exposes a 'Int', and not a 'Data.Word.Word8' or 'Data.Int.Int8' as described, however
 -- we limit the range of the resulting 'ExitCode'.
 --
 -- The resulting 8-bit exit code value will have the two least significant bits
