@@ -60,7 +60,7 @@ data TCMParseResult
 -- |
 -- The results of a TCM file consisting of
 --
---   * A custom alphabet of 'Symbol's
+--   * A custom alphabet of "Symbols"
 --
 --   * A matrix consisting of the transition costs between symbols
 --
@@ -71,7 +71,7 @@ data TCMParseResult
 -- Note that the 'transitionCosts` does not need to be a symetic matrix nor have identity values on the matrix diagonal.
 data TCM
    = TCM
-   { -- | The custom alphabet of 'Symbols' for which the TCM matrix is defined
+   { -- | The custom alphabet of "Symbols" for which the TCM matrix is defined
      customAlphabet  :: Vector ShortText
      -- | The cost to transition between any two symbols, square but not necessarily symetric
    , transitionCosts :: Matrix Rational -- n+1 X n+1 matrix where n = length customAlphabet

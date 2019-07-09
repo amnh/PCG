@@ -10,16 +10,16 @@
 --
 -- An 'Alphabet' represents an /ordered/ list of unique symbols with constant
 -- time random access. Symbols are any data type which are coercable from a
--- 'String' through the 'IsString' type-class.
+-- 'String' through the 'Data.String.IsString' type-class.
 --
 -- An 'Alphabet' is constructed in one of two ways:
 --
---  1. Supplying a `Foldable` structure of symbols which are 'IsString'
+--  1. Supplying a `Foldable` structure of symbols which are 'Data.String.IsString'
 --     instances to the 'fromSymbols' function.
 --
 --  2. Supplying a `Foldable` structure of symbols and state name pairs,
---     both of which are 'IsString' instances to the 'fromSymbolsWithStateNames'
---     function.
+--     both of which are 'Data.String.IsString' instances to the
+--     'fromSymbolsWithStateNames' function.
 --
 -- Both 'Alphabet' construction methods are order preserving with respect to the
 -- input symbol order.

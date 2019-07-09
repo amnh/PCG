@@ -100,7 +100,7 @@ collapseStructures (ccodes, cnames, costs, nstates, treads, xreads)
 -- |
 -- Mutate the metadata structure by replacing the default character naming
 -- information with information defined in CNAME command(s).
-applyCNames :: Foldable f => f CharacterName -> Vector CharacterMetaData -> Vector CharacterMetaData
+applyCNames :: Foldable f => f CharacterName -> Vector CharacterMetadata -> Vector CharacterMetadata
 applyCNames charNames metaData = metaData // toAscList names
   where
     names = f `mapWithKey` cnamesCoalesce charNames
@@ -115,7 +115,7 @@ applyCNames charNames metaData = metaData // toAscList names
 -- |
 -- Mutate the metadata structure by replacing the default TCM costs with
 -- custom TCMs defined in COST command(s).
-applyCosts :: Foldable f => f Cost -> Vector CharacterMetaData -> Vector CharacterMetaData
+applyCosts :: Foldable f => f Cost -> Vector CharacterMetadata -> Vector CharacterMetadata
 applyCosts charCosts metaData = metaData // toAscList matricies
   where
     matricies = mapWithKey f $ costsCoalesce (length metaData - 1) charCosts
@@ -132,22 +132,22 @@ applyCosts charCosts metaData = metaData // toAscList matricies
 -- |
 -- Coalesces many CCODE commands respecting thier structural order
 -- into a single index ordered mapping.
-ccodeCoalesce :: Foldable t => Int -> t CCode -> Vector CharacterMetaData
+ccodeCoalesce :: Foldable t => Int -> t CCode -> Vector CharacterMetadata
 ccodeCoalesce charCount ccodeCommands = generate charCount f
   where
-    f :: Int -> CharacterMetaData
+    f :: Int -> CharacterMetadata
     f = fromMaybe initialMetaData . (`IM.lookup` stateMapping)
 
-    stateMapping :: IntMap CharacterMetaData
+    stateMapping :: IntMap CharacterMetadata
     stateMapping = foldl' (foldl' addChangeSet) mempty ccodeCommands
 
-    addChangeSet :: IntMap CharacterMetaData -> CCodeAugment -> IntMap CharacterMetaData
+    addChangeSet :: IntMap CharacterMetadata -> CCodeAugment -> IntMap CharacterMetadata
     addChangeSet mapping (CCodeAugment states indicies) = foldl' applyChanges mapping indicies
       where
-        applyChanges :: IntMap CharacterMetaData -> CharacterSet -> IntMap CharacterMetaData
+        applyChanges :: IntMap CharacterMetadata -> CharacterSet -> IntMap CharacterMetadata
         applyChanges mapping' changeSet = foldl' (insertStates states) mapping' (range charCount changeSet)
 
-    insertStates :: Foldable t => t CharacterState -> IntMap CharacterMetaData ->  Int -> IntMap CharacterMetaData
+    insertStates :: Foldable t => t CharacterState -> IntMap CharacterMetadata ->  Int -> IntMap CharacterMetadata
     insertStates states mapping index = foldl' insertState mapping states
       where
         insertState mapping' state = insertWith translation index defaultValue mapping'

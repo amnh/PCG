@@ -644,7 +644,7 @@ seqDimsMissing phyloSeq
 
 -- |
 -- Similar to findAmbiguousNoTokens. Takes a sequence as a String.
--- If it encounters a '{' or '(' translates the characters inside the delimiters into a list of 'Strings'.
+-- If it encounters a '{' or '(' translates the characters inside the delimiters into a list of 'String's.
 -- Outputs the original input with all ambiguous sequences replaced by these lists.
 findAmbiguousTokens :: [String] -> AmbiguityGroup -> Bool -> [AmbiguityGroup]
 findAmbiguousTokens [] _ _ = []

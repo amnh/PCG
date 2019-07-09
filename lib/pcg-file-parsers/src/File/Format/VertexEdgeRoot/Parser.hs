@@ -107,7 +107,7 @@ instance Show EdgeInfo where
 -- |
 -- For a given vertex, attempts to get the connected vertex from the 'EdgeInfo'.
 -- If the input vertex was present in the 'EdgeInfo', returns 'Just v' where
--- 'v' is the corresponsing 'VertexLabel'. If the input vertex was not present
+-- @v@ is the corresponsing 'VertexLabel'. If the input vertex was not present
 -- in the 'EdgeInfo'.
 connectedVertex :: VertexLabel -> EdgeInfo -> Maybe VertexLabel
 connectedVertex v (EdgeInfo a b _)
@@ -305,7 +305,7 @@ isReflexive (EdgeInfo a b _) (EdgeInfo x y _) = a == y && b == x
 
 
 -- |
--- Defines the serialized format of an edge connecting nodes 'a' and 'b' as
+-- Defines the serialized format of an edge connecting nodes @a@ and @b@ as
 -- '"(a,b)"'. Allows for optional "branch length" annotation as '"(a,b):12.34"'.
 edgeDefinition :: (MonadParsec e s m, Token s ~ Char) => m EdgeInfo
 edgeDefinition = symbol $ do

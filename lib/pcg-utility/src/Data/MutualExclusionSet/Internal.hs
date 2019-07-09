@@ -61,8 +61,7 @@ import           Test.QuickCheck
 -- set.
 --
 -- This is an efficient representation for construction and manipulation of a
--- collection of mutually exclusive elements using an newtyped 'Bimap' with some
--- typeclass instance modifications.
+-- collection of mutually exclusive elements using multiple internal 'Map's.
 data  MutualExclusionSet a
     = MES
     { includedElemMap :: !(Map a (Set a))
