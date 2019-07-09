@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- The core semigroupoid state of an 'Evaluation' monad.
+-- The core semigroupoid state of an 'Control.Evaluation.Evaluation' monad.
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveDataTypeable         #-}
@@ -52,7 +52,7 @@ import           TextShow
 -- Note that multiple errors can be aggregated before calling 'fail' or
 -- 'evalUnitWithPhase' using another 'Applicative' or 'Monad' locally. We will
 -- use the @Validation@ type to collect many error of the same "phase" before
--- failing in the 'Evaluation' monad. Consequently, the textual error message can
+-- failing in the 'Control.Evaluation' monad. Consequently, the textual error message can
 -- be quite long, representing the entire list of aggregated failures. We use
 -- 'Text' instead of 'String' to store the error message to save space and
 -- efficient rendering.
@@ -232,6 +232,10 @@ instance Semigroup (EvaluationResult a) where
    stimes _ e = e
 
 
+-- |
+-- Create a failure result with a specified 'ErrorPhase'.
+--
+-- Use in place of 'fail' when you want to the associated 'ErrorPhase' to be a value other than 'Computing'.
 {-# INLINE[1] evalUnitWithPhase #-}
 evalUnitWithPhase :: TextShow s => ErrorPhase -> s -> EvaluationResult a
 evalUnitWithPhase p s = EU $ Left (p, showtl s)

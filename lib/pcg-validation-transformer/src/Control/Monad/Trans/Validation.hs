@@ -48,7 +48,7 @@ import           Test.QuickCheck           hiding (Failure, Success)
 
 
 -- |
--- A monad transformer of 'Evaluation'.
+-- A monad transformer of 'Validation'.
 newtype ValidationT e m a
       = ValidationT
       { -- | Run the 'ValidationT' monad transformer

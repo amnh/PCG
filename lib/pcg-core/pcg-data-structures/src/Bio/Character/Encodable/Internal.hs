@@ -75,9 +75,9 @@ bitVectorToBufferChunks elemWidth elemCount bv = fmap toUnsignedNumber $ ((`subR
     totalBits = elemWidth * elemCount
     (fullWords, remainingBits) = totalBits `divMod` longWidth
     slices   = take (fromEnum fullWords) $ iterate ((longWidth +) `bimap` (longWidth +)) ((0, longWidth - 1) :: (Word, Word))
-    tailWord = if   remainingBits == 0
-               then []
-               else [ (totalBits - remainingBits, totalBits - 1) `subRange` bv ]
+    tailWord = [ (totalBits - remainingBits, totalBits - 1) `subRange` bv
+               | remainingBits /= 0
+               ]
 
 
 -- |

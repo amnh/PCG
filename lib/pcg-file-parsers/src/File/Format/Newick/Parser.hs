@@ -86,8 +86,7 @@ newickForestDefinition = whitespace *> symbol (char '<') *> some1 newickExtended
 
 -- |
 -- Definition of a serialized Newick node consisiting of the node's descendants,
--- optional label, and optional branch length. Mutually recursive with
--- 'subtreeDefinition '.
+-- optional label, and optional branch length.
 {-# INLINEABLE newickNodeDefinition #-}
 {-# SPECIALISE newickNodeDefinition :: Parsec Void  T.Text NewickNode #-}
 {-# SPECIALISE newickNodeDefinition :: Parsec Void LT.Text NewickNode #-}
@@ -113,7 +112,7 @@ descendantListDefinition = char '(' *> trimmed subtreeDefinition `sepBy1` char '
 
 -- |
 -- Definition of a Newick subtree consisting of either a single leaf node or a
--- greater subtree. Mutually recursive with 'newickNodeDefinition'.
+-- greater subtree.
 {-# INLINEABLE subtreeDefinition #-}
 {-# SPECIALISE subtreeDefinition :: Parsec Void  T.Text NewickNode #-}
 {-# SPECIALISE subtreeDefinition :: Parsec Void LT.Text NewickNode #-}
@@ -208,7 +207,7 @@ invalidQuotedLabelChars = "\r\n\t\f\v\b"
 
 -- |
 -- List of chacracters which __cannot__ appear in an /unquoted/ label of a
--- 'NewickNode'. A superset of 'invalidQuotedLabelChars'.
+-- 'NewickNode'.
 {-# INLINE invalidUnquotedLabelChars #-}
 invalidUnquotedLabelChars :: String
 invalidUnquotedLabelChars = invalidQuotedLabelChars <> requiresQuotedLabelChars

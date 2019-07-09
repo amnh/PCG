@@ -248,5 +248,7 @@ uncons (NEV v) = (first, stream)
     len   = length v
 
 
+-- |
+-- Fully evaluates the 'Vector'.
 force :: forall a . Vector a -> Vector a
 force = coerce $ V.force @a

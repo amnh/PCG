@@ -8,14 +8,13 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- The 'Evaluation' monad definition.
+-- The various 'Notification' values in an 'Contol.Evaluation.Evaluation' monad.
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Control.Evaluation.Notification

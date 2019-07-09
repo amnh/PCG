@@ -46,7 +46,7 @@ module File.Format.TNT.Internal
   , TntDiscreteCharacter
   , TntDnaCharacter
   , TntProteinCharacter
-  , CharacterMetaData(..)
+  , CharacterMetadata(..)
   , bitsToFlags
   , characterIndicies
   , characterStateChar
@@ -118,7 +118,7 @@ type TreeOnly  = TRead
 data WithTaxa
    = WithTaxa
    { sequences    :: Vector TaxonInfo
-   , charMetaData :: Vector CharacterMetaData
+   , charMetaData :: Vector CharacterMetadata
    , trees        :: [LeafyTree TaxonInfo]
    } deriving (Show)
 
@@ -310,8 +310,8 @@ type TntContinuousCharacter = Maybe Double
 -- values are serialized textualy as one of the 64  values:
 -- '[0..9] <> [\'A\'..\'B\'] <> [\'a\'..\'z\'] <> "-?"'.
 -- Missing \'?\' represents the empty ambiguity group.
--- Each value coresponds to it's respective bit in the 'Int64'. Ambiguity groups
--- are represented by 'Int64' values with multiple set bits.
+-- Each value coresponds to it's respective bit in the 'Word64'. Ambiguity groups
+-- are represented by 'Word64' values with multiple set bits.
 newtype TntDiscreteCharacter   = TntDis Word64
   deriving (Bits, Eq, Ord, FiniteBits)
 
@@ -371,7 +371,7 @@ instance Show TntProteinCharacter where
       str = (serializeStateProtein !) <$> bitsToFlags x
 
 
--- CharacterMetaData types
+-- CharacterMetadata types
 --------------------------------------------------------------------------------
 
 
@@ -379,7 +379,7 @@ instance Show TntProteinCharacter where
 -- The metadata of a character specifying the attributes of the character
 -- specified in the file.
 --
--- Default 'CharacterMetaData values:
+-- Default 'CharacterMetadata' values:
 --
 -- >>> defaultMetaData
 -- CharMeta
@@ -392,7 +392,7 @@ instance Show TntProteinCharacter where
 --   , steps           = 1
 --   , costTCM         = Nothing
 --   }
-data CharacterMetaData
+data CharacterMetadata
    = CharMeta
    { characterName   :: String
    , characterStates :: Vector String
@@ -407,7 +407,7 @@ data CharacterMetaData
 
 -- |
 -- The default values for 'CharacterMetadata' as specified by the TNT "documentation."
-initialMetaData :: CharacterMetaData
+initialMetaData :: CharacterMetadata
 initialMetaData = CharMeta
                 { characterName   = ""
                 , characterStates = mempty
@@ -423,13 +423,13 @@ initialMetaData = CharMeta
 -- |
 -- Convienece method for generating a 'CharacterMetadata' by specifying a single
 -- attribute value and defaulting all the other values.
-metaDataTemplate :: CharacterState -> CharacterMetaData
+metaDataTemplate :: CharacterState -> CharacterMetadata
 metaDataTemplate state = modifyMetaDataState state initialMetaData
 
 
 -- |
--- Overwrite the value of the 'Charactemetadat' with the 'CharacterState' value.
-modifyMetaDataState :: CharacterState -> CharacterMetaData -> CharacterMetaData
+-- Overwrite the value of the 'CharacterMetadata' with the 'CharacterState' value.
+modifyMetaDataState :: CharacterState -> CharacterMetadata -> CharacterMetadata
 modifyMetaDataState  Additive     old = old { additive = True , sankoff = False }
 modifyMetaDataState  NonAdditive  old = old { additive = False }
 modifyMetaDataState  Active       old = old { active   = True  }
@@ -442,7 +442,7 @@ modifyMetaDataState (Steps  n)    old = old { steps    = n     }
 
 -- |
 -- Overwrite the naming variables of the 'CharacterMetadata'.
-modifyMetaDataNames :: CharacterName -> CharacterMetaData -> CharacterMetaData
+modifyMetaDataNames :: CharacterName -> CharacterMetadata -> CharacterMetadata
 modifyMetaDataNames charName old =
     old
     { characterName   = characterId charName
@@ -452,7 +452,7 @@ modifyMetaDataNames charName old =
 
 -- |
 -- Overwrite the TCM attribute of the 'CharacterMetadata'.
-modifyMetaDataTCM :: Matrix Double -> CharacterMetaData -> CharacterMetaData
+modifyMetaDataTCM :: Matrix Double -> CharacterMetadata -> CharacterMetadata
 modifyMetaDataTCM mat old = old { costTCM = Just mat }
 
 

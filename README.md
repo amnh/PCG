@@ -55,7 +55,7 @@ Haskell program and libraries for general phylogenetic graph search
 [   travis-ref]: https://travis-ci.org/amnh/PCG
 [code-size-img]: https://img.shields.io/github/languages/code-size/amnh/PCG.svg?style=popout&color=yellowgreen
 [code-size-ref]: https://github.com/amnh/PCG/archive/master.zip
-[  commits-img]: https://img.shields.io/github/commits-since/amnh/PCG/v0.1.0.1.svg?style=popout&color=yellowgreen
+[  commits-img]: https://img.shields.io/github/commits-since/amnh/PCG/0.2.0.svg?style=popout&color=yellowgreen
 [  commits-ref]: https://github.com/amnh/PCG/commits/master
 [  release-img]: https://img.shields.io/github/release-pre/amnh/PCG.svg
 [ tag-date-img]: https://img.shields.io/github/release-date-pre/amnh/PCG.svg?style=popout

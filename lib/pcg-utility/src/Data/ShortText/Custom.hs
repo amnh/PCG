@@ -12,7 +12,6 @@
 --
 -----------------------------------------------------------------------------
 
-
 module Data.ShortText.Custom
   ( intToShortText
   , makeIllegalShortText
@@ -27,7 +26,6 @@ import Data.Text.Short.Unsafe  (fromShortByteStringUnsafe)
 import Data.Word
 
 
-
 -- |
 -- Converts a signed integer to ShortText.
 intToShortText :: Int -> ShortText
@@ -40,12 +38,16 @@ intToShortText = fromString . show
 makeIllegalShortText :: Word64 -> ShortText
 makeIllegalShortText = fromShortByteStringUnsafe . makeNonUTFByteString
 
+
 -- |
 -- Creates a ByteString which is invalid UTF8
 makeNonUTFByteString :: Word64 -> ShortByteString
-                        -- 192 is not allowed as a starting code point in UTF-8
-makeNonUTFByteString = pack . (\bytes -> 192 : bytes) . convertToBytes
+makeNonUTFByteString = pack . (badByte:) . convertToBytes
+  where
+    badByte = 192 -- 192 is not allowed as a starting code point in UTF-8
 
 
+-- |
+-- Convert a 'Word64' to a list of eight 'Word8' values.
 convertToBytes :: Word64 -> [Word8]
 convertToBytes = unpack . toLazyByteString . word64BE

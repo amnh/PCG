@@ -189,7 +189,7 @@ defaultInterleaveBlock = discreteSegments
 
 
 -- |
--- A sequence segment consisting of real valued literals or '?' characters to
+-- A sequence segment consisting of real valued literals or \'?\' characters to
 -- represent a missing value.
 continuousSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntContinuousCharacter]
 continuousSequence = many (missingValue <|> presentValue)
@@ -229,8 +229,8 @@ coreDiscreteSequenceThatGetsReused = many discreteCharacter
 -- are bitpacked into a 64 bit structure with the ordering specified by
 -- 'TntDiscreteCharacter'.
 --
--- Remeber that you can never have the character literal @'-'@ mean gap. It means
--- missing. Why not use @'?'@ and just say what you mean? We'll never know.
+-- Remeber that you can never have the character literal \'-\' mean gap. It means
+-- missing. Why not use \'?\' and just say what you mean? We'll never know.
 -- So we substitute gaps for missing in discrete charcters.
 discreteSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
 discreteSequence = substituteGapForMissingBecauseOfReasonsIllNeverUnderstand coreDiscreteSequenceThatGetsReused
@@ -446,7 +446,7 @@ proteinSegments    = segmentsOf (fmap Protein    <$> proteinSequence)
 
 -- |
 -- Parses one or more of the parameter sequence segment combinator.
--- Combinators are seperated by 'segmentTerminal'
+-- Combinators are seperated by "segmentTerminal."
 segmentsOf :: (MonadParsec e s m, Token s ~ Char) => m [TntCharacter] -> m (DList TaxonInfo)
 segmentsOf seqDef = DL.fromList <$> symbol (segment `sepEndBy1` segmentTerminal)
   where

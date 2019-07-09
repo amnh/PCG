@@ -40,9 +40,10 @@ import TextShow                    (TextShow (showb), singleton, unlinesB, unwor
 -- the 'BitMatrix' is shown.
 -- The bit at position @(i,x)@ will be of less significance than position @(i+1,x)@,
 -- for the resulting xth 'BitVector' row when calling 'rows' on a 'BitMatrix'.
+{-
 -- The bit at position @(x,i)@ will be of less significance than position @(x,i+1)@,
 -- for the resulting xth 'BitVector' column when calling 'cols' on a 'BitMatrix'.
---
+-}
 data BitMatrix
    = BitMatrix {-# UNPACK #-} !Int {-# UNPACK #-} !BitVector
    deriving (Eq, Generic)

@@ -15,7 +15,7 @@
 {-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT
-  ( CharacterMetaData(..)
+  ( CharacterMetadata(..)
   , LeafyTree(..)
   , TaxonInfo
   , TntCharacter(..)

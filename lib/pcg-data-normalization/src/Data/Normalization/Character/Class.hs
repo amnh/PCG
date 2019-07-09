@@ -11,6 +11,7 @@
 -- Typeclas for a parsed sequence
 --
 -----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE OverloadedStrings    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -47,7 +48,7 @@ import           File.Format.Fasta
 import           File.Format.Fastc                     hiding (Identifier)
 import           File.Format.Newick
 import           File.Format.Nexus                     hiding (TaxonSequenceMap)
-import           File.Format.TNT
+import           File.Format.TNT                       hiding (CharacterMetadata)
 import qualified File.Format.TNT                       as TNT
 import           File.Format.TransitionCostMatrix
 import           File.Format.VertexEdgeRoot
@@ -56,8 +57,7 @@ import           Prelude                               hiding (zipWith)
 
 -- |
 -- Instances provide a method to extract 'Character' sequences from raw parsed results.
--- The 'TreeSeqs' are agnostic of character data types. "Tree-only" return values from
--- files will extract the taxa labels from leaf nodes only with empty sequences.
+-- "Tree-only" return values from files will return an empty result.
 --
 -- Characters of types DNA, RNA, protein, and amino acid will *not* have thier IUPAC
 -- codes translated to the apropriate groups. This abiguity group translation will
@@ -65,12 +65,6 @@ import           Prelude                               hiding (zipWith)
 -- which produce expanded ambiguity groups for these character types will be collapsed
 -- back to the IUPAC code for the ambiguity group during the type class's extraction
 -- process.
---
--- It is expected that parsers will be altered to return simpler character literals for
--- time efficiency in the future.
---
--- I need to think about how this might interact with some things in Nexus, but it seems
--- to make sense. It might make verification in the parsers more difficult.
 class HasNormalizedCharacters a where
 
     getNormalizedCharacters :: a -> NormalizedCharacters
@@ -210,7 +204,7 @@ buildMapFromSeqs = M.fromList . filterNothings . fmap (fromString *** tntToTheSu
         f (k, Just v ) acc = (k,v):acc
 
 -- |
--- Coalesce the 'TaxonSequence' to the larger type 'NormalizedSequences'
+-- Coalesce the 'TaxonSequence' to the larger type 'NormalizedCharacterCollection'.
 tntToTheSuperSequence :: TaxonSequence -> Maybe NormalizedCharacterCollection
 tntToTheSuperSequence ts =
     case ts of
