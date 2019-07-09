@@ -15,9 +15,10 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
--- {-# LANGUAGE NoMonoLocalBinds      #-}
+--{-# LANGUAGE NoMonoLocalBinds      #-}
 
 module Analysis.Scoring
   (
@@ -42,10 +43,11 @@ import           Bio.Graph.Node.Context
 import           Bio.Graph.PhylogeneticDAG                     (setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Lens.Operators                        ((%~))
+import           Control.Lens.Operators                        ((%~), (.~), (^.))
 import           Data.Default
 import           Data.EdgeLength
 import           Data.Function                                 ((&))
+import           Data.IntMap                                   (IntMap)
 import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
 import           Data.Vector                                   (Vector)
@@ -107,7 +109,8 @@ scoreSolution (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap perfo
 -- |
 -- Take an undecorated tree and assign preliminary and final states to all nodes.
 performDecoration
-  :: ( DiscreteCharacterDecoration v StaticCharacter
+  :: forall u v w x y z m .
+     ( DiscreteCharacterDecoration v StaticCharacter
      , DiscreteCharacterDecoration x StaticCharacter
      , DiscreteCharacterDecoration y StaticCharacter
      , RangedCharacterDecoration u ContinuousCharacter
@@ -116,9 +119,17 @@ performDecoration
      )
   => PhylogeneticDAG m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
-performDecoration x = finalizeEdgeData . performPreorderDecoration . performPostorderDecoration $ x
+performDecoration x =
+    case length . (^. _phylogeneticForest) $ x of
+      1 -> finalizeForSingleNode
+          . performPreorderDecoration
+          . performPostorderDecoration $ x
+      _ ->
+          finalizeEdgeData
+        . performPreorderDecoration
+        . performPostorderDecoration $ x
   where
-    finalizeEdgeData :: PreOrderDecorationDAG -> FinalDecorationDAG
+    finalizeEdgeData :: PreorderDecorationDAG -> FinalDecorationDAG
     finalizeEdgeData = setEdgeSequences
                          (const additivePostorderPairwise)
                          (const    fitchPostorderPairwise)
@@ -128,6 +139,19 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
                          adaptiveDirectOptimizationPostorderPairwise
                          contextualNodeDatum
 
+    finalizeForSingleNode :: PreorderDecorationDAG -> FinalDecorationDAG
+    finalizeForSingleNode (PDAG2 dag meta) = PDAG2 updatedDAG meta
+      where
+        updatedDAG = dag & _references .~ newRefs
+
+        newRefs :: FinalReferenceVector
+        newRefs = setEmptyEdgeAnnotation <$> (dag ^. _references)
+        emptyEdgeAnnotation :: IntMap EdgeAnnotation
+        emptyEdgeAnnotation = mempty
+
+        setEmptyEdgeAnnotation :: IndexData e n -> IndexData EdgeAnnotation n
+        setEmptyEdgeAnnotation indexData = indexData & _childRefs .~ emptyEdgeAnnotation
+
     performPreorderDecoration
       :: PostorderDecorationDAG
            ( TraversalTopology
@@ -136,9 +160,9 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
            , Double
            , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
            )
-      -> PreOrderDecorationDAG
+      -> PreorderDecorationDAG
     performPreorderDecoration =
-        preorderFromRooting
+         preorderFromRooting
           adaptiveDirectOptimizationPreorder
           edgeCostMapping
           contextualNodeDatum
@@ -157,8 +181,9 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
             where
               pairwiseAlignmentFunction = selectDynamicMetric meta
 
+
     performPostorderDecoration
-      :: PhylogeneticDAG m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+      :: PhylogeneticDAG m EdgeLength n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
       -> PostorderDecorationDAG
            ( TraversalTopology
            , Double
@@ -167,7 +192,7 @@ performDecoration x = finalizeEdgeData . performPreorderDecoration . performPost
            , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
            )
 
-    performPostorderDecoration _ = postorderResult
+    performPostorderDecoration _ =  postorderResult
 
     (minBlockContext, postorderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =

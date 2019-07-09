@@ -17,6 +17,7 @@
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
 
+
 {-# LANGUAGE UndecidableInstances  #-}
 
 module Bio.Character.Decoration.Dynamic.Internal
@@ -142,8 +143,8 @@ instance (EncodableDynamicCharacter d, Exportable (Element d)) => DirectOptimiza
 -- | (✔)
 instance (EncodableDynamicCharacter d, Exportable (Element d)) => DynamicCharacterDecoration (DynamicDecorationInitial d) d where
 
---    toDynamicCharacterDecoration :: CharacterName -> Double -> Alphabet String -> TCM -> (x -> a) -> x -> s
-    toDynamicCharacterDecoration g symbolSet =
+--    toDynamicCharacterDecoration :: (x -> d) -> x -> (DynamicDecorationInitial d)
+    toDynamicCharacterDecoration  g symbolSet =
         DynamicDecorationInitial
         { dynamicDecorationInitialEncodedField           = charValue
         , dynamicDecorationInitialCharacterAverageLength = toAverageLength . toEnum $ olength charValue
@@ -613,5 +614,3 @@ renderCostB dec = unwordsB
       , showb (dec ^. characterLocalCost)
       , "}"
       ]
-
-

@@ -1,3 +1,4 @@
+{-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -8,26 +9,26 @@ import Control.Evaluation
 import Control.Exception              (catch, ioError)
 import Control.Monad
 import Control.Monad.IO.Class
-import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Validation
 import Data.Char                      (toUpper)
 import Data.FileSource                (FileSource)
 import Data.FileSource.IO
+import Data.Foldable
 import Data.Maybe
 import Data.MonoTraversable
 import Data.Semigroup                 ((<>))
-import Data.String
-import Data.Text.Lazy                 (Text, pack)
-import Data.Text.Lazy.IO              (putStrLn)
+import Data.String                    (fromString)
+import Data.Text.Lazy                 (Text, pack, unlines)
+import Data.Text.Lazy.IO              (putStr, putStrLn)
 import Data.Validation
 import Data.Void
 import PCG.CommandLineOptions
 import PCG.Computation.Internal
 import PCG.Syntax                     (Computation, computationalStreamParser)
-import Prelude                        hiding (putStrLn, readFile, writeFile)
+import Prelude                        hiding (putStr, putStrLn, readFile, unlines, writeFile)
 import System.Environment
 import System.Exit
-import System.IO                      hiding (putStrLn, readFile, writeFile)
+import System.IO                      hiding (putStr, putStrLn, readFile, writeFile)
 import System.IO.Error
 import Text.Megaparsec                (ParseErrorBundle, Parsec, errorBundlePretty, parse)
 
@@ -67,7 +68,7 @@ performSearch :: CommandLineOptions -> IO ()
 performSearch opts = do
     (code, outputStream) <- runUserComputation opts
     let outputPath = outputFile opts
-    (code2, _) <- fmap renderSearchState . runEvaluation $ renderOutputStream outputPath outputStream
+    (code2, _) <- fmap (renderSearchState . snd) . runEvaluationT () $ renderOutputStream outputPath outputStream
     -- If the computation was successful and the outputing was unsuccessful,
     -- only then use the exit code generated during outputing.
     case code of
@@ -75,30 +76,40 @@ performSearch opts = do
       _             -> exitWith code
 
 
---runUserComputation :: CommandLineOptions -> EvaluationT IO GraphState
 runUserComputation :: CommandLineOptions -> IO (ExitCode, Text)
-runUserComputation opts = fmap renderSearchState . runEvaluation $ do
-    globalSettings <- liftIO getGlobalSettings
-    inputStream    <- retreiveInputStream $ inputFile opts
-    computation    <- parseInputStream (inputFile opts) inputStream
-    EvaluationT . (`runReaderT` globalSettings) . runEvaluation . evaluate $ computation
+runUserComputation opts = do
+    globalSettings  <- liftIO getGlobalSettings
+    (notes, result) <- runEvaluationT globalSettings computationalEvaluation
+    putStr $ renderedNotifications notes
+    pure $ renderSearchState result
+  where
+    computationalEvaluation = do
+        inputStream    <- retreiveInputStream $ inputFile opts
+        computation    <- parseInputStream (inputFile opts) inputStream
+        evaluate computation
+
+    renderedNotifications = unlines . toList . fmap f
+      where
+        f :: Notification -> Text
+        f (Information s) = "[-] " <> s
+        f (Warning     s) = "[!] " <> s
 
 
-renderOutputStream :: FileSource -> Text -> EvaluationT IO ()
+renderOutputStream :: FileSource -> Text -> EvaluationT r IO ()
 renderOutputStream filePath outputStream = do
     result <- liftIO $ if   (toUpper <$> otoList filePath) /= "STDOUT"
                        then runValidationT . writeFile filePath $ streamText outputStream
                        else hSetBuffering stdout NoBuffering *>
                             runValidationT (writeSTDOUT (streamText outputStream))
     case result of
-      Failure err -> state $ failWithPhase Outputing err
+      Failure err -> failWithPhase Outputing err
       Success _   -> pure ()
 
 
-parseInputStream :: FileSource -> Text -> EvaluationT IO Computation
+parseInputStream :: FileSource -> Text -> EvaluationT r IO Computation
 parseInputStream path inputStream =
    case parse' computationalStreamParser (otoList path) inputStream of
-     Left  err -> state . failWithPhase Parsing . pack $ '\n' : errorBundlePretty err
+     Left  err -> failWithPhase Parsing . pack $ '\n' : errorBundlePretty err
      Right val -> pure $ optimizeComputation val
   where
      parse'
@@ -122,17 +133,17 @@ parseInputStream path inputStream =
 -- stream was intentionally choosen as the input stream and an error message
 -- noting that the stream is empty is returned along with the program's usage
 -- menu.
-retreiveInputStream :: FileSource -> EvaluationT IO Text
+retreiveInputStream :: FileSource -> EvaluationT r IO Text
 retreiveInputStream filePath = do
     inResult <- liftIO . runValidationT $ getInputStream filePath
     case inResult of
-      Failure err -> state $ failWithPhase Inputing err
+      Failure err -> failWithPhase Inputing err
       Success may ->
         case may of
           Just  v -> pure v
           Nothing -> do
               msg <- liftIO parserHelpMessage
-              state . failWithPhase Inputing $ "Error: STDIN is empty\n\n" <> msg
+              failWithPhase Inputing $ "Error: STDIN is empty\n\n" <> msg
   where
     getInputStream :: FileSource -> ValidationT InputStreamError IO (Maybe Text)
     getInputStream path

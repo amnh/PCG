@@ -12,7 +12,6 @@
 
 {-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE MonoLocalBinds   #-}
 {-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.TotalEdgeCost

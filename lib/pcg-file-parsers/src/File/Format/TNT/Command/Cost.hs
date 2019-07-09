@@ -16,7 +16,8 @@
 {-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.TNT.Command.Cost
-  ( costCommand
+  ( TransitionCost()
+  , costCommand
   ) where
 
 import Data.CaseInsensitive     (FoldCase)
@@ -72,7 +73,7 @@ costBody = do
 
 
 -- |
--- Fold over a nonmepty structure of 'Transition' costs to create a custom TCM.
+-- Fold over a nonmepty structure of 'TransitionCost' costs to create a custom TCM.
 condenseToMatrix :: (Foldable f, Functor f) => f TransitionCost -> Matrix Double
 condenseToMatrix costs = matrix dimensions dimensions value
   where

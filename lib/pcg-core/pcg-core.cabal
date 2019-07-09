@@ -63,9 +63,12 @@ common ghc-flags
   ghc-options:
     -- Optimization flags
     -O2
+    -fexcess-precision
     -fexpose-all-unfoldings
+    -flate-specialise
     -foptimal-applicative-do
     -fspecialize-aggressively
+    -fstatic-argument-transformation
     -- Usability flags
     -fdiagnostics-color=always
     -fhide-source-paths
@@ -121,6 +124,7 @@ library
     pcg-tcm,
 
   reexported-modules:
+    Analysis.Clustering,
     Analysis.Parsimony.Additive,
     Analysis.Parsimony.Dynamic.DirectOptimization,
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise,
@@ -132,6 +136,7 @@ library
     Bio.Character.Decoration.Additive,
     Bio.Character.Decoration.Continuous,
     Bio.Character.Decoration.Discrete,
+    Bio.Character.Decoration.Discrete.Class,
     Bio.Character.Decoration.Dynamic,
     Bio.Character.Decoration.Fitch,
     Bio.Character.Decoration.Metric,
@@ -145,6 +150,7 @@ library
     Bio.Metadata.Discrete,
     Bio.Metadata.DiscreteWithTCM,
     Bio.Metadata.Dynamic,
+    Bio.Metadata.Metric,
     Bio.Sequence,
     Bio.Sequence.Block,
     Bio.Sequence.Character,
@@ -156,6 +162,7 @@ library
     Bio.Graph.Node,
     Bio.Graph.Node.Context,
     Bio.Graph.PhylogeneticDAG,
+    Bio.Graph.PhylogeneticDAG.Substitute,
     Bio.Graph.ReferenceDAG,
     Bio.Graph.ReferenceDAG.Internal,
     Bio.Graph.ReferenceDAG.Network,
@@ -192,6 +199,7 @@ library pcg-analysis
     pcg-utility,
     pcg-tcm,
     pcg-tcm-memo,
+    clustering               >= 0.4       && < 0.5,
     -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 0.7,
     data-default             >= 0.5.2     && < 0.8,
@@ -203,12 +211,15 @@ library pcg-analysis
     mtl                      >= 2.0       && < 3.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
+    text-show                >= 3.0       && < 4.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
+    vector-builder           >= 0.3.7     && < 0.4,
     -- >=3.4 required for corrected definition of (!) & index
     vector-instances         >= 3.4       && < 3.5,
 
   exposed-modules:
+    Analysis.Clustering
     Analysis.Parsimony.Additive
     Analysis.Parsimony.Dynamic.DirectOptimization
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
@@ -218,6 +229,8 @@ library pcg-analysis
     Analysis.TotalEdgeCost
 
   other-modules:
+    Analysis.Clustering.Hierarchical
+    Analysis.Clustering.Metric
     Analysis.Parsimony.Additive.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
@@ -290,6 +303,7 @@ library pcg-data-structures
     Bio.Character.Decoration.Additive
     Bio.Character.Decoration.Continuous
     Bio.Character.Decoration.Discrete
+    Bio.Character.Decoration.Discrete.Class
     Bio.Character.Decoration.Dynamic
     Bio.Character.Decoration.Fitch
     Bio.Character.Decoration.Metric
@@ -303,6 +317,7 @@ library pcg-data-structures
     Bio.Metadata.Discrete
     Bio.Metadata.DiscreteWithTCM
     Bio.Metadata.Dynamic
+    Bio.Metadata.Metric
     Bio.Sequence
     Bio.Sequence.Block
     Bio.Sequence.Character
@@ -314,6 +329,7 @@ library pcg-data-structures
     Bio.Graph.Node
     Bio.Graph.Node.Context
     Bio.Graph.PhylogeneticDAG
+    Bio.Graph.PhylogeneticDAG.Substitute,
     Bio.Graph.ReferenceDAG
     Bio.Graph.ReferenceDAG.Internal
     Bio.Graph.ReferenceDAG.Network
@@ -359,6 +375,8 @@ library pcg-data-structures
     Bio.Metadata.DiscreteWithTCM.Internal
     Bio.Metadata.Dynamic.Class
     Bio.Metadata.Dynamic.Internal
+    Bio.Metadata.Metric.Class
+    Bio.Metadata.Metric.Internal
     Bio.Graph.BinaryRenderingTree
     Bio.Graph.Forest
     Bio.Graph.Node.Internal

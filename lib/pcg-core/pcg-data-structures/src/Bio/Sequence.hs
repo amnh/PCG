@@ -46,6 +46,8 @@ module Bio.Sequence
   , nonExistantBlock
   -- * CharacterBlock transformations
   , toMissingCharacters
+  , foldZipWithMeta
+  , hexFold
   , hexmap
   , hexTranspose
   , hexZip
@@ -54,6 +56,7 @@ module Bio.Sequence
   , hexZipWith3
   , hexZipWithMeta
   , hexZipMeta
+
   -- * Cost quantification
   , sequenceCost
   , sequenceRootCost
@@ -81,9 +84,11 @@ import           Data.DList                   hiding (toList)
 import           Data.Foldable
 import           Data.Foldable.Custom
 import           Data.Key
+import           Data.List.Utility
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
 import           Prelude                      hiding (zip)
+
 
 
 -- |
@@ -297,3 +302,20 @@ sequenceRootCost
 sequenceRootCost rootCount meta char = sum'
     . parmap rpar (uncurry (Blk.rootCost rootCount))
     . zip (meta ^. blockSequence) $ char ^. blockSequence
+
+
+
+foldZipWithMeta
+  :: (Monoid a)
+  => (MetadataBlock m -> CharacterBlock u v w x y z -> CharacterBlock u v w x y z -> a)
+  -> MetadataSequence m
+  -> CharacterSequence u v w x y z
+  -> CharacterSequence u v w x y z
+  -> a
+foldZipWithMeta f meta charSeq1 charSeq2 =
+  let
+    metaV     = otoList meta
+    charSeq1V = otoList charSeq1
+    charSeq2V = otoList charSeq2
+  in
+    foldZipWith3 f metaV charSeq1V charSeq2V

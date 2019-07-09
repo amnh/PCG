@@ -17,6 +17,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
+{-# LANGUAGE RankNTypes             #-}
 
 module Bio.Sequence.Block.Internal
   ( Block(..)
@@ -27,21 +28,22 @@ module Bio.Sequence.Block.Internal
   , HasMetricBin(..)
   , HasNonMetricBin(..)
   , HasDynamicBin(..)
+  , blockParWithStrat
   ) where
-
 
 import           Control.DeepSeq
 import           Control.Lens
+import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Foldable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import qualified Data.Text               as T (Text, lines, unlines)
-import           Data.Vector             (Vector, fromListN)
-import           Data.Vector.Instances   ()
+import qualified Data.Text                   as T (Text, lines, unlines)
+import           Data.Vector                 (Vector, fromListN)
+import           Data.Vector.Instances       ()
 import           GHC.Generics
 import           Text.XML
-import           TextShow                (TextShow (showb, showt), fromText)
+import           TextShow                    (TextShow (showb, showt), fromText)
 
 
 -- |
@@ -311,3 +313,19 @@ instance ( ToXML u -- This is NOT a redundant constraint.
                          , Right . collapseElemList "Metric_character_block"       [] $ _nonMetricBin   block
                          , Right . collapseElemList "Dynamic_character_block"      [] $ _dynamicBin        block
                          ]
+
+
+-- |
+-- This function takes a `Strategy` for (polymorphically) computing a vector
+-- and returns a strategy for computing a Block.
+blockParWithStrat :: (forall a . Strategy (Vector a)) -> Strategy (Block u v w x y z)
+{-# INLINE blockParWithStrat #-}
+blockParWithStrat strat (Block u v w x y z) =
+  do
+    u' <- strat u
+    v' <- strat v
+    w' <- strat w
+    x' <- strat x
+    y' <- strat y
+    z' <- strat z
+    pure (Block u' v' w' x' y' z')
