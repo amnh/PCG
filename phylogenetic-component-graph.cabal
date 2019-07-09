@@ -2,7 +2,7 @@ cabal-version:      2.2
 Category:           Biology
 build-type:         Simple
 name:               phylogenetic-component-graph
-version:            0.1.0.1
+version:            0.2.0
 
 author:             Ward Wheeler
 maintainer:         wheeler@amnh.org
