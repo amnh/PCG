@@ -72,7 +72,6 @@ common dependencies
     QuickCheck               >= 2.12      && < 3.0,
     quickcheck-instances     >= 0.3.17    && < 1.0,
     random                   >= 1.0       && < 2.0,
-    random-shuffle           >= 0.0.4     && < 0.1,
     safe                     >= 0.3.17    && < 0.4,
     scientific               >= 0.3.6     && < 0.4,
     -- required for Data.Semigroup.Foldable.toNonEmpty
