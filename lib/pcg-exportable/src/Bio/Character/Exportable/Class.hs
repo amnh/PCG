@@ -27,7 +27,7 @@ module Bio.Character.Exportable.Class
   , HasExportedElementWidth(..)
   ) where
 
-import Control.Lens (Lens', lens)
+import Control.Lens    (Lens', lens)
 import Foreign.C.Types
 
 
