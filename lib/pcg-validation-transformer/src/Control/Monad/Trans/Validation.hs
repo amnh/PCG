@@ -18,6 +18,7 @@
 
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -53,7 +54,7 @@ newtype ValidationT e m a
       = ValidationT
       { -- | Run the 'ValidationT' monad transformer
         runValidationT :: m (Validation e a)
-      } deriving (Generic)
+      } deriving stock (Generic)
 
 
 instance Alt m => Alt (ValidationT e m)  where

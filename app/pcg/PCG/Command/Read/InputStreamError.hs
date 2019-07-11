@@ -1,7 +1,8 @@
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE OverloadedStrings  #-}
 
 module PCG.Command.Read.InputStreamError
   ( InputStreamError()
@@ -29,14 +30,16 @@ import TextShow
 -- 'InputStreamError' value. The `show` definition will render the 'Read Error' as a
 -- human legible collection of errors that occured within the 'Read' 'Command'.
 newtype InputStreamError = InputStreamError (NonEmpty InputStreamErrorMessage)
-    deriving (Generic, NFData, Show)
+    deriving stock    (Generic, Show)
+    deriving anyclass (NFData)
 
 
 data  InputStreamErrorMessage
     = FileUnfindable FileSource
     | FileUnopenable FileSource
     | FileAmbiguous  FileSource (NonEmpty FileSource)
-    deriving (Generic, NFData, Show)
+    deriving stock    (Generic, Show)
+    deriving anyclass (NFData)
 
 
 instance Semigroup InputStreamError where

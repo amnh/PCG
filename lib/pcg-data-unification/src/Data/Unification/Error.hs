@@ -12,9 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 module Data.Unification.Error
   ( UnificationError()
@@ -42,7 +44,9 @@ import TextShow.Custom
 --
 -- Has nice 'Show'/'TextShow' instances for rendering.
 newtype UnificationError = UnificationError (NonEmpty UnificationErrorMessage)
-    deriving (Generic, NFData, Show)
+    deriving stock    (Generic, Show)
+    deriving anyclass (NFData)
+    deriving newtype  (Semigroup)
 
 
 data  UnificationErrorMessage
@@ -54,11 +58,6 @@ data  UnificationErrorMessage
     | VacuousInput        (NonEmpty FileSource)
     deriving (Generic, NFData, Show)
 -- TODO: Add an error case for a nonempty set of taxa with only missing data observations.
-
-
-instance Semigroup UnificationError where
-
-    (UnificationError messages1) <> (UnificationError messages2) = UnificationError (messages1 <> messages2)
 
 
 instance TextShow UnificationError where

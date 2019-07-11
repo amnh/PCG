@@ -14,12 +14,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DeriveFunctor      #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Data.Alphabet.Internal
   ( Alphabet()
@@ -74,8 +75,10 @@ type instance Key Alphabet = Int
 
 
 -- Newtypes for corecing and consolidation of alphabet input processing logic
-newtype AlphabetInputSingle a = ASI  { toSingle ::  a    } deriving (Eq, Ord)
-newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) } deriving (Eq, Ord)
+newtype AlphabetInputSingle a = ASI  { toSingle ::  a    }
+  deriving stock (Eq, Ord)
+newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) }
+  deriving stock (Eq, Ord)
 
 
 -- |
@@ -84,8 +87,10 @@ newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) } deriving (Eq, Ord)
 -- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 --
 
-newtype UnnamedSymbol a = Unnamed  a  deriving (Generic)
-newtype NamedSymbol   a = Named (a,a) deriving (Generic)
+newtype UnnamedSymbol a = Unnamed  a
+  deriving stock (Generic)
+newtype NamedSymbol   a = Named (a,a)
+  deriving stock (Generic)
 
 
 class InternalClass a where

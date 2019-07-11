@@ -20,6 +20,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
 
@@ -58,37 +59,35 @@ import           TextShow                  (TextShow (..), fromText)
 --
 -- Use exported functionality from 'Data.FileSource.IO' to interact with the disk.
 newtype FileSource = FileSource { toShortText :: ShortText }
-    deriving ( Binary
-             , Eq
-             , Generic
-             , Hashable
-             , IsString
-             , Monoid
-             , NFData
-             , Ord
-             , PrintfArg
-             , Read
-             , Semigroup
-             , Show
-             )
+    deriving stock   (Eq, Generic)
+    deriving newtype ( Binary
+                     , Hashable
+                     , IsString
+                     , Monoid
+                     , NFData
+                     , Ord
+                     , PrintfArg
+                     , Read
+                     , Semigroup
+                     , Show
+                     )
 
 
 -- |
 -- Extension of a 'FileSource'.
 newtype FileExtension = FileExtension { unwrapExtension :: ShortText }
-    deriving ( Binary
-             , Eq
-             , Generic
-             , Hashable
-             , IsString
-             , Monoid
-             , NFData
-             , Ord
-             , PrintfArg
-             , Read
-             , Semigroup
-             , Show
-             )
+    deriving stock (Eq, Generic)
+    deriving newtype ( Binary
+                     , Hashable
+                     , IsString
+                     , Monoid
+                     , NFData
+                     , Ord
+                     , PrintfArg
+                     , Read
+                     , Semigroup
+                     , Show
+                     )
 
 
 type instance Element FileSource = Char

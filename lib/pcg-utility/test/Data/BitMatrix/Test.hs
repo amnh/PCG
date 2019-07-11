@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleInstances  #-}
 
 module Data.BitMatrix.Test
   ( testSuite
@@ -22,13 +23,13 @@ import Test.Tasty.QuickCheck
 newtype DependantFromRowsParameters
       = DependantFromRowsParameters
       { getParameters :: (Word, Word, [BitVector])
-      } deriving (Eq, Show)
+      } deriving stock (Eq, Show)
 
 
 newtype FactoredBitVector
       = FactoredBitVector
       { getFactoredBitVector :: (Word, Word, BitVector)
-      } deriving (Eq, Show)
+      } deriving stock (Eq, Show)
 
 
 instance Arbitrary DependantFromRowsParameters where

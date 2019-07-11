@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module File.Format.Nexus.Test
   ( testSuite
@@ -414,17 +415,12 @@ validtcmMatrix = "usertype name  = 4\n [a]A B C D\n 0 1 2 3\n 1 0 2 3\n 1 2 0 3\
 
 
 newtype NexusKeyword = NexusKeyword String
-    deriving (Eq)
+    deriving stock   (Eq, Show)
 
 
 instance Arbitrary NexusKeyword where
 
     arbitrary = elements . fmap NexusKeyword $ toList nexusKeywords
-
-
-instance Show NexusKeyword where
-
-    show (NexusKeyword c) = show c
 
 
 getNexusKeyword (NexusKeyword c) = c

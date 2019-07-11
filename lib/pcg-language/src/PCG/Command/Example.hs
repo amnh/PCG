@@ -1,3 +1,5 @@
+{-# LANGUAGE DerivingStrategies #-}
+
 module PCG.Command.Example where
 
 
@@ -6,7 +8,7 @@ import qualified Data.List.NonEmpty     as NE
 import           PCG.Syntax.Combinators
 
 
-newtype RRead = Read (NonEmpty FileSpec) deriving (Show)
+newtype RRead = Read (NonEmpty FileSpec) deriving stock (Show)
 
 data FileSpec
     = Unspecified String

@@ -14,9 +14,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 
 module Numeric.Extended.Real
@@ -42,7 +43,7 @@ import TextShow                  (TextShow (showb))
 --
 -- @maxBound@ is defined as the largest representable finite value.
 newtype ExtendedReal = Cost Double
-    deriving (Eq, Generic, Ord)
+    deriving stock (Eq, Generic, Ord)
 
 
 type instance Finite ExtendedReal = Double

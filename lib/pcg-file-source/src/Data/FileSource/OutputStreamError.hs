@@ -12,11 +12,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnboxedSums       #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module Data.FileSource.OutputStreamError
   ( OutputStreamError()
@@ -49,7 +50,8 @@ import TextShow
 --
 -- The 'Show' instance should only be used for debugging purposes.
 newtype OutputStreamError = OutputStreamError (NonEmpty OutputStreamErrorMessage)
-    deriving (Generic, NFData, Show)
+    deriving stock    (Generic, Show)
+    deriving anyclass (NFData)
 
 
 data  OutputStreamErrorMessage
@@ -58,7 +60,8 @@ data  OutputStreamErrorMessage
     | PathDoesNotExist {-# UNPACK #-} !FileSource
     | NoPermissions    {-# UNPACK #-} !FileSource
     | NotEnoughSpace   {-# UNPACK #-} !FileSource
-    deriving (Generic, NFData, Show)
+    deriving stock    (Generic, Show)
+    deriving anyclass (NFData)
 
 
 instance Semigroup OutputStreamError where

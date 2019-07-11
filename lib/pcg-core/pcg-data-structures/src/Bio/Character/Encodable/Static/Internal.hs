@@ -14,6 +14,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -58,7 +59,8 @@ import           TextShow                             (TextShow)
 -- Represents an encoded static character. Supports binary and numeric operations.
 newtype StaticCharacter
       = SC BitVector
-     deriving (Arbitrary, Bits, Eq, Generic, MonoFunctor, MonoFoldable, Ord, Show, TextShow)
+      deriving stock   (Generic)
+      deriving newtype (Arbitrary, Bits, Eq, MonoFunctor, MonoFoldable, Ord, Show, TextShow)
 
 
 -- |
@@ -68,7 +70,7 @@ newtype StaticCharacter
 -- character stream.
 newtype StaticCharacterBlock
       = SCB BitMatrix
-      deriving (Eq, Generic, Show)
+      deriving stock (Eq, Generic, Show)
 
 
 type instance Bound StaticCharacter = Word

@@ -15,6 +15,7 @@
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE UnboxedSums        #-}
@@ -64,14 +65,16 @@ import           TextShow.Custom
 --
 -- The 'Show' instance should only be used for debugging purposes.
 newtype ParseStreamError = ParseStreamError (NonEmpty ParseStreamErrorMessage)
-    deriving (Generic, NFData, Show)
+    deriving stock    (Generic, Show)
+    deriving anyclass (NFData)
 
 
 data  ParseStreamErrorMessage
     = FileUnparsable     {-# UNPACK #-} !FileSource {-# UNPACK #-} !Text
     | InvalidPrealigned  {-# UNPACK #-} !FileSource {-# UNPACK #-} !(Vector Word)
     | FileBadDeserialize {-# UNPACK #-} !FileSource !DataSerializationFormat {-# UNPACK #-} !ShortText
-    deriving (Generic, NFData, Show)
+    deriving stock    (Generic, Show)
+    deriving anyclass (NFData)
 
 
 data  DataSerializationFormat
