@@ -101,6 +101,7 @@ library pcg-graph
     Data.Graph
     Data.Graph.Internal
     Data.Graph.Indices
+    Data.Graph.NodeContext
 
   other-modules:
 
