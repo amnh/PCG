@@ -13,6 +13,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -28,7 +29,7 @@ module Data.Unification.Error
   ) where
 
 import Control.DeepSeq        (NFData)
---import Data.Data              (Data)
+import Data.Data
 import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty     (NonEmpty)
@@ -44,7 +45,7 @@ import TextShow.Custom
 --
 -- Has nice 'Show'/'TextShow' instances for rendering.
 newtype UnificationError = UnificationError (NonEmpty UnificationErrorMessage)
-    deriving stock    (Generic, Show)
+    deriving stock    (Data, Generic, Show, Typeable)
     deriving anyclass (NFData)
     deriving newtype  (Semigroup)
 
@@ -56,7 +57,8 @@ data  UnificationErrorMessage
     | ForestExtraTaxa     FileSource (NonEmpty ShortText)
     | ForestMissingTaxa   FileSource (NonEmpty ShortText)
     | VacuousInput        (NonEmpty FileSource)
-    deriving (Generic, NFData, Show)
+    deriving stock (Data, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 -- TODO: Add an error case for a nonempty set of taxa with only missing data observations.
 
 

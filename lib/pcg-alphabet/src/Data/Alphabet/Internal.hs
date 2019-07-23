@@ -14,6 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DerivingStrategies #-}
@@ -37,6 +38,7 @@ module Data.Alphabet.Internal
 import           Control.DeepSeq                     (NFData)
 import           Control.Monad.State.Strict
 import           Data.Bifunctor                      (bimap)
+import           Data.Data
 import           Data.Foldable
 import           Data.Key
 import           Data.List                           (elemIndex, intercalate, sort)
@@ -68,7 +70,8 @@ data Alphabet a =
      Alphabet
      { symbolVector :: {-# UNPACK #-} !(Vector a)
      , stateNames   :: [a]
-     } deriving (Generic, Functor)
+     }
+     deriving stock (Data, Generic, Functor, Typeable)
 
 
 type instance Key Alphabet = Int
@@ -76,9 +79,9 @@ type instance Key Alphabet = Int
 
 -- Newtypes for corecing and consolidation of alphabet input processing logic
 newtype AlphabetInputSingle a = ASI  { toSingle ::  a    }
-  deriving stock (Eq, Ord)
+    deriving stock (Eq, Ord)
 newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) }
-  deriving stock (Eq, Ord)
+    deriving stock (Eq, Ord)
 
 
 -- |
@@ -88,9 +91,9 @@ newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) }
 --
 
 newtype UnnamedSymbol a = Unnamed  a
-  deriving stock (Generic)
+    deriving stock (Generic)
 newtype NamedSymbol   a = Named (a,a)
-  deriving stock (Generic)
+    deriving stock (Generic)
 
 
 class InternalClass a where
