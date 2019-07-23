@@ -1,6 +1,6 @@
 allow-newer: true
 
-compiler: ghc-8.8.0.20190613
+compiler: ghc-8.8.0.20190721
 
 compiler-check: match-exact
 
@@ -70,33 +70,27 @@ packages:
 
 require-stack-version: ">=2.1.1"
 
-resolver: nightly-2019-07-19
+resolver: nightly-2019-07-23
 
 setup-info:
   ghc:
     linux32:
-        8.8.0.20190613:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-i386-deb9-linux.tar.xz"
-            content-length: 204060792
-            sha1: 0fe7fc95073602078e0677ae623dd02f46ae3a5b
+        8.8.0.20190721:
+            url: "https://downloads.haskell.org/ghc/8.8.1-rc1/ghc-8.8.0.20190721-i386-deb9-linux.tar.xz"
+            content-length: 204519496
+            sha1: cc7de4ab0c963529487e6387dee8de87fe2d8b6e
     macosx:
-        8.8.0.20190613:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-apple-darwin.tar.xz"
-            content-length: 184846152
-            sha1: 116bdaadcde045f78adcf1ffce291c79fb1c3eb6
+        8.8.0.20190721:
+            url: "https://downloads.haskell.org/ghc/8.8.1-rc1/ghc-8.8.0.20190721-x86_64-apple-darwin.tar.xz"
+            content-length: 188586644
+            sha1: d33ab464198b41f54596e297e16bb676d9700991
     linux64:
-        8.8.0.20190613:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-deb9-linux.tar.xz"
-            content-length: 199898532
-            sha1: 11360a17f61da02c82d0f64f07e124479cedecc4
-    linux64-tinfo6:
-        8.8.0.20190613:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-fedora27-linux.tar.xz"
-            content-length: 201560804
-            sha1: 07eb8ab473f2aa3c21ac2b497142a01466ace5ee
+        8.8.0.20190721:
+            url: "https://downloads.haskell.org/ghc/8.8.1-rc1/ghc-8.8.0.20190721-x86_64-deb9-linux.tar.xz"
+            content-length: 200333084
+            sha1: 56c1abc26372d4b202835c45c10d47afca7634a7
     windows64:
-        8.8.0.20190613:
-            url: "https://downloads.haskell.org/~ghc/8.8.1-alpha2/ghc-8.8.0.20190613-x86_64-unknown-mingw32.tar.xz"
-            content-length: 224468920
-            sha1: b4a3b2b45625eb32dd7f892246da9a602d9ce7db
-
+        8.8.0.20190721:
+            url: "https://downloads.haskell.org/ghc/8.8.1-rc1/ghc-8.8.0.20190721-x86_64-unknown-mingw32.tar.xz"
+            content-length: 224732484
+            sha1: 7ab9486b3346de9cf48818806b6b85c7db9504d6
