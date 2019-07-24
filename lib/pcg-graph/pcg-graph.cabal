@@ -10,8 +10,8 @@ license:            BSD-3-Clause
 license-file:       LICENSE
 
 synopsis:           Library for phylogenetic graphs
-                    
-description:        Defines data type for phylogenetic graphs and various 
+
+description:        Defines data type for phylogenetic graphs and various
                     helper functions.
 
 
@@ -75,13 +75,14 @@ library pcg-graph
 
   import:
     ghc-flags,
-    language-spec     
+    language-spec
 
   hs-source-dirs:
     src
 
   build-depends:
     base                     >= 4.11      && < 5.0,
+    bifunctors               ^>= 5.5.4            ,
     -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 0.7,
     deepseq                  >= 1.4       && < 2.0,
@@ -99,6 +100,8 @@ library pcg-graph
 
   exposed-modules:
     Data.Graph
+    Data.Graph.Type
+    Data.Graph.Memo
     Data.Graph.Internal
     Data.Graph.Indices
     Data.Graph.NodeContext
@@ -110,12 +113,12 @@ test-suite pcg-graph-test
 
   import:
     ghc-flags,
-    language-spec     
+    language-spec
 
-  main-is:          
+  main-is:
     TestSuite.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
   hs-source-dirs:
