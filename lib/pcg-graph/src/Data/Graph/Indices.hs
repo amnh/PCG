@@ -59,7 +59,7 @@ newtype ChildIndex   = ChildIndex  {getChildIndex :: Int}
   deriving (Semigroup, Monoid) via (Sum Int)
   deriving newtype (Enum, Bits)
 
-data IndexType = Leaf | Internal | Network | Root
+data IndexType = LeafTag | InternalTag | NetworkTag | RootTag
   deriving Enum
 
 
