@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Data.Graph.Type where
 
@@ -14,7 +15,6 @@ import Data.Kind (Type)
 import Data.Key
 import Data.Vector.Instances ()
 import Control.Lens
-import Data.Bifunctor
 
 data GraphShape i n r t
   = GraphShape
@@ -38,8 +38,14 @@ data Graph
   , cachedData         :: c
   }
 
-instance Bifunctor (Graph f c e) where
-  bimap = undefined
+instance Functor f => Bifunctor (Graph f c e) where
+  bimap f g graph@(Graph{..}) =
+    graph
+      { leafReferences     = fmap (fmap g) leafReferences
+      , internalReferences = fmap (fmap (fmap f)) internalReferences
+      , networkReferences  = fmap (fmap (fmap f)) networkReferences
+      , rootReferences     = fmap (fmap (fmap f)) rootReferences
+      }
 
 class HasLeafReferences s t a b | s -> a, t -> b, s b -> t, t a -> s where
   _leafReferences :: Lens s t a b
