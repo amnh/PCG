@@ -48,6 +48,7 @@ data IndexData nodeContext nodeData  = IndexData
   { nodeData    :: nodeData
   , nodeContext :: !nodeContext
   }
+  deriving stock (Eq, Functor)
 
 class HasNodeData s t a b | s -> a, t -> b, s b -> t, t a -> s where
   _nodeData :: Lens s t a b
