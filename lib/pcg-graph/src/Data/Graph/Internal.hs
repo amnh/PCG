@@ -6,16 +6,10 @@
 
 module Data.Graph.Internal where
 
-import Data.Graph.Indices
-import Data.Graph.NodeContext
-import Data.Vector (Vector)
-import Data.Key
 import Data.Vector.Instances ()
 import Control.Lens
-import Data.Bifunctor
 import Data.Graph.Type
 import Data.Graph.Memo
-import Control.Applicative
 
 
 postorderFold

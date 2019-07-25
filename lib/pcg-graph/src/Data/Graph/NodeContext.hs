@@ -23,10 +23,10 @@ class HasRight s a | s -> a where
   _right :: Lens' s a
 
 instance HasLeft (Pair a) a where
-  _left = lens (\(Pair a1 a2) -> a1) (\(Pair a1 a2) a1' -> Pair a1' a2)
+  _left = lens (\(Pair a1 _) -> a1) (\(Pair _ a2) a1' -> Pair a1' a2)
 
 instance HasRight (Pair a) a where
-  _right = lens (\(Pair a1 a2) -> a2) (\(Pair a1 a2) a2' -> Pair a1 a2')
+  _right = lens (\(Pair _ a2) -> a2) (\(Pair a1 _) a2' -> Pair a1 a2')
 
 data NodeContext
   = LeafC     LeafContext
