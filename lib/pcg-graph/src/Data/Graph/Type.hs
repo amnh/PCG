@@ -75,6 +75,17 @@ instance HasRootReferences
            (Vector (IndexData RootContext (f n))) where
   _rootReferences = lens rootReferences (\g fn -> g {rootReferences = fn})
 
+class HasCachedData s t a b | s -> a, t -> b, s b -> t, t a -> b where
+  _cachedData :: Lens s t a b
+
+instance HasCachedData
+           (Graph f c1 e n t)
+           (Graph f c2 e n t)
+           c1
+           c2 where
+  _cachedData = lens cachedData (\g c2 -> g {cachedData = c2})
+
+
 
 index :: Graph f c e n t -> TaggedIndex -> NodeContext
 index graph taggedIndex =
