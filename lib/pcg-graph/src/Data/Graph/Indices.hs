@@ -49,12 +49,12 @@ newtype TaggedIndex  = TaggedIndex {getIndex :: Int }
   deriving (Semigroup, Monoid) via (Sum Int)
   deriving newtype Bits
 
-newtype ParentIndex  = ParentIndex {getParentIndex :: Int}
+newtype ParentIndex  = ParentIndex {getParentIndex :: TaggedIndex}
   deriving stock (Eq, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
   deriving newtype Bits
 
-newtype ChildIndex   = ChildIndex  {getChildIndex :: Int}
+newtype ChildIndex   = ChildIndex  {getChildIndex :: TaggedIndex}
   deriving stock (Eq, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
   deriving newtype (Enum, Bits)
