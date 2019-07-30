@@ -74,9 +74,9 @@ retreivePairwiseTCM
   -> c
   -> c
   -> (c, Word)
-retreivePairwiseTCM f (ExplicitLayout a b) = f a b
-retreivePairwiseTCM _ DiscreteMetric       = discreteMetricPairwiseLogic
-retreivePairwiseTCM _ LinearNorm           = firstLinearNormPairwiseLogic
+retreivePairwiseTCM f (ExplicitLayout tcm a) = f tcm a
+retreivePairwiseTCM _ DiscreteMetric         = discreteMetricPairwiseLogic
+retreivePairwiseTCM _ LinearNorm             = firstLinearNormPairwiseLogic
 
 
 retreiveThreewayTCM
@@ -90,9 +90,9 @@ retreiveThreewayTCM
   -> c
   -> c
   -> (c, Word)
-retreiveThreewayTCM f (ExplicitLayout a b) = f a b
-retreiveThreewayTCM _ DiscreteMetric       =  discreteMetricThreewayLogic
-retreiveThreewayTCM _ LinearNorm           = firstLinearNormThreewayLogic
+retreiveThreewayTCM f (ExplicitLayout tcm a) = f tcm a
+retreiveThreewayTCM _ DiscreteMetric         =  discreteMetricThreewayLogic
+retreiveThreewayTCM _ LinearNorm             = firstLinearNormThreewayLogic
 
 
 discreteMetricPairwiseLogic

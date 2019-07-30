@@ -71,7 +71,7 @@ import System.IO.Unsafe
 memoize :: forall a b. (Eq a, Hashable a, NFData b) => (a -> b) -> a -> b
 memoize f = unsafePerformIO $ do
     -- Create a TVar which holds the ST state and the HashTable
-    !htRef <- newTVarIO (newSized (2^16) :: IO (BasicHashTable a b))
+    !htRef <- newTVarIO (newSized (2^4) :: IO (BasicHashTable a b))
     -- This is the returned closure of a memozized f
     -- The closure captures the "mutable" reference to the hashtable above
     -- through the TVar.

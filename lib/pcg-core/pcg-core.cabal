@@ -171,6 +171,7 @@ library
     Bio.Graph.Solution,
     Bio.Graph.ZipperDAG,
     Data.EdgeLength,
+    Data.Hashable.Memoize,
     Data.MetricRepresentation,
     Data.NodeLabel,
     Data.TCM,
@@ -206,6 +207,7 @@ library pcg-analysis
     deepseq                  >= 1.4       && < 2.0,
     dlist                    >= 0.8       && < 1.0,
     foldl                    >= 1.3.2     && < 2.0,
+    hashable                 >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.17      && < 5.0,
     mtl                      >= 2.0       && < 3.0,
@@ -331,7 +333,7 @@ library pcg-data-structures
     Bio.Graph.Node
     Bio.Graph.Node.Context
     Bio.Graph.PhylogeneticDAG
-    Bio.Graph.PhylogeneticDAG.Substitute,
+    Bio.Graph.PhylogeneticDAG.Substitute
     Bio.Graph.ReferenceDAG
     Bio.Graph.ReferenceDAG.Internal
     Bio.Graph.ReferenceDAG.Network
@@ -340,6 +342,7 @@ library pcg-data-structures
     Bio.Graph.Solution
     Bio.Graph.ZipperDAG
     Data.EdgeLength
+    Data.Hashable.Memoize
     Data.NodeLabel
     Data.TopologyRepresentation
     Test.Custom.NucleotideSequence

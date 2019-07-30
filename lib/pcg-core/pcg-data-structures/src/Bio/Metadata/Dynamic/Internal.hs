@@ -362,10 +362,11 @@ extractPairwiseTransitionCostMatrix
 extractPairwiseTransitionCostMatrix =
   either
     (lookupPairwise . fst)
-    (retreivePairwiseTCM memoed)
+    (retreivePairwiseTCM  memoed)
   . structuralRepresentationTCM
   where
-    memoed scm = memoize2 $ overlap2 (\i j -> toEnum . fromEnum $ scm TCM.! (fromEnum i, fromEnum j)) --getMedianAndCost2D memo
+--    memoed :: _
+    memoed scm _ = memoize2 $ overlap2 (\i j -> toEnum . fromEnum $ scm TCM.! (fromEnum i, fromEnum j)) --getMedianAndCost2D memo
 {-
 extractPairwiseTransitionCostMatrix = retreivePairwiseTCM handleGeneralCases . structuralRepresentationTCM
   where
@@ -403,7 +404,7 @@ extractThreewayTransitionCostMatrix =
     (retreiveThreewayTCM memoed)
   . structuralRepresentationTCM
   where
-    memoed scm = memoize3 $ overlap3 (\i j -> toEnum . fromEnum $ scm TCM.! (fromEnum i, fromEnum j)) --getMedianAndCost3D memo
+    memoed scm _ = memoize3 $ overlap3 (\i j -> toEnum . fromEnum $ scm TCM.! (fromEnum i, fromEnum j)) --getMedianAndCost3D memo
 
 
 -- |
