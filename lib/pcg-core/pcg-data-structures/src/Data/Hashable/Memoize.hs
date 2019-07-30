@@ -26,12 +26,14 @@ module Data.Hashable.Memoize
 import Control.Concurrent.STM
 import Control.Concurrent.STM.TVar
 import Control.DeepSeq
+import Control.Monad               (join)
 import Control.Monad.ST
 import Data.Functor
 import Data.Hashable
 import Data.HashTable.IO
 --import Data.HashTable.ST.Basic
-import Prelude hiding (lookup)
+import Data.IORef
+import Prelude                     hiding (lookup)
 import System.IO.Unsafe
 
 
@@ -70,8 +72,13 @@ import System.IO.Unsafe
 {-# NOINLINE memoize #-}
 memoize :: forall a b. (Eq a, Hashable a, NFData b) => (a -> b) -> a -> b
 memoize f = unsafePerformIO $ do
+
+    modifyIORef memoEntries succ
+    entries <- readIORef memoEntries
+    if entries `mod` 50 == 0 then print entries else pure ()
+
     -- Create a TVar which holds the ST state and the HashTable
-    !htRef <- newTVarIO (newSized (2^4) :: IO (BasicHashTable a b))
+    !htRef <- newTVarIO (newSized (2^16) :: IO (BasicHashTable a b))
     -- This is the returned closure of a memozized f
     -- The closure captures the "mutable" reference to the hashtable above
     -- through the TVar.
@@ -83,10 +90,10 @@ memoize f = unsafePerformIO $ do
         -- Read the TVar, we use IO since it is the outer monad
         -- and the documentation says that this doesn't perform a complete transaction,
         -- it just reads the current value from the TVar
-        st <- readTVarIO htRef
+        ht <- join $ readTVarIO htRef
         -- We use the HashTable to try and lookup the memoized value
 --        let result = runST $ (ht `lookup` k :: forall s. ST s (Maybe b))
-        result <- (st >>= (\ht -> ht `lookup` k))
+        result <- ht `lookup` k
         -- Here we check if the memoized value exists
         case result of
           -- If the value exists return it
@@ -112,6 +119,11 @@ memoize f = unsafePerformIO $ do
                   -- After performing the update side effects,
                   -- we return the value associated with the key
                   $> v
+
+
+{-# NOINLINE memoEntries #-}
+memoEntries :: IORef Word
+memoEntries = unsafePerformIO $ newIORef 0
 
 
 -- |

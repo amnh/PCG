@@ -11,9 +11,11 @@
 -- The core semigroupoid state of an 'Control.Evaluation.Evaluation' monad.
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
@@ -57,21 +59,9 @@ import           TextShow
 -- 'Text' instead of 'String' to store the error message to save space and
 -- efficient rendering.
 newtype EvaluationResult a = EU { runEvaluationResult :: Either (ErrorPhase, Text) a }
-   deriving ( Applicative
-            , Apply
-            , Data
-            , Eq
-            , Eq1
-            , Foldable
-            , Functor
-            , Generic
-            , Generic1
-            , MonadFix
-            , NFData
-            , Show
-            , Show1
-            , Traversable
-            )
+   deriving stock    (Data, Eq, Foldable, Generic, Generic1, Show, Traversable, Typeable)
+   deriving anyclass (NFData)
+   deriving newtype  (Applicative, Apply, Eq1, Functor, MonadFix, Show1)
 
 -- |
 -- Keep track of which phase of the evaluation th error occured in.

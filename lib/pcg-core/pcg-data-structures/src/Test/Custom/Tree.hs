@@ -1,3 +1,4 @@
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -111,7 +112,7 @@ createBinary leafCharacters = TT . setRefIds . createBinary' $ createCherry' <$>
 
 
 newtype SimpleTree = TT (Tree TestingDecoration)
-    deriving (Eq)
+    deriving stock (Eq)
 
 
 data TestingDecoration

@@ -49,22 +49,23 @@ import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic.Class   hiding (DenseTransitionCostMatrix)
 import           Control.DeepSeq
-import           Control.Foldl                            (Fold (..))
-import qualified Control.Foldl                     as F
-import           Control.Lens                      hiding (Fold)
+import           Control.Foldl                (Fold (..))
+import qualified Control.Foldl                as F
+import           Control.Lens                 hiding (Fold)
 import           Control.Monad.State.Strict
 import           Data.Alphabet
 import           Data.Bits
 import           Data.FileSource
 import           Data.Foldable
-import           Data.Functor                             (($>))
+import           Data.Foldable.Custom         (sum')
+import           Data.Functor                 (($>))
 import           Data.Hashable
 import           Data.Hashable.Memoize
-import           Data.List                                (intercalate)
-import           Data.List.NonEmpty                       (NonEmpty (..))
+import           Data.List                    (intercalate)
+import           Data.List.NonEmpty           (NonEmpty (..))
 import           Data.Maybe
-import           Data.MonoTraversable
 import           Data.MetricRepresentation
+import           Data.MonoTraversable
 import           Data.Ord
 import           Data.Range
 import           Data.Semigroup
@@ -74,8 +75,8 @@ import qualified Data.TCM                     as TCM
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Data.TopologyRepresentation
-import           GHC.Generics                             (Generic)
-import           Prelude                           hiding (lookup)
+import           GHC.Generics                 (Generic)
+import           Prelude                      hiding (lookup)
 import           Text.XML
 
 
@@ -115,6 +116,9 @@ data DynamicCharacterMetadataDec c
    , structuralRepresentationTCM :: !(Either
                                         (DenseTransitionCostMatrix, MetricRepresentation ())
                                         (MetricRepresentation MemoizedCostMatrix)
+   {-                                   TODO: try to change to this
+                                        (MetricRepresentation (c -> c -> (c, Word)))
+   -}
                                      )
    , metadata                    :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
    } deriving (Generic, NFData)
@@ -360,14 +364,13 @@ extractPairwiseTransitionCostMatrix
   -> c
   -> (c, Word)
 extractPairwiseTransitionCostMatrix =
-  either
-    (lookupPairwise . fst)
-    (retreivePairwiseTCM  memoed)
-  . structuralRepresentationTCM
-  where
---    memoed :: _
-    memoed scm _ = memoize2 $ overlap2 (\i j -> toEnum . fromEnum $ scm TCM.! (fromEnum i, fromEnum j)) --getMedianAndCost2D memo
+    either
+      (lookupPairwise . fst)
+      (retreivePairwiseTCM (const . buildMemo2))
+    . structuralRepresentationTCM
 {-
+  where
+--getMedianAndCost2D memo
 extractPairwiseTransitionCostMatrix = retreivePairwiseTCM handleGeneralCases . structuralRepresentationTCM
   where
     handleGeneralCases scm v =
@@ -375,6 +378,20 @@ extractPairwiseTransitionCostMatrix = retreivePairwiseTCM handleGeneralCases . s
           Left  dense -> lookupPairwise dense
           Right _memo -> memoize2 $ overlap2 (\i j -> toEnum . fromEnum $ scm TCM.! (fromEnum i, fromEnum j)) --getMedianAndCost2D memo
 -}
+
+
+{-# SPECIALISE buildMemo2 :: TCM -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
+buildMemo2
+  :: ( Exportable c
+     , EncodableStreamElement c
+     , Eq c
+     , Hashable c
+     , NFData c
+     , Ranged c
+     , Bound c ~ Word
+     )
+  => TCM -> c -> c -> (c, Word)
+buildMemo2 scm = memoize2 $ overlap2 (\i j -> toEnum . fromEnum $ scm TCM.! (fromEnum i, fromEnum j))
 
 
 -- |
@@ -437,7 +454,7 @@ overlap costStruct chars = F.impurely ofoldMUnwrap (F.premapM g outerFold) wlog 
     outerFold = F.generalize $ Fold f (zero, maxBound) id
 
     symbolAndCost (i, x) =
-      let !cost = sum $ getDistance costStruct i <$> chars
+      let !cost = sum' $ getDistance costStruct i <$> chars
       in  (x, cost)
 
     f (!symbol1, !cost1) (!symbol2, !cost2) =

@@ -13,11 +13,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ApplicativeDo    #-}
-{-# LANGUAGE DeriveAnyClass   #-}
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE ApplicativeDo      #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module File.Format.VertexEdgeRoot.Parser
   ( VertexLabel
@@ -38,6 +40,7 @@ module File.Format.VertexEdgeRoot.Parser
 import           Control.DeepSeq        (NFData)
 import           Data.CaseInsensitive   (FoldCase)
 import           Data.Char              (isSpace)
+import           Data.Data
 import           Data.Either            (partitionEithers)
 import           Data.Foldable
 import           Data.Functor           (($>))
@@ -84,7 +87,9 @@ data  EdgeInfo
     { edgeOrigin :: VertexLabel -- ^ Extract the origin of the directed edge
     , edgeTarget :: VertexLabel -- ^ Extract the destination of the directed edge
     , edgeLength :: EdgeLength  -- ^ Extract the /possibly/ present edge length
-    } deriving (Eq, Generic, NFData, Ord)
+    }
+    deriving stock (Data, Eq, Generic, Ord, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -94,7 +99,9 @@ data  VertexEdgeRoot
     { vertices :: Set VertexLabel
     , edges    :: Set EdgeInfo
     , roots    :: Set VertexLabel
-    } deriving (Show, Generic, NFData, Eq)
+    }
+    deriving stock    (Data, Eq, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 -- | (✔)

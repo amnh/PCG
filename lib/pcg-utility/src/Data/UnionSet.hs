@@ -12,7 +12,9 @@
 -- the set {1,...,n}.
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Data.UnionSet
@@ -32,7 +34,9 @@ import TextShow                    (TextShow)
 -- Represents the union of several elements with a lexical ordering over a
 -- pre-determined finite range. Represented internally as a bit-vector for efficiency.
 newtype UnionSet = Union BitVector
-  deriving (Bits, Generic, Ord, TextShow)
+  deriving stock    (Generic)
+  deriving anyclass (NFData)
+  deriving newtype  (Bits, Ord, TextShow)
 
 
 instance Eq UnionSet where
@@ -50,8 +54,6 @@ instance Show UnionSet where
     show (Union bv) = foldMap f $ toBits bv
       where
         f x = if x then "1" else "0"
-
-instance NFData UnionSet
 
 
 instance Semigroup UnionSet where

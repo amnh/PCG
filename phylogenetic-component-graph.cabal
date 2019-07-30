@@ -155,9 +155,7 @@ executable pcg
     PCG.Command.Read.DecorationInitialization
     PCG.Command.Read.Evaluate
     PCG.Command.Read.InputStreams
---    PCG.Command.Read.InputStreamError
     PCG.Command.Read.ParseStreams
---    PCG.Command.Read.ParseStreamError
     PCG.Command.Read.ReadCommandError
     PCG.Command.Report.Evaluate
     PCG.Command.Report.GraphViz

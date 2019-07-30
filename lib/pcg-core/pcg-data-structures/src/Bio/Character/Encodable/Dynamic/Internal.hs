@@ -15,6 +15,7 @@
 
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -79,7 +80,8 @@ data  DynamicCharacter
 -- Represents a sinlge element of a dynamic character.
 newtype DynamicCharacterElement
       = DCE BitVector
-      deriving (Bits, Eq, FiniteBits, Generic, Hashable, MonoFoldable, MonoFunctor, Ord, Show)
+      deriving stock   (Generic)
+      deriving newtype (Bits, Eq, FiniteBits, Hashable, MonoFoldable, MonoFunctor, Ord, Show, TextShow)
 
 
 type instance Bound DynamicCharacterElement = Word

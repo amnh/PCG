@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -62,7 +63,7 @@ import           Text.XML
 -- Blocks are optimized atomically with resepect to network resolutions.
 newtype MetadataSequence m
     = MetaSeq (Vector (MetadataBlock m))
-    deriving (Generic)
+    deriving stock (Generic)
 
 
 type instance Element (MetadataSequence m) = MetadataBlock m

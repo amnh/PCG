@@ -16,6 +16,7 @@
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -313,7 +314,7 @@ type TntContinuousCharacter = Maybe Double
 -- Each value coresponds to it's respective bit in the 'Word64'. Ambiguity groups
 -- are represented by 'Word64' values with multiple set bits.
 newtype TntDiscreteCharacter   = TntDis Word64
-  deriving (Bits, Eq, Ord, FiniteBits)
+  deriving newtype (Bits, Eq, Ord, FiniteBits)
 
 
 -- |
@@ -325,7 +326,7 @@ newtype TntDiscreteCharacter   = TntDis Word64
 -- Gap represents an ambiguity group of all possible proteins unless gaps are
 -- treated as a fifth state. Missing represents the empty ambiguity group.
 newtype TntDnaCharacter        = TntDna Word8
-  deriving (Bits, Eq, FiniteBits, Ord)
+  deriving newtype (Bits, Eq, FiniteBits, Ord)
 
 
 -- |
@@ -334,7 +335,7 @@ newtype TntDnaCharacter        = TntDna Word8
 -- along with \'-\' & \'?\' characters representing gap or missing data respecitively.
 -- Missing represents the empty ambiguity group.
 newtype TntProteinCharacter    = TntPro Word32
-  deriving (Bits, Eq, FiniteBits, Ord)
+  deriving newtype (Bits, Eq, FiniteBits, Ord)
 
 
 -- | (✔)

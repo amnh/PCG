@@ -11,6 +11,7 @@
 -- Unit tests for implied alignment
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DerivingStrategies   #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 
@@ -138,7 +139,7 @@ encodeArbSameLen (parse1, parse2) =
 newtype GoodParsedChar
       = GoodParsedChar
       { getGoodness :: ParsedChar
-      } deriving (Eq,Show)
+      } deriving stock (Eq, Show)
 
 
 instance Arbitrary GoodParsedChar where

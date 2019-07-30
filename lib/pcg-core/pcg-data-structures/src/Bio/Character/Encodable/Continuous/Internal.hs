@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -37,7 +38,7 @@ import TextShow                                 (TextShow (showb))
 -- Represents a real-valued range with a minimum lower bound of zero and a
 -- maximum upper bound of infinity.
 newtype ContinuousCharacter = CC (ExtendedReal, ExtendedReal)
-  deriving (Eq, Generic)
+  deriving stock (Eq, Generic)
 
 
 type instance Bound ContinuousCharacter = ExtendedReal

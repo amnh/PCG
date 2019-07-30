@@ -14,7 +14,9 @@
 
 {-# LANGUAGE ApplicativeDo       #-}
 {-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -34,9 +36,10 @@ module File.Format.Fastc.Parser
 import           Control.DeepSeq                    (NFData, force)
 import           Control.Monad.Combinators.NonEmpty
 import           Data.Char                          (isSpace)
+import           Data.Data
 import           Data.List.NonEmpty                 (NonEmpty (..))
 import           Data.Maybe
-import           Data.Proxy
+import           Data.Proxy                         (Proxy (..))
 import           Data.Semigroup.Foldable
 import           Data.String
 import qualified Data.Text                          as T
@@ -60,11 +63,13 @@ type FastcParseResult = NonEmpty FastcSequence
 
 -- |
 -- Pairing of taxa label with an unconverted sequence
-data FastcSequence
-   = FastcSequence
-   { fastcLabel   :: {-# UNPACK #-} !Identifier
-   , fastcSymbols :: {-# UNPACK #-} !CharacterSequence
-   } deriving (Eq, Generic, NFData, Show)
+data  FastcSequence
+    = FastcSequence
+    { fastcLabel   :: {-# UNPACK #-} !Identifier
+    , fastcSymbols :: {-# UNPACK #-} !CharacterSequence
+    }
+    deriving stock    (Data, Eq, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |
