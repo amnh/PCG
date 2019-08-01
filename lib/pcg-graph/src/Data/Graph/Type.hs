@@ -10,16 +10,14 @@ module Data.Graph.Type where
 import Data.Graph.Indices
 import Data.Graph.NodeContext
 import Data.Vector (Vector)
--- import qualified Data.Vector as V
 import Data.Kind (Type)
-import Data.Key
 import Data.Vector.Instances ()
 import Control.Lens
 
 data GraphShape i n r t
   = GraphShape
   { leafData     :: Vector t
-  , internalData :: Vector i
+  , treeData :: Vector i
   , networkData  :: Vector n
   , rootData     :: Vector r
   }
@@ -32,7 +30,7 @@ data Graph
        (t :: Type)
   = Graph
   { leafReferences     :: Vector (LeafIndexData     (  t))
-  , internalReferences :: Vector (InternalIndexData (f n))
+  , treeReferences     :: Vector (TreeIndexData     (f n))
   , networkReferences  :: Vector (NetworkIndexData  (f n))
   , rootReferences     :: Vector (RootIndexData     (f n))
   , cachedData         :: c
@@ -42,7 +40,7 @@ instance Functor f => Bifunctor (Graph f c e) where
   bimap f g graph@(Graph{..}) =
     graph
       { leafReferences     = fmap (fmap g) leafReferences
-      , internalReferences = fmap (fmap (fmap f)) internalReferences
+      , treeReferences     = fmap (fmap (fmap f)) treeReferences
       , networkReferences  = fmap (fmap (fmap f)) networkReferences
       , rootReferences     = fmap (fmap (fmap f)) rootReferences
       }
@@ -55,15 +53,16 @@ instance HasLeafReferences
            (Graph f c e n t')
            (Vector (IndexData LeafContext t))
            (Vector (IndexData LeafContext t')) where
-  _leafReferences = lens leafReferences (\g l -> g {leafReferences = l})
+  _leafReferences = lens leafReferences (\g l -> g { leafReferences = l})
 
-class HasInternalReferences s a | s -> a where
-  _internalReferences :: Lens' s a
 
-instance HasInternalReferences
+class HasTreeReferences s a | s -> a where
+  _treeReferences :: Lens' s a
+
+instance HasTreeReferences
            (Graph f c e n t)
-           (Vector (IndexData InternalContext (f n))) where
-  _internalReferences = lens internalReferences (\g fn -> g {internalReferences = fn})
+           (Vector (IndexData TreeContext (f n))) where
+  _treeReferences = lens treeReferences (\g fn -> g {treeReferences = fn})
 
 class HasNetworkReferences s a | s -> a where
   _networkReferences :: Lens' s a
@@ -93,32 +92,28 @@ instance HasCachedData
 
 
 
-index :: Graph f c e n t -> TaggedIndex -> NodeContext
+index :: Graph f c e n t -> TaggedIndex -> NodeIndexData (f n) t
 index graph taggedIndex =
   let
     ind = untagValue taggedIndex
   in
   case getTag taggedIndex of
-    LeafTag    ->   leafNodeContext
-                  . (^. _nodeContext)
-                  . (! ind)
-                  .  leafReferences
-                  $ graph
+    LeafTag    -> LeafNodeIndexData $
+                     graph ^.
+                      _leafReferences
+                    . (singular $ ix ind)
 
-    InternalTag ->   internalNodeContext
-                   . (^. _nodeContext)
-                   . (! ind)
-                   .  internalReferences
-                   $ graph
+    TreeTag -> TreeNodeIndexData $
+                     graph ^.
+                       _treeReferences
+                     . (singular $ ix ind)
 
-    NetworkTag  ->   networkNodeContext
-                   .  (^. _nodeContext)
-                   . (! ind)
-                   .  networkReferences
-                   $ graph
+    NetworkTag  -> NetworkNodeIndexData $
+                    graph ^.
+                       _networkReferences
+                     . (singular $ ix ind)
 
-    RootTag     ->   rootNodeContext
-                   . (^. _nodeContext)
-                   . (! ind)
-                   .  rootReferences
-                   $ graph
+    RootTag     -> RootNodeIndexData $
+                    graph ^.
+                       _rootReferences
+                     . (singular $ ix ind)
