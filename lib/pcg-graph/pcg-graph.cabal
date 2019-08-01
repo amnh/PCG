@@ -105,6 +105,8 @@ library pcg-graph
     Data.Graph.Internal
     Data.Graph.Indices
     Data.Graph.NodeContext
+    Data.Graph.Moves
+    Data.Graph.Hash
 
   other-modules:
 
