@@ -97,7 +97,7 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
            parTag == RootTag
          then (Just (newVal, parInd), currVect)
          else
-           let updatedVect = undefined in
+           let updatedVect = writeNodeData ind newVal currVect in
              go (coerce parInd) (val, updatedVect)
         
      
