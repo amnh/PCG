@@ -19,7 +19,7 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
--- {-# LANGUAGE StrictData             #-}
+{-# LANGUAGE StrictData             #-}
 {-# LANGUAGE TypeFamilies           #-}
 
 module Bio.Metadata.Dynamic.Internal
@@ -40,49 +40,38 @@ module Bio.Metadata.Dynamic.Internal
   , dynamicMetadataFromTCM
   , dynamicMetadataWithTCM
   , maybeConstructDenseTransitionCostMatrix
+  , overlap
   ) where
 
 
 import           Bio.Character.Encodable
---import           Bio.Character.Exportable
 import           Bio.Metadata.CharacterName
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic.Class   hiding (DenseTransitionCostMatrix)
 import           Control.DeepSeq
-import           Control.Foldl                (Fold (..))
-import qualified Control.Foldl                as F
 import           Control.Lens                 hiding (Fold)
-import           Control.Monad.ST
 import           Control.Monad.State.Strict
 import           Data.Alphabet
 import           Data.Bits
 import           Data.FileSource
 import           Data.Foldable
-import           Data.Foldable.Custom         (sum')
 import           Data.Functor                 (($>))
 import           Data.Hashable
 import           Data.Hashable.Memoize
 import           Data.List                    (intercalate)
 import           Data.List.NonEmpty           (NonEmpty (..))
-import qualified Data.List.NonEmpty           as NE
 import           Data.Maybe
 import           Data.MetricRepresentation
-import           Data.MonoTraversable
 import           Data.Ord
 import           Data.Range
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.STRef
-import           Data.TCM                     hiding ((!))
+import           Data.TCM                     hiding ((!), size)
 import qualified Data.TCM                     as TCM
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Data.TopologyRepresentation
-import qualified Data.Vector.Storable         as V
-import           Data.Vector.Storable         ((!))
-import           Data.Vector.Storable.Mutable (STVector)
-import qualified Data.Vector.Storable.Mutable as MV
 import           GHC.Generics                 (Generic)
 import           Prelude                      hiding (lookup)
 import           Text.XML
@@ -425,8 +414,8 @@ extractThreewayTransitionCostMatrix =
 
 
 -- |
--- Takes two 'EncodableStreamElement' and a symbol change cost function and
--- returns a tuple of a new character, along with the cost of obtaining that
+-- Takes one or more elements of 'FiniteBits' and a symbol change cost function
+-- and returns a tuple of a new character, along with the cost of obtaining that
 -- character. The return character may be (or is even likely to be) ambiguous.
 -- Will attempt to intersect the two characters, but will union them if that is
 -- not possible, based on the symbol change cost function.
@@ -436,79 +425,38 @@ extractThreewayTransitionCostMatrix =
 -- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
 -- value is A,C,G,T.
 {-# INLINE overlap #-}
--- {-# SPECIALISE overlap :: EncodableStreamElement e => (Word -> Word -> Word) -> NonEmpty e -> (e, Word) #-}
+{-# SPECIALISE overlap :: FiniteBits e => (Word -> Word -> Word) -> NonEmpty e -> (e, Word) #-}
 {-# SPECIALISE overlap :: (Word -> Word -> Word) -> NonEmpty DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
 overlap
-  :: ( Element e ~ Bool
-     , FiniteBits e
-     , MonoFoldable e 
+  :: forall e f.
+     ( FiniteBits e
      , Foldable1 f
      , Functor f
      )
-  => (Word -> Word -> Word)
-  -> f e
-  -> (e, Word)
-overlap costStruct chars = F.impurely ofoldMUnwrap (F.premapM g outerFold) wlog `evalState` 0
+  => (Word -> Word -> Word) -- ^ Symbol change matrix (SCM) to determin cost
+  -> f e                    -- ^ List of elements for of which to find the k-median and cost
+  -> (e, Word)              -- ^ K-median and cost
+overlap sigma xs = go size maxBound zero
   where
-    !wlog = getFirst $ foldMap1 First chars
-    !zero = wlog `xor` wlog
+    (size, zero) = let wlog = getFirst $ foldMap1 First xs
+                   in  (finiteBitSize wlog, wlog `xor` wlog)
 
-    outerFold = F.generalize $ Fold f (zero, maxBound) id
+    go :: Int -> Word -> e -> (e, Word)
+    go 0 theCost bits = (bits, theCost)
+    go i oldCost bits =
+        let newCost = sum $ getDistance (toEnum i) <$> xs
+            (minCost, bits') = case oldCost `compare` newCost of
+                                 EQ -> (oldCost, bits `setBit` i)
+                                 LT -> (oldCost, bits           )
+                                 GT -> (newCost, zero `setBit` i)
+        in go (i-1) minCost bits'
 
-    symbolAndCost (i, x) =
-      let !cost = sum' $ getDistance costStruct i <$> chars
-      in  (x, cost)
-
-    f (!symbol1, !cost1) (!symbol2, !cost2) =
-        case cost1 `compare` cost2 of
-          EQ -> (symbol1 .|. symbol2, cost1)
-          LT -> (symbol1            , cost1)
-          GT -> (symbol2            , cost2)
-
-    g = const $ do
-        j <- get
-        modify' (+1)
-        let !v = toEnum j
-        let !b = zero `setBit` j
-        pure $ symbolAndCost (v, b)
-
-
-{-# INLINE overlap' #-}
-{-# SPECIALISE overlap' :: FiniteBits e => (Word -> Word -> Word) -> NonEmpty e -> (e, Word) #-}
-{-# SPECIALISE overlap' :: (Word -> Word -> Word) -> NonEmpty DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
-overlap'
-  :: ( FiniteBits e
-     , Foldable1 f
-     , Functor f
-     )
-  => (Word -> Word -> Word)
-  -> f e
-  -> (e, Word)
-overlap' sigma xs = runST $ do
-    costRef <- newSTRef (maxBound :: Word)
-    (alphabetBitArray :: STVector s Bool) <- MV.unsafeNew alphabetSize
-    for_ alphabetRange $ \i -> do
-        let newCost = sum' $ h i <$> xs
-        oldCost <- readSTRef costRef
-        case oldCost `compare` newCost of
-          LT -> MV.write alphabetBitArray i False
-          EQ -> MV.write alphabetBitArray i True
-          GT -> do MV.set (MV.take i alphabetBitArray) False
-                   MV.write alphabetBitArray i True
-                   writeSTRef costRef newCost
-    finalBitArray <- V.unsafeFreeze alphabetBitArray
-    finalCost     <- readSTRef costRef
-    let result = foldr (\i e -> if finalBitArray ! i then e `setBit` i else e) zeroedElement [alphabetSize - 1 .. 0]
-    pure (result, finalCost)
-  where
-    zeroedElement = elemWLOG `xor` elemWLOG
-    elemWLOG      = NE.head $ toNonEmpty xs
-    alphabetSize  = finiteBitSize elemWLOG
-    alphabetRange = [0 .. alphabetSize - 1]
-
-    h :: Bits e => Int -> e -> Word 
-    h i e = let i' = toEnum i
-            in  minimum $ (\j -> if e `testBit` j then sigma i' (toEnum j) else maxBound) <$> alphabetRange
+    getDistance i b = go' size (maxBound :: Word)
+      where
+        go' :: Int -> Word -> Word
+        go' 0 a = a
+        go' j a = let a' = if b `testBit` j then min a $ sigma i (toEnum j) else a
+                  in  go' (j-1) a'
 
 
 {-# INLINE overlap2 #-}
@@ -519,7 +467,7 @@ overlap2
   -> e
   -> e
   -> (e, Word)
-overlap2 costStruct char1 char2 = overlap costStruct $ char1 :| [char2]
+overlap2 sigma char1 char2 = overlap sigma $ char1 :| [char2]
 
 
 {-# INLINE overlap3 #-}
@@ -531,62 +479,4 @@ overlap3
   -> e
   -> e
   -> (e, Word)
-overlap3 costStruct char1 char2 char3 = overlap costStruct $ char1 :| [char2, char3]
-
-
-{-# INLINE getDistance #-}
-{-# SPECIALISE getDistance :: (Word -> Word -> Word) -> Word -> DynamicCharacterElement -> Word #-}
-getDistance
-  :: ( MonoFoldable b
-     , Element b ~ Bool
-     )
-  => (Word -> Word -> Word)
-  -> Word
-  -> b
-  -> Word
-getDistance costStruct i b = fromMaybe errMsg $
-    F.impurely ofoldMUnwrap (F.premapM f (F.generalize F.minimum)) b `evalState` 0
-  where
-    errMsg = error "There were no bits set in the character!"
-
-    f e = do
-        j <- get
-        modify' (+1)
-        pure $ if e
-               then costStruct i j
-               else maxBound
-{-
-    getDistance2 :: FiniteBits b => Word -> b -> Word
-    getDistance2 i b =
-        case F.fold (F.prefilter (b `testBit`) (F.premap (costStruct i . toEnum) F.minimum)) indices of
-          Just x  -> x
-          Nothing -> error $ "There were no bits set in the character!"
-      where
-        indices = [0 .. finiteBitSize b - 1]
--}
-
-
-{-
--- |
--- Given a structure of unambiguous character elements and costs, calculates the
--- least costly intersection of unambiguous character elements and the cost of
--- that intersection.
-minimalChoice :: (Bits b, Foldable1 t, Ord c) => t (b, c) -> (b, c)
-minimalChoice = foldl1 f
-  where
-    f (!symbol1, !cost1) (!symbol2, !cost2) =
-        case cost1 `compare` cost2 of
-          EQ -> (symbol1 .|. symbol2, cost1)
-          LT -> (symbol1            , cost1)
-          GT -> (symbol2            , cost2)
-
-
--- |
--- An overlap function that applies the discrete metric to aligning two elements.
-discreteOverlap :: EncodableStreamElement e => e -> e -> (e, Word)
-discreteOverlap lhs rhs
-  | intersect == zeroBits = (lhs .|. rhs, 1)
-  | otherwise             = (intersect  , 0)
-  where
-    intersect = lhs .&. rhs
--}
+overlap3 sigma char1 char2 char3 = overlap sigma $ char1 :| [char2, char3]
