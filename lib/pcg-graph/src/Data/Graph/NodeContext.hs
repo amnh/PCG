@@ -175,6 +175,14 @@ instance HasChildInds (RootIndexData e) (Either ChildIndex (Pair ChildIndex)) wh
 
 
 
-modifyNodeData :: HasNodeData s s a a =>  Int -> a -> Vector s -> Vector s
-modifyNodeData i a = V.modify
+writeNodeData :: HasNodeData s s a a =>  Int -> a -> Vector s -> Vector s
+writeNodeData i a = V.modify
                        (\mv -> MV.modify mv (& _nodeData .~ a) i)
+
+
+modifyNodeData :: HasNodeData s s a a =>  Int -> (a -> a) -> Vector s -> Vector s
+modifyNodeData i fn = V.modify
+                       (\mv -> MV.modify mv (& _nodeData %~ fn) i)
+
+
+                       
