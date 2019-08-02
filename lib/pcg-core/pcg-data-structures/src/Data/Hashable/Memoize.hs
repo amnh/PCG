@@ -24,10 +24,10 @@ module Data.Hashable.Memoize
 
 
 import Control.Concurrent.STM
-import Control.Concurrent.STM.TVar
+--import Control.Concurrent.STM.TVar
 import Control.DeepSeq
 import Control.Monad               (join)
-import Control.Monad.ST
+--import Control.Monad.ST
 import Data.Functor
 import Data.Hashable
 import Data.HashTable.IO
@@ -76,9 +76,10 @@ memoize f = unsafePerformIO $ do
     modifyIORef memoEntries succ
     entries <- readIORef memoEntries
     if entries `mod` 50 == 0 then print entries else pure ()
+    let initialSize = 2 ^ (16 :: Word)
 
     -- Create a TVar which holds the ST state and the HashTable
-    !htRef <- newTVarIO (newSized (2^16) :: IO (BasicHashTable a b))
+    !htRef <- newTVarIO (newSized initialSize :: IO (BasicHashTable a b))
     -- This is the returned closure of a memozized f
     -- The closure captures the "mutable" reference to the hashtable above
     -- through the TVar.
@@ -110,10 +111,10 @@ memoize f = unsafePerformIO $ do
                   -- We *atomically* insert the new key-value pair into the exisiting
                   -- HashTable behind the TVar, modifying the results of the TVar.
                   modifyTVar' htRef
-                    (\st -> st                -- Get the ST state from the TVar
-                        >>= (\ht ->           -- Bind the hashtable in the state to x
-                                insert ht k v -- Insert the key-value pair into the HashTable
-                                $> ht         -- Return the HashTable as the value in ST state
+                    (\st -> st                 -- Get the ST state from the TVar
+                        >>= (\ht' ->           -- Bind the hashtable in the state to x
+                                insert ht' k v -- Insert the key-value pair into the HashTable
+                                $> ht'         -- Return the HashTable as the value in ST state
                             )
                     )
                   -- After performing the update side effects,
@@ -156,8 +157,8 @@ memoize3
 memoize3 f = let f' = memoize (uncurry3 f)
              in curry3 f'
   where
-    curry3   f  x y z  = f (x,y,z)
-    uncurry3 f (x,y,z) = f x y z
+    curry3   g  x y z  = g (x,y,z)
+    uncurry3 g (x,y,z) = g x y z
 
 
 

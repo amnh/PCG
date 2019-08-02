@@ -18,7 +18,8 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE StrictData             #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
+-- {-# LANGUAGE StrictData             #-}
 {-# LANGUAGE TypeFamilies           #-}
 
 module Bio.Metadata.Dynamic.Internal
@@ -43,7 +44,7 @@ module Bio.Metadata.Dynamic.Internal
 
 
 import           Bio.Character.Encodable
-import           Bio.Character.Exportable
+--import           Bio.Character.Exportable
 import           Bio.Metadata.CharacterName
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
@@ -52,6 +53,7 @@ import           Control.DeepSeq
 import           Control.Foldl                (Fold (..))
 import qualified Control.Foldl                as F
 import           Control.Lens                 hiding (Fold)
+import           Control.Monad.ST
 import           Control.Monad.State.Strict
 import           Data.Alphabet
 import           Data.Bits
@@ -63,6 +65,7 @@ import           Data.Hashable
 import           Data.Hashable.Memoize
 import           Data.List                    (intercalate)
 import           Data.List.NonEmpty           (NonEmpty (..))
+import qualified Data.List.NonEmpty           as NE
 import           Data.Maybe
 import           Data.MetricRepresentation
 import           Data.MonoTraversable
@@ -70,11 +73,16 @@ import           Data.Ord
 import           Data.Range
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.TCM
+import           Data.STRef
+import           Data.TCM                     hiding ((!))
 import qualified Data.TCM                     as TCM
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Data.TopologyRepresentation
+import qualified Data.Vector.Storable         as V
+import           Data.Vector.Storable         ((!))
+import           Data.Vector.Storable.Mutable (STVector)
+import qualified Data.Vector.Storable.Mutable as MV
 import           GHC.Generics                 (Generic)
 import           Prelude                      hiding (lookup)
 import           Text.XML
@@ -166,12 +174,12 @@ instance DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Eq c, Hashable c, NFData c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, Hashable c, NFData c, Ranged c)
     => DiscreteWithTcmCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Eq c, Hashable c, NFData c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, Hashable c, NFData c, Ranged c)
     => DynamicCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
     {-# INLINE extractDynamicCharacterMetadata #-}
@@ -234,14 +242,14 @@ instance GetSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> 
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Eq c, Hashable c, NFData c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, Hashable c, NFData c, Ranged c)
     => GetPairwiseTransitionCostMatrix (DynamicCharacterMetadataDec c) c Word where
 
     pairwiseTransitionCostMatrix = to extractPairwiseTransitionCostMatrix
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Eq c, Hashable c, NFData c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, Hashable c, NFData c, Ranged c)
     => GetThreewayTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> c -> (c, Word)) where
 
     threewayTransitionCostMatrix = to extractThreewayTransitionCostMatrix
@@ -351,9 +359,7 @@ maybeConstructDenseTransitionCostMatrix alpha sigma = force f
 {-# INLINE extractPairwiseTransitionCostMatrix #-}
 {-# SPECIALISE extractPairwiseTransitionCostMatrix :: DynamicCharacterMetadataDec DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
 extractPairwiseTransitionCostMatrix
-  :: ( Exportable c
-     , EncodableStreamElement c
-     , Eq c
+  :: ( EncodableStreamElement c
      , Hashable c
      , NFData c
      , Ranged c
@@ -382,13 +388,9 @@ extractPairwiseTransitionCostMatrix = retreivePairwiseTCM handleGeneralCases . s
 
 {-# SPECIALISE buildMemo2 :: TCM -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
 buildMemo2
-  :: ( Exportable c
-     , EncodableStreamElement c
-     , Eq c
+  :: ( EncodableStreamElement c
      , Hashable c
      , NFData c
-     , Ranged c
-     , Bound c ~ Word
      )
   => TCM -> c -> c -> (c, Word)
 buildMemo2 scm = memoize2 $ overlap2 (\i j -> toEnum . fromEnum $ scm TCM.! (fromEnum i, fromEnum j))
@@ -402,9 +404,7 @@ buildMemo2 scm = memoize2 $ overlap2 (\i j -> toEnum . fromEnum $ scm TCM.! (fro
 {-# INLINE extractThreewayTransitionCostMatrix #-}
 {-# SPECIALISE extractThreewayTransitionCostMatrix :: DynamicCharacterMetadataDec DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
 extractThreewayTransitionCostMatrix
-  :: ( Exportable c
-     , EncodableStreamElement c
-     , Eq c
+  :: ( EncodableStreamElement c
      , Hashable c
      , NFData c
      , Ranged c
@@ -436,10 +436,12 @@ extractThreewayTransitionCostMatrix =
 -- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
 -- value is A,C,G,T.
 {-# INLINE overlap #-}
-{-# SPECIALISE overlap :: EncodableStreamElement e => (Word -> Word -> Word) -> NonEmpty e -> (e, Word) #-}
+-- {-# SPECIALISE overlap :: EncodableStreamElement e => (Word -> Word -> Word) -> NonEmpty e -> (e, Word) #-}
 {-# SPECIALISE overlap :: (Word -> Word -> Word) -> NonEmpty DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
 overlap
-  :: ( EncodableStreamElement e {- , Show e -}
+  :: ( Element e ~ Bool
+     , FiniteBits e
+     , MonoFoldable e 
      , Foldable1 f
      , Functor f
      )
@@ -469,6 +471,44 @@ overlap costStruct chars = F.impurely ofoldMUnwrap (F.premapM g outerFold) wlog 
         let !v = toEnum j
         let !b = zero `setBit` j
         pure $ symbolAndCost (v, b)
+
+
+{-# INLINE overlap' #-}
+{-# SPECIALISE overlap' :: FiniteBits e => (Word -> Word -> Word) -> NonEmpty e -> (e, Word) #-}
+{-# SPECIALISE overlap' :: (Word -> Word -> Word) -> NonEmpty DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
+overlap'
+  :: ( FiniteBits e
+     , Foldable1 f
+     , Functor f
+     )
+  => (Word -> Word -> Word)
+  -> f e
+  -> (e, Word)
+overlap' sigma xs = runST $ do
+    costRef <- newSTRef (maxBound :: Word)
+    (alphabetBitArray :: STVector s Bool) <- MV.unsafeNew alphabetSize
+    for_ alphabetRange $ \i -> do
+        let newCost = sum' $ h i <$> xs
+        oldCost <- readSTRef costRef
+        case oldCost `compare` newCost of
+          LT -> MV.write alphabetBitArray i False
+          EQ -> MV.write alphabetBitArray i True
+          GT -> do MV.set (MV.take i alphabetBitArray) False
+                   MV.write alphabetBitArray i True
+                   writeSTRef costRef newCost
+    finalBitArray <- V.unsafeFreeze alphabetBitArray
+    finalCost     <- readSTRef costRef
+    let result = foldr (\i e -> if finalBitArray ! i then e `setBit` i else e) zeroedElement [alphabetSize - 1 .. 0]
+    pure (result, finalCost)
+  where
+    zeroedElement = elemWLOG `xor` elemWLOG
+    elemWLOG      = NE.head $ toNonEmpty xs
+    alphabetSize  = finiteBitSize elemWLOG
+    alphabetRange = [0 .. alphabetSize - 1]
+
+    h :: Bits e => Int -> e -> Word 
+    h i e = let i' = toEnum i
+            in  minimum $ (\j -> if e `testBit` j then sigma i' (toEnum j) else maxBound) <$> alphabetRange
 
 
 {-# INLINE overlap2 #-}
