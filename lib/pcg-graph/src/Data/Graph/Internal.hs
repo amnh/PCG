@@ -13,8 +13,6 @@ import Control.Lens hiding (index)
 import Data.Graph.Type
 import Data.Graph.Memo
 import Data.Vector (Vector)
-import qualified Data.Vector as V
-import qualified Data.Vector.Mutable as MV
 import Data.Graph.Indices
 import Data.Graph.NodeContext
 import Data.Coerce
@@ -62,16 +60,16 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
     taggedIndex :: TaggedIndex
     taggedIndex = tagValue TreeTag startInd
 
-    startingValue :: f n
-    startingValue = graph ^. _treeReferences . singular (ix startInd) . _nodeData
+    treeRefs = graph ^. _treeReferences
+
+    updatedTreeRefs = modifyNodeData startInd (fmap updateFn) treeRefs
 
 
- -- TODO: rewrite using ST.
     f :: Graph f e c n n -> Graph f e c n n
-    f g = case go taggedIndex (Nothing, g ^. _treeReferences) of
+    f g = case go taggedIndex (Nothing, updatedTreeRefs) of
       (Nothing       , v') -> g & _treeReferences .~ v'
       (Just (r, ind) , v') -> g & _treeReferences .~ v'
-                                & _rootReferences  %~ (modifyNodeData (untagValue ind) r)
+                                & _rootReferences  %~ (writeNodeData (untagValue ind) r)
       
  -- TODO: rewrite using ST.      
     go
@@ -83,10 +81,10 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
         ind = untagValue tagInd
         currVal   = graph ^. _treeReferences . singular (ix ind) . _nodeData
         parInd    = graph ^. _treeReferences . singular (ix ind) . _parentInds
-        childInds :: Pair ChildIndex
-        childInds = graph ^. _treeReferences . singular (ix ind) . _childInds
-        childIndData1 = graph `index` (coerce $ childInds ^. _left)
-        childIndData2  = graph `index` (coerce $ childInds ^. _right)
+        childIndices :: Pair ChildIndex
+        childIndices = graph ^. _treeReferences . singular (ix ind) . _childInds
+        childIndData1 = graph `index`  (coerce $ childIndices ^. _left)
+        childIndData2  = graph `index` (coerce $ childIndices ^. _right)
         parTag    = getTag $ parInd
         newVal    = (liftFunction treeFn) childIndData1 childIndData2
      in
