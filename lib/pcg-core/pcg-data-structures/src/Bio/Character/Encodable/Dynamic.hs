@@ -20,6 +20,7 @@ module Bio.Character.Encodable.Dynamic
   , EncodableDynamicCharacter(..)
   , EncodableStreamElement(..)
   , EncodableStream(..)
+  , selectDC
   ) where
 
 import Bio.Character.Encodable.Dynamic.Class

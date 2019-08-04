@@ -29,6 +29,7 @@ module Bio.Character.Encodable
   , PossiblyMissingCharacter(..)
   , showStream
   , showStreamElement
+  , selectDC
   ) where
 
 import Bio.Character.Encodable.Continuous

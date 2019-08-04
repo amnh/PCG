@@ -32,6 +32,7 @@ module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicCharacter (DC, Missing)
   , DynamicCharacters
   , DynamicCharacterElement()
+  , selectDC
   ) where
 
 import           Bio.Character.Encodable.Dynamic.Class
@@ -62,6 +63,7 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
 import           TextShow                              (TextShow (showb))
+import           Data.Coerce
 
 
 -- |
@@ -82,6 +84,9 @@ newtype DynamicCharacterElement
       = DCE BitVector
       deriving stock   (Generic)
       deriving newtype (Bits, Eq, FiniteBits, Hashable, MonoFoldable, MonoFunctor, Ord, Show, TextShow)
+
+selectDC :: DynamicCharacterElement -> Word -> Maybe Word
+selectDC = coerce select
 
 
 type instance Bound DynamicCharacterElement = Word
