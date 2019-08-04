@@ -21,6 +21,8 @@
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StrictData             #-}
 {-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE MagicHash              #-}
+{-# LANGUAGE UnboxedTuples         #-}
 
 module Bio.Metadata.Dynamic.Internal
   ( DenseTransitionCostMatrix
@@ -41,6 +43,7 @@ module Bio.Metadata.Dynamic.Internal
   , dynamicMetadataWithTCM
   , maybeConstructDenseTransitionCostMatrix
   , overlap
+  , overlap'
   ) where
 
 
@@ -75,6 +78,10 @@ import           Data.TopologyRepresentation
 import           GHC.Generics                 (Generic)
 import           Prelude                      hiding (lookup)
 import           Text.XML
+import           Data.BitVector.LittleEndian
+
+import Control.DeepSeq
+import Data.Semigroup (Min(..))
 
 
 -- |
@@ -455,8 +462,52 @@ overlap sigma xs = go size maxBound zero
       where
         go' :: Int -> Word -> Word
         go' 0 a = a
-        go' j a = let a' = if b `testBit` j then min a $ sigma i (toEnum j) else a
+        go' j a =
+          let a' =
+                if b `testBit` j then min a $ sigma i (toEnum j)
+                else a
                   in  go' (j-1) a'
+
+
+overlap'
+  :: forall  f.
+     ( Foldable1 f
+     , Functor f
+     , NFData (f DynamicCharacterElement)
+     )
+  => (Word -> Word -> Word)
+  -> f DynamicCharacterElement
+  -> (DynamicCharacterElement, Word)
+overlap' sigma xs = go size maxBound zero
+  where
+    (size, !zero) = let !wlog = getFirst $ foldMap1 First xs
+                   in  (finiteBitSize wlog, wlog `xor` wlog)
+    size'  = size - 1
+
+  --  go :: Int -> Word -> e -> (e, Word)
+    go 0 theCost bits = (bits, theCost)
+    go i oldCost bits =
+        let !newCost = sum $ getDistance (toEnum i) <$>  xs
+            (minCost, bits') = case oldCost `compare` newCost of
+                                 EQ -> (oldCost, bits `setBit` i)
+                                 LT -> (oldCost, bits           )
+                                 GT -> (newCost, zero `setBit` i)
+        in go (i-1) minCost bits'
+
+    getDistance i !b = go' 0 0 (maxBound :: Word)
+      where
+        go' :: Int -> Word -> Word -> Word
+        go' j _ a | j == size' = a
+        go' j o a =
+          let
+            o' = o + 1
+            (a', j') =
+                if b `testBit` j then (min a $ sigma i (toEnum j), j + 1)
+                else
+                  case selectDC b o' of
+                    Just !ind ->  (min a $ sigma i ind, (fromEnum ind) + 1)
+                    _        ->  (a, size')
+                  in  go' j' o' a'
 
 
 {-# INLINE overlap2 #-}
