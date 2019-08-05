@@ -210,7 +210,7 @@ library pcg-analysis
     mtl                      >= 2.0       && < 3.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    text-show                >= 3.0       && < 4.0,
+    text-show                >= 3.8.1     && < 4.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
     vector-builder           >= 0.3.7     && < 0.4,
@@ -286,7 +286,7 @@ library pcg-data-structures
     smallcheck               >= 1.1.5     && < 2.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.0       && < 4.0,
+    text-show                >= 3.8.1     && < 4.0,
     text-show-instances      >= 3.0       && < 4.0,
     unordered-containers     >= 0.2.9     && < 1.0,
     -- >=0.12.0.2 required for compatability with "compact regions"

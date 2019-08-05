@@ -149,15 +149,12 @@ instance Monad EvaluationResult where
     {-# INLINEABLE (>>=)  #-}
     {-# INLINE     (>>)   #-}
     {-# INLINE     return #-}
-    {-# INLINE     fail   #-}
 
     (>>=)  = (>>-)
 
     (>>)   = (*>)
 
     return = pure
-
-    fail   = F.fail
 
 
 instance MonadFail EvaluationResult where

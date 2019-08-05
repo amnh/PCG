@@ -31,8 +31,6 @@ module Control.Monad.Trans.Validation
 
 import           Control.Applicative
 import           Control.DeepSeq
-import           Control.Monad.Fail        (MonadFail)
-import qualified Control.Monad.Fail        as F
 import           Control.Monad.Fix         (MonadFix (..))
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Class
@@ -157,7 +155,6 @@ instance (Monad m, Semigroup e) => Monad (ValidationT e m) where
     {-# INLINEABLE (>>=)  #-}
     {-# INLINE     (>>)   #-}
     {-# INLINE     return #-}
-    {-# INLINE     fail   #-}
 
     (>>=) v f = ValidationT $ do
         x <- runValidationT v
@@ -168,8 +165,6 @@ instance (Monad m, Semigroup e) => Monad (ValidationT e m) where
     (>>)   = (*>)
 
     return = pure
-
-    fail   = error "Use Monad.Fail.fail"
 
 
 instance (IsString e, Monad m, Semigroup e) => MonadFail (ValidationT e m) where
