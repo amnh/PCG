@@ -14,6 +14,7 @@
 
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE LambdaCase            #-}
@@ -91,7 +92,7 @@ newtype EvaluationT r m a
       = EvaluationT
       { -- | Run the 'EvaluationT' monad transformer
         unwrapEvaluationT :: RWST r (Seq Notification) () m (EvaluationResult a)
-      } deriving (Generic)
+      } deriving stock (Generic)
 
 
 -- |

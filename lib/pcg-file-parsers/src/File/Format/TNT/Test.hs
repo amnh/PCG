@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module File.Format.TNT.Test
   ( testSuite
@@ -28,7 +29,7 @@ import           Text.Megaparsec
 
 
 newtype WordToken = WordToken { getWordToken :: String }
-    deriving (Eq)
+    deriving stock (Eq)
 
 
 instance Arbitrary WordToken where
@@ -414,7 +415,8 @@ testCommandXRead = testGroup "XREAD command test" [xreadHeader',xreadDiscreteSeq
                 str  = getWordToken tok
 
 
-newtype DiscreteCharacters = DC (NonEmpty Char) deriving (Eq,Show)
+newtype DiscreteCharacters = DC (NonEmpty Char)
+  deriving stock (Eq, Show)
 
 
 instance Arbitrary DiscreteCharacters where

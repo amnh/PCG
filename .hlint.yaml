@@ -1,6 +1,8 @@
 # HLint configuration file
 # https://github.com/ndmitchell/hlint
 
+# Optional rules
+- warn: { name: Use DerivingStrategies }
 
 # Custom warning hints
 - warn: { note: Prefer pure to reduce Monad constraint

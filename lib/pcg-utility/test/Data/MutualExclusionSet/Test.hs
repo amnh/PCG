@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleInstances  #-}
 
 module Data.MutualExclusionSet.Test
   ( testSuite
@@ -20,7 +21,7 @@ import Test.Tasty.QuickCheck
 -- An arbitrary 'MutualExclusionSet' and a value that is included 20% likely in
 -- the set.
 newtype ProbablyIncluded a = PI { getProbablyIncluded :: (MutualExclusionSet a, a) }
-    deriving (Eq, Ord, Show)
+    deriving stock (Eq, Ord, Show)
 
 
 instance (Arbitrary a, Ord a) => Arbitrary (ProbablyIncluded a) where

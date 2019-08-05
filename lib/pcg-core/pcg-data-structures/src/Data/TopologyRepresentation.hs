@@ -13,6 +13,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 
@@ -52,7 +53,8 @@ isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y
 --
 -- Often used to represent a unique spanning tree in a phylogenetic DAG.
 newtype TopologyRepresentation a = TR { unwrap :: MutualExclusionSet a }
-    deriving (Eq, Eq1, Hashable, Generic, Monoid, NFData, Ord, Ord1, Semigroup)
+  deriving stock   (Eq, Generic, Ord)
+  deriving newtype (Eq1, Hashable, Monoid, NFData, Ord1, Semigroup)
 
 {-
 instance Foldable TopologyRepresentation where

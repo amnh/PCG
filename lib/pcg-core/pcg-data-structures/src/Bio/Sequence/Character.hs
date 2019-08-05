@@ -13,7 +13,10 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
+
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -61,7 +64,9 @@ import           TextShow.Instances      ()
 -- was minimal.
 newtype CharacterSequence u v w x y z
     = CharSeq (Vector (CharacterBlock u v w x y z))
-    deriving (Eq, Generic, TextShow)
+    deriving stock    (Eq, Generic)
+    deriving anyclass (NFData)
+    deriving newtype  (TextShow)
 
 
 type instance Element (CharacterSequence u v w x y z) = CharacterBlock u v w x y z
@@ -128,9 +133,6 @@ instance MonoTraversable (CharacterSequence u v w x y z) where
 
     {-# INLINE omapM #-}
     omapM = otraverse
-
-
-instance (NFData u, NFData v, NFData w, NFData x, NFData y, NFData z) => NFData (CharacterSequence u v w x y z)
 
 
 -- | (✔)

@@ -19,7 +19,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
 
@@ -35,6 +37,7 @@ import           Control.DeepSeq           (NFData)
 import           Data.Bifunctor            (first)
 import           Data.Binary
 import           Data.Char                 (toLower)
+import           Data.Data
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Key
@@ -58,37 +61,35 @@ import           TextShow                  (TextShow (..), fromText)
 --
 -- Use exported functionality from 'Data.FileSource.IO' to interact with the disk.
 newtype FileSource = FileSource { toShortText :: ShortText }
-    deriving ( Binary
-             , Eq
-             , Generic
-             , Hashable
-             , IsString
-             , Monoid
-             , NFData
-             , Ord
-             , PrintfArg
-             , Read
-             , Semigroup
-             , Show
-             )
+    deriving stock   (Data, Eq, Generic, Typeable)
+    deriving newtype ( Binary
+                     , Hashable
+                     , IsString
+                     , Monoid
+                     , NFData
+                     , Ord
+                     , PrintfArg
+                     , Read
+                     , Semigroup
+                     , Show
+                     )
 
 
 -- |
 -- Extension of a 'FileSource'.
 newtype FileExtension = FileExtension { unwrapExtension :: ShortText }
-    deriving ( Binary
-             , Eq
-             , Generic
-             , Hashable
-             , IsString
-             , Monoid
-             , NFData
-             , Ord
-             , PrintfArg
-             , Read
-             , Semigroup
-             , Show
-             )
+    deriving stock (Data, Eq, Generic, Typeable)
+    deriving newtype ( Binary
+                     , Hashable
+                     , IsString
+                     , Monoid
+                     , NFData
+                     , Ord
+                     , PrintfArg
+                     , Read
+                     , Semigroup
+                     , Show
+                     )
 
 
 type instance Element FileSource = Char

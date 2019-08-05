@@ -12,11 +12,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnboxedSums       #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module Data.FileSource.InputStreamError
   ( InputStreamError()
@@ -28,6 +30,7 @@ module Data.FileSource.InputStreamError
   ) where
 
 import Control.DeepSeq         (NFData)
+import Data.Data
 import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty      hiding (toList)
@@ -50,7 +53,8 @@ import TextShow
 --
 -- The 'Show' instance should only be used for debugging purposes.
 newtype InputStreamError = InputStreamError (NonEmpty InputStreamErrorMessage)
-    deriving (Generic, NFData, Show)
+    deriving stock    (Data, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 data  InputStreamErrorMessage
@@ -59,7 +63,8 @@ data  InputStreamErrorMessage
     | FileBadPermissions {-# UNPACK #-} !FileSource
     | FileEmptyStream    {-# UNPACK #-} !FileSource
     | FileUnfindable     {-# UNPACK #-} !FileSource
-    deriving (Generic, NFData, Show)
+    deriving stock    (Data, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 instance Semigroup InputStreamError where

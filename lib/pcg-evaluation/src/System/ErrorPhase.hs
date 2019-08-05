@@ -16,6 +16,7 @@
 
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -50,7 +51,7 @@ data  ErrorPhase
     | Unifying
     | Computing
     | Outputing
-    deriving (Data, Eq, Generic, Ord, Read, Show)
+    deriving stock (Data, Eq, Generic, Ord, Read, Show)
 
 
 instance Arbitrary ErrorPhase where

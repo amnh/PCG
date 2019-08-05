@@ -12,7 +12,10 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies               #-}
@@ -28,6 +31,7 @@ module Data.NodeLabel
 import Control.DeepSeq
 import Data.Binary
 import Data.Coerce          (coerce)
+import Data.Data            (Data, Typeable)
 import Data.Default
 import Data.MonoTraversable
 import Data.String          (IsString)
@@ -50,7 +54,13 @@ import TextShow             (TextShow (showb))
 -- did not specify a label for the node, the Show insatnce will return
 -- @{Unlabeled Node}@.
 newtype NodeLabel = NL {getNodeLabel :: ShortText}
-    deriving(Eq, Generic, IsString, Monoid, NFData, Ord, Semigroup, Show)
+    deriving stock    (Data, Eq, Generic, Ord, Show, Typeable)
+    deriving anyclass (NFData)
+    deriving newtype  (IsString, Monoid, Semigroup)
+
+
+type instance Element NodeLabel = Char
+
 
 -- |
 -- Constructor for a 'NodeLabel'
@@ -69,9 +79,9 @@ isEmpty = coerce TS.null
 
 
 instance Default NodeLabel where
-  def = mempty
+  
+    def = mempty
 
-type instance Element NodeLabel = Char
 
 instance Binary NodeLabel
 
@@ -107,14 +117,15 @@ instance MonoFoldable NodeLabel where
 -- Performs a element-wise monomporphic map over a 'NodeLabel'.
 instance MonoFunctor NodeLabel where
 
-  omap f (NL shortText) = NL $ TS.foldr g mempty shortText
+    omap f (NL shortText) = NL $ TS.foldr g mempty shortText
+      where
+        g char acc = singleton (f char) <> acc
 
-    where
-      g char acc = singleton (f char) <> acc
 
 -- |
 -- Prints the underlying textual representation of a `NodeLabel`.
 instance TextShow NodeLabel where
-  -- TO DO: When text-show-instances is updated to have an instance
-  --        for ShortText then use that instead.
-  showb = showb . TS.toString . getNodeLabel
+
+    -- TODO: When text-show-instances is updated to have an instance
+    --        for ShortText then use that instead.
+    showb = showb . TS.toString . getNodeLabel
