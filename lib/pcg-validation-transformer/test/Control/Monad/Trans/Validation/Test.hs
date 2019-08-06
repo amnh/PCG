@@ -11,6 +11,7 @@ module Control.Monad.Trans.Validation.Test
   ) where
 
 import Control.Arrow                  ((***))
+import Control.Applicative            (Applicative(..))
 import Control.DeepSeq
 import Control.Monad                  (void)
 import Control.Monad.Fail             (MonadFail (..))
@@ -102,10 +103,13 @@ applicativeLaws
      )
   => TestTree
 applicativeLaws = testGroup "Applicative Laws"
-    [ testLaw applicativeIdentity     "Identity"     "pure id <*> v === v"
-    , testLaw applicativeComposition  "Composition"  "pure (.) <*> u <*> v <*> w === u <*> (v <*> w)"
-    , testLaw applicativeHomomorphism "Homomorphism" "pure f <*> pure x = pure (f x)"
-    , testLaw applicativeInterchange  "Interchange"  "u <*> pure y === pure ($ y) <*> u"
+    [ testLaw applicativeIdentity     "Identity"         "pure id <*> v === v"
+    , testLaw applicativeComposition  "Composition"      "pure (.) <*> u <*> v <*> w === u <*> (v <*> w)"
+    , testLaw applicativeHomomorphism "Homomorphism"     "pure f <*> pure x = pure (f x)"
+    , testLaw applicativeInterchange  "Interchange"      "u <*> pure y === pure ($ y) <*> u"
+    , testLaw specializedLeftEffect   "Left effect"      "u *> v === (id <$ u) <*> v"
+    , testLaw specializedRightEffect  "Right effect"     "u <* v === liftA2 const u v"
+    , testLaw functorRelation         "Functor relation" "fmap f x === pure f <*> x"
     ]
   where
     applicativeIdentity :: f W -> Property
@@ -116,13 +120,25 @@ applicativeLaws = testGroup "Applicative Laws"
     applicativeComposition (fmap apply -> x) (fmap apply -> y) z =
         (pure (.) <*> x <*> y <*> z) === (x <*> (y <*> z))
 
+    applicativeHomomorphism :: Fun W W -> W -> Property
+    applicativeHomomorphism (apply -> f) x =
+        (pure f <*> pure x) === (pure (f x) :: f W)
+
     applicativeInterchange :: f (Fun W W) -> W -> Property
     applicativeInterchange (fmap apply -> x) y =
         (x <*> pure y) === (pure ($ y) <*> x)
 
-    applicativeHomomorphism :: Fun W W -> W -> Property
-    applicativeHomomorphism (apply -> f) x =
-        (pure f <*> pure x) === (pure (f x) :: f W)
+    specializedLeftEffect :: f W -> f W -> Property
+    specializedLeftEffect u v =
+        (u *> v) === ((id <$ u) <*> v)
+
+    specializedRightEffect :: f W -> f W -> Property
+    specializedRightEffect u v =
+        (u <* v) === liftA2 const u v
+
+    functorRelation :: Fun W W -> f W -> Property
+    functorRelation (apply -> f) x =
+        fmap f x === (pure f <*> x)
 
 
 monadLaws

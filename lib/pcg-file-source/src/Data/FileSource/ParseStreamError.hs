@@ -65,7 +65,7 @@ import           TextShow.Custom
 --
 -- The 'Show' instance should only be used for debugging purposes.
 newtype ParseStreamError = ParseStreamError (NonEmpty ParseStreamErrorMessage)
-    deriving stock    (Generic, Show)
+    deriving stock    (Data, Generic, Show, Typeable)
     deriving anyclass (NFData)
 
 
@@ -73,14 +73,14 @@ data  ParseStreamErrorMessage
     = FileUnparsable     {-# UNPACK #-} !FileSource {-# UNPACK #-} !Text
     | InvalidPrealigned  {-# UNPACK #-} !FileSource {-# UNPACK #-} !(Vector Word)
     | FileBadDeserialize {-# UNPACK #-} !FileSource !DataSerializationFormat {-# UNPACK #-} !ShortText
-    deriving stock    (Generic, Show)
+    deriving stock    (Data, Generic, Show, Typeable)
     deriving anyclass (NFData)
 
 
 data  DataSerializationFormat
     = BinaryFormat
     | CompactFormat
-    deriving (Data, Generic, NFData, Show)
+    deriving (Data, Generic, NFData, Show, Typeable)
 
 
 instance Semigroup ParseStreamError where

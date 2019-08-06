@@ -15,7 +15,9 @@
 {-# LANGUAGE ApplicativeDo       #-}
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -34,6 +36,7 @@ import           Control.Monad              ((<=<))
 import           Data.Alphabet.IUPAC
 import           Data.Bimap                 (Bimap, toMap)
 import           Data.Char                  (isLower, isUpper, toLower, toUpper)
+import           Data.Data
 import           Data.Foldable
 import           Data.Functor
 import           Data.List                  (partition)
@@ -42,7 +45,7 @@ import qualified Data.List.NonEmpty         as NE
 import           Data.List.Utility
 import           Data.Map                   (keysSet)
 import           Data.Maybe                 (fromJust)
-import           Data.Proxy
+import           Data.Proxy                 (Proxy(..))
 import           Data.Set                   (Set, mapMonotonic)
 import qualified Data.Set                   as S
 import qualified Data.Text                  as T
@@ -60,11 +63,13 @@ import           Text.Megaparsec.Custom
 
 -- |
 -- Pairing of taxa with an unconverted sequence
-data FastaSequence
-   = FastaSequence
-   { taxonName     :: {-# UNPACK #-} !Identifier
-   , taxonSequence :: {-# UNPACK #-} !(Vector Char)
-   } deriving (Eq, Generic, NFData, Show)
+data  FastaSequence
+    = FastaSequence
+    { taxonName     :: {-# UNPACK #-} !Identifier
+    , taxonSequence :: {-# UNPACK #-} !(Vector Char)
+    }
+    deriving stock    (Data, Eq, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |

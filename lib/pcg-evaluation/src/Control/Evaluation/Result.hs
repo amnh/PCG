@@ -59,7 +59,7 @@ import           TextShow
 -- 'Text' instead of 'String' to store the error message to save space and
 -- efficient rendering.
 newtype EvaluationResult a = EU { runEvaluationResult :: Either (ErrorPhase, Text) a }
-   deriving stock    (Eq, Data, Foldable, Generic, Generic1, Show, Traversable)
+   deriving stock    (Data, Eq, Foldable, Generic, Generic1, Show, Traversable, Typeable)
    deriving anyclass (NFData)
    deriving newtype  (Applicative, Apply, Eq1, Functor, MonadFix, Show1)
 

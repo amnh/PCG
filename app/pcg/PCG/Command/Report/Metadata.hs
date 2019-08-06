@@ -13,6 +13,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
@@ -25,19 +26,18 @@ module PCG.Command.Report.Metadata
   )
   where
 
-import           Bio.Character.Type         (CharacterType (..))
 import           Bio.Graph
-import           Bio.Graph.PhylogeneticDAG
-import           Bio.Metadata
-import           Bio.Metadata.CharacterName
-import           Bio.Sequence.Metadata
-import           Control.Lens.Operators     ((^.))
+--import           Bio.Graph.PhylogeneticDAG
+--import           Bio.Metadata
+--import           Bio.Metadata.CharacterName
+--import           Bio.Sequence.Metadata
+--import           Control.Lens.Operators     ((^.))
 import qualified Data.ByteString.Lazy       as BS
-import           Data.Csv
-import           Data.FileSource
-import           Data.Text.Short            (toByteString)
+--import           Data.Csv
+--import           Data.FileSource
+--import           Data.Text.Short            (toByteString)
 
-
+{-
 data  CharacterReportMetadata
     = CharacterReportMetadata
     { characterNameRM  :: String
@@ -45,6 +45,28 @@ data  CharacterReportMetadata
     , characterTypeRM  :: CharacterType
     , tcmSourceFile    :: FileSource
     }
+
+-- |
+-- A label for the different types of characters.
+data  CharacterType
+    = Continuous
+    | NonAdditive
+    | Additive
+    | Metric
+    | NonMetric
+    | Dynamic
+    deriving Show
+
+
+instance ToField CharacterType where
+
+    toField = \case
+      Continuous  -> "Continuous"
+      NonAdditive -> "NonAdditive"
+      Additive    -> "Additive"
+      Metric      -> "Metric"
+      NonMetric   -> "NonMetric"
+      Dynamic     -> "Dynamic"
 
 
 instance ToNamedRecord CharacterReportMetadata where
@@ -69,15 +91,15 @@ instance DefaultOrdered CharacterReportMetadata where
 instance ToField FileSource where
 
     toField = toByteString . toShortText
-
+-}
 
 -- |
 -- Wrapper function to output a metadata csv as a 'ByteString'
 outputMetadata :: DecoratedCharacterResult -> BS.ByteString
-outputMetadata =
-  encodeDefaultOrderedByName . characterMetadataOutput
+outputMetadata = undefined
+--  encodeDefaultOrderedByName . characterMetadataOutput
 
-
+{-
 characterMetadataOutput :: DecoratedCharacterResult -> [CharacterReportMetadata]
 characterMetadataOutput decCharRes = getCharacterReportMetadata metaSeq
   where
@@ -123,3 +145,4 @@ getCharacterReportMetadata =
     metricMeta      = pure . f Metric
     nonMetricMeta   = pure . f NonMetric
     dynamicBin      = pure . f Dynamic
+-}

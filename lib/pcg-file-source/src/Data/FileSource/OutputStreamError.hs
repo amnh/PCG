@@ -13,6 +13,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts   #-}
@@ -29,6 +30,7 @@ module Data.FileSource.OutputStreamError
   ) where
 
 import Control.DeepSeq    (NFData)
+import Data.Data
 import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty hiding (toList)
@@ -50,7 +52,7 @@ import TextShow
 --
 -- The 'Show' instance should only be used for debugging purposes.
 newtype OutputStreamError = OutputStreamError (NonEmpty OutputStreamErrorMessage)
-    deriving stock    (Generic, Show)
+    deriving stock    (Data, Generic, Show, Typeable)
     deriving anyclass (NFData)
 
 
@@ -60,7 +62,7 @@ data  OutputStreamErrorMessage
     | PathDoesNotExist {-# UNPACK #-} !FileSource
     | NoPermissions    {-# UNPACK #-} !FileSource
     | NotEnoughSpace   {-# UNPACK #-} !FileSource
-    deriving stock    (Generic, Show)
+    deriving stock    (Data, Generic, Show, Typeable)
     deriving anyclass (NFData)
 
 

@@ -19,6 +19,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -36,6 +37,7 @@ import           Control.DeepSeq           (NFData)
 import           Data.Bifunctor            (first)
 import           Data.Binary
 import           Data.Char                 (toLower)
+import           Data.Data
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Key
@@ -59,7 +61,7 @@ import           TextShow                  (TextShow (..), fromText)
 --
 -- Use exported functionality from 'Data.FileSource.IO' to interact with the disk.
 newtype FileSource = FileSource { toShortText :: ShortText }
-    deriving stock   (Eq, Generic)
+    deriving stock   (Data, Eq, Generic, Typeable)
     deriving newtype ( Binary
                      , Hashable
                      , IsString
@@ -76,7 +78,7 @@ newtype FileSource = FileSource { toShortText :: ShortText }
 -- |
 -- Extension of a 'FileSource'.
 newtype FileExtension = FileExtension { unwrapExtension :: ShortText }
-    deriving stock (Eq, Generic)
+    deriving stock (Data, Eq, Generic, Typeable)
     deriving newtype ( Binary
                      , Hashable
                      , IsString

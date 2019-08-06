@@ -92,7 +92,7 @@ instance (Monad m, Semigroup e) => Applicative (ValidationT e m) where
 
     (<*>) = (<.>)
 
-    (*>)  = (*>)
+    (*>)  = (.>)
 
 
 instance (Arbitrary a, Arbitrary e, Arbitrary1 m) => Arbitrary (ValidationT e m a) where

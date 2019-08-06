@@ -8,6 +8,8 @@ A list of the contributions to the haskell ecosystem that emerged from AMNH's PC
 
   * [`bv-little`][bv-little]
 
+  * [`mono-traversable-keys`][mono-traversable-keys]
+
   * [`perfect-vector-shuffle`][perfect-vector-shuffle]
 
 
@@ -17,5 +19,9 @@ A list of the contributions to the haskell ecosystem that emerged from AMNH's PC
 
 
 [bv-little]: http://hackage.haskell.org/package/bv-little
+
+[mono-traversable-keys]: http://hackage.haskell.org/package/mono-traversable-keys
+
 [perfect-vector-shuffle]: http://hackage.haskell.org/package/perfect-vector-shuffle
+
 [cabal-cxx]: https://github.com/haskell/cabal/pull/4810
