@@ -131,6 +131,7 @@ library
     Data.List.Utility
     Data.Matrix.NotStupid
     Data.MutualExclusionSet
+    Data.Pair.Strict
     Data.Range
     Data.Render.Utility
     Data.ShortText.Custom
