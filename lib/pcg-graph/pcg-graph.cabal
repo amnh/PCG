@@ -81,6 +81,7 @@ library pcg-graph
     src
 
   build-depends:
+    pcg-utility,
     base                     >= 4.11      && < 5.0,
     bifunctors               ^>= 5.5.4            ,
     -- >=0.5.8 Required for Data.Map.restrictKeys
