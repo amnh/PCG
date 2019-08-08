@@ -7,29 +7,30 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnboxedTuples       #-}
 
+{-# OPTIONS_GHC -Wno-type-defaults #-}
+
+
 module Main where
 
 import Bio.Metadata.Dynamic
 import Bio.Character.Encodable
 import Bio.Character.Exportable
 import Data.Bits
-import Data.Foldable
 import           Data.List.NonEmpty  (NonEmpty(..))
 import qualified Data.List.NonEmpty as NE
-import qualified Criterion.Main        as C (bench, bgroup, defaultMain, nf)
+import Benchmarks.Internal
 
 
 main :: IO ()
-main = C.defaultMain
-     [ C.bgroup "pcg-core"
-       [
-         C.bench "select"  $ C.nf (overlap' sigma) medians
-       , C.bench "iterate" $ C.nf (overlap  sigma) medians
+main =
+  timeAndWeigh "overlap"
+    [ ("select" , (overlap' sigma))
+    , ("iterate", (overlap sigma))
+    ]
+    medians
 
-       ]
-     ]
-
-medians = foldr1 (<>) $ replicate 100 testList
+medians :: NonEmpty DynamicCharacterElement
+medians = foldr1 (<>) $ replicate 1000 testList
 
 testList :: NonEmpty DynamicCharacterElement
 testList = fromExportableBuffer <$> NE.fromList
