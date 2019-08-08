@@ -17,7 +17,7 @@ description:        Exposes core data-types for constructing, mutating, and scor
                     phylogenetic forests. Character sequences and matricies, character
                     and graph metadata, and scoring methods are defined as well.
 
-        
+
 common dependencies
 
   build-depends:
@@ -112,7 +112,7 @@ common language-specs
   -- Always use MonadFail(fail), not Monad(fail)
   other-extensions: MonadFailDesugaring
 
- 
+
 library
 
   import:
@@ -120,7 +120,7 @@ library
 
   build-depends:
     pcg-analysis,
-    pcg-data-structures,           
+    pcg-data-structures,
     pcg-tcm,
 
   reexported-modules:
@@ -243,7 +243,7 @@ library pcg-analysis
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
 
-    
+
 library pcg-data-structures
 
   import:
@@ -447,17 +447,17 @@ test-suite analysis-tests
   main-is:
     TestSuite.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
-  hs-source-dirs:   
+  hs-source-dirs:
     pcg-analysis/test
 
   build-depends:
     pcg-analysis,
     pcg-data-structures,
     pcg-tcm,
-    pcg-tcm-memo,                    
+    pcg-tcm-memo,
     base                     >= 4.11      && < 5.0,
     mono-traversable         >= 1.0       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
@@ -560,6 +560,9 @@ benchmark bench-k-median
   main-is:
     Benchmarks/BuildKMedian.hs
 
+  other-modules:
+    Benchmarks.Internal
+
   type:
     exitcode-stdio-1.0
 
@@ -574,6 +577,8 @@ benchmark bench-k-median
     , pcg-data-structures
     , pcg-exportable
     , criterion   ^>= 1.5.0
+    , deepseq     ^>= 1.4
+    , weigh       ^>= 0.0.14
 
   default-language:
     Haskell2010
