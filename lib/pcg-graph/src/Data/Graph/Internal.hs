@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Data.Graph.Internal where
 
@@ -13,9 +14,15 @@ import Control.Lens hiding (index)
 import Data.Graph.Type
 import Data.Graph.Memo
 import Data.Vector (Vector)
+import qualified Data.Vector as V
 import Data.Graph.Indices
 import Data.Graph.NodeContext
 import Data.Coerce
+import Data.Pair.Strict
+import Data.Vector.Mutable (MVector)
+import qualified Data.Vector.Mutable as MV
+
+import Control.Monad.ST
 
 
 postorderFold
@@ -60,44 +67,82 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
     taggedIndex :: TaggedIndex
     taggedIndex = tagValue TreeTag startInd
 
-    treeRefs = graph ^. _treeReferences
-
+    treeRefs        = graph ^. _treeReferences
     updatedTreeRefs = modifyNodeData startInd (fmap updateFn) treeRefs
 
 
     f :: Graph f e c n n -> Graph f e c n n
-    f g = case go taggedIndex (Nothing, updatedTreeRefs) of
+    f g = case go taggedIndex updatedTreeRefs of
       (Nothing       , v') -> g & _treeReferences .~ v'
       (Just (r, ind) , v') -> g & _treeReferences .~ v'
                                 & _rootReferences  %~ (writeNodeData (untagValue ind) r)
       
- -- TODO: rewrite using ST.      
     go
       :: TaggedIndex
+      -> (Vector (TreeIndexData (f n)))
       -> (Maybe ((f n), ParentIndex), Vector (TreeIndexData (f n)))
-      -> (Maybe ((f n), ParentIndex), Vector (TreeIndexData (f n))) 
-    go tagInd ~(val, currVect) =
+    go tagInd treeVect =
+      runST $
+        do
+          mvec <- V.thaw treeVect
+          val  <- loop tagInd mvec
+          vec  <- V.unsafeFreeze mvec
+          pure (val, vec)
+
+
+    loop :: TaggedIndex -> MVector s (TreeIndexData (f n)) -> ST s (Maybe ((f n), ParentIndex))
+    loop tagInd mvec = do
+      let ind = untagValue tagInd
+      currData <- MV.read mvec ind
+      let currVal       = currData ^. _nodeData
+      let parInd        = currData ^. _parentInds
+      let parTag        = getTag $ parInd
       let
-        ind = untagValue tagInd
-        currVal   = graph ^. _treeReferences . singular (ix ind) . _nodeData
-        parInd    = graph ^. _treeReferences . singular (ix ind) . _parentInds
-        childIndices :: Pair ChildIndex
-        childIndices = graph ^. _treeReferences . singular (ix ind) . _childInds
-        childIndData1 = graph `index`  (coerce $ childIndices ^. _left)
-        childIndData2  = graph `index` (coerce $ childIndices ^. _right)
-        parTag    = getTag $ parInd
-        newVal    = (liftFunction treeFn) childIndData1 childIndData2
-     in
-       if
-         thresholdFn currVal newVal
-       then
-         (val, currVect)
-       else
-         if
-           parTag == RootTag
-         then (Just (newVal, parInd), currVect)
-         else
-           let updatedVect = writeNodeData ind newVal currVect in
-             go (coerce parInd) (val, updatedVect)
-        
-     
+        childInds :: ChildIndex :!: ChildIndex
+        childInds     = currData ^. _childInds
+      let childIndData1 = graph `index` (coerce $ childInds ^. _left)
+      let childIndData2 = graph `index` (coerce $ childInds ^. _right)
+      let newVal        = (liftFunction treeFn) childIndData1 childIndData2
+      let newData       = currData & _nodeData .~ newVal
+      if thresholdFn currVal newVal
+      then
+        pure Nothing
+      else
+        if parTag == RootTag
+        then pure (Just (newVal, parInd))
+        else
+          do
+          MV.write mvec ind newData
+          loop (coerce parInd) mvec
+
+
+-- |
+-- This function takes a graph and the indices of a tree node
+-- and its child node and then breaks the graph into a forest
+-- also returning the index of the root node of the subgraph.
+breakEdge
+  :: Graph f e c n t
+  -> (Int, Int)
+  -> (Graph f e c n t, Int)
+breakEdge graph (src, tgt) = undefined
+
+
+-- |
+-- This function takes a graph of graphs, the index of one of those
+-- graphs and returns that graph along with the graph of graphs with
+-- that node removed.
+breakEdgeGraph
+  :: Graph f e c n (Graph f e c n t)
+  -> Int
+  -> (Graph f e c n t, Graph f e c n (Graph f e c n t))
+breakEdgeGraph graph subgraphInd =
+  let
+    leaves = graph ^. _leafReferences
+    (before, after) = V.splitAt subgraphInd leaves
+    updatedAfter    = fmap (undefined ) . V.tail $ after
+    newLeaves       = before <> updatedAfter
+  in
+    undefined
+  
+  
+--}
