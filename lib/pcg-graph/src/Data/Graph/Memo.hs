@@ -1,6 +1,8 @@
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE TypeOperators       #-}
+
 module Data.Graph.Memo where
 
 import Data.Graph.Type
@@ -11,6 +13,7 @@ import Data.Vector.Instances ()
 import Data.Graph.Indices
 import Data.Coerce
 import Control.Applicative
+import Data.Pair.Strict
 
 import qualified Data.Vector as V
 
@@ -18,7 +21,7 @@ type Endo a = (a -> a)
 
 data MemoGen i n r l = MemoGen
   { leafGen     :: Int -> l
-  , treeGen :: Int -> i
+  , treeGen     :: Int -> i
   , networkGen  :: Int -> n
   , rootGen     :: Int -> r
   }
@@ -98,7 +101,7 @@ memoPostorder leafFn treeFn netFn graph = f
                         . singular (ix i)
                         . (_nodeData)
 
-        fromTwoChildren  :: Pair ChildIndex -> g val
+        fromTwoChildren  :: ChildIndex :!: ChildIndex -> g val
         fromTwoChildren c =
             (liftA2 treeFn)
               (childVal (coerce $ c ^. _left))
@@ -153,7 +156,7 @@ memoGraphPostorder leafFn treeFn netFn graph = f
                          _leafReferences
                         . singular (ix i)
 
-        fromTwoChildren  :: Pair ChildIndex -> g val
+        fromTwoChildren  :: ChildIndex :!: ChildIndex -> g val
         fromTwoChildren c =
             (liftA2 treeFn)
               (childVal (coerce $ c ^. _left))
