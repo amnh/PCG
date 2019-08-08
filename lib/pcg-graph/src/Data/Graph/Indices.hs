@@ -12,9 +12,7 @@ import Data.Monoid
 import Data.Bits
 import Data.Word
 
--- Note: GHC-8.10 will allow UnliftedNewtypes at which point
--- it may be better to instead use:
--- newtype Ind = Ind {getInd :: Word#}
+
 newtype LeafInd = LeafInd {getLeafInd     :: Word64}
   deriving stock  (Eq, Show)
   deriving (Semigroup, Monoid) via (Sum Word64)
@@ -53,7 +51,7 @@ class Tagged t where
 newtype TaggedIndex  = TaggedIndex {getIndex :: Int }
   deriving stock (Eq, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
-  deriving newtype Bits
+  deriving newtype (Bits, Num)
 
 instance Tagged TaggedIndex where
   tagValue :: IndexType -> Int -> TaggedIndex
@@ -69,12 +67,12 @@ instance Tagged TaggedIndex where
 newtype ParentIndex  = ParentIndex {getParentIndex :: TaggedIndex}
   deriving stock (Eq, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
-  deriving newtype (Bits, Tagged)
+  deriving newtype (Bits, Tagged, Num)
 
 newtype ChildIndex   = ChildIndex  {getChildIndex :: TaggedIndex}
   deriving stock (Eq, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
-  deriving newtype (Bits, Tagged)
+  deriving newtype (Bits, Tagged, Num)
 
 data IndexType = LeafTag | TreeTag | NetworkTag | RootTag
   deriving stock (Eq, Enum)
