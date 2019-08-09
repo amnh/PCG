@@ -18,6 +18,8 @@ extra-deps:
   - text-show-3.7.5
   - text-show-instances-3.7
   - validation-1.1
+  - git: https://github.com/recursion-ninja/cassava
+    commit: 794dd4b60882491dff600a2bf15701ae0550dbb6
 
 #ghc-options:
 #  "$everything": -j -fdiagnostics-color=always -fspecialize-aggressively -fexpose-all-unfoldings
