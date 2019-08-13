@@ -6,6 +6,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE TypeApplications #-}
+
 
 module Data.Graph.Internal where
 
@@ -13,7 +15,7 @@ import Data.Vector.Instances ()
 import Control.Lens hiding (index)
 import Data.Graph.Type
 import Data.Graph.Memo
-import Data.Vector (Vector)
+import Data.Vector (Vector, (//))
 import qualified Data.Vector as V
 import Data.Graph.Indices
 import Data.Graph.NodeContext
@@ -100,8 +102,8 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
       let
         childInds :: ChildIndex :!: ChildIndex
         childInds     = currData ^. _childInds
-      let childIndData1 = graph `index` (coerce $ childInds ^. _left)
-      let childIndData2 = graph `index` (coerce $ childInds ^. _right)
+      let childIndData1 = graph `index` (childInds ^. _left)
+      let childIndData2 = graph `index` (childInds ^. _right)
       let newVal        = (liftFunction treeFn) childIndData1 childIndData2
       let newData       = currData & _nodeData .~ newVal
       if thresholdFn currVal newVal
@@ -143,6 +145,105 @@ breakEdgeGraph graph subgraphInd =
     newLeaves       = before <> updatedAfter
   in
     undefined
-  
-  
---}
+
+
+decrementLeafParents
+  :: Vector (LeafIndexData t)
+  -> Graph f e c n t
+  -> Int
+  -> Graph f e c n t
+decrementLeafParents graph leafNode = undefined
+
+
+-- |
+-- This function takes a graph of graphs, the index of one of those
+-- graphs and the indices of an internal edge and returns a graph of graph
+-- with the subgraph removed and added along a new node on the graph.
+
+
+-- Note: this function currently assumes the parent of the leaf is a tree node
+-- and the edge we are attaching to is a tree edge (an edge between two
+-- tree nodes).
+breakEdgeAndReattachG
+  :: forall f c e n t
+  .  Graph f e c n (Graph f e c n t)
+  -> (ParentIndex, LeafInd)
+  -> (ParentIndex, Direction)
+  -> Graph f e c n (Graph f e c n t)
+breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
+  let
+    subGraphContext    = (graph `unsafeLeafInd` leafInd) ^. _nodeContext
+    -- Parent of leafNode
+    untaggedParInd = untagValue (leafParInd)
+    parIndexData =
+        case getTag leafParInd of
+          TreeTag -> graph `unsafeTreeInd` (TreeInd untaggedParInd)
+          _       -> error "breaking an edge from a non-tree index is not yet implemented"
+
+    _otherLeafParChild
+      :: (HasLeft s ChildIndex, HasRight s ChildIndex)
+      => Lens' s ChildIndex
+    _otherLeafParChild = 
+      if
+        parIndexData ^. _left == (coerce leafInd) then _right
+                                         else _left
+
+
+    updatedLeafParNodeInfo  =
+      parIndexData & _childInds . _otherLeafParChild .~ tgtInd
+                   & _parentInds                     .~ srcInd
+
+
+    -- src and target contexts
+    srcNodeInfo    = graph `unsafeTreeInd` (coerce srcInd)
+    tgtInd       = srcNodeInfo ^. _srcChildLens
+    tgtNodeInfo  = graph `unsafeTreeInd` (coerce tgtInd)
+    untaggedSource = untagValue srcInd
+    untaggedTarget = untagValue tgtInd
+
+    _srcChildLens :: Lens' (TreeIndexData (f n)) ChildIndex
+    _srcChildLens = _getChildLens dir
+    
+    updatedSourceNodeInfo = srcNodeInfo
+                          & _srcChildLens
+                          .~ coerce @_ @ChildIndex leafParInd
+
+    updatedTargetNodeInfo = tgtNodeInfo
+                          & _parentInds
+                          .~ leafParInd
+
+    -- Parent and other child of above parent node
+    _leafParParentChild :: Lens' (TreeIndexData (f n)) ChildIndex
+    _leafParParentChild =
+      if
+        leafParParentNodeInfo ^. _left == (coerce leafParInd)
+        then _right
+      else _left
+    
+    leafParParentNodeInfo = graph `unsafeTreeInd` (coerce leafParParentNodeInd)
+    leafParParentNodeInd     = parIndexData ^. _parentInds
+    leafParChildNodeInfo  = graph `unsafeTreeInd` (coerce leafParParentNodeInd)
+    leafParChildNodeInd      = parIndexData ^. _otherLeafParChild
+
+    updatedParParentNodeInfo = leafParParentNodeInfo
+                             & _leafParParentChild
+                             .~ (parIndexData ^. _otherLeafParChild)
+    updatedParChildNodeInfo  = leafParChildNodeInfo
+                             & _parentInds
+                             .~ leafParParentNodeInd
+
+    -- Updated Tree Reference and LeafReference
+    updateTreeNodeContext :: [(Int, TreeIndexData (f n))]
+    updateTreeNodeContext = [ (untagValue leafParParentNodeInd, updatedParParentNodeInfo)
+                            , (untagValue leafParChildNodeInd , updatedParChildNodeInfo )
+                            , (untaggedParInd  , updatedLeafParNodeInfo)
+                            , (untaggedSource  , updatedSourceNodeInfo)
+                            , (untaggedTarget  , updatedTargetNodeInfo)
+                            ]
+                             
+  in
+    graph & _treeReferences %~ (// updateTreeNodeContext)
+                             
+
+breadthFirstBreakAndAttach :: Int
+breadthFirstBreakAndAttach = undefined
