@@ -13,26 +13,25 @@ import Data.Bits
 import Data.Word
 
 
-newtype LeafInd = LeafInd {getLeafInd     :: Word64}
+newtype LeafInd = LeafInd {getLeafInd :: Int}
   deriving stock  (Eq, Show)
-  deriving (Semigroup, Monoid) via (Sum Word64)
+  deriving (Semigroup, Monoid) via (Sum Int)
 
-newtype RootInd = RootInd {getRootInd     :: Word64}
+newtype RootInd = RootInd {getRootInd :: Int}
   deriving stock (Eq, Show)
-  deriving (Semigroup, Monoid) via (Sum Word64)
+  deriving (Semigroup, Monoid) via (Sum Int)
 
-newtype NetworkInd = NetworkInd {getNetworkInd  :: Word64}
+newtype NetworkInd = NetworkInd {getNetworkInd  :: Int}
   deriving stock (Eq, Show)
-  deriving (Semigroup, Monoid) via (Sum Word64)
+  deriving (Semigroup, Monoid) via (Sum Int)
 
-newtype TreeInd = TreeInd {getTreeInd :: Word64}
+newtype TreeInd = TreeInd {getTreeInd :: Int}
   deriving stock (Eq, Show)
-  deriving (Semigroup, Monoid) via (Sum Word64)
+  deriving (Semigroup, Monoid) via (Sum Int)
 
 
-data Ind = L LeafInd | R RootInd | N NetworkInd | I TreeInd
-data ChildInd = CL LeafInd | CN NetworkInd | CI TreeInd
-data ParentInd = PR RootInd | PN NetworkInd | PI TreeInd
+--data ChildInd = CL LeafInd | CN NetworkInd | CI TreeInd
+--data ParentInd = PR RootInd | PN NetworkInd | PI TreeInd
 
 class Tagged t where
   tagValue   :: IndexType -> Int -> t
@@ -68,6 +67,7 @@ newtype ParentIndex  = ParentIndex {getParentIndex :: TaggedIndex}
   deriving stock (Eq, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
   deriving newtype (Bits, Tagged, Num)
+
 
 newtype ChildIndex   = ChildIndex  {getChildIndex :: TaggedIndex}
   deriving stock (Eq, Show)
