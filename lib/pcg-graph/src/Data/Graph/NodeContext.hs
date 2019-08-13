@@ -8,6 +8,8 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE RankNTypes #-}
+
 
 
 module Data.Graph.NodeContext where
@@ -76,6 +78,24 @@ data TreeContext = TreeContext
   }
 
 type TreeIndexData d = IndexData TreeContext d
+
+-- |
+-- This is for use to say which child we are looking at
+data Direction = L | R
+
+_getChildLens :: (HasLeft s a, HasRight s a) => Direction -> Lens' s a
+_getChildLens =
+  \case
+    L -> _left
+    R -> _right
+
+_getOtherChildLens :: (HasLeft s a, HasRight s a) => Direction -> Lens' s a
+_getOtherChildLens =
+  \case
+    L -> _right
+    R -> _left
+
+
 
 -- 	┌──────────────────────────────────┐ 
 --      │    Type classes for reindexing   │
@@ -167,6 +187,13 @@ instance HasChildInds (TreeIndexData e) (Pair ChildIndex ChildIndex) where
   _childInds = _nodeContext . _childInds
 
 
+instance HasLeft (TreeIndexData e) ChildIndex where
+  _left = _childInds . _left
+
+instance HasRight (TreeIndexData e) ChildIndex where
+  _right = _childInds . _right
+
+
 -- 	┌────────────────────────┐ 
 --      │    Network Accessors   │
 --      └────────────────────────┘
@@ -239,3 +266,6 @@ liftFunction fn = \nInd1 nInd2
                           -> liftA2 fn
                                (nInd1 ^. _liftedNodeData)
                                (nInd2 ^. _liftedNodeData)
+
+
+
