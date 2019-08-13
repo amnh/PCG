@@ -92,7 +92,7 @@ instance HasCachedData
 
 
 
-index :: Graph f c e n t -> TaggedIndex -> NodeIndexData (f n) t
+index :: Tagged taggedInd => Graph f c e n t -> taggedInd -> NodeIndexData (f n) t
 index graph taggedIndex =
   let
     ind = untagValue taggedIndex
@@ -117,3 +117,25 @@ index graph taggedIndex =
                     graph ^.
                        _rootReferences
                      . (singular $ ix ind)
+
+
+
+--      ┌───────────────────────┐
+--      │    Unsafe Indexing    │
+--      └───────────────────────┘
+
+{-# INLINE unsafeLeafInd #-}
+unsafeLeafInd    :: Graph f c e n t -> LeafInd -> LeafIndexData t
+unsafeLeafInd graph (LeafInd i) = graph ^. _leafReferences . (singular (ix i))
+
+{-# INLINE unsafeTreeInd #-}
+unsafeTreeInd    :: Graph f c e n t -> TreeInd -> TreeIndexData (f n)
+unsafeTreeInd graph (TreeInd i) = graph ^. _treeReferences . (singular (ix i))
+
+{-# INLINE unsafeRootInd #-}
+unsafeRootInd    :: Graph f c e n t -> RootInd -> RootIndexData (f n)
+unsafeRootInd graph (RootInd i) = graph ^. _rootReferences . (singular (ix i))
+
+{-# INLINE unsafeNetworkInd #-}
+unsafeNetworkInd :: Graph f c e n t -> NetworkInd -> NetworkIndexData (f n)
+unsafeNetworkInd graph (NetworkInd i) = graph ^. _networkReferences . (singular (ix i))
