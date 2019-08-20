@@ -13,6 +13,12 @@ import Data.Vector (Vector)
 import Data.Kind (Type)
 import Data.Vector.Instances ()
 import Control.Lens
+import Test.QuickCheck.Arbitrary
+import TextShow
+
+--      ┌─────────────┐
+--      │    Types    │
+--      └─────────────┘
 
 data GraphShape i n r t
   = GraphShape
@@ -36,6 +42,11 @@ data Graph
   , cachedData         :: c
   }
 
+ 
+--      ┌─────────────────┐
+--      │    Instances    │
+--      └─────────────────┘
+
 instance Functor f => Bifunctor (Graph f c e) where
   bimap f g graph@(Graph{..}) =
     graph
@@ -44,6 +55,20 @@ instance Functor f => Bifunctor (Graph f c e) where
       , networkReferences  = fmap (fmap (fmap f)) networkReferences
       , rootReferences     = fmap (fmap (fmap f)) rootReferences
       }
+
+instance Arbitrary (Graph f c e n t) where
+  arbitrary =
+    do
+      pure undefined
+
+instance TextShow (Graph f c e n t) where
+  showb = undefined
+
+
+instance Show (Graph f c e n t) where
+  show = toString . showb
+
+
 
 class HasLeafReferences s t a b | s -> a, t -> b, s b -> t, t a -> s where
   _leafReferences :: Lens s t a b
@@ -59,29 +84,36 @@ instance HasLeafReferences
 class HasTreeReferences s a | s -> a where
   _treeReferences :: Lens' s a
 
+
 instance HasTreeReferences
            (Graph f c e n t)
            (Vector (IndexData TreeContext (f n))) where
   _treeReferences = lens treeReferences (\g fn -> g {treeReferences = fn})
 
+
 class HasNetworkReferences s a | s -> a where
   _networkReferences :: Lens' s a
+
 
 instance HasNetworkReferences
            (Graph f c e n t)
            (Vector (IndexData NetworkContext (f n))) where
   _networkReferences = lens networkReferences (\g fn -> g {networkReferences = fn})
 
+
 class HasRootReferences s a | s -> a where
   _rootReferences :: Lens' s a
+
 
 instance HasRootReferences
            (Graph f c e n t)
            (Vector (IndexData RootContext (f n))) where
   _rootReferences = lens rootReferences (\g fn -> g {rootReferences = fn})
 
+
 class HasCachedData s t a b | s -> a, t -> b, s b -> t, t a -> b where
   _cachedData :: Lens s t a b
+
 
 instance HasCachedData
            (Graph f c1 e n t)
@@ -91,6 +123,9 @@ instance HasCachedData
   _cachedData = lens cachedData (\g c2 -> g {cachedData = c2})
 
 
+--      ┌───────────────┐
+--      │    Utility    │
+--      └───────────────┘
 
 index :: Tagged taggedInd => Graph f c e n t -> taggedInd -> NodeIndexData (f n) t
 index graph taggedIndex =
@@ -139,3 +174,25 @@ unsafeRootInd graph (RootInd i) = graph ^. _rootReferences . (singular (ix i))
 {-# INLINE unsafeNetworkInd #-}
 unsafeNetworkInd :: Graph f c e n t -> NetworkInd -> NetworkIndexData (f n)
 unsafeNetworkInd graph (NetworkInd i) = graph ^. _networkReferences . (singular (ix i))
+
+
+
+--      ┌─────────────────┐
+--      │    Rendering    │
+--      └─────────────────┘
+
+
+topologyRendering :: Graph f e c n t -> Text
+topologyRendering = undefined
+
+
+horizontalRendering :: 
+horizontalRendering = undefined
+
+
+referenceRendering :: Graph f e c n t -> Text
+referenceRendering = undefined
+
+
+toBinaryRenderingTree :: (n -> String) -> Graph f e c n t -> NonEmpty BinaryRenderingTree
+toBinaryRenderingTree = undefined
