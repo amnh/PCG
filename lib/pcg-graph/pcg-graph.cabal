@@ -90,6 +90,7 @@ library pcg-graph
     foldl                    >= 1.3.2     && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.17      && < 5.0,
+    QuickCheck               >= 2.12      && < 3.0,
     text                     >= 1.2       && < 2.0,
     text-show                >= 3.0       && < 4.0,
     text-show-instances      >= 3.0       && < 4.0,
@@ -138,7 +139,7 @@ test-suite pcg-graph-test
                     
   other-modules:
     Data.Graph.Test
-   
+
 
 benchmark benchmark-suite
 
