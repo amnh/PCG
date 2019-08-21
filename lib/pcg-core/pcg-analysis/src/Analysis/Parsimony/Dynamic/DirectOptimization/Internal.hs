@@ -35,8 +35,9 @@ import           Bio.Character.Exportable
 import           Bio.Graph.Node.Context
 import           Bio.Metadata                                           hiding (DenseTransitionCostMatrix)
 import           Control.DeepSeq
-import           Control.Lens
+import           Control.Lens                                           hiding ((<|), (|>))
 import           Data.Bits
+import           Data.Foldable
 import           Data.Foldable.Custom                                   (sum')
 import           Data.Hashable
 import           Data.IntMap                                            (IntMap)
@@ -48,6 +49,8 @@ import           Data.List.Utility                                      (invaria
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
+import           Data.Sequence                                          ((<|), (|>))
+import qualified Data.Sequence                                          as Seq
 import           Data.TCM.Dense                                         (DenseTransitionCostMatrix)
 import           Data.Word
 import           Numeric.Extended.Natural
@@ -404,18 +407,18 @@ newGapLocations unaligned aligned
 -- Given a list of gap locations and a character, returns a longer character with
 -- the supplied gaps inserted at the corresponding locations.
 insertNewGaps :: EncodableDynamicCharacter c => IntMap Int -> c -> c
--- TODO: The foldMapWithKey1 call takes up a lot of memory. Consider how to make this new dynamic character construction more efficient. Maybe use Control.Foldl?
-insertNewGaps insertionIndicies character = constructDynamic . appendGaps . foldMapWithKey1 f . NE.fromList $ otoList character
+insertNewGaps insertionIndicies character
+  -- If there are no gaos to insert, then do no work!
+  | null insertionIndicies = character
+  -- If there are gaps to insert, then it is safe to use mempty in the initial acumulator value
+  | otherwise = constructDynamic . NE.fromList . toList . (\(_,x,y) -> x <> y) $ foldrWithKey go (0, mempty, elementSeq) insertionIndicies
   where
-    len = olength character
+    go k v (n, acc, remaining) =
+      let (taken, leftover) = Seq.splitAt (k - n) remaining
+      in  (k, acc <> taken <> Seq.replicate v gap, leftover)
+    
+    elementSeq = Seq.fromList $ otoList character
     gap = gapOfStream character
-    appendGaps (x:|xs) = x :| (xs <> trailingGaps)
-    trailingGaps = maybe [] (`replicate` gap) $ len `lookup` insertionIndicies
-
-    f i e =
-      case i `lookup` insertionIndicies of
-        Nothing -> pure e
-        Just n  -> gap :| replicate (n-1) gap <> pure e
 
 
 -- |
