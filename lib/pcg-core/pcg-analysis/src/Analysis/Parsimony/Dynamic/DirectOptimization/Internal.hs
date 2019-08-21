@@ -406,7 +406,7 @@ insertNewGaps insertionIndicies character
     go k v (n, acc, remaining) =
       let (taken, leftover) = Seq.splitAt (k - n) remaining
       in  (k, acc <> taken <> Seq.replicate v gap, leftover)
-    
+
     elementSeq = Seq.fromList $ otoList character
     gap = gapOfStream character
 

@@ -39,7 +39,7 @@ import           Data.Char                          (isSpace)
 import           Data.Data
 import           Data.List.NonEmpty                 (NonEmpty (..))
 import           Data.Maybe
-import           Data.Proxy                         (Proxy(..))
+import           Data.Proxy                         (Proxy (..))
 import           Data.Semigroup.Foldable
 import           Data.String
 import qualified Data.Text                          as T

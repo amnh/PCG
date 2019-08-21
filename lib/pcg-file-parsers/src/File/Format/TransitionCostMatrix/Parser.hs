@@ -40,7 +40,7 @@ import           Data.List.Utility                        (duplicates, mostCommo
 import           Data.Matrix.NotStupid                    (Matrix, ncols, nrows)
 import qualified Data.Matrix.NotStupid                    as M (fromList)
 import           Data.Maybe                               (catMaybes, fromJust)
-import           Data.Proxy                               (Proxy(..))
+import           Data.Proxy                               (Proxy (..))
 import           Data.String
 import qualified Data.Text                                as T
 import qualified Data.Text.Lazy                           as LT

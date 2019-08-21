@@ -32,7 +32,7 @@ import           Bio.Graph
 --import           Bio.Metadata.CharacterName
 --import           Bio.Sequence.Metadata
 --import           Control.Lens.Operators     ((^.))
-import qualified Data.ByteString.Lazy       as BS
+import qualified Data.ByteString.Lazy as BS
 --import           Data.Csv
 --import           Data.FileSource
 --import           Data.Text.Short            (toByteString)
