@@ -200,7 +200,7 @@ library pcg-analysis
     pcg-tcm-memo,
     clustering               >= 0.4       && < 0.5,
     -- >=0.5.8 Required for Data.Map.restrictKeys
-    containers               >= 0.5.8     && < 0.7,
+    containers               >= 0.5.8     && < 1.0,
     data-default             >= 0.5.2     && < 0.8,
     deepseq                  >= 1.4       && < 2.0,
     dlist                    >= 0.8       && < 1.0,
@@ -261,12 +261,12 @@ library pcg-data-structures
     pcg-serialize,
     pcg-tcm,
     pcg-tcm-memo,
-    bimap                    >= 0.3       && < 0.4,
+    bimap                    >= 0.3       && < 1.0,
     binary                   >= 0.6       && < 1.0,
     bv-little                >= 1.0.1     && < 2.0,
     compact                  >= 0.1       && < 2.0,
     -- >=0.5.8 Required for Data.Map.restrictKeys
-    containers               >= 0.5.8     && < 0.7,
+    containers               >= 0.5.8     && < 1.0,
     data-default             >= 0.5.2     && < 0.8,
     deepseq                  >= 1.4       && < 2.0,
     dlist                    >= 0.8       && < 1.0,
@@ -416,7 +416,7 @@ library pcg-tcm
     pcg-serialize,
     pcg-tcm-memo,
     -- >=0.5.8 Required for Data.Map.restrictKeys
-    containers               >= 0.5.8     && < 0.7,
+    containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
@@ -491,7 +491,7 @@ test-suite data-structures-tests
     pcg-alphabet,
     pcg-data-structures,
     -- >=0.5.8 Required for Data.Map.restrictKeys
-    containers               >= 0.5.8     && < 0.7,
+    containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.17      && < 5.0,
