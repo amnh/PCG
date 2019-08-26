@@ -109,6 +109,7 @@ library pcg-graph
     Data.Graph.NodeContext
     Data.Graph.Moves
     Data.Graph.Hash
+    Data.Graph.Intermediate
 
   other-modules:
 
