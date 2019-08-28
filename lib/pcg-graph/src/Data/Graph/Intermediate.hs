@@ -2,22 +2,23 @@
 module Data.Graph.Intermediate where
 
 import Data.Graph.Type
-import Data.Tree (Tree(..))
-import Data.Map hiding ((!))
-import Data.Set
+import Data.Tree (Tree(..), unfoldForest)
+import Data.Map hiding ((!), fromList)
+import qualified Data.Set as S
+import Data.Set (Set)
 import Data.Graph.NodeContext
 import Control.Lens
-import Data.Vector
+import Data.Vector hiding (fromList)
 import Data.Graph.Indices
 import Data.Graph.NodeContext
 import Data.Pair.Strict
 import Data.Coerce
+import qualified Data.Foldable as F
 
 type Size = Int
 
 data RoseForest a netRef = RoseForest
   { _forest       :: [Tree (a, Maybe netRef) ]
-  , _networkNodes :: Set netRef
   }
 
 leafR :: a -> Tree (a, Maybe netRef)
@@ -51,8 +52,12 @@ toRoseForest
   -> (NetworkInd -> netRef)
   -> Graph f e c n t
   -> RoseForest a netRef
-toRoseForest leafConv internalConv netConv graph = undefined
+toRoseForest leafConv internalConv netConv graph =
+  RoseForest
+  { _forest = unfoldForest build rootFocusGraphs
+  }
   where
+    rootFocusGraphs :: [RootFocusGraph f e c n t]
     rootFocusGraphs = makeRootFocusGraphs graph
     build :: RootFocusGraph f e c n t -> ((a, Maybe netRef), [RootFocusGraph f e c n t])
     build (focus :!: graph) =
