@@ -11,6 +11,8 @@ module Data.Graph.Indices where
 import Data.Monoid
 import Data.Bits
 import Data.Word
+import Data.Pair.Strict
+
 
 
 newtype LeafInd = LeafInd {getLeafInd :: Int}
@@ -52,6 +54,8 @@ newtype TaggedIndex  = TaggedIndex {getIndex :: Int }
   deriving (Semigroup, Monoid) via (Sum Int)
   deriving newtype (Bits, Num)
 
+type UntaggedIndex = Int
+
 instance Tagged TaggedIndex where
   tagValue :: IndexType -> Int -> TaggedIndex
   tagValue ty i = TaggedIndex (i .|. fromEnum ty `shiftL` 61)
@@ -74,8 +78,10 @@ newtype ChildIndex   = ChildIndex  {getChildIndex :: TaggedIndex}
   deriving (Semigroup, Monoid) via (Sum Int)
   deriving newtype (Bits, Tagged, Num)
 
+
 data IndexType = LeafTag | TreeTag | NetworkTag | RootTag
   deriving stock (Eq, Enum)
 
 
-
+toUntagged :: (Tagged t) => t -> Pair IndexType UntaggedIndex
+toUntagged ind = getTag ind :!: untagValue ind
