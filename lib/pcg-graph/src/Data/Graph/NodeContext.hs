@@ -25,7 +25,7 @@ import Data.Bifunctor
 
 
 
--- 	┌──────────────────────────────┐ 
+--      ┌──────────────────────────────┐
 --      │    Polymorphic Index Data    │
 --      └──────────────────────────────┘
 
@@ -48,12 +48,9 @@ instance HasNodeData (IndexData nc nd) (IndexData nc nd') nd nd' where
 instance HasNodeContext (IndexData nc nd) (IndexData nc' nd) nc nc'  where
   _nodeContext = lens nodeContext (\ind nc -> ind {nodeContext = nc})
 
-
-
--- 	┌──────────────────────────────┐ 
+--      ┌──────────────────────────────┐
 --      │    Node Contexts and Data    │
 --      └──────────────────────────────┘
-
 
 newtype RootContext = RootContext
   { childIndsR :: (Either ChildIndex (Pair ChildIndex ChildIndex))
@@ -97,13 +94,14 @@ _getOtherChildLens =
 
 
 
--- 	┌──────────────────────────────────┐ 
+--      ┌──────────────────────────────────┐
 --      │    Type classes for reindexing   │
 --      └──────────────────────────────────┘
 
 class Reindexable s where
   increment :: s -> s
   decrement :: s -> s
+
 
 instance Reindexable RootContext where
   increment rc =
@@ -147,9 +145,7 @@ instance Reindexable TreeContext where
 
 
 
-   
-
--- 	┌─────────────────────┐ 
+--      ┌─────────────────────┐
 --      │    Classy Lenses    │
 --      └─────────────────────┘
 
@@ -161,7 +157,7 @@ class HasChildInds s a | s -> a where
   _childInds :: Lens' s a
 
 
--- 	┌─────────────────────┐ 
+--      ┌─────────────────────┐
 --      │    Leaf Accessors   │
 --      └─────────────────────┘
 instance HasParentInds LeafContext ParentIndex where
@@ -171,7 +167,8 @@ instance HasParentInds (LeafIndexData e) ParentIndex where
   _parentInds = _nodeContext . _parentInds
 
 
--- 	┌─────────────────────┐ 
+
+--      ┌─────────────────────┐
 --      │    Tree Accessors   │
 --      └─────────────────────┘
 instance HasParentInds TreeContext ParentIndex where
@@ -194,7 +191,7 @@ instance HasRight (TreeIndexData e) ChildIndex where
   _right = _childInds . _right
 
 
--- 	┌────────────────────────┐ 
+--      ┌────────────────────────┐
 --      │    Network Accessors   │
 --      └────────────────────────┘
 instance HasParentInds NetworkContext (Pair ParentIndex ParentIndex) where
@@ -210,7 +207,7 @@ instance HasChildInds (NetworkIndexData e) ChildIndex where
   _childInds = _nodeContext . _childInds
 
 
--- 	┌─────────────────────┐ 
+--      ┌─────────────────────┐
 --      │    Root Accessors   │
 --      └─────────────────────┘
 
@@ -234,7 +231,7 @@ modifyNodeData i fn = V.modify
 
 
 
--- 	┌──────────────────────────┐ 
+--      ┌──────────────────────────┐
 --      │    Combined Index Data   │
 --      └──────────────────────────┘
 
@@ -266,6 +263,3 @@ liftFunction fn = \nInd1 nInd2
                           -> liftA2 fn
                                (nInd1 ^. _liftedNodeData)
                                (nInd2 ^. _liftedNodeData)
-
-
-
