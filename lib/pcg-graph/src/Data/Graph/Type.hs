@@ -4,6 +4,8 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Data.Graph.Type where
 
@@ -15,6 +17,8 @@ import Data.Vector.Instances ()
 import Control.Lens
 import Test.QuickCheck.Arbitrary
 import TextShow
+import Data.Pair.Strict
+import Data.Coerce
 
 --      ┌─────────────┐
 --      │    Types    │
@@ -23,7 +27,7 @@ import TextShow
 data GraphShape i n r t
   = GraphShape
   { leafData     :: Vector t
-  , treeData :: Vector i
+  , treeData     :: Vector i
   , networkData  :: Vector n
   , rootData     :: Vector r
   }
@@ -42,7 +46,21 @@ data Graph
   , cachedData         :: c
   }
 
- 
+type Focus = Pair IndexType UntaggedIndex
+type RootFocusGraph f c e n t = Pair Focus (Graph f c e n t)
+
+-- |
+-- This makes a list of graphs along with the roots to focus upon.
+makeRootFocusGraphs :: Graph f c e n t -> [RootFocusGraph f c e n t]
+makeRootFocusGraphs graph =
+  let
+    rootLength = length (view _rootReferences graph)
+    rootNames :: [Focus]
+    rootNames  = fmap (Pair RootTag) [0..rootLength]
+  in
+    fmap (\i -> i :!: graph) rootNames
+    
+
 --      ┌─────────────────┐
 --      │    Instances    │
 --      └─────────────────┘
@@ -154,7 +172,6 @@ index graph taggedIndex =
                      . (singular $ ix ind)
 
 
-
 --      ┌───────────────────────┐
 --      │    Unsafe Indexing    │
 --      └───────────────────────┘
@@ -181,12 +198,12 @@ unsafeNetworkInd graph (NetworkInd i) = graph ^. _networkReferences . (singular 
 --      │    Rendering    │
 --      └─────────────────┘
 
-
+{-
 topologyRendering :: Graph f e c n t -> Text
 topologyRendering = undefined
 
 
-horizontalRendering :: 
+horizontalRendering :: _
 horizontalRendering = undefined
 
 
@@ -196,3 +213,5 @@ referenceRendering = undefined
 
 toBinaryRenderingTree :: (n -> String) -> Graph f e c n t -> NonEmpty BinaryRenderingTree
 toBinaryRenderingTree = undefined
+-}
+
