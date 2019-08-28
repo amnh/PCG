@@ -32,7 +32,6 @@ import           Control.Arrow                                 ((&&&))
 import           Control.DeepSeq
 import           Control.Evaluation
 import           Control.Lens                                  hiding (snoc, _head)
-import           Control.Monad                                 (foldM, replicateM)
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Strict
 import           Control.Parallel.Custom

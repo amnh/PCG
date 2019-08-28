@@ -51,13 +51,13 @@ data TransitionCost
 --  * A single specification of the character state change
 --
 --  * One or more character indicies or index ranges of affected characters
-costCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Cost
+costCommand :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m Cost
 costCommand = costHeader *> costBody <* symbol (char ';')
 
 
 -- |
 -- Consumes the superflous heading for a CCODE command.
-costHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+costHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 costHeader = symbol $ keyword "costs" 2
 
 

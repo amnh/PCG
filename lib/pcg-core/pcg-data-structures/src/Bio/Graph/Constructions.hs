@@ -72,6 +72,7 @@ import Data.Compact
 import Data.EdgeLength
 import Data.Function                       ((&))
 import Data.Functor.Identity               (Identity (..))
+import Data.Kind
 import Data.List.NonEmpty
 import Data.NodeLabel
 import Data.Vector                         (Vector)
@@ -116,7 +117,7 @@ type FinalCharacterSequence =
 
 -- |
 -- A Phylogenetic Node within a decorations parameterized by a functor.
-type DecoratedCharacterNode (f :: * -> *) =
+type DecoratedCharacterNode (f :: Type -> Type) =
   PhylogeneticNode
     (CharacterSequence
       (f (ContinuousOptimizationDecoration ContinuousCharacter))

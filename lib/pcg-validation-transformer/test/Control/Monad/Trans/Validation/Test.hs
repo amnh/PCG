@@ -10,8 +10,8 @@ module Control.Monad.Trans.Validation.Test
   ( testSuite
   ) where
 
+import Control.Applicative            (Applicative (..))
 import Control.Arrow                  ((***))
-import Control.Applicative            (Applicative(..))
 import Control.DeepSeq
 import Control.Monad                  (void)
 import Control.Monad.Fail             (MonadFail (..))

@@ -52,7 +52,6 @@ module Bio.Graph.Node.Internal
 
 import Control.DeepSeq
 import Control.Lens                hiding (_head)
-import Control.Lens.Lens           (Lens)
 import Data.EdgeSet
 import Data.Foldable
 import Data.Functor.Apply

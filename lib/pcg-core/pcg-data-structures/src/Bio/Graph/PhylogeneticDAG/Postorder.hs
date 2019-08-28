@@ -34,7 +34,8 @@ import           Control.Arrow                      ((&&&))
 import           Control.Lens.At                    (ix)
 import           Control.Lens.Combinators           (singular)
 import           Control.Lens.Operators             ((%~), (.~), (^.))
-import           Data.Foldable.Custom               (foldMap', minimum', sum')
+import           Data.Foldable
+import           Data.Foldable.Custom               (minimum', sum')
 import           Data.Function                      ((&))
 import qualified Data.IntMap                        as IM
 import           Data.IntSet                        (IntSet)

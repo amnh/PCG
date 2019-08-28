@@ -18,7 +18,6 @@
 
 module Data.Foldable.Custom
   ( foldl''
-  , foldMap'
   , sum'
   , minimum'
   , maximum'
@@ -29,7 +28,7 @@ module Data.Foldable.Custom
 
 import Control.DeepSeq (NFData, ($!!))
 import Data.Coerce     (Coercible, coerce)
-import Data.Foldable   (Foldable (foldl', foldr))
+import Data.Foldable   (Foldable (foldl'))
 import Data.Maybe      (fromMaybe)
 import Data.Monoid     (Sum (..))
 

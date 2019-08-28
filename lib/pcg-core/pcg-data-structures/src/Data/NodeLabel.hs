@@ -79,7 +79,7 @@ isEmpty = coerce TS.null
 
 
 instance Default NodeLabel where
-  
+
     def = mempty
 
 

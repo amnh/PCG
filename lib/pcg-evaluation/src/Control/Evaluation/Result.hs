@@ -25,22 +25,20 @@
 
 module Control.Evaluation.Result where
 
-import           Control.DeepSeq
-import           Control.Monad.Fail        (MonadFail)
-import qualified Control.Monad.Fail        as F
-import           Control.Monad.Fix         (MonadFix)
-import           Control.Monad.Zip         (MonadZip (..))
-import           Data.Data
-import           Data.Functor.Alt          (Alt (..))
-import           Data.Functor.Apply        (Apply (..))
-import           Data.Functor.Bind         (Bind (..))
-import           Data.Functor.Classes      (Eq1, Ord1 (..), Show1)
-import           Data.Semigroup            (Semigroup (..))
-import           Data.Text.Lazy            (Text, pack)
-import           GHC.Generics
-import           Test.QuickCheck
-import           Test.QuickCheck.Instances ()
-import           TextShow
+import Control.DeepSeq
+import Control.Monad.Fix         (MonadFix)
+import Control.Monad.Zip         (MonadZip (..))
+import Data.Data
+import Data.Functor.Alt          (Alt (..))
+import Data.Functor.Apply        (Apply (..))
+import Data.Functor.Bind         (Bind (..))
+import Data.Functor.Classes      (Eq1, Ord1 (..), Show1)
+import Data.Semigroup            (Semigroup (..))
+import Data.Text.Lazy            (Text, pack)
+import GHC.Generics
+import Test.QuickCheck
+import Test.QuickCheck.Instances ()
+import TextShow
 
 
 -- |

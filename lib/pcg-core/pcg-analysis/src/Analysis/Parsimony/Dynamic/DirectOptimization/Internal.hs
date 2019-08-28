@@ -47,7 +47,7 @@ import           Data.List.Utility                                      (invaria
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
-import           Data.Sequence                                          ((<|), (|>))
+--import           Data.Sequence                                          ((<|), (|>))
 import qualified Data.Sequence                                          as Seq
 import           Data.TCM.Dense                                         (DenseTransitionCostMatrix)
 import           Data.Word
@@ -406,7 +406,7 @@ insertNewGaps insertionIndicies character
     go k v (n, acc, remaining) =
       let (taken, leftover) = Seq.splitAt (k - n) remaining
       in  (k, acc <> taken <> Seq.replicate v gap, leftover)
-    
+
     elementSeq = Seq.fromList $ otoList character
     gap = gapOfStream character
 
