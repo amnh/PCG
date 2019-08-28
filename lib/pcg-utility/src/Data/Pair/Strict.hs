@@ -38,7 +38,12 @@ data Pair a b = !a :!: !b
 
 type (:!:) = Pair
 
-pattern Pair a b = a :!: b
+pattern Pair :: a -> b -> Pair a b
+pattern Pair a b <- (a :!: b)
+  where
+    Pair a b = a :!: b
+{-# COMPLETE Pair #-}
+
 
 instance Bifunctor Pair where
   bimap f g (a :!: b) = f a :!: g b
