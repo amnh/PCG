@@ -85,6 +85,7 @@ library pcg-graph
     base                     >= 4.11      && < 5.0,
     bifunctors               ^>= 5.5.4            ,
     -- >=0.5.8 Required for Data.Map.restrictKeys
+    comonad                  ^>= 5.0.5            ,
     containers               >= 0.5.8     && < 0.7,
     deepseq                  >= 1.4       && < 2.0,
     foldl                    >= 1.3.2     && < 2.0,
