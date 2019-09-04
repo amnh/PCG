@@ -15,9 +15,6 @@ packages: .
 
 source-repository-package
   type: git
-  location: https://github.com/bgamari/attoparsec
-  tag:      e64bbfb34733f53236e6b05d2248a5896b46daf1
-  type: git
   location: https://github.com/haskell/cabal
   tag:      27221efc89e25069f3ded141310aa0e63df9d8f5
   subdir:   Cabal
@@ -26,7 +23,7 @@ source-repository-package
   tag:      98d7890b410968ff338ff661949304df75cdc169
   type: git
   location: https://www.github.com/recursion-ninja/cassava
-  tag: 794dd4b60882491dff600a2bf15701ae0550dbb6
+  tag:      cfb71d47bc6c9a556dad1e89cbe7796c013dab5f
   type: git
   location: https://github.com/GaloisInc/cereal
   tag:      3396176a36284d7aa53ffcb34a905a91a576832c
@@ -62,9 +59,12 @@ source-repository-package
   location: https://github.com/glguy/th-abstraction
   tag:      00fcd437f35c3049ccca70ff644bdf38e8dce8d0
   type: git
-  location: https://github.com/haskell-vanguard/vector-th-unbox
-  tag:      2fa686c70d4f10993ca7c73b510e18568620b1d0
+  location: https://github.com/bgamari/vector-th-unbox
+  tag:      b5ecd80e422a1b762923b026eba1efd46d4e8c28
   type: git
+--  location: https://github.com/haskell-vanguard/vector-th-unbox
+--  tag:      2fa686c70d4f10993ca7c73b510e18568620b1d0
+--  type: git
   location: https://github.com/haskell-vanguard/yaml
   tag:      ef48de2ff3a551fdc6d3884fbe5755501abbad65
   subdir:   yaml
