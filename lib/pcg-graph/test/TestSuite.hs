@@ -21,6 +21,8 @@ main =
     putStrLn (showGraphAsRoseForest exampleGraph1)
     putStrLn ""
     putStrLn (showGraphAsRoseForest exampleGraph2)
+    putStrLn ""
+    putStrLn (showGraphAsRoseForest exampleGraph3)
     defaultMainWithIngredients
       [ rerunningTests defaultIngredients ]
       testSuite
@@ -91,6 +93,53 @@ exampleGraph2 =
 
           ]
   , networkReferences = mempty
+  , rootReferences
+      = fromList
+          [ rootIndexData
+              (Id "root")
+              (Right $ (tagValue TreeTag 0) :!: (tagValue TreeTag 1))
+          ]
+  , cachedData = ()
+  }
+
+exampleGraph3 :: Graph Id () () String String
+exampleGraph3 =
+  Graph
+  { leafReferences
+      = fromList
+          [ leafIndexData "leaf1" (tagValue TreeTag 0)
+          , leafIndexData "leaf2" (tagValue TreeTag 0)
+          , leafIndexData "leaf3" (tagValue TreeTag 1)
+          , leafIndexData "leaf4/5" (tagValue TreeTag 1)
+          , leafIndexData "leaf6" (tagValue TreeTag 1)
+          ]
+  , treeReferences
+      = fromList
+          [ treeIndexData
+              (Id "tree1")
+              (tagValue RootTag 0)
+              (tagValue LeafTag 0 :!: tagValue LeafTag 1)
+          , treeIndexData
+              (Id "tree2")
+              (tagValue RootTag 0)
+              (tagValue TreeTag 2 :!: tagValue TreeTag 3)
+          , treeIndexData
+              (Id "tree3")
+              (tagValue RootTag 0)
+              (tagValue NetworkTag 0 :!: tagValue LeafTag 2)
+          , treeIndexData
+              (Id "tree4")
+              (tagValue RootTag 0)
+              (tagValue NetworkTag 0 :!: tagValue LeafTag 4)
+
+          ]
+  , networkReferences
+      = fromList
+        [ networkIndexData
+            (Id "#net1")
+            (tagValue TreeTag 2 :!: tagValue TreeTag 3)
+            (tagValue LeafTag 3)
+        ]
   , rootReferences
       = fromList
           [ rootIndexData
