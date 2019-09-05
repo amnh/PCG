@@ -9,6 +9,7 @@
 {-# LANGUAGE BlockArguments #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TypeOperators #-}
 
 
 
@@ -21,8 +22,6 @@ import Data.Vector (Vector)
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Data.Pair.Strict
-import Data.Bifunctor
-
 
 
 --      ┌──────────────────────────────┐
@@ -34,6 +33,13 @@ data IndexData nodeContext nodeData  = IndexData
   , nodeContext :: !nodeContext
   }
   deriving stock (Eq, Functor)
+
+instance Bifunctor IndexData where
+  bimap f g (IndexData n d) =
+    IndexData
+    { nodeData = g n
+    , nodeContext = f d
+    }
 
 class HasNodeData s t a b | s -> a, t -> b, s b -> t, t a -> s where
   _nodeData :: Lens s t a b
@@ -53,28 +59,65 @@ instance HasNodeContext (IndexData nc nd) (IndexData nc' nd) nc nc'  where
 --      └──────────────────────────────┘
 
 newtype RootContext = RootContext
-  { childIndsR :: (Either ChildIndex (Pair ChildIndex ChildIndex))
+  { childIndsR :: (Either ChildIndex (ChildIndex :!: ChildIndex))
   }
 type RootIndexData d = IndexData RootContext d
+
+rootIndexData :: d -> Either ChildIndex (ChildIndex :!: ChildIndex) -> RootIndexData d
+rootIndexData d inds =
+  IndexData
+  { nodeData = d
+  , nodeContext = RootContext inds
+  }
 
 newtype LeafContext = LeafContext
   { parentIndsL :: ParentIndex
   }
 type LeafIndexData d = IndexData LeafContext d
 
+leafIndexData :: d -> ParentIndex -> LeafIndexData d
+leafIndexData d ind =
+  IndexData
+  { nodeData = d
+  , nodeContext = LeafContext ind
+  }
+
 data NetworkContext = NetworkContext
-  { parentIndsN  :: {-# UNPACK #-} !(Pair ParentIndex ParentIndex)
+  { parentIndsN  :: {-# UNPACK #-} !(ParentIndex :!: ParentIndex)
   , childIndsN   :: {-# UNPACK #-} !ChildIndex
   }
 
 type NetworkIndexData d = IndexData NetworkContext d
 
+networkIndexData :: d -> ParentIndex :!: ParentIndex -> ChildIndex -> NetworkIndexData d
+networkIndexData d parInd childInd =
+  IndexData
+  { nodeData = d
+  , nodeContext
+      = NetworkContext
+          { parentIndsN = parInd
+          , childIndsN  = childInd
+          }
+  }
+
 data TreeContext = TreeContext
   { parentIndsT :: {-# UNPACK #-} !ParentIndex
-  , childIndsT  :: {-# UNPACK #-} !(Pair ChildIndex ChildIndex)
+  , childIndsT  :: {-# UNPACK #-} !(ChildIndex :!: ChildIndex)
   }
 
 type TreeIndexData d = IndexData TreeContext d
+
+treeIndexData :: d -> ParentIndex -> ChildIndex :!: ChildIndex -> TreeIndexData d
+treeIndexData d parInd childInd =
+  IndexData
+  { nodeData = d
+  , nodeContext
+      = TreeContext
+          { parentIndsT = parInd
+          , childIndsT  = childInd
+          }
+  }
+
 
 -- |
 -- This is for use to say which child we are looking at
