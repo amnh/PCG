@@ -10,9 +10,7 @@ import qualified Data.Set as S
 import Data.Set (Set)
 import Data.Graph.NodeContext
 import Control.Lens
-import Data.Vector hiding (fromList, modify)
 import Data.Graph.Indices
-import Data.Graph.NodeContext
 import Data.Pair.Strict
 import Data.Coerce
 import qualified Data.Foldable as F
@@ -30,7 +28,7 @@ data RenderNodeLabel a netRef =
   }
 
 type RoseForest a netRef = [Tree (a, Focus, Maybe netRef)]
-  
+
 
 leafR :: a -> Tree (a, Maybe netRef)
 leafR name = Node (name, Nothing) []
@@ -73,7 +71,7 @@ toRoseForest leafConv internalConv netConv graph =
     build
       :: RootFocusGraph f e c n t
       -> State (Set netRef) ((a, Focus, Maybe netRef), [RootFocusGraph f e c n t])
-    build (focus :!: graph) =
+    build (focus :!: _) =
       case focus of
         LeafTag :!: untaggedInd ->
           let
@@ -125,7 +123,7 @@ toRoseForest leafConv internalConv netConv graph =
                     rightFocus = toUntagged rightChildInd
                   in
                     pure ((nodeName, focus, Nothing), [leftFocus :!: graph, rightFocus :!: graph])
-          
+
 
 makeSizeLabelledTree
   :: Tree (a, Focus, Maybe netRef)
@@ -169,7 +167,7 @@ renderRoseForest
 renderRoseForest renderFn =
   drawForest . fmap (fmap renderFn)
 
-   
+
 renderGraphAsRoseForest
   :: (Ord netRef)
   => (t   -> a)

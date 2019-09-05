@@ -10,9 +10,7 @@ module Data.Graph.Indices where
 
 import Data.Monoid
 import Data.Bits
-import Data.Word
 import Data.Pair.Strict
-
 
 
 newtype LeafInd = LeafInd {getLeafInd :: Int}
@@ -30,10 +28,6 @@ newtype NetworkInd = NetworkInd {getNetworkInd  :: Int}
 newtype TreeInd = TreeInd {getTreeInd :: Int}
   deriving stock (Eq, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
-
-
---data ChildInd = CL LeafInd | CN NetworkInd | CI TreeInd
---data ParentInd = PR RootInd | PN NetworkInd | PI TreeInd
 
 class Tagged t where
   tagValue   :: IndexType -> Int -> t
@@ -65,7 +59,7 @@ instance Tagged TaggedIndex where
 
   untagValue :: TaggedIndex -> Int
   untagValue (TaggedIndex i) = clearBit (clearBit i 62) 61
-    
+
 
 newtype ParentIndex  = ParentIndex {getParentIndex :: TaggedIndex}
   deriving stock (Eq, Show)

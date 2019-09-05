@@ -18,7 +18,6 @@ import Control.Lens
 import Test.QuickCheck.Arbitrary
 import TextShow
 import Data.Pair.Strict
-import Data.Coerce
 
 --      ┌─────────────┐
 --      │    Types    │

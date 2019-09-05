@@ -78,7 +78,7 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
       (Nothing       , v') -> g & _treeReferences .~ v'
       (Just (r, ind) , v') -> g & _treeReferences .~ v'
                                 & _rootReferences  %~ (writeNodeData (untagValue ind) r)
-      
+
     go
       :: TaggedIndex
       -> (Vector (TreeIndexData (f n)))
@@ -118,48 +118,12 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
           loop (coerce parInd) mvec
 
 
--- |
--- This function takes a graph and the indices of a tree node
--- and its child node and then breaks the graph into a forest
--- also returning the index of the root node of the subgraph.
-breakEdge
-  :: Graph f e c n t
-  -> (Int, Int)
-  -> (Graph f e c n t, Int)
-breakEdge graph (src, tgt) = undefined
-
-
--- |
--- This function takes a graph of graphs, the index of one of those
--- graphs and returns that graph along with the graph of graphs with
--- that node removed.
-breakEdgeGraph
-  :: Graph f e c n (Graph f e c n t)
-  -> Int
-  -> (Graph f e c n t, Graph f e c n (Graph f e c n t))
-breakEdgeGraph graph subgraphInd =
-  let
-    leaves = graph ^. _leafReferences
-    (before, after) = V.splitAt subgraphInd leaves
-    updatedAfter    = fmap (undefined ) . V.tail $ after
-    newLeaves       = before <> updatedAfter
-  in
-    undefined
-
-
-decrementLeafParents
-  :: Vector (LeafIndexData t)
-  -> Graph f e c n t
-  -> Int
-  -> Graph f e c n t
-decrementLeafParents graph leafNode = undefined
 
 
 -- |
 -- This function takes a graph of graphs, the index of one of those
 -- graphs and the indices of an internal edge and returns a graph of graph
 -- with the subgraph removed and added along a new node on the graph.
-
 
 -- Note: this function currently assumes the parent of the leaf is a tree node
 -- and the edge we are attaching to is a tree edge (an edge between two
@@ -172,7 +136,6 @@ breakEdgeAndReattachG
   -> Graph f e c n (Graph f e c n t)
 breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
   let
-    subGraphContext    = (graph `unsafeLeafInd` leafInd) ^. _nodeContext
     -- Parent of leafNode
     untaggedParInd = untagValue (leafParInd)
     parIndexData =
@@ -183,7 +146,7 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
     _otherLeafParChild
       :: (HasLeft s ChildIndex, HasRight s ChildIndex)
       => Lens' s ChildIndex
-    _otherLeafParChild = 
+    _otherLeafParChild =
       if
         parIndexData ^. _left == (coerce leafInd) then _right
                                          else _left
@@ -203,7 +166,7 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
 
     _srcChildLens :: Lens' (TreeIndexData (f n)) ChildIndex
     _srcChildLens = _getChildLens dir
-    
+
     updatedSourceNodeInfo = srcNodeInfo
                           & _srcChildLens
                           .~ coerce @_ @ChildIndex leafParInd
@@ -219,7 +182,7 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
         leafParParentNodeInfo ^. _left == (coerce leafParInd)
         then _right
       else _left
-    
+
     leafParParentNodeInfo = graph `unsafeTreeInd` (coerce leafParParentNodeInd)
     leafParParentNodeInd     = parIndexData ^. _parentInds
     leafParChildNodeInfo  = graph `unsafeTreeInd` (coerce leafParParentNodeInd)
@@ -240,10 +203,10 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
                             , (untaggedSource  , updatedSourceNodeInfo)
                             , (untaggedTarget  , updatedTargetNodeInfo)
                             ]
-                             
+
   in
     graph & _treeReferences %~ (// updateTreeNodeContext)
-                             
+
 
 breadthFirstBreakAndAttach :: Int
 breadthFirstBreakAndAttach = undefined
