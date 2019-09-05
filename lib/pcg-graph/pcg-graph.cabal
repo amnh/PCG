@@ -133,12 +133,14 @@ test-suite pcg-graph-test
 
   build-depends:
     pcg-graph,
+    pcg-utility,
     base                     >= 4.11      && < 5.0,
     QuickCheck               >= 2.12      && < 3.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-hunit              >= 0.10      && < 1.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
                     
   other-modules:
     Data.Graph.Test
