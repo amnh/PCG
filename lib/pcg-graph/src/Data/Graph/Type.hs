@@ -44,6 +44,7 @@ data Graph
   , rootReferences     :: Vector (RootIndexData     (f n))
   , cachedData         :: c
   }
+  deriving Show
 
 type Focus = Pair IndexType UntaggedIndex
 type RootFocusGraph f c e n t = Pair Focus (Graph f c e n t)
@@ -55,10 +56,17 @@ makeRootFocusGraphs graph =
   let
     rootLength = length (view _rootReferences graph)
     rootNames :: [Focus]
-    rootNames  = fmap (Pair RootTag) [0..rootLength]
+    rootNames  =
+      let
+        rootInds = case rootLength of
+            0 -> []
+            1 -> [0]
+            n -> [0..(n - 1)]
+      in
+        fmap (Pair RootTag) rootInds
   in
     fmap (\i -> i :!: graph) rootNames
-    
+
 
 --      ┌─────────────────┐
 --      │    Instances    │
@@ -82,8 +90,8 @@ instance TextShow (Graph f c e n t) where
   showb = undefined
 
 
-instance Show (Graph f c e n t) where
-  show = toString . showb
+--instance Show (Graph f c e n t) where
+--  show = toString . showb
 
 
 
@@ -147,7 +155,7 @@ instance HasCachedData
 index :: Tagged taggedInd => Graph f c e n t -> taggedInd -> NodeIndexData (f n) t
 index graph taggedIndex =
   let
-    ind = untagValue taggedIndex
+    ind = getIndex taggedIndex
   in
   case getTag taggedIndex of
     LeafTag    -> LeafNodeIndexData $

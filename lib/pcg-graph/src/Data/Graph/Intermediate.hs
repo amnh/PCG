@@ -1,5 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE RecordWildCards     #-}
 
 module Data.Graph.Intermediate where
 
@@ -16,6 +17,10 @@ import Data.Coerce
 import qualified Data.Foldable as F
 import Control.Monad.State.Strict
 import Control.Comonad
+
+
+import Data.Maybe
+import Debug.Trace
 
 type Size = Int
 
@@ -75,7 +80,7 @@ toRoseForest leafConv internalConv netConv graph =
       case focus of
         LeafTag :!: untaggedInd ->
           let
-            leafNodeInfo    = view (_leafReferences . singular (ix untaggedInd)) graph
+            leafNodeInfo    = fromJust $ preview (_leafReferences . (ix untaggedInd)) graph
             nodeName        = leafConv . (view _nodeData) $ leafNodeInfo
           in
             pure ((nodeName, focus, Nothing), [])
@@ -107,7 +112,7 @@ toRoseForest leafConv internalConv netConv graph =
             pure ((nodeName, focus, Nothing), [leftFocus :!: graph, rightFocus :!: graph])
         RootTag    :!: untaggedInd ->
           let
-            nodeInfo = view (_rootReferences . singular (ix untaggedInd)) graph
+            nodeInfo = fromJust $ preview (_rootReferences . (ix (traceShowId untaggedInd))) graph
             nodeName = internalConv $ view _nodeData nodeInfo
             childInds = view _childInds nodeInfo
           in
@@ -181,3 +186,13 @@ renderGraphAsRoseForest leafFn intFn netFn renderFn =
   . reorderForest
   . makeSizeLabelledForest
   . (toRoseForest leafFn intFn netFn)
+
+
+showGraphAsRoseForest
+  :: (Show t, Show (f n))
+  => Graph f c e n t
+  -> String
+showGraphAsRoseForest = renderGraphAsRoseForest show show id renderNodeLabel
+  where
+    renderNodeLabel :: RenderNodeLabel String NetworkInd -> String
+    renderNodeLabel RenderNodeLabel{..} = _name

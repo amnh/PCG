@@ -10,7 +10,7 @@
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeOperators #-}
-
+{-# LANGUAGE BangPatterns #-}
 
 
 module Data.Graph.NodeContext where
@@ -28,11 +28,17 @@ import Data.Pair.Strict
 --      │    Polymorphic Index Data    │
 --      └──────────────────────────────┘
 
+data LabelledChildIndex e =
+  LabelledChildIndex
+  { edgeAnnotation :: e
+  , labelledChildIndex :: {-# UNPACK #-} !ChildIndex
+  }
+
 data IndexData nodeContext nodeData  = IndexData
   { nodeData    :: nodeData
   , nodeContext :: !nodeContext
   }
-  deriving stock (Eq, Functor)
+  deriving stock (Eq, Functor, Show)
 
 instance Bifunctor IndexData where
   bimap f g (IndexData n d) =
@@ -61,6 +67,8 @@ instance HasNodeContext (IndexData nc nd) (IndexData nc' nd) nc nc'  where
 newtype RootContext = RootContext
   { childIndsR :: (Either ChildIndex (ChildIndex :!: ChildIndex))
   }
+  deriving stock Show
+
 type RootIndexData d = IndexData RootContext d
 
 rootIndexData :: d -> Either ChildIndex (ChildIndex :!: ChildIndex) -> RootIndexData d
@@ -73,6 +81,8 @@ rootIndexData d inds =
 newtype LeafContext = LeafContext
   { parentIndsL :: ParentIndex
   }
+  deriving stock (Show)
+
 type LeafIndexData d = IndexData LeafContext d
 
 leafIndexData :: d -> ParentIndex -> LeafIndexData d
@@ -86,6 +96,7 @@ data NetworkContext = NetworkContext
   { parentIndsN  :: {-# UNPACK #-} !(ParentIndex :!: ParentIndex)
   , childIndsN   :: {-# UNPACK #-} !ChildIndex
   }
+  deriving stock Show
 
 type NetworkIndexData d = IndexData NetworkContext d
 
@@ -104,6 +115,7 @@ data TreeContext = TreeContext
   { parentIndsT :: {-# UNPACK #-} !ParentIndex
   , childIndsT  :: {-# UNPACK #-} !(ChildIndex :!: ChildIndex)
   }
+  deriving stock (Show)
 
 type TreeIndexData d = IndexData TreeContext d
 
@@ -144,47 +156,6 @@ _getOtherChildLens =
 class Reindexable s where
   increment :: s -> s
   decrement :: s -> s
-
-
-instance Reindexable RootContext where
-  increment rc =
-    rc & _childInds %~
-          (\case
-             Left  c -> Left $ c + 1
-             Right p -> Right $ bimap (+ 1) (+ 1) p)
-
-  decrement rc =
-    rc & _childInds %~
-          (\case
-             Left  c -> Left $ c - 1
-             Right p -> Right $ bimap (subtract 1) (subtract 1) p)
-
-instance Reindexable LeafContext where
-  increment rc =
-    rc & _parentInds %~ (+ 1)
-
-  decrement rc =
-    rc & _parentInds %~ (subtract 1)
-
-
-instance Reindexable NetworkContext where
-  increment rc =
-    rc & _parentInds %~ (bimap (+ 1) (+ 1))
-       & _childInds  %~ (+ 1)
-
-  decrement rc =
-    rc & _parentInds %~ (bimap (subtract 1) (subtract 1))
-       & _childInds  %~ (subtract 1)
-
-
-instance Reindexable TreeContext where
-  increment rc =
-    rc & _childInds   %~ (bimap (+ 1) (+ 1))
-       & _parentInds  %~ (+ 1)
-
-  decrement rc =
-    rc & _childInds   %~ (bimap (subtract 1) (subtract 1))
-       & _parentInds  %~ (subtract 1)
 
 
 

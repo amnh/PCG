@@ -88,10 +88,10 @@ memoPostorder leafFn treeFn netFn graph = f
       where
         childVal :: TaggedIndex -> g val
         childVal i  = case getTag i of
-              LeafTag     -> pure . leafGen  $ (untagValue i)
-              TreeTag -> treeGen (untagValue i)
-              NetworkTag  -> networkGen  (untagValue i)
-              RootTag     -> rootGen     (untagValue i)
+              LeafTag     -> pure . leafGen  $ (getIndex i)
+              TreeTag -> treeGen (getIndex i)
+              NetworkTag  -> networkGen  (getIndex i)
+              RootTag     -> rootGen     (getIndex i)
 
 
         leafGen' :: Int -> val
@@ -144,10 +144,10 @@ memoGraphPostorder leafFn treeFn netFn graph = f
       where
         childVal :: TaggedIndex -> g val
         childVal i  = case getTag i of
-              LeafTag     -> pure . (^. _nodeData) . leafGen  $ (untagValue i)
-              TreeTag -> (^. _nodeData) . treeGen $ (untagValue i)
-              NetworkTag  -> (^. _nodeData) . networkGen  $ (untagValue i)
-              RootTag     -> (^. _nodeData) . rootGen     $ (untagValue i)
+              LeafTag     -> pure . (^. _nodeData) . leafGen  $ (getIndex i)
+              TreeTag -> (^. _nodeData) . treeGen $ (getIndex i)
+              NetworkTag  -> (^. _nodeData) . networkGen  $ (getIndex i)
+              RootTag     -> (^. _nodeData) . rootGen     $ (getIndex i)
 
 
         leafGen' :: Int -> LeafIndexData val
@@ -207,10 +207,10 @@ memoPostorder leafFn treeFn netFn graph = f
       where
         childVal :: TaggedIndex -> val
         childVal i  = case getTag i of
-              LeafTag     -> leafGen     (untagValue i)
-              TreeTag -> treeGen (untagValue i)
-              NetworkTag  -> networkGen  (untagValue i)
-              RootTag     -> rootGen     (untagValue i)
+              LeafTag     -> leafGen     (getIndex i)
+              TreeTag -> treeGen (getIndex i)
+              NetworkTag  -> networkGen  (getIndex i)
+              RootTag     -> rootGen     (getIndex i)
 
         leafGen' :: Int -> val
         leafGen' i = leafFn $
