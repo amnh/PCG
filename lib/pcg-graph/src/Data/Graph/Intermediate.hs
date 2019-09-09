@@ -156,11 +156,15 @@ makeSizeLabelledForest = fmap makeSizeLabelledTree
 reorderTree :: Tree (RenderNodeLabel a netRef) -> Tree (RenderNodeLabel a netRef)
 reorderTree t@(Node _ [])   = t
 reorderTree t@(Node _ [_])  = t
-reorderTree t@(Node root (l:r:ls))
-  | (_size . rootLabel $ l) < (_size . rootLabel $ r)
-    = Node root (r:l:ls)
-  | otherwise
-    = t
+reorderTree   (Node root (l:r:ls) =
+  let
+    l' = reorderTree l
+    r' = reorderTree r
+  in
+    if (_size . rootLabel $ r) < (_size . rootLabel $ l)
+    then (Node root (r':l':ls))
+    else (Node root (l':r':ls))
+
 
 reorderForest :: Forest (RenderNodeLabel a netRef) -> Forest (RenderNodeLabel a netRef)
 reorderForest = fmap reorderTree
