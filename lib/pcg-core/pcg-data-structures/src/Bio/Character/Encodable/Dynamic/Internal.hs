@@ -47,6 +47,7 @@ import qualified Data.Bimap                            as B
 import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
+import           Data.Coerce
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Key
@@ -63,7 +64,6 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
 import           TextShow                              (TextShow (showb))
-import           Data.Coerce
 
 
 -- |

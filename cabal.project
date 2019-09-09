@@ -12,8 +12,3 @@ packages: .
           lib/pcg-tcm-memo
           lib/pcg-utility
           lib/pcg-validation-transformer
-
-source-repository-package
-  type: git
-  location: https://www.github.com/recursion-ninja/cassava
-  tag: 794dd4b60882491dff600a2bf15701ae0550dbb6

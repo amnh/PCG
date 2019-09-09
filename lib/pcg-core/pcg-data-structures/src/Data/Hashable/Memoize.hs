@@ -26,14 +26,14 @@ module Data.Hashable.Memoize
 import Control.Concurrent.STM
 --import Control.Concurrent.STM.TVar
 import Control.DeepSeq
-import Control.Monad               (join)
+import Control.Monad          (join)
 --import Control.Monad.ST
 import Data.Functor
 import Data.Hashable
 import Data.HashTable.IO
 --import Data.HashTable.ST.Basic
 import Data.IORef
-import Prelude                     hiding (lookup)
+import Prelude                hiding (lookup)
 import System.IO.Unsafe
 
 

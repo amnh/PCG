@@ -17,12 +17,12 @@
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MagicHash              #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StrictData             #-}
 {-# LANGUAGE TypeFamilies           #-}
-{-# LANGUAGE MagicHash              #-}
-{-# LANGUAGE UnboxedTuples         #-}
+{-# LANGUAGE UnboxedTuples          #-}
 
 module Bio.Metadata.Dynamic.Internal
   ( DenseTransitionCostMatrix
@@ -57,6 +57,7 @@ import           Control.Lens                 hiding (Fold)
 import           Control.Monad.State.Strict
 import           Data.Alphabet
 import           Data.Bits
+import           Data.BitVector.LittleEndian
 import           Data.FileSource
 import           Data.Foldable
 import           Data.Functor                 (($>))
@@ -70,7 +71,7 @@ import           Data.Ord
 import           Data.Range
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.TCM                     hiding ((!), size)
+import           Data.TCM                     hiding (size, (!))
 import qualified Data.TCM                     as TCM
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
@@ -78,10 +79,9 @@ import           Data.TopologyRepresentation
 import           GHC.Generics                 (Generic)
 import           Prelude                      hiding (lookup)
 import           Text.XML
-import           Data.BitVector.LittleEndian
 
-import Control.DeepSeq
-import Data.Semigroup (Min(..))
+import           Control.DeepSeq
+import           Data.Semigroup               (Min (..))
 
 
 -- |
@@ -448,25 +448,24 @@ overlap sigma xs = go size maxBound zero
     (size, zero) = let wlog = getFirst $ foldMap1 First xs
                    in  (finiteBitSize wlog, wlog `xor` wlog)
 
-    go :: Int -> Word -> e -> (e, Word)
     go 0 theCost bits = (bits, theCost)
     go i oldCost bits =
-        let newCost = sum $ getDistance (toEnum i) <$> xs
+        let i' = i - 1
+            newCost = sum $ getDistance (toEnum i') <$> xs
             (minCost, bits') = case oldCost `compare` newCost of
-                                 EQ -> (oldCost, bits `setBit` i)
-                                 LT -> (oldCost, bits           )
-                                 GT -> (newCost, zero `setBit` i)
-        in go (i-1) minCost bits'
+                                 EQ -> (oldCost, bits `setBit` i')
+                                 LT -> (oldCost, bits            )
+                                 GT -> (newCost, zero `setBit` i')
+        in go i' minCost bits'
 
     getDistance i b = go' size (maxBound :: Word)
       where
         go' :: Int -> Word -> Word
         go' 0 a = a
         go' j a =
-          let a' =
-                if b `testBit` j then min a $ sigma i (toEnum j)
-                else a
-                  in  go' (j-1) a'
+          let j' = j - 1
+              a' = if b `testBit` j' then min a $ sigma i (toEnum j') else a
+          in  go' j' a'
 
 
 overlap'
@@ -506,7 +505,7 @@ overlap' sigma xs = go size maxBound zero
                 else
                   case selectDC b o' of
                     Just !ind ->  (min a $ sigma i ind, (fromEnum ind) + 1)
-                    _        ->  (a, size')
+                    _      ->  (a, size')
                   in  go' j' o' a'
 
 

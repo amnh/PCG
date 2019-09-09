@@ -3,7 +3,6 @@
 --
 -- A benchmark for sumAndLength as discussed in the foldl library documentation.
 
-{-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnboxedTuples       #-}
 
@@ -12,13 +11,13 @@
 
 module Main where
 
-import Bio.Metadata.Dynamic
-import Bio.Character.Encodable
-import Bio.Character.Exportable
-import Data.Bits
-import           Data.List.NonEmpty  (NonEmpty(..))
-import qualified Data.List.NonEmpty as NE
-import Benchmarks.Internal
+import           Benchmarks.Internal
+import           Bio.Character.Encodable
+import           Bio.Character.Exportable
+import           Bio.Metadata.Dynamic
+import           Data.Bits
+import           Data.List.NonEmpty       (NonEmpty (..))
+import qualified Data.List.NonEmpty       as NE
 
 
 main :: IO ()

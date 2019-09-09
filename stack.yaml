@@ -5,12 +5,12 @@ compiler: ghc-8.6.5
 compiler-check: match-exact
 
 extra-deps:
+  - bytestring-0.10.8.2
+  - cassava-0.5.2.0
   - clustering-0.4.1
   - perfect-vector-shuffle-0.1.1
   - pretty-tree-0.1.0.0
   - tasty-rerun-1.1.14
-  - git: https://github.com/recursion-ninja/cassava
-    commit: 794dd4b60882491dff600a2bf15701ae0550dbb6
 
 ghc-options:
   "$everything": -j -fdiagnostics-color=always
