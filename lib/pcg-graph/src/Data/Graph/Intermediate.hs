@@ -1,6 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE TypeOperators       #-}
 
 module Data.Graph.Intermediate where
 
@@ -65,17 +66,17 @@ toRoseForest
   => (t -> a)
   -> (f n -> a)
   -> (NetworkInd -> netRef)
-  -> Graph f e c n t
+  -> Graph f c e n t
   -> RoseForest a netRef
 toRoseForest leafConv internalConv netConv graph =
   (unfoldForestM build rootFocusGraphs) `evalState` mempty
   where
-    rootFocusGraphs :: [RootFocusGraph f e c n t]
+    rootFocusGraphs :: [RootFocusGraph f c e n t]
     rootFocusGraphs = makeRootFocusGraphs graph
 
     build
-      :: RootFocusGraph f e c n t
-      -> State (Set netRef) ((a, Focus, Maybe netRef), [RootFocusGraph f e c n t])
+      :: RootFocusGraph f c e n t
+      -> State (Set netRef) ((a, Focus, Maybe netRef), [RootFocusGraph f c e n t])
     build (focus :!: _) =
       case focus of
         LeafTag :!: untaggedInd ->
@@ -114,6 +115,7 @@ toRoseForest leafConv internalConv netConv graph =
           let
             nodeInfo = fromJust $ preview (_rootReferences . (ix (traceShowId untaggedInd))) graph
             nodeName = internalConv $ view _nodeData nodeInfo
+            childInds :: Either ChildIndex (ChildIndex :!: ChildIndex)
             childInds = view _childInds nodeInfo
           in
             case childInds of
@@ -156,7 +158,7 @@ makeSizeLabelledForest = fmap makeSizeLabelledTree
 reorderTree :: Tree (RenderNodeLabel a netRef) -> Tree (RenderNodeLabel a netRef)
 reorderTree t@(Node _ [])   = t
 reorderTree t@(Node _ [_])  = t
-reorderTree   (Node root (l:r:ls) =
+reorderTree   (Node root (l:r:ls)) =
   let
     l' = reorderTree l
     r' = reorderTree r

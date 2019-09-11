@@ -28,11 +28,11 @@ data MemoGen i n r l = MemoGen
 
 type MemoGen' i l = MemoGen i i i l
 
-type MemoGenGraph i l =
+type MemoGenGraph i l e =
   MemoGen
-    (TreeIndexData i)
-    (NetworkIndexData  i)
-    (RootIndexData     i)
+    (TreeIndexData     i e)
+    (NetworkIndexData  i e)
+    (RootIndexData     i e)
     (LeafIndexData     l)
 
 generateMemoGraph
@@ -42,14 +42,14 @@ generateMemoGraph
   -> Int
   -> Int
   -> Int
-  -> Endo (MemoGenGraph (f n) t)
+  -> Endo (MemoGenGraph (f n) t e)
   -> Graph f c e n t
 generateMemoGraph cache numL numI numN numR recursiveFuns = memoGraph
   where
     memoGraph :: Graph f c e n t
     memoGraph = generateGraph cache numL numI numN numR (recursiveFuns memoizedFunction)
 
-    memoizedFunction :: MemoGenGraph (f n) t
+    memoizedFunction :: MemoGenGraph (f n) t e
     memoizedFunction = MemoGen
       { leafGen     = ((memoGraph ^. _leafReferences    ) !)
       , treeGen = ((memoGraph ^. _treeReferences) !)
@@ -64,7 +64,7 @@ generateGraph
   -> Int
   -> Int
   -> Int
-  -> MemoGenGraph (f n) t
+  -> MemoGenGraph (f n) t e
   -> Graph f c e n t
 generateGraph cache numL numI numN numR MemoGen{..} =
   Graph
@@ -136,10 +136,10 @@ memoGraphPostorder
   =>  (t    -> val)
   -> (val -> val -> val)
   -> (val -> val)
-  -> Graph f c e n t -> Endo (MemoGenGraph (g val) val)
+  -> Graph f c e n t -> Endo (MemoGenGraph (g val) val e)
 memoGraphPostorder leafFn treeFn netFn graph = f
   where
-    f :: MemoGenGraph (g val) val -> MemoGenGraph (g val) val
+    f :: MemoGenGraph (g val) val e -> MemoGenGraph (g val) val e
     f MemoGen{..} = MemoGen leafGen' treeGen' networkGen' rootGen'
       where
         childVal :: TaggedIndex -> g val
@@ -172,19 +172,19 @@ memoGraphPostorder leafFn treeFn netFn graph = f
                             . _nodeContext
                             . _childInds
 
-        treeGen' :: Int -> TreeIndexData (g val)
+        treeGen' :: Int -> TreeIndexData (g val) e
         treeGen' i =
           (graph ^. _treeReferences . singular (ix i))
           & _nodeData
           .~ (fromTwoChildren (getChildInd _treeReferences i))
 
-        networkGen' :: Int -> NetworkIndexData (g val)
+        networkGen' :: Int -> NetworkIndexData (g val) e
         networkGen' i =
            (graph ^. _networkReferences . singular (ix i))
            & _nodeData
            .~ fromOneChild (getChildInd _networkReferences i)
 
-        rootGen' :: Int -> RootIndexData (g val)
+        rootGen' :: Int -> RootIndexData (g val) e
         rootGen' i =
           (graph ^. _rootReferences . singular (ix i))
           & _nodeData

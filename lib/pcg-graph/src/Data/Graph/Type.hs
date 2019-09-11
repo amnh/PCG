@@ -38,10 +38,10 @@ data Graph
        (n :: Type)
        (t :: Type)
   = Graph
-  { leafReferences     :: Vector (LeafIndexData     (  t))
-  , treeReferences     :: Vector (TreeIndexData     (f n))
-  , networkReferences  :: Vector (NetworkIndexData  (f n))
-  , rootReferences     :: Vector (RootIndexData     (f n))
+  { leafReferences     :: Vector (LeafIndexData      (  t))
+  , treeReferences     :: Vector (TreeIndexData    (f n) e)
+  , networkReferences  :: Vector (NetworkIndexData (f n) e)
+  , rootReferences     :: Vector (RootIndexData    (f n) e)
   , cachedData         :: c
   }
   deriving Show
@@ -75,10 +75,10 @@ makeRootFocusGraphs graph =
 instance Functor f => Bifunctor (Graph f c e) where
   bimap f g graph@(Graph{..}) =
     graph
-      { leafReferences     = fmap (fmap g) leafReferences
-      , treeReferences     = fmap (fmap (fmap f)) treeReferences
-      , networkReferences  = fmap (fmap (fmap f)) networkReferences
-      , rootReferences     = fmap (fmap (fmap f)) rootReferences
+      { leafReferences     = (fmap . fmap        $ g) leafReferences
+      , treeReferences     = (fmap . fmap . fmap $ f) treeReferences
+      , networkReferences  = (fmap . fmap . fmap $ f) networkReferences
+      , rootReferences     = (fmap . fmap . fmap $ f) rootReferences
       }
 
 instance Arbitrary (Graph f c e n t) where
@@ -98,6 +98,7 @@ instance TextShow (Graph f c e n t) where
 class HasLeafReferences s t a b | s -> a, t -> b, s b -> t, t a -> s where
   _leafReferences :: Lens s t a b
 
+
 instance HasLeafReferences
            (Graph f c e n t)
            (Graph f c e n t')
@@ -112,7 +113,7 @@ class HasTreeReferences s a | s -> a where
 
 instance HasTreeReferences
            (Graph f c e n t)
-           (Vector (IndexData TreeContext (f n))) where
+           (Vector (IndexData (TreeContext e)  (f n))) where
   _treeReferences = lens treeReferences (\g fn -> g {treeReferences = fn})
 
 
@@ -122,7 +123,7 @@ class HasNetworkReferences s a | s -> a where
 
 instance HasNetworkReferences
            (Graph f c e n t)
-           (Vector (IndexData NetworkContext (f n))) where
+           (Vector (IndexData (NetworkContext e) (f n))) where
   _networkReferences = lens networkReferences (\g fn -> g {networkReferences = fn})
 
 
@@ -132,7 +133,7 @@ class HasRootReferences s a | s -> a where
 
 instance HasRootReferences
            (Graph f c e n t)
-           (Vector (IndexData RootContext (f n))) where
+           (Vector (IndexData (RootContext e) (f n))) where
   _rootReferences = lens rootReferences (\g fn -> g {rootReferences = fn})
 
 
@@ -152,7 +153,7 @@ instance HasCachedData
 --      │    Utility    │
 --      └───────────────┘
 
-index :: Tagged taggedInd => Graph f c e n t -> taggedInd -> NodeIndexData (f n) t
+index :: Tagged taggedInd => Graph f c e n t -> taggedInd -> NodeIndexData (f n) e t
 index graph taggedIndex =
   let
     ind = getIndex taggedIndex
@@ -188,15 +189,15 @@ unsafeLeafInd    :: Graph f c e n t -> LeafInd -> LeafIndexData t
 unsafeLeafInd graph (LeafInd i) = graph ^. _leafReferences . (singular (ix i))
 
 {-# INLINE unsafeTreeInd #-}
-unsafeTreeInd    :: Graph f c e n t -> TreeInd -> TreeIndexData (f n)
+unsafeTreeInd    :: Graph f c e n t -> TreeInd -> TreeIndexData (f n) e
 unsafeTreeInd graph (TreeInd i) = graph ^. _treeReferences . (singular (ix i))
 
 {-# INLINE unsafeRootInd #-}
-unsafeRootInd    :: Graph f c e n t -> RootInd -> RootIndexData (f n)
+unsafeRootInd    :: Graph f c e n t -> RootInd -> RootIndexData (f n) e
 unsafeRootInd graph (RootInd i) = graph ^. _rootReferences . (singular (ix i))
 
 {-# INLINE unsafeNetworkInd #-}
-unsafeNetworkInd :: Graph f c e n t -> NetworkInd -> NetworkIndexData (f n)
+unsafeNetworkInd :: Graph f c e n t -> NetworkInd -> NetworkIndexData (f n) e
 unsafeNetworkInd graph (NetworkInd i) = graph ^. _networkReferences . (singular (ix i))
 
 
