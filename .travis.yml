@@ -1,4 +1,4 @@
-dist: xenial #Required for GCC >= v5.0
+dist: bionic #Required for GCC >= v5.0
 sudo: true
 
 language: haskell

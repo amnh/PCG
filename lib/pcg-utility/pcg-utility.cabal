@@ -99,7 +99,7 @@ library
     hashable                 >= 1.2       && < 2.0,
     integer-gmp              >= 1.0       && < 2.0,
     keys                     >= 3.0       && < 4.0,
-    lens                     >= 4.17      && < 5.0,
+    lens                     >= 4.18      && < 5.0,
     matrix                   >= 0.3.6     && < 0.4,
     mono-traversable         >= 1.0       && < 2.0,
 --    mono-traversable-keys    >= 0.1       && < 1.0,
