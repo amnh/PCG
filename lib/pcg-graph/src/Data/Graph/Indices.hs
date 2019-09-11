@@ -4,12 +4,17 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveFunctor #-}
 
 
 module Data.Graph.Indices where
 
 import Data.Monoid
 import Data.Pair.Strict
+import Control.Lens
 
 
 newtype LeafInd = LeafInd {getLeafInd :: Int}
@@ -34,22 +39,12 @@ class Tagged t where
   getIndex   :: t -> Int
 
 
--- Tag Info:
---       |      Tag        |    IndexType    |
---       |  bit63, bit62   |
---       |     0 , 0       |    Leaf         |
---       |     1 , 0       |    Tree     |
---       |     0 , 1       |    Network      |
---       |     1 , 1       |    Root         |
-
 data TaggedIndex  = TaggedIndex
   { untaggedIndex :: {-# UNPACK #-} !Int
-  , tag      :: {-# UNPACK #-} !IndexType
+  , tag           :: {-# UNPACK #-} !IndexType
   }
 
   deriving stock (Eq, Show)
---  deriving (Semigroup, Monoid) via (Sum Int)
---  deriving newtype (Bits, Num)
 
 type UntaggedIndex = Int
 
@@ -72,6 +67,26 @@ newtype ParentIndex  = ParentIndex {getParentIndex :: TaggedIndex}
 newtype ChildIndex   = ChildIndex  {getChildIndex :: TaggedIndex}
   deriving stock (Eq, Show)
   deriving newtype (Tagged)
+
+data ChildInfo e =
+  ChildInfo
+  { childIndex :: ChildIndex
+  , edgeData   :: e
+  }
+  deriving stock (Eq, Show, Functor)
+
+class HasChildIndex s a | s -> a where
+  _childIndex :: Lens' s a
+
+instance HasChildIndex (ChildInfo e) ChildIndex where
+  _childIndex = lens childIndex (\c i -> c { childIndex = i})
+
+class HasEdgeData s t a b| s -> a, t -> b, s b -> t, t a -> s where
+  _edgeData :: Lens s t a b
+
+instance HasEdgeData (ChildInfo e) (ChildInfo e') e e' where
+  _edgeData = lens edgeData (\c e -> c { edgeData = e})
+
 
 
 data IndexType = LeafTag | TreeTag | NetworkTag | RootTag
