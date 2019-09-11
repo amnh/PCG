@@ -23,21 +23,20 @@
 
 module PCG.Command.Report.Metadata
   ( outputMetadata
-  )
-  where
+  ) where
 
 import           Bio.Graph
---import           Bio.Graph.PhylogeneticDAG
---import           Bio.Metadata
---import           Bio.Metadata.CharacterName
---import           Bio.Sequence.Metadata
---import           Control.Lens.Operators     ((^.))
+import           Bio.Graph.PhylogeneticDAG
+import           Bio.Metadata
+import           Bio.Metadata.CharacterName
+import           Bio.Sequence.Metadata
+import           Control.Lens.Operators     ((^.))
 import qualified Data.ByteString.Lazy as BS
---import           Data.Csv
---import           Data.FileSource
---import           Data.Text.Short            (toByteString)
+import           Data.Csv
+import           Data.FileSource
+import           Data.Text.Short            (toByteString)
 
-{-
+
 data  CharacterReportMetadata
     = CharacterReportMetadata
     { characterNameRM  :: String
@@ -91,15 +90,12 @@ instance DefaultOrdered CharacterReportMetadata where
 instance ToField FileSource where
 
     toField = toByteString . toShortText
--}
 
 -- |
 -- Wrapper function to output a metadata csv as a 'ByteString'
 outputMetadata :: DecoratedCharacterResult -> BS.ByteString
-outputMetadata = undefined
---  encodeDefaultOrderedByName . characterMetadataOutput
+outputMetadata = encodeDefaultOrderedByName . characterMetadataOutput
 
-{-
 characterMetadataOutput :: DecoratedCharacterResult -> [CharacterReportMetadata]
 characterMetadataOutput decCharRes = getCharacterReportMetadata metaSeq
   where
@@ -145,4 +141,3 @@ getCharacterReportMetadata =
     metricMeta      = pure . f Metric
     nonMetricMeta   = pure . f NonMetric
     dynamicBin      = pure . f Dynamic
--}
