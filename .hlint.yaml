@@ -43,8 +43,6 @@
               }
 
 
-
-
 # Replace a $ b $ c with a . b $ c
 - group: { name: dollar, enabled: true }
 
@@ -56,6 +54,11 @@
 
 # The TupleSections language extension's syntax can be confusing, so we will ignore the hints
 - ignore: { name: Use tuple-section }
+
+# Reports language extensions that ARE used, but are implied by other langauge
+# extensions. Since this whole implied extension idea is dodgy, we don't eschew
+# the extra information regarding what extensions are currently enabled.
+- ignore: { name: Unused LANGUAGE pragma }
 
 
 # Ignore some builtin hint in test modules where we need to test the hint.
@@ -128,6 +131,20 @@
           , within:
             [ Control.Evaluation.Test
             , Control.Monad.Trans.Validation.Test
+            ]
+          }
+
+- ignore: { name: Monoid law, left identity
+          , within:
+            [ Data.MutualExclusionSet.Test
+            , Numeric.Cost.Test
+            ]
+          }
+
+- ignore: { name: Monoid law, right identity
+          , within:
+            [ Data.MutualExclusionSet.Test
+            , Numeric.Cost.Test
             ]
           }
 

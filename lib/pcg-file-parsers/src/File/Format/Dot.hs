@@ -155,7 +155,7 @@ dotNodeSet = foldMap (S.singleton . nodeID) . graphNodes
 
 -- |
 -- Takes a 'DotGraph' parse result and returns a set of unique edge identifiers.
-dotEdgeSet :: Ord n => DotGraph n -> Set ((n, n))
+dotEdgeSet :: Ord n => DotGraph n -> Set (n, n)
 dotEdgeSet = foldMap (S.singleton . toEdgeIdentifier) . graphEdges
   where
 
