@@ -7,11 +7,14 @@ import Test.Tasty
 import Test.Tasty.Ingredients.Rerun (rerunningTests)
 import Data.Vector
 import Data.Pair.Strict
+import Data.Functor.Const
+
 
 import Data.Graph.Type
 import Data.Graph.Intermediate
 import Data.Graph.Indices
 import Data.Graph.NodeContext
+import Data.Graph.Internal
 
 
 main :: IO ()
@@ -23,9 +26,13 @@ main =
     putStrLn (showGraphAsRoseForest exampleGraph2)
     putStrLn ""
     putStrLn (showGraphAsRoseForest exampleGraph3)
-    defaultMainWithIngredients
-      [ rerunningTests defaultIngredients ]
-      testSuite
+    putStrLn ""
+    putStrLn (showGraphAsRoseForest intBinTree)
+    putStrLn ""
+    putStrLn (showGraphAsRoseForest intBinTree2)
+--    defaultMainWithIngredients
+--      [ rerunningTests defaultIngredients ]
+--      testSuite
 
 
 exampleGraph1 :: Graph Id () () String String
@@ -43,18 +50,18 @@ exampleGraph1 =
           [ treeIndexData
               (Id "tree1")
               (tagValue RootTag 0)
-              (tagValue LeafTag 0 :!: tagValue LeafTag 1)
+              (childInfo LeafTag 0 () :!: childInfo LeafTag 1 ())
           , treeIndexData
               (Id "tree2")
               (tagValue RootTag 0)
-              (tagValue LeafTag 2 :!: tagValue LeafTag 3)
+              (childInfo LeafTag 2 () :!: childInfo LeafTag 3 ())
           ]
   , networkReferences = mempty
   , rootReferences
       = fromList
           [ rootIndexData
               (Id "root")
-              (Right $ (tagValue TreeTag 0) :!: (tagValue TreeTag 1))
+              (Right $ (childInfo TreeTag 0 ()) :!: (childInfo TreeTag 1 ()))
           ]
   , cachedData = ()
   }
@@ -77,19 +84,19 @@ exampleGraph2 =
           [ treeIndexData
               (Id "tree1")
               (tagValue RootTag 0)
-              (tagValue LeafTag 0 :!: tagValue LeafTag 1)
+              (childInfo LeafTag 0 () :!: childInfo LeafTag 1 ())
           , treeIndexData
               (Id "tree2")
               (tagValue RootTag 0)
-              (tagValue TreeTag 2 :!: tagValue TreeTag 3)
+              (childInfo TreeTag 2 () :!: childInfo TreeTag 3 ())
           , treeIndexData
               (Id "tree3")
               (tagValue RootTag 0)
-              (tagValue LeafTag 2 :!: tagValue LeafTag 3)
+              (childInfo LeafTag 2  () :!: childInfo LeafTag 3 ())
           , treeIndexData
               (Id "tree4")
               (tagValue RootTag 0)
-              (tagValue LeafTag 4 :!: tagValue LeafTag 5)
+              (childInfo LeafTag 4 () :!: childInfo LeafTag 5 ())
 
           ]
   , networkReferences = mempty
@@ -97,7 +104,7 @@ exampleGraph2 =
       = fromList
           [ rootIndexData
               (Id "root")
-              (Right $ (tagValue TreeTag 0) :!: (tagValue TreeTag 1))
+              (Right $ (childInfo TreeTag 0 ()) :!: (childInfo TreeTag 1 ()))
           ]
   , cachedData = ()
   }
@@ -118,19 +125,19 @@ exampleGraph3 =
           [ treeIndexData
               (Id "tree1")
               (tagValue RootTag 0)
-              (tagValue LeafTag 0 :!: tagValue LeafTag 1)
+              (childInfo LeafTag 0 () :!: childInfo LeafTag 1 ())
           , treeIndexData
               (Id "tree2")
               (tagValue RootTag 0)
-              (tagValue TreeTag 2 :!: tagValue TreeTag 3)
+              (childInfo TreeTag 2 () :!: childInfo TreeTag 3 ())
           , treeIndexData
               (Id "tree3")
               (tagValue RootTag 0)
-              (tagValue NetworkTag 0 :!: tagValue LeafTag 2)
+              (childInfo NetworkTag 0  () :!: childInfo LeafTag 2 ())
           , treeIndexData
               (Id "tree4")
               (tagValue RootTag 0)
-              (tagValue NetworkTag 0 :!: tagValue LeafTag 4)
+              (childInfo NetworkTag 0 () :!: childInfo LeafTag 4 ())
 
           ]
   , networkReferences
@@ -138,16 +145,57 @@ exampleGraph3 =
         [ networkIndexData
             (Id "#net1")
             (tagValue TreeTag 2 :!: tagValue TreeTag 3)
-            (tagValue LeafTag 3)
+            (childInfo LeafTag 3 ())
         ]
   , rootReferences
       = fromList
           [ rootIndexData
               (Id "root")
-              (Right $ (tagValue TreeTag 0) :!: (tagValue TreeTag 1))
+              (Right $ (childInfo TreeTag 0 ()) :!: (childInfo TreeTag 1 ()))
           ]
   , cachedData = ()
   }
+
+
+intBinTree :: Graph (Const ()) () () Int Int
+intBinTree = Graph
+  { leafReferences
+      = fromList
+          [ leafIndexData 5 (tagValue TreeTag 0)
+          , leafIndexData 2 (tagValue TreeTag 0)
+          , leafIndexData 3 (tagValue TreeTag 1)
+          , leafIndexData 9 (tagValue TreeTag 1)
+          ]
+  , treeReferences
+      = fromList
+          [ treeIndexData
+              (Const ())
+              (tagValue RootTag 0)
+              (childInfo LeafTag 0 () :!: childInfo LeafTag 1 ())
+          , treeIndexData
+              (Const ())
+              (tagValue RootTag 0)
+              (childInfo LeafTag 2 () :!: childInfo LeafTag 3 ())
+          ]
+  , rootReferences
+      = fromList
+          [ rootIndexData
+              (Const ())
+              (Right $ childInfo TreeTag 0 () :!: childInfo TreeTag 1 ())
+          ]
+  , networkReferences = mempty
+  , cachedData = ()
+  }
+
+intBinTree2 :: Graph ([]) () () Int Int
+intBinTree2 = postorder id f intBinTree
+  where
+    f :: [Int] -> [Int] -> [Int]
+    f [a] [b] = [a,b, a + b]
+    f xs ys = (+) <$> xs <*> ys
+
+
+
 
 newtype Id a = Id {runId :: a}
   deriving newtype (Show)
