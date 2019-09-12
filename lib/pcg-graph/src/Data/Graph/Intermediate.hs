@@ -21,7 +21,6 @@ import Control.Comonad
 
 
 import Data.Maybe
-import Debug.Trace
 
 type Size = Int
 
@@ -62,7 +61,7 @@ data BinaryTree l i n =
 
 
 toRoseForest
-  :: forall f c e n t a netRef . (Ord netRef)
+  :: forall f c e n t a netRef . (Ord netRef, Show e, Show (f n))
   => (t -> a)
   -> (f n -> a)
   -> (NetworkInd -> netRef)
@@ -87,7 +86,7 @@ toRoseForest leafConv internalConv netConv graph =
             pure ((nodeName, focus, Nothing), [])
         NetworkTag :!: untaggedInd ->
           let
-            nodeInfo = view (_networkReferences . singular (ix untaggedInd)) graph
+            nodeInfo = fromJust $ preview (_networkReferences . ix untaggedInd) graph
             nodeName = internalConv $ view _nodeData nodeInfo
             netRef   = netConv (coerce untaggedInd)
             childInd = view _childInds nodeInfo
@@ -104,7 +103,7 @@ toRoseForest leafConv internalConv netConv graph =
 
         TreeTag    :!: untaggedInd ->
           let
-            nodeInfo = view (_treeReferences . singular (ix untaggedInd)) graph
+            nodeInfo = fromJust $ preview (_treeReferences . ix untaggedInd) graph
             nodeName = internalConv $ view _nodeData nodeInfo
             leftChildInd :!: rightChildInd = view _childInds nodeInfo
             leftFocus = toUntagged leftChildInd
@@ -113,7 +112,7 @@ toRoseForest leafConv internalConv netConv graph =
             pure ((nodeName, focus, Nothing), [leftFocus :!: graph, rightFocus :!: graph])
         RootTag    :!: untaggedInd ->
           let
-            nodeInfo = fromJust $ preview (_rootReferences . (ix (traceShowId untaggedInd))) graph
+            nodeInfo = fromJust $ preview (_rootReferences . (ix untaggedInd)) graph
             nodeName = internalConv $ view _nodeData nodeInfo
             childInds :: Either ChildIndex (ChildIndex :!: ChildIndex)
             childInds = view _childInds nodeInfo
@@ -180,7 +179,7 @@ renderRoseForest renderFn =
 
 
 renderGraphAsRoseForest
-  :: (Ord netRef)
+  :: (Ord netRef, Show e, Show (f n))
   => (t   -> a)
   -> (f n -> a)
   -> (NetworkInd -> netRef)
@@ -195,7 +194,7 @@ renderGraphAsRoseForest leafFn intFn netFn renderFn =
 
 
 showGraphAsRoseForest
-  :: (Show t, Show (f n))
+  :: (Show t, Show (f n), Show e)
   => Graph f c e n t
   -> String
 showGraphAsRoseForest = renderGraphAsRoseForest show show id renderNodeLabel
