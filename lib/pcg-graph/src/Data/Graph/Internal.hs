@@ -149,8 +149,7 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
     parChildInfo = view _leafParChild parIndexData
 
     _leafParChild, _otherLeafParChild
-      :: ( HasLeft s (ChildInfo e), HasRight s (ChildInfo e)
-         , HasLeftChildIndex  s ChildIndex, HasRightChildIndex s ChildIndex)
+      :: ( HasLeft s (ChildInfo e), HasRight s (ChildInfo e))
       => Lens' s (ChildInfo e)
     _leafParChild      =
       if

@@ -16,7 +16,7 @@
 module Data.Graph.NodeContext where
 
 import Data.Graph.Indices
-import Control.Lens hiding (_both)
+import Control.Lens
 import Control.Applicative
 import Data.Vector (Vector)
 import qualified Data.Vector as V
@@ -154,7 +154,7 @@ _getChildLens =
     R -> _right
 
 _getOtherChildLens
-  :: (HasLeft s a, HasRight s a) => Direction -> Getter s a
+  :: (HasLeft s a, HasRight s a) => Direction -> Lens' s a
 _getOtherChildLens =
   \case
     L -> _right
