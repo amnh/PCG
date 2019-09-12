@@ -75,6 +75,13 @@ data ChildInfo e =
   }
   deriving stock (Eq, Show, Functor)
 
+childInfo :: IndexType -> Int -> e -> ChildInfo e
+childInfo indtype n e =
+  ChildInfo
+  { childIndex = tagValue indtype n
+  , edgeData   = e
+  }
+
 class HasChildIndex s a | s -> a where
   _childIndex :: Lens' s a
 
