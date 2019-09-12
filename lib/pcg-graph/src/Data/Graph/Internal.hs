@@ -25,6 +25,7 @@ import Data.Vector.Mutable (MVector)
 import qualified Data.Vector.Mutable as MV
 
 import Control.Monad.ST
+import Debug.Trace
 
 
 postorderFold
@@ -39,7 +40,7 @@ postorderFold = undefined
 postorder
   :: forall g f e c n1 n2 t . (Applicative g)
   => (t -> n2)
-  -> (n2 -> n2 -> n2)
+  -> (g n2 -> g n2 -> g n2)
   -> Graph f c e n1 t
   -> Graph g c e n2 n2
 postorder leafFn treeFn graph =
@@ -47,10 +48,11 @@ postorder leafFn treeFn graph =
     memoGen :: Endo (MemoGenGraph (g n2) n2 e)
     memoGen = memoGraphPostorder leafFn treeFn id graph
 
-    numberL = lengthOf _leafReferences     graph
-    numberI = lengthOf _treeReferences graph
-    numberN = lengthOf _networkReferences  graph
-    numberR = lengthOf _rootReferences     graph
+    numberL = length (graph ^. _leafReferences)
+    numberI = length (graph ^. _treeReferences)
+    numberN = length (graph ^. _networkReferences)
+    numberR = length (graph ^. _rootReferences)
+
     cacheInfo :: c
     cacheInfo      = graph ^. _cachedData
   in
