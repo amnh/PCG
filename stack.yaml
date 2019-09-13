@@ -40,6 +40,7 @@ packages:
   - lib/pcg-exportable
   - lib/pcg-file-parsers
   - lib/pcg-file-source
+  - lib/pcg-graph
   - lib/pcg-language
   - lib/pcg-serialize
   - lib/pcg-tcm-memo

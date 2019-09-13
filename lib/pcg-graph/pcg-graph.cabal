@@ -1,7 +1,7 @@
 cabal-version:      2.2
 Category:           Biology
 build-type:         Simple
-name:               graph
+name:               pcg-graph
 version:            0.2.0
 
 author:             Ward Wheeler
@@ -71,7 +71,7 @@ common language-spec
   other-extensions: MonadFailDesugaring
 
 
-library pcg-graph
+library
 
   import:
     ghc-flags,
