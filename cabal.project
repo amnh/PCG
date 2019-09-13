@@ -13,7 +13,7 @@ packages: .
           lib/pcg-utility
           lib/pcg-validation-transformer
 
---source-repository-package
+source-repository-package
 --  type: git
 --  location: https://github.com/haskell/cabal
 --  tag:      27221efc89e25069f3ded141310aa0e63df9d8f5
@@ -46,9 +46,9 @@ packages: .
 --  type: git
 --  location: https://github.com/bgamari/vector-th-unbox
 --  tag:      b5ecd80e422a1b762923b026eba1efd46d4e8c28
---  type: git
---  location: https://github.com/haskell-vanguard/vector-th-unbox
---  tag:      2fa686c70d4f10993ca7c73b510e18568620b1d0
+  type: git
+  location: https://github.com/haskell-vanguard/vector-th-unbox
+  tag:      2fa686c70d4f10993ca7c73b510e18568620b1d0
 --  type: git
 --  location: https://github.com/haskell-vanguard/yaml
 --  tag:      ef48de2ff3a551fdc6d3884fbe5755501abbad65
