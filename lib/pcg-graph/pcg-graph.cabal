@@ -92,8 +92,10 @@ library
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.17      && < 5.0,
     mtl                      ^>= 2.2.2            ,
+    parallel                 >= 3.2       && < 4.0,    
     QuickCheck               >= 2.12      && < 3.0,
     text                     >= 1.2       && < 2.0,
+    semigroupoids            >= 5.2.1     && < 5.4,
     text-show                >= 3.0       && < 4.0,
     text-show-instances      >= 3.0       && < 4.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
@@ -112,6 +114,7 @@ library
     Data.Graph.Moves
     Data.Graph.Hash
     Data.Graph.Intermediate
+    Data.Graph.Build
 
   other-modules:
 
