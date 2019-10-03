@@ -20,8 +20,7 @@ extra-deps:
   - tasty-rerun-1.1.14
   - text-show-instances-3.8.1
   - validation-1.1
-  - git: https://github.com/haskell-vanguard/vector-th-unbox
-    commit: 2fa686c70d4f10993ca7c73b510e18568620b1d0
+  - vector-th-unbox-0.2.1.7
 
 ghc-options:
   "$everything": -j -fdiagnostics-color=always
