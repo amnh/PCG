@@ -7,10 +7,14 @@ compiler-check: match-exact
 dump-logs: all
 
 extra-deps:
+  - algebraic-graphs-0.4
   - attoparsec-0.13.2.3
+  - bv-little-1.1.0
   - optparse-applicative-0.15.0.0
   - Cabal-3.0.0.0
   - clustering-0.4.1
+  - compact-0.1.0.1
+  - graphviz-2999.20.0.3
   - lens-4.18
   - microlens-0.4.11.2
   - perfect-vector-shuffle-0.1.1
@@ -21,6 +25,7 @@ extra-deps:
   - text-show-instances-3.8.1
   - validation-1.1
   - vector-th-unbox-0.2.1.7
+  - wl-pprint-text-1.2.0.0
 
 ghc-options:
   "$everything": -j -fdiagnostics-color=always
@@ -46,4 +51,4 @@ packages:
 
 require-stack-version: ">=2.1.3"
 
-resolver: nightly-2019-09-11
+resolver: nightly-2019-10-07
