@@ -6,18 +6,46 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
 
-module Data.Graph.Type where
+module Data.Graph.Type
+  ( Graph(..)
+  , HasTreeReferences(..)
+  , HasNetworkReferences(..)
+  , HasRootReferences(..)
+  , HasLeafReferences(..)
+  , HasCachedData(..)
+  , RootFocusGraph
+  , Focus
+  , makeRootFocusGraphs
+  , buildGraph
+  , index
+  , getRootInds
+  , unfoldGraph
+  , unsafeLeafInd
+  , unsafeRootInd
+  , unsafeTreeInd
+  , unsafeNetworkInd
+  )where
 
 import Data.Graph.Indices
 import Data.Graph.NodeContext
-import Data.Vector (Vector)
+import Data.Vector (Vector, generate)
 import Data.Kind (Type)
 import Data.Vector.Instances ()
-import Control.Lens
+import Control.Lens hiding (index)
 import Test.QuickCheck.Arbitrary
-import TextShow
+import TextShow hiding (Builder)
 import Data.Pair.Strict
+import Data.Hashable
+import VectorBuilder.Vector
+import VectorBuilder.Builder
+import Data.Set (Set)
+import qualified Data.Set as S
+import Control.Monad.State.Strict
+import Data.Maybe (catMaybes)
+import Control.Arrow (first)
+import Control.Lens.Tuple
 
 --      ┌─────────────┐
 --      │    Types    │
@@ -38,13 +66,38 @@ data Graph
        (n :: Type)
        (t :: Type)
   = Graph
-  { leafReferences     :: Vector (LeafIndexData      (  t))
+  { leafReferences     :: Vector (LeafIndexData    (  t)  )
   , treeReferences     :: Vector (TreeIndexData    (f n) e)
   , networkReferences  :: Vector (NetworkIndexData (f n) e)
   , rootReferences     :: Vector (RootIndexData    (f n) e)
   , cachedData         :: c
   }
   deriving Show
+
+
+data GraphBuilder
+       (f :: Type -> Type)
+       (e :: Type)
+       (n :: Type)
+       (t :: Type)
+  = GraphBuilder
+  { leafReferencesBuilder     :: Builder (LeafIndexData    (  t)  )
+  , treeReferencesBuilder     :: Builder (TreeIndexData    (f n) e)
+  , networkReferencesBuilder  :: Builder (NetworkIndexData (f n) e)
+  , rootReferencesBuilder     :: Builder (RootIndexData    (f n) e)
+  }
+
+
+buildGraph :: GraphBuilder f e n t -> c -> Graph f c e n t
+buildGraph GraphBuilder{..} cachedData =
+    let
+      leafReferences    = build leafReferencesBuilder
+      treeReferences    = build treeReferencesBuilder
+      networkReferences = build networkReferencesBuilder
+      rootReferences    = build rootReferencesBuilder
+    in
+      Graph{..}
+
 
 type Focus = Pair IndexType UntaggedIndex
 type RootFocusGraph f c e n t = Pair Focus (Graph f c e n t)
@@ -178,6 +231,122 @@ index graph taggedIndex =
                     graph ^.
                        _rootReferences
                      . (singular $ ix ind)
+
+
+getRootInds :: Graph f c e n t -> Vector (TaggedIndex)
+getRootInds graph =
+  let
+    numberOfRoots = length (view _rootReferences graph)
+    roots = generate numberOfRoots (\i -> TaggedIndex i RootTag)
+  in
+    roots
+
+
+size :: Builder a -> Int
+size = length . build @Vector
+
+
+data RoseTree e t = RoseTree
+  { root      :: t
+  , subForest :: ([(RoseTree e t, e)], [(t, e)])
+  }
+
+type RoseForest e t = [RoseTree e t]
+
+
+                
+unfoldToRoseForest
+  :: forall a e t. (Eq a, Show a, Monoid e, Ord a, Ord t)
+  => (a -> ([(a,e)], t, [(a,e)]))
+  -> a
+  -> RoseForest e t
+unfoldToRoseForest unfoldFn seed = unfoldFromRoots roots
+  where
+    roots :: [a]
+    roots = findRootsFrom seed `evalState` mempty
+
+    isRoot :: a -> [b] -> Maybe a
+    isRoot start pars =
+        if null pars
+          then (Just start)
+          else Nothing
+
+    -- To do: use hashmaps instead of set
+    addRoot :: a -> State (Set t) (Maybe a)
+    addRoot start = do
+      let (pars, val, childs) = unfoldFn start
+      seenNodes <- get
+      put (val `S.insert` seenNodes)
+      case val `S.member` seenNodes of
+        True  -> pure Nothing
+        False ->
+          do
+            pure $ isRoot start pars
+
+    findRootsFrom :: a -> State (Set t) [a]
+    findRootsFrom start = do
+      let (pars, val, childs) = unfoldFn start
+      let otherNodes = fst <$> pars <> childs
+      startRoot <- addRoot start
+      let
+        otherRootNodes :: State (Set t) [a]
+        otherRootNodes = catMaybes <$> traverse addRoot otherNodes
+
+      case startRoot of
+        Nothing -> otherRootNodes
+        Just r  -> (r :) <$> otherRootNodes  
+
+
+    unfoldFromRoots :: [a] -> RoseForest e t
+    unfoldFromRoots = fmap unfoldFromRoot
+
+    unfoldFromRoot :: a -> RoseTree e t
+    unfoldFromRoot root =
+      let
+        (pars, val, childs) = unfoldFn root
+        subtrees = first unfoldFromRoot <$> childs
+        parVals  = first ((view _2) . unfoldFn) <$> pars
+      in
+        RoseTree
+          { root = val
+          , subForest = (subtrees, parVals)
+          }
+
+-- |
+-- This function will convert a rose tree into a binary tree which we then convert to our internal format.
+normaliseRoseTree :: RoseTree e t -> RoseTree e t
+normaliseRoseTree = undefined
+
+
+fromRoseTree :: RoseTree e t -> Graph Identity () e t t
+fromRoseTree = undefined
+  
+      
+      
+-- |
+-- This function is intended as a way to convert from unstructured
+-- external tree formats to our *internal* phylogenetic binary networks.
+-- It is not intended to be used for internal logic.
+unfoldGraph
+  :: forall a e t. (Eq a, Show a, Monoid e)
+  => (a -> ([(a,e)], t, [(a,e)]))
+  -> a
+  -> Graph Identity () e t t
+unfoldGraph unfoldFn seed = undefined
+  where
+    go :: a -> GraphBuilder Identity e t t -> GraphBuilder Identity e t t
+    go a (GraphBuilder currTreeRefs currLeafRefs currNetRefs currRootRefs)
+      = case unfoldFn  a of
+          ([], t, [(par, e)]) ->
+            let
+              newInd = undefined
+            in
+              undefined
+    
+  
+
+
+
 
 
 --      ┌───────────────────────┐
