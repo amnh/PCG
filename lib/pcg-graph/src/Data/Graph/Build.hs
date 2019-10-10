@@ -7,6 +7,7 @@
 {-# LANGUAGE TypeOperators          #-}
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 
+
 module Data.Graph.Build where
 
 import Data.Foldable
@@ -31,22 +32,26 @@ class HasScore g c where
   score :: g -> c
 
 class HasLeafDecoration t t' | t' -> t where
-  hasLeafDecoration :: Lens' t t'
+  _leafDecoration :: Lens' t t'
 
 class HasTreeDecoration n n' | n' -> n where
-  hasTreeDecoration :: Lens' n n'
+  _treeDecoration :: Lens' n n'
 
 class HasFinalCacheDecoration c c' | c' -> c where
-  hasFinalCacheDecoration :: Lens' c c'
+  _hasFinalCacheDecoration :: Lens' c c'
 
-class
-   ( HasLeafDecoration t t'
-   , HasTreeDecoration n n'
-   , HasFinalCacheDecoration c c'
-   ) =>
-  HasGraphDecoration g c c' t t' n n' e where
-  decorate
-    :: g Maybe c () n t -> g Identity c' e n' t'
+type FinalDecorationGraphM m c e n t =
+  Graph
+    m
+    (FinalDecoration c)
+    (FinalDecoration e)
+    (FinalDecoration n)
+    (FinalDecoration t)
+
+type FinalDecorationGraph c e n t = FinalDecorationGraphM Identity c e n t
+
+class (HasCharacterSequence t (CharacterSequence t)) => HasGraphDecoration c e n t where
+  decorate :: Graph Maybe c () n t -> FinalDecorationGraph c e n t
 
 
 fromFoldable1 :: Foldable1 f => f a -> [a]
@@ -83,19 +88,18 @@ initialBuild ts cache =
 
 
 naiveWagnerBuild
-  :: forall c c' e n n' t t' f charSeq.
-     ( HasScore (Graph Identity c' e n' t') Double
-     , HasGraphDecoration Graph c c' t t' n n' e
-     , HasCharacterSequence e charSeq
-     , HasCharacterSequence n charSeq
+  :: forall c e n t charSeq f.
+     ( HasScore (FinalDecorationGraph c e n t) Double
+     , HasGraphDecoration c e n t
+     , HasCharacterSequence t (CharacterSequence t)
      , MetricSpace charSeq
      , MedianSpace charSeq
      , Foldable1 f
     )
-  => f t -> c -> Graph Identity c' e n' t'
+  => f t -> c -> FinalDecorationGraph c e n t
 naiveWagnerBuild ts cache =
   case toNonEmpty ts of
-      t:|[]  -> decorate $
+      t:|[]  -> decorate @c @e @n @t $
                   Graph
                   { leafReferences
                       = fromList
@@ -111,7 +115,7 @@ naiveWagnerBuild ts cache =
                   , cachedData = cache
                   }
 
-      x:|[y] -> decorate $
+      x:|[y] -> decorate @c @e @n @t $
                   Graph
                    { leafReferences
                       = fromList
@@ -129,8 +133,10 @@ naiveWagnerBuild ts cache =
                   , cachedData = cache
                   }
       x:|(y:z:xs) ->
-        let initTree
-              = decorate $ undefined
+        let
+          initTree :: FinalDecorationGraph c e n t
+          initTree
+              = decorate @c @e @n @t $ undefined
                     
 --                  [ ( mempty        , wipeNode True  x, IM.fromList [(1,mempty), (4,mempty)] )
 --                  , ( IS.singleton 0, wipeNode True  x, IM.fromList [(2,mempty), (3,mempty)] )
@@ -139,28 +145,31 @@ naiveWagnerBuild ts cache =
 --                  , ( IS.singleton 0, wipeNode False z, mempty )
 --                  ]
         in
-          foldl' iterativeBuild initTree xs
+          foldl' (iterativeBuild @c @e @n @t @charSeq) initTree xs
 
 
 iterativeBuild
-  :: forall c c' e n n' t t' f charSeq .
-     ( HasScore (Graph Identity c' e n' t') Double
-     , HasGraphDecoration Graph c c' t t' n n' e
-     , HasCharacterSequence e charSeq
-     , HasCharacterSequence n charSeq
+  :: forall c e n t charSeq f.
+     ( HasScore (FinalDecorationGraph c e n t) Double
+     , HasGraphDecoration c e n t
+     , HasCharacterSequence t (CharacterSequence t)
      , MetricSpace charSeq
      , MedianSpace charSeq
-    )
-  => Graph Identity c' e n' t'
+     )
+  => FinalDecorationGraph c e n t
   -> t
-  -> Graph Identity c' e n' t'
+  -> FinalDecorationGraph c e n t
 iterativeBuild currentGraph tree = undefined
   where
     newEdge :: (Int, ChildIndex)
     newEdge =
       let
         treeNodes = currentGraph ^. _treeReferences
-        treeNodesInd :: Vector (Int, (TreeIndexData (Identity n') e))
+        treeNodesInd
+          :: Vector
+               ( Int
+               , TreeIndexData (Identity (FinalDecoration n)) (FinalDecoration e)
+               )
         treeNodesInd = indexed treeNodes
         extract = id *** view _right
         minimumNode =
@@ -169,7 +178,7 @@ iterativeBuild currentGraph tree = undefined
           treeNodesInd
       in
         undefined
-    edgeCosts :: TreeIndexData (Identity n') e -> ChildIndex :!: Double
+    edgeCosts :: TreeIndexData (Identity (FinalDecoration n)) (FinalDecoration e) -> ChildIndex :!: Double
     edgeCosts treeInd =
         case comparing (view _right) leftEdge rightEdge of
         LT -> leftEdge
@@ -197,5 +206,5 @@ iterativeBuild currentGraph tree = undefined
             edgeCost (rightChildInfo ^. _edgeData)
 
 
-        edgeCost :: e -> Double
+        edgeCost :: FinalDecoration e -> Double
         edgeCost = undefined
