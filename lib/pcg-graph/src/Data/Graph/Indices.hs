@@ -110,3 +110,15 @@ instance Show IndexType where
 
 toUntagged :: (Tagged t) => t -> Pair IndexType UntaggedIndex
 toUntagged ind = getTag ind :!: getIndex ind
+
+
+
+--      ┌───────────────────────┐
+--      │    Edge Index Data    │
+--      └───────────────────────┘
+
+data EdgeIndex = EdgeIndex
+  { edgeParType    :: IndexType
+  , edgeParIndex   :: ParentIndex
+  , edgeChildIndex :: ChildIndex
+  }
