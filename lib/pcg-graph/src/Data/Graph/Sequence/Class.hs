@@ -1,9 +1,11 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE TypeFamilies           #-}
 
 module Data.Graph.Sequence.Class where
 
 import Control.Lens
+import Data.Kind
 
 class MetricSpace charSeq where
   dist :: charSeq -> charSeq -> Double
@@ -13,3 +15,7 @@ class MedianSpace charSeq where
 
 class HasCharacterSequence s a | s -> a where
   _characterSequence :: Lens' s a
+
+type family FinalDecoration a :: Type
+type family CharacterSequence a :: Type
+
