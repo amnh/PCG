@@ -4,9 +4,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE BangPatterns  #-}
 
 
 module Data.Graph.Internal where
@@ -27,15 +27,70 @@ import qualified Data.Vector.Mutable as MV
 import Control.Monad.ST
 import Debug.Trace
 
-
+-- |
+-- This is a postorder fold function that collects together values in a monoid.
+-- Note: This function double counts if the graph has multiple roots which are
+-- connected via a descendent network node.
 postorderFold
-  :: (t     -> r)
-  -> ((f n) -> r)
-  -> ((f n) -> r -> r)
-  -> ((f n) -> r -> r -> r)
-  -> Graph f c e n t -> r
-postorderFold = undefined
+  :: forall f c e n t m . (Monoid m)
+  => (t     -> m)
+  -> ((f n) -> m)
+  -> Graph f c e n t -> m
+postorderFold leafFn internalFn graph =
+  let
+    fromNode :: TaggedIndex -> m
+    fromNode (TaggedIndex untaggedInd tag) =
+      case tag of
+        LeafTag
+          -> leafFn . (view _nodeData) . (`unsafeLeafInd` (coerce untaggedInd)) $ graph
+        TreeTag    ->
+          let
+            treeNode :: TreeIndexData (f n) e
+            treeNode   = graph `unsafeTreeInd` (coerce untaggedInd)
+            childInd1, childInd2 :: ChildIndex
+            childInd1  = (view (_childInds . _left )) treeNode
+            childInd2  = (view (_childInds . _right)) treeNode
 
+            childVal1, childVal2 :: m
+            !childVal1 = fromNode (coerce childInd1)
+            !childVal2 = fromNode (coerce childInd2)
+            !childVals = childVal1 <> childVal2
+          in
+            childVals <> internalFn (view _nodeData treeNode)
+        NetworkTag ->
+          let
+            networkNode :: NetworkIndexData (f n) e
+            networkNode   = graph `unsafeNetworkInd` (coerce untaggedInd)
+            childInd :: ChildIndex
+            childInd  = (view (_childInds)) networkNode
+
+            childVal :: m
+            !childVal = fromNode (coerce childInd)
+          in
+            childVal
+        RootTag    ->
+          let
+            rootNode :: RootIndexData (f n) e
+            rootNode   = graph `unsafeRootInd` (coerce untaggedInd)
+            childInd :: Either ChildIndex (ChildIndex :!: ChildIndex)
+            childInd  = (view (_childInds)) rootNode
+
+            childVals :: m
+            !childVals =
+              case childInd of
+                Left singleChild
+                  -> fromNode (coerce singleChild)
+                Right (childInd1 :!: childInd2)
+                  ->
+                    let
+                      !childVal1 = fromNode (coerce childInd1)
+                      !childVal2 = fromNode (coerce childInd2)
+                    in
+                      childVal1 <> childVal2
+          in
+            childVals <> internalFn (view _nodeData rootNode)
+  in
+    undefined-- foldMap (view _rootReferences graph)
 
 postorder
   :: forall g f e c n1 n2 t . (Applicative g)
