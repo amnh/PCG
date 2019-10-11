@@ -1,55 +1,55 @@
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE LambdaCase     #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE BangPatterns  #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeOperators         #-}
 
 
 module Data.Graph.Internal where
 
-import Data.Vector.Instances ()
-import Control.Lens hiding (index)
-import Data.Graph.Type
-import Data.Graph.Memo
-import Data.Vector (Vector, (//))
-import qualified Data.Vector as V
-import Data.Graph.Indices
-import Data.Graph.NodeContext
-import Data.Coerce
-import Data.Pair.Strict
-import Data.Vector.Mutable (MVector)
-import qualified Data.Vector.Mutable as MV
+import           Control.Lens           hiding (index)
+import           Data.Coerce
+import           Data.Graph.Indices
+import           Data.Graph.Memo
+import           Data.Graph.NodeContext
+import           Data.Graph.Type
+import           Data.Pair.Strict
+import           Data.Vector            (Vector, (//))
+import qualified Data.Vector            as V
+import           Data.Vector.Instances  ()
+import           Data.Vector.Mutable    (MVector)
+import qualified Data.Vector.Mutable    as MV
 
-import Control.Monad.ST
-import Debug.Trace
+import           Control.Monad.ST
+--import Debug.Trace
 
 -- |
 -- This is a postorder fold function that collects together values in a monoid.
 -- Note: This function double counts if the graph has multiple roots which are
 -- connected via a descendent network node.
 postorderFold
-  :: forall f c e n t m . (Monoid m)
-  => (t     -> m)
-  -> ((f n) -> m)
+  :: forall f c e n t m . -- Monoid m =>
+     (t   -> m)
+  -> (f n -> m)
   -> Graph f c e n t -> m
-postorderFold leafFn internalFn graph =
-  let
+postorderFold _leafFn _internalFn _graph = undefined -- foldMap (view _rootReferences graph)
+{-
+  where
     fromNode :: TaggedIndex -> m
-    fromNode (TaggedIndex untaggedInd tag) =
-      case tag of
+    fromNode (TaggedIndex untaggedInd tagVal) =
+      case tagVal of
         LeafTag
-          -> leafFn . (view _nodeData) . (`unsafeLeafInd` (coerce untaggedInd)) $ graph
+          -> leafFn . view _nodeData . (`unsafeLeafInd` coerce untaggedInd) $ graph
         TreeTag    ->
           let
             treeNode :: TreeIndexData (f n) e
-            treeNode   = graph `unsafeTreeInd` (coerce untaggedInd)
+            treeNode   = graph `unsafeTreeInd` coerce untaggedInd
             childInd1, childInd2 :: ChildIndex
-            childInd1  = (view (_childInds . _left )) treeNode
-            childInd2  = (view (_childInds . _right)) treeNode
+            childInd1  = view (_childInds . _left ) treeNode
+            childInd2  = view (_childInds . _right) treeNode
 
             childVal1, childVal2 :: m
             !childVal1 = fromNode (coerce childInd1)
@@ -60,9 +60,9 @@ postorderFold leafFn internalFn graph =
         NetworkTag ->
           let
             networkNode :: NetworkIndexData (f n) e
-            networkNode   = graph `unsafeNetworkInd` (coerce untaggedInd)
+            networkNode   = graph `unsafeNetworkInd` coerce untaggedInd
             childInd :: ChildIndex
-            childInd  = (view (_childInds)) networkNode
+            childInd  = view _childInds networkNode
 
             childVal :: m
             !childVal = fromNode (coerce childInd)
@@ -71,26 +71,22 @@ postorderFold leafFn internalFn graph =
         RootTag    ->
           let
             rootNode :: RootIndexData (f n) e
-            rootNode   = graph `unsafeRootInd` (coerce untaggedInd)
+            rootNode   = graph `unsafeRootInd` coerce untaggedInd
             childInd :: Either ChildIndex (ChildIndex :!: ChildIndex)
-            childInd  = (view (_childInds)) rootNode
+            childInd  = view _childInds rootNode
 
             childVals :: m
             !childVals =
               case childInd of
-                Left singleChild
-                  -> fromNode (coerce singleChild)
-                Right (childInd1 :!: childInd2)
-                  ->
-                    let
-                      !childVal1 = fromNode (coerce childInd1)
+                Left singleChild -> fromNode $ coerce singleChild
+                Right (childInd1 :!: childInd2) ->
+                  let !childVal1 = fromNode (coerce childInd1)
                       !childVal2 = fromNode (coerce childInd2)
-                    in
-                      childVal1 <> childVal2
+                  in   childVal1 <> childVal2
           in
             childVals <> internalFn (view _nodeData rootNode)
-  in
-    undefined-- foldMap (view _rootReferences graph)
+-}
+
 
 postorder
   :: forall g f e c n1 n2 t . (Applicative g)
@@ -135,12 +131,12 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
     f g = case go taggedIndex updatedTreeRefs of
       (Nothing       , v') -> g & _treeReferences .~ v'
       (Just (r, ind) , v') -> g & _treeReferences .~ v'
-                                & _rootReferences  %~ (writeNodeData (getIndex ind) r)
+                                & _rootReferences  %~ writeNodeData (getIndex ind) r
 
     go
       :: TaggedIndex
-      -> (Vector (TreeIndexData (f n) e))
-      -> (Maybe ((f n), ParentIndex), Vector (TreeIndexData (f n) e))
+      -> Vector (TreeIndexData (f n) e)
+      -> (Maybe (f n, ParentIndex), Vector (TreeIndexData (f n) e))
     go tagInd treeVect =
       runST $
         do
@@ -150,19 +146,19 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
           pure (val, vec)
 
 
-    loop :: TaggedIndex -> MVector s (TreeIndexData (f n) e) -> ST s (Maybe ((f n), ParentIndex))
+    loop :: TaggedIndex -> MVector s (TreeIndexData (f n) e) -> ST s (Maybe (f n, ParentIndex))
     loop tagInd mvec = do
       let ind = getIndex tagInd
       currData <- MV.read mvec ind
       let currVal       = currData ^. _nodeData
       let parInd        = currData ^. _parentInds
-      let parTag        = getTag $ parInd
+      let parTag        = getTag parInd
       let
         childInds :: ChildIndex :!: ChildIndex
         childInds     = currData ^. _childInds
       let childIndData1 = graph `index` (childInds ^. _left)
       let childIndData2 = graph `index` (childInds ^. _right)
-      let newVal        = (liftFunction treeFn) childIndData1 childIndData2
+      let newVal        = liftFunction treeFn childIndData1 childIndData2
       let newData       = currData & _nodeData .~ newVal
       if thresholdFn currVal newVal
       then
@@ -195,11 +191,11 @@ breakEdgeAndReattachG
 breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
   let
     -- Parent of leafNode
-    untaggedParInd = getIndex (leafParInd)
+    untaggedParInd = getIndex leafParInd
     parIndexData :: TreeIndexData (f n) e
     parIndexData =
         case getTag leafParInd of
-          TreeTag -> graph `unsafeTreeInd` (TreeInd untaggedParInd)
+          TreeTag -> graph `unsafeTreeInd` TreeInd untaggedParInd
           _       -> error "breaking an edge from a non-tree index is not yet implemented"
 
     parChildInfo :: ChildInfo e
@@ -226,13 +222,13 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
 
     -- src and target contexts
     srcNodeInfo :: TreeIndexData (f n) e
-    srcNodeInfo    = graph `unsafeTreeInd` (coerce (getIndex srcInd))
+    srcNodeInfo    = graph `unsafeTreeInd` coerce (getIndex srcInd)
     tgtInfo :: ChildInfo e
     tgtInfo = srcNodeInfo ^. _srcChildLens
     tgtInd :: ChildIndex
     tgtInd       = tgtInfo ^. _childIndex
     tgtNodeInfo :: TreeIndexData (f n) e
-    tgtNodeInfo  = graph `unsafeTreeInd` (coerce (getIndex tgtInd))
+    tgtNodeInfo  = graph `unsafeTreeInd` coerce (getIndex tgtInd)
     untaggedSource :: Int
     untaggedSource = getIndex srcInd
     untaggedTarget :: Int
@@ -253,13 +249,13 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
     _leafParParentChild :: Lens' (TreeIndexData (f n) e) (ChildInfo e)
     _leafParParentChild =
       if
-        leafParParentNodeInfo ^. _leftChildIndex == (coerce leafParInd)
+        leafParParentNodeInfo ^. _leftChildIndex == coerce leafParInd
         then _right
       else _left
 
-    leafParParentNodeInfo = graph `unsafeTreeInd` (coerce (getIndex leafParParentNodeInd))
+    leafParParentNodeInfo = graph `unsafeTreeInd` coerce (getIndex leafParParentNodeInd)
     leafParParentNodeInd     = parIndexData ^. _parentInds
-    leafParChildNodeInfo  = graph `unsafeTreeInd` (coerce (getIndex leafParParentNodeInd))
+    leafParChildNodeInfo  = graph `unsafeTreeInd` coerce (getIndex leafParParentNodeInd)
     leafParChildInfo      = parIndexData ^. _otherLeafParChild
     leafParChildNodeInd = leafParChildInfo ^. _childIndex
 

@@ -1,5 +1,5 @@
-{-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
 
 module Data.Graph.Hash where
 
@@ -9,4 +9,4 @@ class HasHashValue s a | s -> a where
   _hashValue :: Lens' s a
 
 
-  
+

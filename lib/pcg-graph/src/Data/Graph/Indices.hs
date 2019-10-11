@@ -1,20 +1,20 @@
-{-# LANGUAGE LambdaCase     #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DerivingVia                #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DerivingStrategies         #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DerivingVia                #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs               #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 
 module Data.Graph.Indices where
 
+import Control.Lens
 import Data.Monoid
 import Data.Pair.Strict
-import Control.Lens
 
 
 newtype LeafInd = LeafInd {getLeafInd :: Int}
@@ -41,7 +41,7 @@ class Tagged t where
 
 data TaggedIndex  = TaggedIndex
   { untaggedIndex :: {-# UNPACK #-} !Int
-  , tag           :: {-# UNPACK #-} !IndexType
+  , tag           :: !IndexType
   }
 
   deriving stock (Eq, Show)

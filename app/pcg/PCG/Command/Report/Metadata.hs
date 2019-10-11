@@ -30,7 +30,7 @@ import Control.Lens.Operators     ((^.))
 import Data.FileSource
 import Data.Text.Lazy             (Text)
 import Data.Text.Short
-import Prelude             hiding (filter)
+import Prelude                    hiding (filter)
 import TextShow
 import TextShow.Custom
 
@@ -67,7 +67,7 @@ outputMetadata = toLazyText . unlinesB . fmap (intercalateB ",") . (headerRow:) 
         , renderCharacterType . characterTypeRM
         , showb . stripCommas . tcmSourceFile
         ] <*> [x]
-      
+
     headerRow =
         [ "Character Name"
         , "Character Source File"

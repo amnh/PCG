@@ -1,28 +1,28 @@
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
 
 module Data.Graph.Intermediate where
 
-import Data.Graph.Type
-import Data.Tree (Tree(..), unfoldForestM, drawForest, Forest)
-import Data.Map hiding ((!), fromList)
-import qualified Data.Set as S
-import Data.Set (Set)
-import Data.Graph.NodeContext
-import Control.Lens
-import Data.Graph.Indices
-import Data.Pair.Strict
-import Data.Coerce
-import qualified Data.Foldable as F
-import Control.Monad.State.Strict
-import Control.Comonad
+import           Control.Comonad
+import           Control.Lens
+import           Control.Monad.State.Strict
+import           Data.Coerce
+import qualified Data.Foldable              as F
+import           Data.Graph.Indices
+import           Data.Graph.NodeContext
+import           Data.Graph.Type
+import           Data.Map                   hiding (fromList, (!))
+import           Data.Maybe
+import           Data.Pair.Strict
+import           Data.Set                   (Set)
+import qualified Data.Set                   as S
+import           Data.Tree                  (Forest, Tree (..), drawForest, unfoldForestM)
 
-
-import Data.Maybe
 
 type Size = Int
+
 
 data RenderNodeLabel a netRef =
   RenderNodeLabel
@@ -31,6 +31,7 @@ data RenderNodeLabel a netRef =
   , _netRef    :: Maybe netRef
   , _indexInfo :: Focus
   }
+
 
 type RoseForest a netRef = [Tree (a, Focus, Maybe netRef)]
 
@@ -50,25 +51,27 @@ networkR name netRef subTree = Node (name, Just netRef) [subTree]
 data ReferenceNode l n ref = LeafRN l ref | NetworkRN !Size n ref | BranchRN !Size ref ref
 
 data ReferenceMap l n ref = ReferenceMap
-  { _rootRefs     :: [ref]
-  , _networkRefs  :: [ref]
-  , _refMap       :: Map ref (ReferenceNode l n ref)
+  { _rootRefs    :: [ref]
+  , _networkRefs :: [ref]
+  , _refMap      :: Map ref (ReferenceNode l n ref)
   }
 
 
-data BinaryTree l i n =
-  LeafBT l | NetworkBT i n !Size  | BranchBT !Size i (BinaryTree l i n) (BinaryTree l i n)
+data  BinaryTree l i n
+    = LeafBT l
+    | NetworkBT i n !Size
+    | BranchBT !Size i (BinaryTree l i n) (BinaryTree l i n)
 
 
 toRoseForest
-  :: forall f c e n t a netRef . (Ord netRef, Show e, Show (f n))
+  :: forall f c e n t a netRef . Ord netRef
   => (t -> a)
   -> (f n -> a)
   -> (NetworkInd -> netRef)
   -> Graph f c e n t
   -> RoseForest a netRef
 toRoseForest leafConv internalConv netConv graph =
-  (unfoldForestM build rootFocusGraphs) `evalState` mempty
+  unfoldForestM build rootFocusGraphs `evalState` mempty
   where
     rootFocusGraphs :: [RootFocusGraph f c e n t]
     rootFocusGraphs = makeRootFocusGraphs graph
@@ -80,8 +83,8 @@ toRoseForest leafConv internalConv netConv graph =
       case focus of
         LeafTag :!: untaggedInd ->
           let
-            leafNodeInfo    = fromJust $ preview (_leafReferences . (ix untaggedInd)) graph
-            nodeName        = leafConv . (view _nodeData) $ leafNodeInfo
+            leafNodeInfo    = fromJust $ preview (_leafReferences . ix untaggedInd) graph
+            nodeName        = leafConv . view _nodeData $ leafNodeInfo
           in
             pure ((nodeName, focus, Nothing), [])
         NetworkTag :!: untaggedInd ->
@@ -91,15 +94,10 @@ toRoseForest leafConv internalConv netConv graph =
             netRef   = netConv (coerce untaggedInd)
             childInd = view _childInds nodeInfo
             newFocus = toUntagged childInd
-          in
-            do
-              seenNetRefs <- get
-              case netRef `S.member` seenNetRefs of
-                True  -> pure ((nodeName, focus, Just netRef), [])
-                False ->
-                  do
-                    modify (S.insert netRef)
-                    pure ((nodeName, focus, Just netRef), [newFocus :!: graph])
+          in do seenNetRefs <- get
+                if   netRef `S.member` seenNetRefs
+                then pure ((nodeName, focus, Just netRef), [])
+                else modify (S.insert netRef) $> ((nodeName, focus, Just netRef), [newFocus :!: graph])
 
         TreeTag    :!: untaggedInd ->
           let
@@ -112,7 +110,7 @@ toRoseForest leafConv internalConv netConv graph =
             pure ((nodeName, focus, Nothing), [leftFocus :!: graph, rightFocus :!: graph])
         RootTag    :!: untaggedInd ->
           let
-            nodeInfo = fromJust $ preview (_rootReferences . (ix untaggedInd)) graph
+            nodeInfo = fromJust $ preview (_rootReferences . ix untaggedInd) graph
             nodeName = internalConv $ view _nodeData nodeInfo
             childInds :: Either ChildIndex (ChildIndex :!: ChildIndex)
             childInds = view _childInds nodeInfo
@@ -148,6 +146,7 @@ makeSizeLabelledTree = extend f
           , _size = F.length tree
           }
 
+
 makeSizeLabelledForest
   :: Forest (a, Focus, Maybe netRef)
   -> Forest (RenderNodeLabel a netRef)
@@ -158,17 +157,16 @@ reorderTree :: Tree (RenderNodeLabel a netRef) -> Tree (RenderNodeLabel a netRef
 reorderTree t@(Node _ [])   = t
 reorderTree t@(Node _ [_])  = t
 reorderTree   (Node root (l:r:ls)) =
-  let
-    l' = reorderTree l
-    r' = reorderTree r
-  in
-    if (_size . rootLabel $ r) < (_size . rootLabel $ l)
-    then (Node root (r':l':ls))
-    else (Node root (l':r':ls))
+  let l' = reorderTree l
+      r' = reorderTree r
+  in  if (_size . rootLabel $ r) < (_size . rootLabel $ l)
+      then Node root (r':l':ls)
+      else Node root (l':r':ls)
 
 
 reorderForest :: Forest (RenderNodeLabel a netRef) -> Forest (RenderNodeLabel a netRef)
 reorderForest = fmap reorderTree
+
 
 renderRoseForest
   :: (RenderNodeLabel a netRef -> String)
@@ -179,7 +177,7 @@ renderRoseForest renderFn =
 
 
 renderGraphAsRoseForest
-  :: (Ord netRef, Show e, Show (f n))
+  :: Ord netRef
   => (t   -> a)
   -> (f n -> a)
   -> (NetworkInd -> netRef)
@@ -190,11 +188,11 @@ renderGraphAsRoseForest leafFn intFn netFn renderFn =
     renderRoseForest renderFn
   . reorderForest
   . makeSizeLabelledForest
-  . (toRoseForest leafFn intFn netFn)
+  . toRoseForest leafFn intFn netFn
 
 
 showGraphAsRoseForest
-  :: (Show t, Show (f n), Show e)
+  :: (Show t, Show (f n))
   => Graph f c e n t
   -> String
 showGraphAsRoseForest = renderGraphAsRoseForest show show id renderNodeLabel

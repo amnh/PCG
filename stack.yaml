@@ -9,7 +9,7 @@ dump-logs: all
 extra-deps:
   - algebraic-graphs-0.4
   - attoparsec-0.13.2.3
-  - bv-little-1.1.0
+  - bv-little-1.1.1
   - optparse-applicative-0.15.0.0
   - Cabal-3.0.0.0
   - clustering-0.4.1

@@ -1,31 +1,30 @@
+{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE TypeOperators       #-}
 
 module Data.Graph.Memo where
 
-import Data.Graph.Type
-import Data.Graph.NodeContext
-import Control.Lens
-import Data.Key
-import Data.Vector.Instances ()
-import Data.Graph.Indices
-import Data.Coerce
-import Control.Applicative
-import Data.Pair.Strict
+import           Control.Lens
+import           Data.Coerce
+import           Data.Graph.Indices
+import           Data.Graph.NodeContext
+import           Data.Graph.Type
+import           Data.Key
+import           Data.Pair.Strict
+import           Data.Vector.Instances  ()
 
-import Data.Maybe (fromJust)
+import           Data.Maybe             (fromJust)
 
-import qualified Data.Vector as V
+import qualified Data.Vector            as V
 
 type Endo a = (a -> a)
 
 data MemoGen i n r l = MemoGen
-  { leafGen     :: Int -> l
-  , treeGen     :: Int -> i
-  , networkGen  :: Int -> n
-  , rootGen     :: Int -> r
+  { leafGen    :: Int -> l
+  , treeGen    :: Int -> i
+  , networkGen :: Int -> n
+  , rootGen    :: Int -> r
   }
 
 type MemoGen' i l = MemoGen i i i l
@@ -90,10 +89,10 @@ memoPostorder leafFn treeFn netFn graph = f
       where
         childVal :: TaggedIndex -> g val
         childVal i  = case getTag i of
-              LeafTag     -> pure . leafGen $ (getIndex i)
-              TreeTag     -> treeGen     (getIndex i)
-              NetworkTag  -> networkGen  (getIndex i)
-              RootTag     -> rootGen     (getIndex i)
+              LeafTag    -> pure . leafGen     $ getIndex i
+              TreeTag    ->        treeGen     $ getIndex i
+              NetworkTag ->        networkGen  $ getIndex i
+              RootTag    ->        rootGen     $ getIndex i
 
 
         leafGen' :: Int -> val
@@ -101,7 +100,7 @@ memoPostorder leafFn treeFn netFn graph = f
                        graph ^?
                          _leafReferences
                         . ix i
-                        . (_nodeData)
+                        . _nodeData
 
         fromTwoChildren  :: ChildIndex :!: ChildIndex -> g val
         fromTwoChildren c =
@@ -113,11 +112,7 @@ memoPostorder leafFn treeFn netFn graph = f
         fromOneChild c =
           netFn <$> (childVal . coerce $  c)
 
-        getChildInd refs i = fromJust $ graph
-                           ^? refs
-                            . ix i
-                            . _nodeContext
-                            . _childInds
+        getChildInd refs i = graph ^?! (refs . ix i . _nodeContext . _childInds)
 
         treeGen' :: Int -> g val
         treeGen' i = fromTwoChildren (getChildInd _treeReferences i)
@@ -146,15 +141,15 @@ memoGraphPostorder leafFn treeFn netFn graph = f
       where
         childVal :: TaggedIndex -> g val
         childVal i  = case getTag i of
-              LeafTag     -> pure . (^. _nodeData) . leafGen  $ (getIndex i)
-              TreeTag     -> (^. _nodeData) . treeGen $ (getIndex i)
-              NetworkTag  -> (^. _nodeData) . networkGen  $ (getIndex i)
-              RootTag     -> (^. _nodeData) . rootGen     $ (getIndex i)
+              LeafTag    -> pure . (^. _nodeData) . leafGen     $ getIndex i
+              TreeTag    ->        (^. _nodeData) . treeGen     $ getIndex i
+              NetworkTag ->        (^. _nodeData) . networkGen  $ getIndex i
+              RootTag    ->        (^. _nodeData) . rootGen     $ getIndex i
 
 
         leafGen' :: Int -> LeafIndexData val
         leafGen' i = leafFn <$>
-                       fromJust (preview (_leafReferences . (ix i)) graph)
+                       fromJust (preview (_leafReferences . ix i) graph)
 
 
         fromTwoChildren  :: ChildIndex :!: ChildIndex -> g val
@@ -178,25 +173,26 @@ memoGraphPostorder leafFn treeFn netFn graph = f
 
         treeGen' :: Int -> TreeIndexData (g val) e
         treeGen' i =
-          (fromJust $ preview ( _treeReferences . (ix i)) graph)
+          fromJust (preview ( _treeReferences . ix i) graph)
           & _nodeData
-          .~ (fromTwoChildren (getChildInd _treeReferences i))
+          .~ fromTwoChildren (getChildInd _treeReferences i)
 
         networkGen' :: Int -> NetworkIndexData (g val) e
         networkGen' i =
-           (fromJust $ preview (_networkReferences . ix i) graph)
+           fromJust (preview (_networkReferences . ix i) graph)
            & _nodeData
            .~ fromOneChild (getChildInd _networkReferences i)
 
         rootGen' :: Int -> RootIndexData (g val) e
         rootGen' i =
-          (fromJust $ preview (_rootReferences . ix i) graph)
+          fromJust (preview (_rootReferences . ix i) graph)
           & _nodeData
           .~
             either
               fromOneChild
               fromTwoChildren
               (getChildInd _rootReferences i)
+
 {-
 memoPostorder
   :: forall f c e n t val
