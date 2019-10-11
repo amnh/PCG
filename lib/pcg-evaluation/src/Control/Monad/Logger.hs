@@ -20,9 +20,6 @@ module Control.Monad.Logger
   ) where
 
 
-import           Control.Monad.Fail (MonadFail)
-import qualified Control.Monad.Fail as F
-
 {- |
 
   A 'MonadFail' that has been extended to support "information" and "warning"
@@ -45,5 +42,5 @@ class MonadFail m => Logger m a where
 
     (<?>), (<@>), (<☓>) :: m a -> String -> m a
 
-    (<☓>) x s = x *> F.fail s
+    (<☓>) x s = x *> fail s
 

@@ -12,11 +12,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE UnboxedSums       #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module Data.FileSource.OutputStreamError
   ( OutputStreamError()
@@ -28,6 +30,7 @@ module Data.FileSource.OutputStreamError
   ) where
 
 import Control.DeepSeq    (NFData)
+import Data.Data
 import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty hiding (toList)
@@ -49,7 +52,8 @@ import TextShow
 --
 -- The 'Show' instance should only be used for debugging purposes.
 newtype OutputStreamError = OutputStreamError (NonEmpty OutputStreamErrorMessage)
-    deriving (Generic, NFData, Show)
+    deriving stock    (Data, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 data  OutputStreamErrorMessage
@@ -58,7 +62,8 @@ data  OutputStreamErrorMessage
     | PathDoesNotExist {-# UNPACK #-} !FileSource
     | NoPermissions    {-# UNPACK #-} !FileSource
     | NotEnoughSpace   {-# UNPACK #-} !FileSource
-    deriving (Generic, NFData, Show)
+    deriving stock    (Data, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 instance Semigroup OutputStreamError where

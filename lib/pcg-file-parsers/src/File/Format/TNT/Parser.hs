@@ -47,10 +47,10 @@ import           Text.Megaparsec.Custom
 --
 -- * A collection of taxa sequences with coresponsing metadata and possibly
 --   corresponding forest of trees whose leaf sets are equal to the taxa set.
-tntStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m TntResult
+tntStreamParser :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where
-    colateResult :: MonadParsec e s m => ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead]) -> m TntResult
+    colateResult :: MonadFail m => ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead]) -> m TntResult
     colateResult (     _,     _,     _,      _,     _,  _:_:_) = fail "Multiple XREAD commands found in source, expecting a single XREAD command."
     colateResult (     _,     _,     _,      _,    [],     []) = fail "No XREAD command or TREAD command, expecting either a single XREAD command or one or more TRead commands."
     colateResult (     _,     _,    _,       _,treads,     []) = pure . Left $ NE.fromList treads
@@ -63,7 +63,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
       where
         vectorizeTaxa   = V.fromList . toList . sequencesx
 
-        matchTaxaInTree :: MonadParsec e s m => XRead -> [TReadTree] -> m [LeafyTree TaxonInfo]
+        matchTaxaInTree :: MonadFail m => XRead -> [TReadTree] -> m [LeafyTree TaxonInfo]
         matchTaxaInTree xreadCommand = traverse interpolateLeafs
           where
             seqs  = sequencesx xreadCommand

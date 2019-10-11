@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -40,7 +41,7 @@ import Text.XML
 -- |
 -- Metadata type for a continuous character.
 newtype ContinuousCharacterMetadataDec = CCM GeneralCharacterMetadataDec
-  deriving (Generic)
+  deriving stock (Generic)
 
 
 -- | (✔)

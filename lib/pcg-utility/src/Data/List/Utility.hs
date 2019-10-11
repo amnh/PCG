@@ -25,7 +25,7 @@ import           Data.List               (sort, sortBy)
 import           Data.List.NonEmpty      (NonEmpty (..), nonEmpty)
 import qualified Data.List.NonEmpty      as NE
 import           Data.Map                (assocs, empty, insertWith)
-import           Data.Maybe              (catMaybes, maybe)
+import           Data.Maybe              (catMaybes)
 import           Data.Ord                (comparing)
 import           Data.Semigroup.Foldable
 import           Data.Set                (insert, intersection)

@@ -14,12 +14,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveFunctor      #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Data.Alphabet.Internal
   ( Alphabet()
@@ -36,6 +38,7 @@ module Data.Alphabet.Internal
 import           Control.DeepSeq                     (NFData)
 import           Control.Monad.State.Strict
 import           Data.Bifunctor                      (bimap)
+import           Data.Data
 import           Data.Foldable
 import           Data.Key
 import           Data.List                           (elemIndex, intercalate, sort)
@@ -67,15 +70,18 @@ data Alphabet a =
      Alphabet
      { symbolVector :: {-# UNPACK #-} !(Vector a)
      , stateNames   :: [a]
-     } deriving (Generic, Functor)
+     }
+     deriving stock (Data, Generic, Functor, Typeable)
 
 
 type instance Key Alphabet = Int
 
 
 -- Newtypes for corecing and consolidation of alphabet input processing logic
-newtype AlphabetInputSingle a = ASI  { toSingle ::  a    } deriving (Eq, Ord)
-newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) } deriving (Eq, Ord)
+newtype AlphabetInputSingle a = ASI  { toSingle ::  a    }
+    deriving stock (Eq, Ord)
+newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) }
+    deriving stock (Eq, Ord)
 
 
 -- |
@@ -84,8 +90,10 @@ newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) } deriving (Eq, Ord)
 -- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 --
 
-newtype UnnamedSymbol a = Unnamed  a  deriving (Generic)
-newtype NamedSymbol   a = Named (a,a) deriving (Generic)
+newtype UnnamedSymbol a = Unnamed  a
+    deriving stock (Generic)
+newtype NamedSymbol   a = Named (a,a)
+    deriving stock (Generic)
 
 
 class InternalClass a where

@@ -14,6 +14,7 @@
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
@@ -35,7 +36,8 @@ import Test.QuickCheck.Instances ()
 data  Notification
     = Warning     Text
     | Information Text
-    deriving (Eq, Data, Generic, NFData, Ord, Show)
+    deriving stock    (Data, Eq, Generic, Ord, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 instance Arbitrary Notification where

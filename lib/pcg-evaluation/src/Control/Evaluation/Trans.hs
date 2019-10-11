@@ -14,6 +14,7 @@
 
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE LambdaCase            #-}
@@ -38,8 +39,6 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Evaluation.Notification
 import           Control.Evaluation.Result
-import           Control.Monad.Fail              (MonadFail)
-import qualified Control.Monad.Fail              as F
 import           Control.Monad.Fix               (MonadFix (..))
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
@@ -91,7 +90,7 @@ newtype EvaluationT r m a
       = EvaluationT
       { -- | Run the 'EvaluationT' monad transformer
         unwrapEvaluationT :: RWST r (Seq Notification) () m (EvaluationResult a)
-      } deriving (Generic)
+      } deriving stock (Generic)
 
 
 -- |
@@ -199,15 +198,12 @@ instance Monad m => Monad (EvaluationT r m) where
     {-# INLINEABLE (>>=)  #-}
     {-# INLINE     (>>)   #-}
     {-# INLINE     return #-}
-    {-# INLINE     fail   #-}
 
     (>>=)  = bind
 
     (>>)   = (*>)
 
     return = pure
-
-    fail   = F.fail
 
 
 instance Monad m => MonadFail (EvaluationT r m) where

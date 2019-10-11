@@ -10,11 +10,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE DeriveGeneric  #-}
-{-# LANGUAGE Strict         #-}
-{-# LANGUAGE StrictData     #-}
-{-# LANGUAGE TypeFamilies   #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE Strict             #-}
+{-# LANGUAGE StrictData         #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Data.TCM.Internal
   ( TCM(..)
@@ -33,6 +35,7 @@ module Data.TCM.Internal
 
 import           Control.Arrow        ((***))
 import           Control.DeepSeq
+import           Data.Data
 import           Data.Foldable
 import           Data.IntSet          (IntSet)
 import           Data.List            (transpose)
@@ -68,7 +71,8 @@ import           Text.XML
 -- constructors will result in a runtime exception.
 data TCM
    = TCM {-# UNPACK #-} Int !(Vector Word32)
-   deriving (Eq, Generic, NFData)
+   deriving stock    (Data, Eq, Generic, Typeable)
+   deriving anyclass (NFData)
 
 
 -- |
@@ -136,28 +140,31 @@ type instance Element TCM = Word32
 --
 --       * /σ(i,j) = max(i,j) - min(i,j)/
 --
-data TCMStructure
-   = NonSymmetric
-   | Symmetric
-   | Metric
-   | UltraMetric
-   | Additive
-   | NonAdditive
-   deriving (Eq, Generic, NFData, Show)
+data  TCMStructure
+    = NonSymmetric
+    | Symmetric
+    | Metric
+    | UltraMetric
+    | Additive
+    | NonAdditive
+    deriving stock    (Data, Eq, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |
 -- The result of a call to 'diagnoseTcm'.
-data TCMDiagnosis
-   = TCMDiagnosis
-   { factoredWeight :: Int          -- ^ The multiplicative constant factor of a
+data  TCMDiagnosis
+    = TCMDiagnosis
+    { factoredWeight :: Int          -- ^ The multiplicative constant factor of a
                                     --   'TCM'. Minimum value of the
                                     --   multiplicative identity /one/.
-   , factoredTcm    :: TCM          -- ^ The new 'TCM' with each value divided by
+    , factoredTcm    :: TCM          -- ^ The new 'TCM' with each value divided by
                                     --   the 'factoredWeight'.
-   , tcmStructure   :: TCMStructure -- ^ The most restrictive present in the
+    , tcmStructure   :: TCMStructure -- ^ The most restrictive present in the
                                     --   'factoredTcm'.
-   } deriving (Eq, Generic, NFData, Show)
+    }
+    deriving stock    (Data, Eq, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |

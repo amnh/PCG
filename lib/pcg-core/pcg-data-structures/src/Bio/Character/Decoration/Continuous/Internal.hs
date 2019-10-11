@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -45,7 +46,9 @@ import TextShow                          (TextShow (showb), unlinesB)
 newtype ContinuousDecorationInitial c
     = ContinuousDecorationInitial
     { continuousDecorationInitialCharacter :: c
-    } deriving (Generic, Ranged)
+    }
+    deriving stock    (Generic)
+    deriving newtype  (Ranged)
 
 
 -- |
@@ -60,14 +63,14 @@ continuousDecorationInitial value =
 -- |
 -- Represents a character decoration after a pre-order traversal.
 newtype ContinuousOptimizationDecoration  c = COptD (AdditiveOptimizationDecoration c)
-    deriving (Generic)
+    deriving stock (Generic)
 
 
 -- |
 -- Represents the partially-complete character decoration after a post-order
 -- traversal.
 newtype ContinuousPostorderDecoration c = CPostD (AdditivePostorderDecoration c)
-    deriving (Generic)
+    deriving stock (Generic)
 
 
 lensCOptD :: Functor f

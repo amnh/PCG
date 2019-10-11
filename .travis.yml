@@ -1,4 +1,4 @@
-dist: xenial #Required for GCC >= v5.0
+dist: bionic #Required for GCC >= v5.0
 sudo: true
 
 language: haskell
@@ -7,20 +7,20 @@ cabal: "2.4"
 
 cache:
   directories:
-  - "$HOME/.cabal/store"
-  - "$HOME/.stack"
-  - "$TRAVIS_BUILD_DIR/.stack-work"
+    - "$HOME/.cabal/store"
+    - "$HOME/.stack"
+    - "$TRAVIS_BUILD_DIR/.stack-work"
 
 
 matrix:
   include:
 
-  # Cabal
-  - ghc: 8.6.5
+    # Cabal
+    - ghc: 8.8.1
 
-  # Stack
-  - ghc: 8.6.5
-    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
+    # Stack
+    - ghc: 8.8.1
+      env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
 
 
 before_install:
@@ -43,7 +43,7 @@ install:
   - gcc --version
   - ghc --version
   - hlint  --version
-#  - weeder --version
+# - weeder --version
   - |
     if [ -z "$STACK_YAML" ]; then
       cabal --version
@@ -55,13 +55,13 @@ install:
 
       # build project with stack
       stack --version
-      stack build --fast --system-ghc --bench --test --haddock --haddock-deps --haddock-hyperlink-source --haddock-internal --no-run-benchmarks --no-run-tests 
+      stack build --fast --system-ghc --bench --test --haddock --haddock-deps --haddock-hyperlink-source --haddock-internal --no-run-benchmarks --no-run-tests --verbosity warn
     fi
 
 
 script:
   - make run-hlint
-  
+
 git:
   depth: 5
 

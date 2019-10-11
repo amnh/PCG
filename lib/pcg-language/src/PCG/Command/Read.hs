@@ -13,8 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UnboxedSums      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module PCG.Command.Read
   ( FileSpecification(..)
@@ -32,7 +33,7 @@ import PCG.Syntax.Combinators
 -- |
 -- The \"READ\" command containing the files paths to be read.
 newtype ReadCommand = ReadCommand (NonEmpty FileSpecification)
-    deriving (Show)
+    deriving stock (Show)
 
 
 -- |

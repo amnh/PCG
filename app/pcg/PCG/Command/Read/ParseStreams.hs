@@ -85,9 +85,9 @@ removeGaps = fmap removeGapsFromDynamicCharactersNotMarkedAsAligned
 
 
 parseSpecifiedFile :: FileSpecification -> ValidationT ReadCommandError IO (NonEmpty PartialInputData)
-parseSpecifiedFile      AnnotatedFile          {} = fail "Annotated file specification is not implemented"
-parseSpecifiedFile      ChromosomeFile         {} = fail "Chromosome file specification is not implemented"
-parseSpecifiedFile      GenomeFile             {} = fail "Genome file specification is not implemented"
+parseSpecifiedFile      AnnotatedFile          {} = error "Annotated file specification is not implemented"
+parseSpecifiedFile      ChromosomeFile         {} = error "Chromosome file specification is not implemented"
+parseSpecifiedFile      GenomeFile             {} = error "Genome file specification is not implemented"
 parseSpecifiedFile spec@AminoAcidFile          {} = fastaAminoAcid spec
 parseSpecifiedFile spec@NucleotideFile         {} = fastaDNA       spec
 parseSpecifiedFile      (CustomAlphabetFile fs m) = parseCustomAlphabet fs m

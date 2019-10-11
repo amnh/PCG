@@ -9,6 +9,8 @@
 -- Portability :  portable
 --
 -----------------------------------------------------------------------------
+
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Bio.Graph.MonadDAG where
@@ -16,7 +18,7 @@ module Bio.Graph.MonadDAG where
 import Data.List.NonEmpty
 
 
-newtype NodeRef = NR Int deriving (Eq)
+newtype NodeRef = NR Int deriving stock (Eq)
 
 
 class MonadDAG t e n where

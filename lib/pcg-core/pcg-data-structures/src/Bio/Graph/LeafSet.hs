@@ -16,6 +16,7 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE DeriveFoldable         #-}
 {-# LANGUAGE DeriveFunctor          #-}
+{-# LANGUAGE DerivingStrategies     #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
@@ -37,7 +38,7 @@ import Text.XML.Custom ()
 -- |
 -- Set of unique leaf labels.
 newtype LeafSet n = LeafSet (Vector n)
-    deriving (Foldable, Functor, Show)
+    deriving stock (Foldable, Functor, Show)
 
 
 -- |
