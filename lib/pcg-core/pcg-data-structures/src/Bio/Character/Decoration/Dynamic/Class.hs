@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
@@ -60,7 +61,8 @@ import Numeric.NonNegativeAverage
 --
 -- Forms a 'Semigroup' for efficient recursive post-order accumulation on the tree.
 newtype AverageLength = AL NonNegativeAverage
-  deriving (Eq, Generic, Ord, Semigroup)
+  deriving stock   (Eq, Generic, Ord)
+  deriving newtype (Semigroup)
 
 
 -- | (✔)

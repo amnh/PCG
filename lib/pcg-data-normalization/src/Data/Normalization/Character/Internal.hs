@@ -15,7 +15,9 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveAnyClass       #-}
+{-# LANGUAGE DeriveDataTypeable   #-}
 {-# LANGUAGE DeriveGeneric        #-}
+{-# LANGUAGE DerivingStrategies   #-}
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE StrictData           #-}
 {-# LANGUAGE TypeSynonymInstances #-}
@@ -24,6 +26,7 @@ module Data.Normalization.Character.Internal where
 
 import           Control.DeepSeq
 import           Data.Alphabet
+import           Data.Data
 import           Data.Foldable
 import           Data.List.NonEmpty      (NonEmpty)
 import           Data.Map                (Map)
@@ -58,7 +61,8 @@ data NormalizedCharacter
    = NormalizedContinuousCharacter (Maybe Double)
    | NormalizedDiscreteCharacter   (Maybe (AmbiguityGroup ShortText))
    | NormalizedDynamicCharacter    (Maybe (NonEmpty (AmbiguityGroup ShortText)))
-   deriving (Eq, Ord, Generic, NFData, Show)
+   deriving (Data, Eq, Ord, Generic, Show, Typeable)
+   deriving (NFData)
 
 
 -- |

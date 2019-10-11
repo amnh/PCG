@@ -16,6 +16,7 @@
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -313,7 +314,7 @@ type TntContinuousCharacter = Maybe Double
 -- Each value coresponds to it's respective bit in the 'Word64'. Ambiguity groups
 -- are represented by 'Word64' values with multiple set bits.
 newtype TntDiscreteCharacter   = TntDis Word64
-  deriving (Bits, Eq, Ord, FiniteBits)
+  deriving newtype (Bits, Eq, Ord, FiniteBits)
 
 
 -- |
@@ -325,7 +326,7 @@ newtype TntDiscreteCharacter   = TntDis Word64
 -- Gap represents an ambiguity group of all possible proteins unless gaps are
 -- treated as a fifth state. Missing represents the empty ambiguity group.
 newtype TntDnaCharacter        = TntDna Word8
-  deriving (Bits, Eq, FiniteBits, Ord)
+  deriving newtype (Bits, Eq, FiniteBits, Ord)
 
 
 -- |
@@ -334,7 +335,7 @@ newtype TntDnaCharacter        = TntDna Word8
 -- along with \'-\' & \'?\' characters representing gap or missing data respecitively.
 -- Missing represents the empty ambiguity group.
 newtype TntProteinCharacter    = TntPro Word32
-  deriving (Bits, Eq, FiniteBits, Ord)
+  deriving newtype (Bits, Eq, FiniteBits, Ord)
 
 
 -- | (✔)
@@ -460,14 +461,13 @@ modifyMetaDataTCM mat old = old { costTCM = Just mat }
 -- Parses an non-negative integer from a variety of representations.
 -- Parses both signed integral values and signed floating values
 -- if the value is non-negative and an integer.
-flexibleNonNegativeInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
+flexibleNonNegativeInt :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => String -> m Int
 flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatingOrInteger
                               =<< signed whitespace scientific <?> ("positive integer for " <> labeling)
   where
-    coerceIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => Integer -> m Int
     coerceIntegral x
-      | x <  0      = fail $ concat ["The ",labeling," value (",show x,") is a negative number"]
-      | otherwise   = pure $ fromEnum x
+      | x <  (0::Int) = fail $ concat ["The ",labeling," value (",show x,") is a negative number"]
+      | otherwise     = pure $ fromEnum x
 
 --    coerceFloating :: (MonadParsec e s m {- , Token s ~ Char -}) => Double -> m Int
     coerceFloating = assertNonNegative <=< assertIntegral labeling
@@ -505,16 +505,14 @@ flexibleNonNegativeInt labeling = either coerceFloating coerceIntegral . floatin
 -- expecting 'E', 'e', or rest of number
 -- The errorCount value (0.1337) is a real value, not an integral value
 -- The errorCount value (0.1337) is not a positive integer
-flexiblePositiveInt :: (MonadParsec e s m, Token s ~ Char) => String -> m Int
+flexiblePositiveInt :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => String -> m Int
 flexiblePositiveInt labeling = either coerceFloating coerceIntegral . floatingOrInteger
                              =<< signed whitespace scientific <?> ("positive integer for " <> labeling)
   where
-    coerceIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => Integer -> m Int
     coerceIntegral x
-      | x <= 0      = fail $ concat ["The ",labeling," value (",show x,") is not a positive number"]
-      | otherwise   = pure $ fromEnum x
+      | x <= (0::Int) = fail $ concat ["The ",labeling," value (",show x,") is not a positive number"]
+      | otherwise     = pure $ fromEnum x
 
-    coerceFloating :: (MonadParsec e s m {- , Token s ~ Char -}) => Double -> m Int
     coerceFloating = assertPositive <=< assertIntegral labeling
       where
         assertPositive x
@@ -545,7 +543,7 @@ flexiblePositiveInt labeling = either coerceFloating coerceIntegral . floatingOr
 -- Left 1:1:
 -- unexpected "abr"
 -- expecting keyword 'abrakadabra'
-keyword :: forall e s m. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => String -> Int -> m ()
+keyword :: forall e s m. (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => String -> Int -> m ()
 keyword x y = abreviatable x y $> ()
   where
     abreviatable fullName minimumChars
@@ -571,10 +569,11 @@ nonNegInt = decimal
 -- Parses an Integral value from a 'Double' value. If the 'Double' is not an
 -- integral value, then a parse error is raised. The first 'String' parameter
 -- is used as a label in the error reporting.
-assertIntegral :: (MonadParsec e s m {- , Token s ~ Char -}) => String -> Double -> m Int
+assertIntegral :: MonadFail m => String -> Double -> m Int
 assertIntegral labeling x
   | isInt x   = pure $ fromEnum rounded
-  | otherwise = fail $ concat ["The ",labeling," value (",show x,") is a real value, not an integral value"]
+  | otherwise = fail $ fold
+      [ "The ", labeling, " value (", show x, ") is a real value, not an integral value" ]
   where
     isInt n = n == fromInteger rounded
     rounded = round x

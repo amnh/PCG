@@ -46,7 +46,6 @@ import           Data.NodeLabel
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata
 import           Data.Normalization.Topology
-import           Data.Semigroup               ((<>))
 import           Data.Semigroup.Foldable
 import           Data.Set                     (Set, (\\))
 import qualified Data.Set                     as Set

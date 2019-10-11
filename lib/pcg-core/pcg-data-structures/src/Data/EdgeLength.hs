@@ -13,7 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 
@@ -46,7 +48,9 @@ import TextShow            (TextShow (showb))
 -- operation returns a specified edge length if possible, satifying the monoid
 -- laws regarding the identity element.
 newtype EdgeLength = C (Maybe (Sum Rational))
-    deriving(Eq, Default, Generic, NFData, Ord, Semigroup, Monoid)
+    deriving stock    (Eq, Generic, Ord)
+    deriving anyclass (NFData)
+    deriving newtype  (Default, Semigroup, Monoid)
 
 
 instance Binary EdgeLength

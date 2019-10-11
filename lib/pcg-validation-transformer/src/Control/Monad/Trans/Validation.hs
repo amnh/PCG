@@ -18,6 +18,7 @@
 
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -28,23 +29,21 @@ module Control.Monad.Trans.Validation
   , invalid
   ) where
 
-import           Control.Applicative
-import           Control.DeepSeq
-import           Control.Monad.Fail        (MonadFail)
-import qualified Control.Monad.Fail        as F
-import           Control.Monad.Fix         (MonadFix (..))
-import           Control.Monad.IO.Class
-import           Control.Monad.Trans.Class
-import           Control.Monad.Zip         (MonadZip (..))
-import           Data.Bifunctor
-import           Data.Functor.Alt          (Alt (..))
-import           Data.Functor.Apply        (Apply (..))
-import           Data.Functor.Bind         (Bind (..))
-import           Data.Functor.Classes      (Eq1 (..), Ord1 (..), Show1 (..))
-import           Data.String
-import           Data.Validation
-import           GHC.Generics
-import           Test.QuickCheck           hiding (Failure, Success)
+import Control.Applicative
+import Control.DeepSeq
+import Control.Monad.Fix         (MonadFix (..))
+import Control.Monad.IO.Class
+import Control.Monad.Trans.Class
+import Control.Monad.Zip         (MonadZip (..))
+import Data.Bifunctor
+import Data.Functor.Alt          (Alt (..))
+import Data.Functor.Apply        (Apply (..))
+import Data.Functor.Bind         (Bind (..))
+import Data.Functor.Classes      (Eq1 (..), Ord1 (..), Show1 (..))
+import Data.String
+import Data.Validation
+import GHC.Generics
+import Test.QuickCheck           hiding (Failure, Success)
 
 
 -- |
@@ -53,7 +52,7 @@ newtype ValidationT e m a
       = ValidationT
       { -- | Run the 'ValidationT' monad transformer
         runValidationT :: m (Validation e a)
-      } deriving (Generic)
+      } deriving stock (Generic)
 
 
 instance Alt m => Alt (ValidationT e m)  where
@@ -91,7 +90,7 @@ instance (Monad m, Semigroup e) => Applicative (ValidationT e m) where
 
     (<*>) = (<.>)
 
-    (*>)  = (*>)
+    (*>)  = (.>)
 
 
 instance (Arbitrary a, Arbitrary e, Arbitrary1 m) => Arbitrary (ValidationT e m a) where
@@ -156,7 +155,6 @@ instance (Monad m, Semigroup e) => Monad (ValidationT e m) where
     {-# INLINEABLE (>>=)  #-}
     {-# INLINE     (>>)   #-}
     {-# INLINE     return #-}
-    {-# INLINE     fail   #-}
 
     (>>=) v f = ValidationT $ do
         x <- runValidationT v
@@ -167,8 +165,6 @@ instance (Monad m, Semigroup e) => Monad (ValidationT e m) where
     (>>)   = (*>)
 
     return = pure
-
-    fail   = error "Use Monad.Fail.fail"
 
 
 instance (IsString e, Monad m, Semigroup e) => MonadFail (ValidationT e m) where

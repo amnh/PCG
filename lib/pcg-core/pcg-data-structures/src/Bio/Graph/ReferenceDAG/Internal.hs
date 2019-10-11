@@ -15,6 +15,7 @@
 
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
@@ -137,7 +138,9 @@ data NodeClassification
 
 -- |
 -- A reference to a node within the 'ReferenceDAG'.
-newtype NodeRef = NR Int deriving (Eq, Enum)
+newtype NodeRef = NR Int
+  deriving stock   (Eq)
+  deriving newtype (Enum)
 
 
 type instance Key (ReferenceDAG d e) = Int
