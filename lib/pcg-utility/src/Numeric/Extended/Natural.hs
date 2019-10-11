@@ -10,10 +10,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE MagicHash     #-}
-{-# LANGUAGE Strict        #-}
-{-# LANGUAGE TypeFamilies  #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE MagicHash          #-}
+{-# LANGUAGE Strict             #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Numeric.Extended.Natural
   ( ExtendedNatural()
@@ -60,7 +61,7 @@ import Test.QuickCheck
 --     @infinity@ as the denominator.
 --
 newtype ExtendedNatural = Cost Word
-  deriving (Eq, Generic, Ord)
+  deriving stock (Eq, Generic, Ord)
 
 
 type instance Finite ExtendedNatural = Word

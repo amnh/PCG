@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -38,7 +39,7 @@ import TextShow                              (TextShow (showb))
 newtype MetricDecorationInitial c
     = MetricDecorationInitial
     { metricDecorationInitialCharacter :: c
-    } deriving (Generic)
+    } deriving stock (Generic)
 
 
 -- |

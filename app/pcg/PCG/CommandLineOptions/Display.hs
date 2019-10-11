@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 
 module PCG.CommandLineOptions.Display
   ( gatherDisplayInformation
@@ -11,10 +12,10 @@ import Data.Foldable
 import Data.Key
 import Data.List                    (intersperse)
 import Data.MonoTraversable
-import Data.Semigroup               ((<>))
 import Data.Text                    hiding (filter, intersperse, replicate)
 import Data.Text.IO
 import PCG.CommandLineOptions.Types
+import PCG.Software.Credits
 import PCG.Software.Metadata
 import Prelude                      hiding (putStrLn, unlines, unwords)
 import System.ErrorPhase
@@ -84,7 +85,7 @@ printAuthorList = putStrLn $ renderedHeaderLines <> renderedAuthorLines
       , ""
       ]
     renderedAuthorLines = (<>"\n\n") . intercalate "\n\n" $ fmap ("    • " <>) rawAuthorLines
-    rawAuthorLines = mempty -- $(authorsList)
+    rawAuthorLines = $(authorsList)
 
 
 printFunderList :: IO ()
@@ -96,7 +97,7 @@ printFunderList = putStrLn $ renderedHeaderLines <> renderedFundingSources
       , ""
       ]
     renderedFundingSources = (<>"\n") . intercalate "\n\n" $ renderSource <$> rawFundingSources
-    rawFundingSources = mempty --  $(fundingList)
+    rawFundingSources = $(fundingList)
     renderSource (src, url) = "    • " <> src <> maybe "" ("\n      › " <>) url
 
 

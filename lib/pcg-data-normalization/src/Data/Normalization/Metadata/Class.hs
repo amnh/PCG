@@ -106,7 +106,7 @@ instance HasNormalizedMetadata TNT.TntResult where
                      []   -> Nothing
                      y:ys -> Just $ y:|ys
 
-        f :: TNT.CharacterMetaData -> TNT.TntCharacter -> NormalizedMetadata
+        f :: TNT.CharacterMetadata -> TNT.TntCharacter -> NormalizedMetadata
         f inMeta inChar =
             NormalizedMetadata
             { alphabet      = fmap fromString characterAlphabet

@@ -12,10 +12,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE FlexibleInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -31,6 +33,7 @@ import           Bio.Graph.ReferenceDAG
 import           Control.Arrow                    (first, (&&&))
 import           Control.DeepSeq
 import           Data.Coerce                      (coerce)
+import           Data.Data                        (Data, Typeable)
 import           Data.EdgeLength
 import           Data.Foldable
 import           Data.Hashable
@@ -78,7 +81,8 @@ type NormalizedForestSet = Maybe (NonEmpty (PhylogeneticForest NormalizedTree))
 -- |
 -- An internal type for representing a node with a unique numeric identifier.
 data NewickEnum = NE !Int (Maybe NodeLabel) (Maybe Rational) [NewickEnum]
-    deriving (Eq, Ord, Generic, NFData, Show)
+    deriving stock    (Data, Eq, Ord, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |

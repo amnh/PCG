@@ -13,7 +13,6 @@ module PCG.Command.Read.InputStreams
   , ValidationT(..)
   , getSpecifiedContent
   , getSpecifiedTcm
---  , invalid
   ) where
 
 import Control.Monad.Trans.Validation

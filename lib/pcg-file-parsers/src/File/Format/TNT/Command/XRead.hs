@@ -50,13 +50,13 @@ import           Text.Megaparsec.Custom
 -- |
 -- Parses an XREAD command. Correctly validates for taxa count and character
 -- sequence length. Produces one or more taxa sequences.
-xreadCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m XRead
+xreadCommand :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m XRead
 xreadCommand = xreadValidation =<< xreadDefinition
   where
-    xreadDefinition :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Int, Int, NonEmpty TaxonInfo)
+    xreadDefinition :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Int, Int, NonEmpty TaxonInfo)
     xreadDefinition = uncurry (,,) <$> xreadPreamble <*> xreadSequences <* symbol (char ';')
 
-    xreadValidation :: (MonadParsec e s m {- , Token s ~ Char -}) => (Int, Int, NonEmpty TaxonInfo) -> m XRead
+    xreadValidation :: (MonadFail m, MonadParsec e s m {- , Token s ~ Char -}) => (Int, Int, NonEmpty TaxonInfo) -> m XRead
     xreadValidation (charCount, taxaCount, taxaSeqs)
       | null errors = pure $ XRead charCount taxaCount taxaSeqs
       | otherwise   = fails errors
@@ -88,7 +88,7 @@ xreadCommand = xreadValidation =<< xreadDefinition
 -- |
 -- Consumes everything in the XREAD command prior to the taxa sequences.
 -- Produces the expected taxa count and the length of the character sequences.
-xreadPreamble :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m (Int, Int)
+xreadPreamble :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Int, Int)
 xreadPreamble = xreadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
 
 
@@ -96,7 +96,7 @@ xreadPreamble = xreadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
 -- The superflous information of an XREAD command.
 -- Consumes the XREAD string identifier and zero or more comments
 -- preceeding the taxa count and character cound parameters
-xreadHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+xreadHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 xreadHeader =  symbol (keyword "xread" 2)
             *> many simpleComment
             $> ()
@@ -109,14 +109,14 @@ xreadHeader =  symbol (keyword "xread" 2)
 -- |
 -- The number of taxa present in the XREAD command.
 -- __Naturally__ this number must be a positive integer.
-xreadTaxaCount :: (MonadParsec e s m, Token s ~ Char) => m Int
+xreadTaxaCount :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m Int
 xreadTaxaCount = symbol $ flexiblePositiveInt "taxa count"
 
 
 -- |
 -- The number of characters in a taxon sequence for this XREAD command.
 -- __Naturally__ this number must be a non-negative integer.
-xreadCharCount :: (MonadParsec e s m, Token s ~ Char) => m Int
+xreadCharCount :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m Int
 xreadCharCount = symbol $ flexibleNonNegativeInt "character count"
 
 
@@ -138,7 +138,7 @@ xreadCharCount = symbol $ flexibleNonNegativeInt "character count"
 -- Right [ ("taxonOne", "GATACAACATAG")
 --       , ("taxonTwo", "GGAATTCCGATC")
 --       ]
-xreadSequences :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
+xreadSequences :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
 xreadSequences = NE.fromList . deinterleaveTaxa <$> taxonSequence
   where
     deinterleaveTaxa = assocs . fmap toList . foldr f mempty
@@ -150,7 +150,7 @@ xreadSequences = NE.fromList . deinterleaveTaxa <$> taxonSequence
 -- Character values can be one of 64 states ordered @[0..9,A..Z,a..z]@ and
 -- also the Chars @\'-\'@ & @\'?\'@.
 -- Taxon name cannot contain spaces or the @\';\'@ character.
-taxonSequence :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
+taxonSequence :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
 taxonSequence = NE.fromList . toList . DL.concat <$> some taxonSequenceSegment
 
 
@@ -171,7 +171,7 @@ taxonName = notFollowedBy openingSequence *> some validNameChar
 -- Represents a partial taxon sequence. The sequence segment can either have it's
 -- character type specified explicitly by a tag or the sequence segment will be
 -- interpreted as the default discrete character type.
-taxonSequenceSegment :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+taxonSequenceSegment :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
 taxonSequenceSegment = choice
     [ try taggedInterleaveBlock
     ,    defaultInterleaveBlock
@@ -180,7 +180,7 @@ taxonSequenceSegment = choice
 
 -- |
 -- The default sequence segment type is of discrete characters.
-defaultInterleaveBlock :: (MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+defaultInterleaveBlock :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
 defaultInterleaveBlock = discreteSegments
 
 
@@ -189,7 +189,7 @@ defaultInterleaveBlock = discreteSegments
 
 
 -- |
--- A sequence segment consisting of real valued literals or '?' characters to
+-- A sequence segment consisting of real valued literals or \'?\' characters to
 -- represent a missing value.
 continuousSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntContinuousCharacter]
 continuousSequence = many (missingValue <|> presentValue)
@@ -201,7 +201,7 @@ continuousSequence = many (missingValue <|> presentValue)
 -- |
 -- Parses a collection of discrete characters.
 -- Intended to be reused as a primative for other XREAD combinators.
-coreDiscreteSequenceThatGetsReused :: (MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
+coreDiscreteSequenceThatGetsReused :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
 coreDiscreteSequenceThatGetsReused = many discreteCharacter
   where
     discreteCharacter  = (ambiguityCharacter <|> singletonCharacter) <* whitespaceInline
@@ -229,10 +229,10 @@ coreDiscreteSequenceThatGetsReused = many discreteCharacter
 -- are bitpacked into a 64 bit structure with the ordering specified by
 -- 'TntDiscreteCharacter'.
 --
--- Remeber that you can never have the character literal @'-'@ mean gap. It means
--- missing. Why not use @'?'@ and just say what you mean? We'll never know.
+-- Remeber that you can never have the character literal \'-\' mean gap. It means
+-- missing. Why not use \'?\' and just say what you mean? We'll never know.
 -- So we substitute gaps for missing in discrete charcters.
-discreteSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
+discreteSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
 discreteSequence = substituteGapForMissingBecauseOfReasonsIllNeverUnderstand coreDiscreteSequenceThatGetsReused
   where
     gapOnlyChar = deserializeStateDiscrete ! '-'
@@ -250,7 +250,7 @@ discreteSequence = substituteGapForMissingBecauseOfReasonsIllNeverUnderstand cor
 -- explicit ambiguity group notation with braces. Ambiguity groups are
 -- bitpacked into 8 bit structures with the bit ordering specified by
 -- 'TntDnaCharacter'.
-dnaSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntDnaCharacter]
+dnaSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntDnaCharacter]
 dnaSequence = mapM discreteToDna =<< coreDiscreteSequenceThatGetsReused
 
 
@@ -259,7 +259,7 @@ dnaSequence = mapM discreteToDna =<< coreDiscreteSequenceThatGetsReused
 -- can contain IUPAC codes which will be converted to abiguity groups, or
 -- explicit ambiguity group notation with braces. Ambiguity groups are bitpacked
 -- into 8 bit structures with the bit ordering specified by 'TntProteinCharacter'.
-proteinSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntProteinCharacter]
+proteinSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntProteinCharacter]
 proteinSequence = mapM discreteToProtein =<< coreDiscreteSequenceThatGetsReused
 
 
@@ -271,7 +271,7 @@ proteinSequence = mapM discreteToProtein =<< coreDiscreteSequenceThatGetsReused
 -- A conversion function from a discrete character ambiguity group to a dna
 -- character ambiguity group. The mapping is not injective and unmatched
 -- discrete character values will result in a parse error being raised.
-discreteToDna :: (MonadParsec e s m {- , Token s ~ Char -}) => TntDiscreteCharacter -> m TntDnaCharacter
+discreteToDna :: (MonadFail m {- , Token s ~ Char -}) => TntDiscreteCharacter -> m TntDnaCharacter
 discreteToDna character = foldl (.|.) zeroBits <$> mapM f flags
   where
     flags = bitsToFlags character
@@ -286,7 +286,7 @@ discreteToDna character = foldl (.|.) zeroBits <$> mapM f flags
 -- protein character ambiguity group. The mapping is not injective and
 -- unmatched discrete character values will result in a parse error being
 -- raised.
-discreteToProtein :: (MonadParsec e s m {- , Token s ~ Char -}) => TntDiscreteCharacter -> m TntProteinCharacter
+discreteToProtein :: (MonadFail m {- , Token s ~ Char -}) => TntDiscreteCharacter -> m TntProteinCharacter
 discreteToProtein character = foldl (.|.) zeroBits <$> mapM f flags
   where
     flags     = bitsToFlags character
@@ -396,7 +396,7 @@ data XReadInterpretation
 -- segment based on the contextual information derived from the sequence segment
 -- tag. Applies any transformations to the sequence segment that were specified
 -- by the sequence segment tag context.
-taggedInterleaveBlock :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+taggedInterleaveBlock :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
 taggedInterleaveBlock = nightmare =<< xreadTags
 
 
@@ -407,7 +407,7 @@ taggedInterleaveBlock = nightmare =<< xreadTags
 --    the abyss gazes also into you.”
 --
 -- In all seriousness, interpreting the tags correctly is messy.
-nightmare :: (MonadParsec e s m, Token s ~ Char) => XReadInterpretation -> m (DList TaxonInfo)
+nightmare :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => XReadInterpretation -> m (DList TaxonInfo)
 nightmare interpretation = transformation <$> segment
   where
     applyGapsToMissings = if not $ parseGaps     interpretation then gapsToMissings else id
@@ -421,7 +421,7 @@ nightmare interpretation = transformation <$> segment
                 ParseProtein    -> proteinSegments
 
 
-continuousSegments, dnaSegments, discreteSegments, proteinSegments :: (MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+continuousSegments, dnaSegments, discreteSegments, proteinSegments :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
 
 
 -- |
@@ -446,7 +446,7 @@ proteinSegments    = segmentsOf (fmap Protein    <$> proteinSequence)
 
 -- |
 -- Parses one or more of the parameter sequence segment combinator.
--- Combinators are seperated by 'segmentTerminal'
+-- Combinators are seperated by "segmentTerminal."
 segmentsOf :: (MonadParsec e s m, Token s ~ Char) => m [TntCharacter] -> m (DList TaxonInfo)
 segmentsOf seqDef = DL.fromList <$> symbol (segment `sepEndBy1` segmentTerminal)
   where
@@ -523,7 +523,7 @@ toMissing e          = e
 -- identifiers. Validates that neither duplicate nor mutually exclusive
 -- identifiers exist. Returns the contextual information for interpreting the
 -- sequence segments following the tag.
-xreadTags :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m XReadInterpretation
+xreadTags :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m XReadInterpretation
 xreadTags = validateXReadTags =<< xreadTagsDef
   where
     xreadTagsDef = symbol (char '&') *> symbol (withinBraces tags)
@@ -541,7 +541,7 @@ xreadTags = validateXReadTags =<< xreadTagsDef
                  ,      keyword "trimtail"   5  $> TagTrimTail
                  ]
 
-    validateXReadTags :: (MonadParsec e s m {- , Token s ~ Char -}) => NonEmpty XReadTag -> m XReadInterpretation
+    validateXReadTags :: (MonadFail m {- , Token s ~ Char -}) => NonEmpty XReadTag -> m XReadInterpretation
     validateXReadTags xs
       | not (null dupes)                      = fail $ "You got duplicate tags man! Like only one's allowed. For realz! " <> show dupes
       | manyTags allTypeTags                  = fail $ "You can't have multiple character type tags: " <> show allTypeTags

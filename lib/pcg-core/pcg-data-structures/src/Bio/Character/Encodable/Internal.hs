@@ -21,7 +21,6 @@ module Bio.Character.Encodable.Internal
 
 import Bio.Character.Exportable
 import Control.Lens
-import Data.Bifunctor              (bimap)
 import Data.BitMatrix              (BitMatrix, fromRows)
 import Data.Bits
 import Data.BitVector.LittleEndian

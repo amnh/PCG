@@ -14,11 +14,13 @@
 -- Allocates a "ribbon" down the diagonal of the matrix rather than the entire matrix.
 --
 -----------------------------------------------------------------------------
-{-# LANGUAGE ConstraintKinds  #-}
-{-# LANGUAGE DeriveFoldable   #-}
-{-# LANGUAGE DeriveFunctor    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+
+{-# LANGUAGE ConstraintKinds    #-}
+{-# LANGUAGE DeriveFoldable     #-}
+{-# LANGUAGE DeriveFunctor      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Internal
   ( ukkonenDO
@@ -50,7 +52,7 @@ import           Prelude                                                        
 --
 -- Use the 'createUkkonenMethodMatrix' function to create this effcient structure.
 newtype UkkonenMethodMatrix a = U (Ribbon a)
-  deriving (Eq, Foldable, Functor)
+  deriving stock (Eq, Foldable, Functor)
 
 
 type instance Key UkkonenMethodMatrix = (Int, Int)

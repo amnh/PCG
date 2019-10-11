@@ -66,6 +66,7 @@ import qualified Control.Monad.Free               as F
 import           Data.CaseInsensitive             (FoldCase)
 import           Data.Foldable
 import           Data.Functor                     (void)
+import           Data.Kind                        (Type)
 import           Data.List                        (intercalate)
 import           Data.List.NonEmpty               (NonEmpty (..), some1)
 import           Data.Proxy
@@ -251,7 +252,7 @@ apRunner effect (ArgIdNamedArg p ids) = toPermutation $ do
     runPermutation $ runAp (apRunner effect) p
   where
     parseId
-      :: forall s' e' (m' :: * -> *)
+      :: forall s' e' (m' :: Type -> Type)
       .  (Token s' ~ Char, MonadParsec e' s' m', FoldCase (Tokens s'))
       => ArgumentIdentifier
       -> m' ()
@@ -273,7 +274,7 @@ parseArgumentList :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) =>
 parseArgumentList argListVal = toPermutation $ begin *> datum <* close
   where
     bookend
-      :: forall e s (f :: * -> *) a
+      :: forall e s (f :: Type -> Type) a
       .  (Token s ~ Char, MonadParsec e s f)
       => f a
       -> f ()

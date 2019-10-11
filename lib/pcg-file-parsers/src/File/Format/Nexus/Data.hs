@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DerivingStrategies #-}
+
 module File.Format.Nexus.Data
   ( Sequences
   , AlphabetSymbol
@@ -36,7 +38,7 @@ module File.Format.Nexus.Data
   , SeqSubBlock(Matrix, Format, Dims, Eliminate, CharLabels, IgnSSB, Taxa)
   , StepMatrix(..)
   , TaxaSpecification(..)
---  , TreeName
+  , TreeName
 --  , SerializedTree
   , TreeBlock(..)
   , TreeField(..)
@@ -214,7 +216,8 @@ data DimensionsFormat
 
 
 -- | Where any information that should be ignored is stored.
-newtype IgnBlock = IgnBlock {ignoredName :: String} deriving (Show)
+newtype IgnBlock = IgnBlock {ignoredName :: String}
+  deriving stock (Show)
 
 
 -- | The collection of information extracted from blocks in the Nexus file.

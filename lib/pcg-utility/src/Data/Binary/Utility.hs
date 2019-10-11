@@ -8,8 +8,8 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Functions for collecting 'Left' values of 'Either' forming a 'Validation'
--- similar context.
+-- Functions for collecting 'Left' values of 'Either' forming a context similar
+-- to 'Data.Validation' similar context.
 --
 -----------------------------------------------------------------------------
 

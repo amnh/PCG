@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -35,7 +36,6 @@ import           Control.DeepSeq
 import           Control.Lens              as Lens hiding (Indexable)
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding (indent)
-import           Data.GraphViz.Printing    (renderDot, toDot)
 import           Data.GraphViz.Types       hiding (attrs)
 import           Data.GraphViz.Types.Graph
 import           Data.Key
@@ -56,7 +56,8 @@ import           Type.Reflection           (Typeable)
 -- A solution that contains one or more equally costly forests.
 newtype PhylogeneticSolution a
       = PhylogeneticSolution {getPhylogeneticSolution :: NonEmpty (PhylogeneticForest a)}
-      deriving (Generic, Semigroup, Typeable)
+      deriving stock   (Generic)
+      deriving newtype (Semigroup, Typeable)
 
 
 -- |

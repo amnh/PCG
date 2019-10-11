@@ -48,7 +48,6 @@ common ghc-flags
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
     -Wmissing-signatures
-    -Wnoncanonical-monadfail-instances
     -Wnoncanonical-monad-instances
     -Wnoncanonical-monoid-instances
     -Woverflowed-literals
@@ -90,7 +89,7 @@ library
     pcg-utility,
     base                     >= 4.11      && < 5.0,
     -- >=0.5.8 Required for Data.Map.restrictKeys
-    containers               >= 0.5.8     && < 0.7,
+    containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     -- >=2999.20 Required for forgiving construction of DOT object
     graphviz                 >= 2999.20   && < 3000,
@@ -99,7 +98,7 @@ library
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
     semigroups               >= 0.18      && < 1.0,
-    text-short               >= 0.1       && < 1.0,
+    text-short               >= 0.1.3     && < 1.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
     -- >=3.4 required for corrected definition of (!) & index

@@ -46,9 +46,10 @@ data  ConstructionType
     | WheelerForest
     deriving (Eq, Show)
 
+
 -- |
 -- Different possible types of clustering pre-pass.
-data ClusterLabel
+data  ClusterLabel
     = NoCluster
     | SingleLinkage
     | CompleteLinkage
@@ -56,10 +57,14 @@ data ClusterLabel
     | WeightedLinkage
     | WardLinkage
     | KMedians
-  deriving (Eq, Show)
+    deriving (Eq, Show)
 
+
+-- |
+-- A clustering specification with type and grouping.
 data ClusterOption = ClusterOption !ClusterLabel !Int
-  deriving (Eq, Show)
+    deriving (Eq, Show)
+
 
 -- |
 -- Get the number of clusters from a 'ClusterOption'.

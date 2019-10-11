@@ -25,7 +25,7 @@ import           Data.List               (sort, sortBy)
 import           Data.List.NonEmpty      (NonEmpty (..), nonEmpty)
 import qualified Data.List.NonEmpty      as NE
 import           Data.Map                (assocs, empty, insertWith)
-import           Data.Maybe              (catMaybes, maybe)
+import           Data.Maybe              (catMaybes)
 import           Data.Ord                (comparing)
 import           Data.Semigroup.Foldable
 import           Data.Set                (insert, intersection)
@@ -435,7 +435,7 @@ foldZipWith3 f fa fb fc =
     fold (zipWith3 f la lb lc)
 
 -- |
--- A class with a 'Lens' to access the head field of a structure
+-- A class with a 'Control.Lens.Type.Lens' to access the head field of a structure
 class HasHead s a | s -> a where
   _head :: Lens' s a
 

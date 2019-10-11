@@ -12,7 +12,6 @@
 --
 -----------------------------------------------------------------------------
 
-
 module Data.ShortText.Custom
   ( intToShortText
   , makeIllegalShortText
@@ -25,7 +24,6 @@ import Data.ByteString.Short   hiding (unpack)
 import Data.Text.Short         (ShortText, fromString)
 import Data.Text.Short.Unsafe  (fromShortByteStringUnsafe)
 import Data.Word
-
 
 
 -- |
@@ -49,5 +47,7 @@ makeNonUTFByteString = pack . (badByte:) . convertToBytes
     badByte = 192 -- 192 is not allowed as a starting code point in UTF-8
 
 
+-- |
+-- Convert a 'Word64' to a list of eight 'Word8' values.
 convertToBytes :: Word64 -> [Word8]
 convertToBytes = unpack . toLazyByteString . word64BE
