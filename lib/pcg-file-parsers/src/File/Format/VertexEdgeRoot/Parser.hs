@@ -17,6 +17,7 @@
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE TypeFamilies       #-}
 
@@ -39,6 +40,7 @@ module File.Format.VertexEdgeRoot.Parser
 import           Control.DeepSeq        (NFData)
 import           Data.CaseInsensitive   (FoldCase)
 import           Data.Char              (isSpace)
+import           Data.Data
 import           Data.Either            (partitionEithers)
 import           Data.Foldable
 import           Data.Functor           (($>))
@@ -85,7 +87,9 @@ data  EdgeInfo
     { edgeOrigin :: VertexLabel -- ^ Extract the origin of the directed edge
     , edgeTarget :: VertexLabel -- ^ Extract the destination of the directed edge
     , edgeLength :: EdgeLength  -- ^ Extract the /possibly/ present edge length
-    } deriving (Eq, Generic, NFData, Ord)
+    }
+    deriving stock (Data, Eq, Generic, Ord, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -95,7 +99,9 @@ data  VertexEdgeRoot
     { vertices :: Set VertexLabel
     , edges    :: Set EdgeInfo
     , roots    :: Set VertexLabel
-    } deriving (Show, Generic, NFData, Eq)
+    }
+    deriving stock    (Data, Eq, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 -- | (✔)
@@ -108,7 +114,7 @@ instance Show EdgeInfo where
 -- |
 -- For a given vertex, attempts to get the connected vertex from the 'EdgeInfo'.
 -- If the input vertex was present in the 'EdgeInfo', returns 'Just v' where
--- 'v' is the corresponsing 'VertexLabel'. If the input vertex was not present
+-- @v@ is the corresponsing 'VertexLabel'. If the input vertex was not present
 -- in the 'EdgeInfo'.
 connectedVertex :: VertexLabel -> EdgeInfo -> Maybe VertexLabel
 connectedVertex v (EdgeInfo a b _)
@@ -306,7 +312,7 @@ isReflexive (EdgeInfo a b _) (EdgeInfo x y _) = a == y && b == x
 
 
 -- |
--- Defines the serialized format of an edge connecting nodes 'a' and 'b' as
+-- Defines the serialized format of an edge connecting nodes @a@ and @b@ as
 -- '"(a,b)"'. Allows for optional "branch length" annotation as '"(a,b):12.34"'.
 edgeDefinition :: (MonadParsec e s m, Token s ~ Char) => m EdgeInfo
 edgeDefinition = symbol $ do

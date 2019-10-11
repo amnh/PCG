@@ -337,6 +337,13 @@ generateDotFile :: TextShow n => PhylogeneticDAG m e n u v w x y z -> String
 generateDotFile = (<> "\n") . L.unpack . renderDot . toDot
 
 
+adjustResolution
+  :: (ResolutionInformation (CharacterSequence u v w x y z) -> ResolutionInformation (CharacterSequence u v w x y z'))
+  -> IndexData e (PhylogeneticNode (CharacterSequence u v w x y z) n)
+  -> ResolutionCache (CharacterSequence u v w x y z')
+adjustResolution f = pure . f . NE.head . resolutions . nodeDecoration
+
+
 -- |
 -- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
 --
@@ -371,9 +378,10 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
     singleRef node = node & _nodeDecoration .~ updatedNode
       where
         updatedNode = (node ^. _nodeDecoration) & _resolutions .~ newResolution
+
         newResolution :: ResolutionCache (CharacterSequence u' v' w' x' y' z')
-        newResolution    = pure . updateDynamicCharactersInSequence $ NE.head datumResolutions
-        datumResolutions = resolutions $ nodeDecoration node
+        newResolution = adjustResolution updateDynamicCharactersInSequence node
+
         dynCharGen m x = transformation m (RootContext x)
 
         updateDynamicCharactersInSequence
@@ -529,15 +537,11 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
             -- PhylogeneticNode type requirements. It is the part that gets
             -- updated, and requires a bunch of work to be performed.
             -- Remember, this only updates the dynamic characters.
+            newResolution = adjustResolution updateDynamicCharactersInSequence node
 
-            newResolution :: ResolutionCache (CharacterSequence u' v' w' x' y' z')
-            newResolution    = pure . updateDynamicCharactersInSequence $ NE.head datumResolutions
+            node          = refs ! i
 
-            datumResolutions = resolutions $ nodeDecoration node
-
-            node             = refs ! i
-
-            kids             = IM.keys $ childRefs node
+            kids          = IM.keys $ childRefs node
 
             updateDynamicCharactersInSequence
               :: ResolutionInformation (CharacterSequence u1 v1 w1 x1 y1 z)

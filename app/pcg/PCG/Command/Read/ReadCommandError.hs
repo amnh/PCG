@@ -15,6 +15,7 @@
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE UnboxedSums        #-}
 
 module PCG.Command.Read.ReadCommandError
@@ -26,14 +27,14 @@ module PCG.Command.Read.ReadCommandError
 
 
 import Control.DeepSeq                  (NFData)
-import GHC.Generics                     (Generic)
---import Data.Data
+import Data.Data
 import Data.FileSource                  (FileSource)
 import Data.FileSource.InputStreamError
 import Data.FileSource.ParseStreamError
 import Data.List.NonEmpty               (NonEmpty (..))
 import Data.Semigroup.Foldable
 import Data.Unification
+import GHC.Generics                     (Generic)
 import Text.Megaparsec
 import TextShow
 
@@ -56,7 +57,8 @@ data  ReadCommandError
     = InputError {-# UNPACK #-} !InputStreamError
     | ParseError {-# UNPACK #-} !ParseStreamError
     | UnifyError {-# UNPACK #-} !UnificationError
-    deriving (Generic, NFData, Show)
+    deriving stock    (Data, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 instance Semigroup ReadCommandError where

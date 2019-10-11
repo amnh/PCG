@@ -13,29 +13,26 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE FlexibleContexts  #-}
+{-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards   #-}
 
--- Included for ToField instance of FileSource.
--- I didn't want the cassava package dependency for the library that defines FileSource.
-{-# OPTIONS_GHC -fno-warn-orphans #-}
-
 module PCG.Command.Report.Metadata
   ( outputMetadata
-  )
-  where
+  ) where
 
-import           Bio.Character.Type         (CharacterType (..))
-import           Bio.Graph
-import           Bio.Graph.PhylogeneticDAG
-import           Bio.Metadata
-import           Bio.Metadata.CharacterName
-import           Bio.Sequence.Metadata
-import           Control.Lens.Operators     ((^.))
-import qualified Data.ByteString.Lazy       as BS
-import           Data.Csv
-import           Data.FileSource
-import           Data.Text.Short            (toByteString)
+import Bio.Graph
+import Bio.Graph.PhylogeneticDAG
+import Bio.Metadata
+import Bio.Metadata.CharacterName
+import Bio.Sequence.Metadata
+import Control.Lens.Operators     ((^.))
+import Data.FileSource
+import Data.Text.Lazy             (Text)
+import Data.Text.Short
+import Prelude             hiding (filter)
+import TextShow
+import TextShow.Custom
 
 
 data  CharacterReportMetadata
@@ -47,35 +44,46 @@ data  CharacterReportMetadata
     }
 
 
-instance ToNamedRecord CharacterReportMetadata where
-  toNamedRecord CharacterReportMetadata {..} =
-    namedRecord
-      [ "Character Name"        .= characterNameRM
-      , "Character Source File" .= charsourceFileRM
-      , "Character Type"        .= characterTypeRM
-      , "TCM Source File"       .= tcmSourceFile
-      ]
-
-
-instance DefaultOrdered CharacterReportMetadata where
-  headerOrder _ =
-    header
-      [ "Character Name"
-      , "Character Source File"
-      , "Character Type"
-      , "TCM Source File"
-      ]
-
-instance ToField FileSource where
-
-    toField = toByteString . toShortText
+-- |
+-- A label for the different types of characters.
+data  CharacterType
+    = Continuous
+    | NonAdditive
+    | Additive
+    | Metric
+    | NonMetric
+    | Dynamic
+    deriving Show
 
 
 -- |
 -- Wrapper function to output a metadata csv as a 'ByteString'
-outputMetadata :: DecoratedCharacterResult -> BS.ByteString
-outputMetadata =
-  encodeDefaultOrderedByName . characterMetadataOutput
+outputMetadata :: DecoratedCharacterResult -> Text
+outputMetadata = toLazyText . unlinesB . fmap (intercalateB ",") . (headerRow:) . fmap toFields . characterMetadataOutput
+  where
+    toFields x =
+        [ showb . characterNameRM
+        , showb . charsourceFileRM
+        , renderCharacterType . characterTypeRM
+        , showb . stripCommas . tcmSourceFile
+        ] <*> [x]
+      
+    headerRow =
+        [ "Character Name"
+        , "Character Source File"
+        , "Character Type"
+        , "TCM Source File"
+        ]
+
+    renderCharacterType = \case
+        Continuous  -> "Continuous"
+        NonAdditive -> "NonAdditive"
+        Additive    -> "Additive"
+        Metric      -> "Metric"
+        NonMetric   -> "NonMetric"
+        Dynamic     -> "Dynamic"
+
+    stripCommas = filter (','/=) . toShortText
 
 
 characterMetadataOutput :: DecoratedCharacterResult -> [CharacterReportMetadata]
@@ -84,7 +92,6 @@ characterMetadataOutput decCharRes = getCharacterReportMetadata metaSeq
  -- Extract a generic solution and its metadata sequence
     pdag2        = extractSolution decCharRes
     metaSeq      = pdag2 ^. _columnMetadata
-
 
 
 getCharacterReportMetadata :: MetadataSequence m -> [CharacterReportMetadata]

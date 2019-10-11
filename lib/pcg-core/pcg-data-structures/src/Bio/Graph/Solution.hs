@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -56,7 +57,8 @@ import           Type.Reflection           (Typeable)
 -- A solution that contains one or more equally costly forests.
 newtype PhylogeneticSolution a
       = PhylogeneticSolution {getPhylogeneticSolution :: NonEmpty (PhylogeneticForest a)}
-      deriving (Generic, Semigroup, Typeable)
+      deriving stock   (Generic)
+      deriving newtype (Semigroup, Typeable)
 
 
 -- |

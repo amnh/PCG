@@ -18,6 +18,9 @@
 
 module Data.Vector.Memo
   ( DVector(..)
+  , Cartesian(..)
+  , Endo
+  , ExpFunctor(..)
   , generateMemo
   , liftExp2
   , zip2
@@ -33,6 +36,9 @@ import Data.Vector   as V hiding (zip3, zip4)
 import Prelude       hiding (zip3)
 
 
+-- |
+-- Analogous to this 'Data.Semigroup.Endo'.
+-- We should probably switch to this canonical type eventually.
 type Endo a = (a -> a)
 
 
@@ -71,6 +77,8 @@ class Cartesian f where
     pair :: f a -> f b -> f (a, b)
 
 
+-- |
+-- An expressable functor.
 class ExpFunctor f where
 
     xmap :: (a -> b) -> (b -> a) -> f a -> f b
@@ -88,7 +96,7 @@ instance Cartesian DVector where
 
 
 -- |
--- Lifts a binary function into the 'Expfunctor'.
+-- Lifts a binary function into the 'ExpFunctor'.
 {-# INLINE liftExp2 #-}
 liftExp2 :: (ExpFunctor f, Cartesian f)
   => (a -> b -> c)

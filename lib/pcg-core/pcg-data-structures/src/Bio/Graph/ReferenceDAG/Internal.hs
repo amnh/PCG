@@ -15,6 +15,7 @@
 
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
@@ -137,7 +138,9 @@ data NodeClassification
 
 -- |
 -- A reference to a node within the 'ReferenceDAG'.
-newtype NodeRef = NR Int deriving (Eq, Enum)
+newtype NodeRef = NR Int
+  deriving stock   (Eq)
+  deriving newtype (Enum)
 
 
 type instance Key (ReferenceDAG d e) = Int
@@ -1325,7 +1328,7 @@ getDotContext uniqueIdentifierBase mostSignificantDigit dag =
     toAttributes :: TextShow a => a -> Attributes
     toAttributes x =
       let txt = showt x
-      in  if T.null txt then [] else [ toLabel $ T.unpack txt ]
+      in  [ toLabel $ T.unpack txt | not (T.null txt) ]
 
     f :: TextShow n => Int -> IndexData e n -> [(DotNode GraphID, [DotEdge GraphID])]
     f k v = [ (toDotNode, toDotEdge <$> kidRefs) ]

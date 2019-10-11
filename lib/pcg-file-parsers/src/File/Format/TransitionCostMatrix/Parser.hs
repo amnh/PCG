@@ -16,6 +16,7 @@
 {-# LANGUAGE DeriveAnyClass      #-}
 {-# LANGUAGE DeriveDataTypeable  #-}
 {-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -32,13 +33,14 @@ module File.Format.TransitionCostMatrix.Parser
 import           Control.Applicative.Combinators.NonEmpty
 import           Control.DeepSeq
 import           Data.Char                                (isSpace)
+import           Data.Data
 import           Data.Foldable
 import           Data.List.NonEmpty                       (NonEmpty)
 import           Data.List.Utility                        (duplicates, mostCommon)
 import           Data.Matrix.NotStupid                    (Matrix, ncols, nrows)
 import qualified Data.Matrix.NotStupid                    as M (fromList)
 import           Data.Maybe                               (catMaybes, fromJust)
-import           Data.Proxy
+import           Data.Proxy                               (Proxy (..))
 import           Data.String
 import qualified Data.Text                                as T
 import qualified Data.Text.Lazy                           as LT
@@ -61,7 +63,7 @@ data TCMParseResult
 -- |
 -- The results of a TCM file consisting of
 --
---   * A custom alphabet of 'Symbol's
+--   * A custom alphabet of "Symbols"
 --
 --   * A matrix consisting of the transition costs between symbols
 --
@@ -70,13 +72,13 @@ data TCMParseResult
 -- > (length . customAlphabet) tcm == (nrows . transitionCosts) tcm && (length . customAlphabet) tcm == (ncols . transitionCosts) tcm
 --
 -- Note that the 'transitionCosts` does not need to be a symetic matrix nor have identity values on the matrix diagonal.
-data TCM
-   = TCM
-   { -- | The custom alphabet of 'Symbols' for which the TCM matrix is defined
-     customAlphabet  :: Vector ShortText
-     -- | The cost to transition between any two symbols, square but not necessarily symetric
-   , transitionCosts :: Matrix Rational -- n+1 X n+1 matrix where n = length customAlphabet
-   } deriving (Eq, Generic, NFData, Show)
+data  TCM
+    = TCM
+    { customAlphabet  :: Vector ShortText -- ^ The custom alphabet of "Symbols" for which the TCM matrix is defined
+    , transitionCosts :: Matrix Rational  -- ^ The cost to transition between any two symbols, square but not necessarily symetric
+    } -- n+1 X n+1 matrix where n = length customAlphabet
+    deriving stock    (Eq, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |

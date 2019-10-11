@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Main (main) where
 
@@ -11,7 +12,8 @@ import Safe                     (readMay)
 import System.Environment       (getArgs)
 
 
-newtype MyStruct = T [CULong] deriving (Show)
+newtype MyStruct = T [CULong]
+  deriving stock (Show)
 
 
 instance Exportable MyStruct where

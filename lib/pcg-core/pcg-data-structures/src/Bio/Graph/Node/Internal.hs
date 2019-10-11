@@ -170,11 +170,9 @@ type ResolutionCache s = NonEmpty (ResolutionInformation s)
 -- A newick representation of a subtree. 'Semigroup' instance used for subtree
 -- joining.
 newtype NewickSerialization = NS Text
-  deriving newtype Eq
-  deriving         Generic
-  deriving newtype Ord
-  deriving newtype Show
-  deriving newtype TextShow
+  deriving newtype (Eq, Ord, Show, TextShow)
+  deriving stock   (Generic)
+
 
 
 -- |

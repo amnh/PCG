@@ -8,14 +8,14 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- The 'Evaluation' monad definition.
+-- The various 'Notification' values in an 'Contol.Evaluation.Evaluation' monad.
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Control.Evaluation.Notification
@@ -36,7 +36,8 @@ import Test.QuickCheck.Instances ()
 data  Notification
     = Warning     Text
     | Information Text
-    deriving (Eq, Data, Generic, NFData, Ord, Show)
+    deriving stock    (Data, Eq, Generic, Ord, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 instance Arbitrary Notification where
