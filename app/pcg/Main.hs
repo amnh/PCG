@@ -6,7 +6,7 @@ module Main (main) where
 
 import Control.DeepSeq
 import Control.Evaluation
-import Control.Exception              (catch, ioError)
+import Control.Exception              (catch)
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Validation
@@ -16,7 +16,6 @@ import Data.FileSource.IO
 import Data.Foldable
 import Data.Maybe
 import Data.MonoTraversable
-import Data.Semigroup                 ((<>))
 import Data.String                    (fromString)
 import Data.Text.Lazy                 (Text, pack, unlines)
 import Data.Text.Lazy.IO              (putStr, putStrLn)

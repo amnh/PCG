@@ -60,7 +60,6 @@ common ghc-flags
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
     -Wmissing-signatures
-    -Wnoncanonical-monadfail-instances
     -Wnoncanonical-monad-instances
     -Wnoncanonical-monoid-instances
     -Woverflowed-literals
@@ -101,7 +100,7 @@ library
     containers               >= 0.5.8     && < 1.0,
     quickcheck-instances     >= 0.3.17    && < 1.0,
     text                     >= 1.2       && < 2.0,
-    text-show                >= 3.0       && < 4.0,            
+    text-show                >= 3.8.1     && < 4.0,            
                 
   exposed-modules:
     Control.Evaluation

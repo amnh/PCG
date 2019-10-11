@@ -29,6 +29,7 @@ module File.Format.Dot
   ) where
 
 import           Control.Arrow                     ((&&&))
+import           Control.Monad.Fail
 import           Control.Monad.State
 import           Data.Foldable
 import           Data.GraphViz.Attributes.Complete (Attribute (Label), Label (..))
@@ -36,6 +37,7 @@ import           Data.GraphViz.Parsing
 import           Data.GraphViz.Types
 import           Data.GraphViz.Types.Canonical
 import           Data.Key
+import           Data.Kind
 import           Data.Map                          (Map, fromSet, insertWith)
 import           Data.Monoid
 import           Data.Proxy
@@ -53,8 +55,9 @@ import           Text.Megaparsec                   (MonadParsec, Token, chunkToT
 -- (MonadParsec e s m, Token s ~ Char) => m
 --dotParse :: Text -> Either String (DotGraph GraphID)
 dotStreamParser
-  :: forall e s (m :: * -> *).
-     ( MonadParsec e s m
+  :: forall e s (m :: Type -> Type).
+     ( MonadFail m
+     , MonadParsec e s m
      , Token s ~ Char
      )
   => m (DotGraph GraphID)

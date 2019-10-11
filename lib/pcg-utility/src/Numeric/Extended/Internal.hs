@@ -19,10 +19,12 @@ module Numeric.Extended.Internal
   , Finite
   ) where
 
+import Data.Kind
+
 
 -- |
 -- The finite type underlying the infinite extension type.
-type family Finite (f :: *)
+type family Finite (f :: Type)
 
 
 -- |

@@ -87,7 +87,6 @@ common ghc-flags
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
     -Wmissing-signatures
-    -Wnoncanonical-monadfail-instances
     -Wnoncanonical-monad-instances
     -Wnoncanonical-monoid-instances
     -Woverflowed-literals
@@ -208,11 +207,11 @@ library pcg-analysis
     foldl                    >= 1.3.2     && < 2.0,
     hashable                 >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
-    lens                     >= 4.17      && < 5.0,
+    lens                     >= 4.18      && < 5.0,
     mtl                      >= 2.0       && < 3.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    text-show                >= 3.0       && < 4.0,
+    text-show                >= 3.8.1     && < 4.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
     vector-builder           >= 0.3.7     && < 0.4,
@@ -278,7 +277,7 @@ library pcg-data-structures
     hashable                 >= 1.2       && < 2.0,
     hashtables               >= 1.2.3     && < 2.0,
     keys                     >= 3.0       && < 4.0,
-    lens                     >= 4.17      && < 5.0,
+    lens                     >= 4.18      && < 5.0,
     monad-loops              >= 0.4       && < 1.0,
     mtl                      >= 2.0       && < 3.0,
     parallel                 >= 3.2       && < 4.0,
@@ -290,7 +289,7 @@ library pcg-data-structures
     stm                      >= 2.4       && < 3.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.0       && < 4.0,
+    text-show                >= 3.8.1     && < 4.0,
     text-show-instances      >= 3.0       && < 4.0,
     unordered-containers     >= 0.2.9     && < 1.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
@@ -499,7 +498,7 @@ test-suite data-structures-tests
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
-    lens                     >= 4.17      && < 5.0,
+    lens                     >= 4.18      && < 5.0,
     QuickCheck               >= 2.12      && < 3.0,
     semigroups               >= 0.18      && < 1.0,
     tasty                    >= 1.2       && < 2.0,

@@ -41,7 +41,7 @@ import           Data.Data
 import           Data.Foldable
 import           Data.Hashable
 import           Data.Key
-import           Data.Maybe                (fromMaybe, isJust, maybe)
+import           Data.Maybe                (fromMaybe, isJust)
 import           Data.MonoTraversable
 import           Data.MonoTraversable.Keys
 import           Data.String

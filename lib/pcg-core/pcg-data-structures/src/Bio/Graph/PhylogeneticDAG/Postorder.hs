@@ -34,7 +34,8 @@ import           Control.Arrow                      ((&&&))
 import           Control.Lens.At                    (ix)
 import           Control.Lens.Combinators           (singular)
 import           Control.Lens.Operators             ((%~), (.~), (^.))
-import           Data.Foldable.Custom               (foldMap', minimum', sum')
+import           Data.Foldable
+import           Data.Foldable.Custom               (minimum', sum')
 import           Data.Function                      ((&))
 import qualified Data.IntMap                        as IM
 import           Data.IntSet                        (IntSet)
@@ -54,12 +55,12 @@ import qualified Data.Vector                        as V
 -- and returns the new decoration for the current node.
 postorderSequence'
   :: forall m e n u v w x y z u' v' w' x' y' z' . HasBlockCost u' v' w' x' y' z'
-  => (ContinuousCharacterMetadataDec                      -> PostorderContext u u' -> u')
-  -> (DiscreteCharacterMetadataDec                        -> PostorderContext v v' -> v')
-  -> (DiscreteCharacterMetadataDec                        -> PostorderContext w w' -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext x x' -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter)   -> PostorderContext z z' -> z')
+  => (ContinuousCharacterMetadataDec                         -> PostorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                           -> PostorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                           -> PostorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> PostorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> PostorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> PostorderContext z z' -> z')
   -> PhylogeneticDAG m e n u  v  w  x  y  z
   -> PhylogeneticDAG m e n u' v' w' x' y' z'
 

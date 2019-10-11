@@ -43,6 +43,7 @@ module Data.Range
 
 import Control.DeepSeq
 import Data.Foldable
+import Data.Kind
 import GHC.Generics
 import TextShow        (TextShow (showb))
 
@@ -56,7 +57,7 @@ newtype Range r = Range (r, r, Maybe Int)
 
 -- |
 -- The bound of a 'Ranged' type.
-type family Bound (f :: *)
+type family Bound (f :: Type)
 
 
 -- |

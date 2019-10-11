@@ -4,7 +4,7 @@ module Data.Alphabet.Test
 
 import Data.Alphabet
 import Data.Foldable
-import Data.List             (nubBy, splitAt)
+import Data.List             (nubBy)
 import Test.Tasty
 import Test.Tasty.HUnit      as HU
 import Test.Tasty.QuickCheck as QC

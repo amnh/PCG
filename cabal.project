@@ -7,8 +7,54 @@ packages: .
           lib/pcg-exportable
           lib/pcg-file-parsers
           lib/pcg-file-source
+          lib/pcg-graph
           lib/pcg-language
           lib/pcg-serialize
           lib/pcg-tcm-memo
           lib/pcg-utility
           lib/pcg-validation-transformer
+
+source-repository-package
+  type: git
+  location: https://github.com/haskell/recursion-ninja/cassava
+  tag:      46445b6bed6f626ec3d2cfcaad489f88bae56963
+--  type: git
+--  location: https://github.com/haskell/cabal
+--  tag:      27221efc89e25069f3ded141310aa0e63df9d8f5
+--  subdir:   Cabal
+--  type: git
+--  location: https://github.com/GaloisInc/cereal
+--  tag:      3396176a36284d7aa53ffcb34a905a91a576832c
+--  type: git
+--  location: https://github.com/monadfix/microlens
+--  tag:      0033b78a005bef20e37d033d2b34809ebe6f9e1b
+--  subdir:   microlens
+--  type: git
+--  location: https://github.com/haskell/parsec
+--  tag:      60dfb0cb6a711f141e5d8728af37de894e33795e
+--  type: git
+--  location: https://github.com/Gabriel439/Haskell-Pipes-Library
+--  tag:      37e4b33b24c4b0dfb26d424bced00af6f4c11333
+--  type: git
+--  location: https://github.com/haskell/primitive
+--  tag:      47c4341f4e0f6fbbc3c53f23ca71e588c9515e6d
+--  type: git
+--  location: https://github.com/nick8325/quickcheck
+--  tag:      af14a56beda3bb02239ffb0ef7f8e9b393fec8e4
+--  type: git
+--  location: https://github.com/phadej/qc-instances
+--  tag:      d39d60ed0a9673073d2a8e67947a7c7d99ffb41f
+--  type: git
+--  location: https://github.com/glguy/th-abstraction
+--  tag:      00fcd437f35c3049ccca70ff644bdf38e8dce8d0
+--  type: git
+--  location: https://github.com/bgamari/vector-th-unbox
+--  tag:      b5ecd80e422a1b762923b026eba1efd46d4e8c28
+  type: git
+  location: https://github.com/haskell-vanguard/vector-th-unbox
+  tag:      2fa686c70d4f10993ca7c73b510e18568620b1d0
+--  type: git
+--  location: https://github.com/haskell-vanguard/yaml
+--  tag:      ef48de2ff3a551fdc6d3884fbe5755501abbad65
+--  subdir:   yaml
+

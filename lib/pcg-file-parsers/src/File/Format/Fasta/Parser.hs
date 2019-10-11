@@ -45,7 +45,6 @@ import qualified Data.List.NonEmpty         as NE
 import           Data.List.Utility
 import           Data.Map                   (keysSet)
 import           Data.Maybe                 (fromJust)
-import           Data.Proxy                 (Proxy (..))
 import           Data.Set                   (Set, mapMonotonic)
 import qualified Data.Set                   as S
 import qualified Data.Text                  as T

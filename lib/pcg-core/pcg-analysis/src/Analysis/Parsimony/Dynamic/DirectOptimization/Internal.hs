@@ -49,7 +49,7 @@ import           Data.List.Utility                                      (invaria
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
-import           Data.Sequence                                          ((<|), (|>))
+--import           Data.Sequence                                          ((<|), (|>))
 import qualified Data.Sequence                                          as Seq
 import           Data.TCM.Dense                                         (DenseTransitionCostMatrix)
 import           Data.Word

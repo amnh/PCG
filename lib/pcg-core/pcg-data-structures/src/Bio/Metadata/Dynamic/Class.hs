@@ -29,7 +29,6 @@ module Bio.Metadata.Dynamic.Class
   ) where
 
 
---import Bio.Character.Encodable
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
 import Control.Lens
@@ -42,7 +41,7 @@ import Data.TCM.Memoized
 class GetDenseTransitionCostMatrix s a | s -> a where
 
     {-# MINIMAL denseTransitionCostMatrix #-}
-    denseTransitionCostMatrix  :: Getter s a
+    denseTransitionCostMatrix :: Getter s a
 
 
 -- |
@@ -50,12 +49,12 @@ class GetDenseTransitionCostMatrix s a | s -> a where
 class GetThreewayTransitionCostMatrix s a | s -> a where
 
     {-# MINIMAL threewayTransitionCostMatrix #-}
-    threewayTransitionCostMatrix  :: Getter s a
+    threewayTransitionCostMatrix :: Getter s a
 
 
 -- |
--- A 'Lens' for the 'traversalFoci' field
+-- A 'yLens' for the 'traversalFoci' field
 class HasTraversalFoci s a | s -> a where
 
     {-# MINIMAL traversalFoci #-}
-    traversalFoci  :: Lens' s a
+    traversalFoci :: Lens' s a

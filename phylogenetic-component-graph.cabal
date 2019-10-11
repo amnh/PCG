@@ -55,7 +55,6 @@ common ghc-flags
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
     -Wmissing-signatures
-    -Wnoncanonical-monadfail-instances
     -Wnoncanonical-monad-instances
     -Wnoncanonical-monoid-instances
     -Woverflowed-literals
@@ -112,7 +111,6 @@ executable pcg
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 2.0,
     bytestring               >= 0.10.8    && < 0.11,
-    cassava                  >= 0.5.2     && < 0.6,
     compact                  >= 0.1       && < 2.0,
     -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
@@ -130,7 +128,7 @@ executable pcg
     modern-uri               >= 0.3       && < 1.0,
     mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
-    optparse-applicative     >= 0.14      && < 0.15,
+    optparse-applicative     >= 0.15      && < 2.0,
     parallel                 >= 3.2       && < 4.0,
     perfect-vector-shuffle   ^>= 0.1             ,
     random-shuffle           >= 0.0.4     && < 0.1,
@@ -140,7 +138,7 @@ executable pcg
     template-haskell         >= 2.13      && < 3.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
-    text-show                >= 3.0       && < 4.0,
+    text-show                >= 3.8.1     && < 4.0,
     th-lift-instances        >= 0.1       && < 1.0,            
     transformers             >= 0.5.5     && < 1.0,
     validation               >= 1.1       && < 2.0,
@@ -276,13 +274,13 @@ executable generate-data-set
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
-    optparse-applicative     >= 0.14      && < 0.15,
+    optparse-applicative     >= 0.15      && < 2.0,
     mtl                      >= 2.0       && < 3.0,
     mwc-random               >= 0.14      && < 1.0,                         
     random-shuffle           >= 0.0.4     && < 0.1,
     scientific               >= 0.3.6     && < 0.4,
     text                     >= 1.2       && < 2.0,
-    text-show                >= 3.0       && < 4.0,
+    text-show                >= 3.8.1     && < 4.0,
     validation               >= 1.1       && < 2.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
@@ -308,7 +306,7 @@ executable generate-tcm
     containers               >= 0.5.8     && < 1.0,
     keys                     >= 3.0       && < 4.0,
     matrix                   >= 0.3.6     && < 0.4,
-    optparse-applicative     >= 0.14      && < 0.15,
+    optparse-applicative     >= 0.15      && < 2.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
 

@@ -36,7 +36,7 @@ import           Text.Megaparsec.Custom
 -- |
 -- Parses an TREAD command. Correctly validates for taxa count
 -- and character sequence length. Produces one or more taxa sequences.
-treadCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m TRead
+treadCommand :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m TRead
 treadCommand = treadValidation =<< treadDefinition
   where
     treadDefinition = symbol treadHeader
@@ -50,7 +50,7 @@ treadCommand = treadValidation =<< treadDefinition
 -- The superflous information of an XREAD command. Consumes the XREAD string
 -- identifier and zero or more comments preceeding the taxa count and character
 -- cound parameters
-treadHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+treadHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 treadHeader =  symbol (keyword "tread" 2)
             *> many simpleComment
             $> ()
@@ -62,20 +62,20 @@ treadHeader =  symbol (keyword "tread" 2)
 
 -- |
 -- One or more '*' seperated trees in parenthetical notationy
-treadForest :: (MonadParsec e s m, Token s ~ Char) => m TRead
+treadForest :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m TRead
 treadForest = fmap NE.fromList $ symbol treadTree `sepBy1` symbol (char '*')
 
 
 -- |
 -- A bifurcating, rooted tree with data only on the leaf nodes.
-treadTree :: (MonadParsec e s m, Token s ~ Char) => m TReadTree
+treadTree :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m TReadTree
 treadTree = treadSubtree <|> treadLeaf
 
 
 -- |
 -- A leaf node of the TREAD tree, representing one of the three possible
 -- identifier types used for matching with a taxon from the taxa set.
-treadLeaf :: (MonadParsec e s m, Token s ~ Char) => m TReadTree
+treadLeaf :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m TReadTree
 treadLeaf = Leaf <$> choice [try index, try prefix, name]
  where
    index       = Index  <$>  flexibleNonNegativeInt "taxon reference index"
@@ -88,7 +88,7 @@ treadLeaf = Leaf <$> choice [try index, try prefix, name]
 
 -- |
 -- A branch of the TREAD tree. each brach can be either a leaf or a sub tree.
-treadSubtree :: (MonadParsec e s m, Token s ~ Char) => m TReadTree
+treadSubtree :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m TReadTree
 treadSubtree = between open close body
   where
     open      = symbol (char '(')

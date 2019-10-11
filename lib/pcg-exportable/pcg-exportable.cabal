@@ -46,7 +46,6 @@ common ghc-flags
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
     -Wmissing-signatures
-    -Wnoncanonical-monadfail-instances
     -Wnoncanonical-monad-instances
     -Wnoncanonical-monoid-instances
     -Woverflowed-literals
@@ -83,7 +82,7 @@ library
 
   build-depends:
     base                     >= 4.11      && < 5.0,
-    lens                     >= 4.17      && < 5.0,
+    lens                     >= 4.18      && < 5.0,
     semigroups               >= 0.18      && < 1.0,
 
   exposed-modules:

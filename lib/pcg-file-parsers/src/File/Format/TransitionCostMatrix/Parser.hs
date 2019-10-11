@@ -40,7 +40,6 @@ import           Data.List.Utility                        (duplicates, mostCommo
 import           Data.Matrix.NotStupid                    (Matrix, ncols, nrows)
 import qualified Data.Matrix.NotStupid                    as M (fromList)
 import           Data.Maybe                               (catMaybes, fromJust)
-import           Data.Proxy                               (Proxy (..))
 import           Data.String
 import qualified Data.Text                                as T
 import qualified Data.Text.Lazy                           as LT
@@ -90,7 +89,7 @@ data  TCM
 {-# SPECIALISE tcmStreamParser :: Parsec Void  T.Text TCM #-}
 {-# SPECIALISE tcmStreamParser :: Parsec Void LT.Text TCM #-}
 {-# SPECIALISE tcmStreamParser :: Parsec Void  String TCM #-}
-tcmStreamParser :: (MonadParsec e s m, Token s ~ Char) => m TCM
+tcmStreamParser :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m TCM
 tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 
 
@@ -104,7 +103,7 @@ tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 {-# SPECIALISE tcmDefinition :: Parsec Void  T.Text TCMParseResult #-}
 {-# SPECIALISE tcmDefinition :: Parsec Void LT.Text TCMParseResult #-}
 {-# SPECIALISE tcmDefinition :: Parsec Void  String TCMParseResult #-}
-tcmDefinition :: (MonadParsec e s m, Token s ~ Char) => m TCMParseResult
+tcmDefinition :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m TCMParseResult
 tcmDefinition = do
     _        <- space
     alphabet <- symbol tcmAlphabet
@@ -119,7 +118,7 @@ tcmDefinition = do
 {-# SPECIALISE tcmAlphabet :: Parsec Void  T.Text (Vector ShortText) #-}
 {-# SPECIALISE tcmAlphabet :: Parsec Void LT.Text (Vector ShortText) #-}
 {-# SPECIALISE tcmAlphabet :: Parsec Void  String (Vector ShortText) #-}
-tcmAlphabet :: (MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
+tcmAlphabet :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
 tcmAlphabet = alphabetLine inlinedSpace
 
 
@@ -130,7 +129,7 @@ tcmAlphabet = alphabetLine inlinedSpace
 {-# SPECIALISE tcmMatrix :: Parsec Void  T.Text (Matrix Rational) #-}
 {-# SPECIALISE tcmMatrix :: Parsec Void LT.Text (Matrix Rational) #-}
 {-# SPECIALISE tcmMatrix :: Parsec Void  String (Matrix Rational) #-}
-tcmMatrix :: (MonadParsec e s m, Token s ~ Char) => m (Matrix Rational)
+tcmMatrix :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Matrix Rational)
 tcmMatrix = matrixBlock inlinedSpace
 
 
@@ -151,7 +150,7 @@ tcmMatrix = matrixBlock inlinedSpace
 {-# SPECIALISE alphabetLine :: Parsec Void  T.Text () -> Parsec Void  T.Text (Vector ShortText) #-}
 {-# SPECIALISE alphabetLine :: Parsec Void LT.Text () -> Parsec Void LT.Text (Vector ShortText) #-}
 {-# SPECIALISE alphabetLine :: Parsec Void  String () -> Parsec Void  String (Vector ShortText) #-}
-alphabetLine :: (MonadParsec e s m, Token s ~ Char) => m () -> m (Vector ShortText)
+alphabetLine :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m () -> m (Vector ShortText)
 alphabetLine spacing = validateAlphabet =<< ((alphabetSymbol <* spacing) `someTill` endOfLine)
   where
     alphabetSymbol = takeWhile1P Nothing (not . isSpace)
@@ -177,7 +176,7 @@ alphabetLine spacing = validateAlphabet =<< ((alphabetSymbol <* spacing) `someTi
 {-# SPECIALISE matrixBlock :: Parsec Void  T.Text () -> Parsec Void  T.Text (Matrix Rational) #-}
 {-# SPECIALISE matrixBlock :: Parsec Void LT.Text () -> Parsec Void LT.Text (Matrix Rational) #-}
 {-# SPECIALISE matrixBlock :: Parsec Void  String () -> Parsec Void  String (Matrix Rational) #-}
-matrixBlock :: (MonadParsec e s m, Token s ~ Char) => m () -> m (Matrix Rational)
+matrixBlock :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m () -> m (Matrix Rational)
 matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
   where
     matrixRow   = (spacing *> matrixEntry <* spacing) `manyTill` endOfLine
@@ -191,7 +190,7 @@ matrixBlock spacing = validateMatrix =<< many (symbol matrixRow)
 {-# SPECIALISE validateTCMParseResult :: TCMParseResult -> Parsec Void  T.Text TCM #-}
 {-# SPECIALISE validateTCMParseResult :: TCMParseResult -> Parsec Void LT.Text TCM #-}
 {-# SPECIALISE validateTCMParseResult :: TCMParseResult -> Parsec Void  String TCM #-}
-validateTCMParseResult :: MonadParsec e s m => TCMParseResult -> m TCM
+validateTCMParseResult :: MonadFail m => TCMParseResult -> m TCM
 validateTCMParseResult (TCMParseResult alphabet matrix)
   | dimMismatch  = fail errorMessage
   | otherwise    = pure $ TCM alphabet matrix
@@ -227,7 +226,7 @@ validateTCMParseResult (TCMParseResult alphabet matrix)
 {-# SPECIALISE validateAlphabet :: NonEmpty  T.Text -> Parsec Void  T.Text (Vector ShortText) #-}
 {-# SPECIALISE validateAlphabet :: NonEmpty LT.Text -> Parsec Void LT.Text (Vector ShortText) #-}
 {-# SPECIALISE validateAlphabet :: NonEmpty  String -> Parsec Void  String (Vector ShortText) #-}
-validateAlphabet :: forall e s m . (MonadParsec e s m, Token s ~ Char) => NonEmpty (Tokens s) -> m (Vector ShortText)
+validateAlphabet :: forall e s m . (MonadFail m, MonadParsec e s m, Token s ~ Char) => NonEmpty (Tokens s) -> m (Vector ShortText)
 validateAlphabet alphabet
   | duplicatesExist = fail $ "The following symbols were listed multiple times in the custom alphabet: " <> shownDuplicates
   | otherwise       = pure . fromNonEmpty $ toShortText <$> alphabet
@@ -237,6 +236,7 @@ validateAlphabet alphabet
     shownDuplicates = show $ chunkToTokens pxy <$> dupes
     toShortText     = fromString . chunkToTokens pxy
     pxy = Proxy :: Proxy s
+
 
 -- |
 -- Validates the information contained in the Matrix constitutes a square matrix.
@@ -253,7 +253,7 @@ validateAlphabet alphabet
 {-# SPECIALISE validateMatrix :: [[Rational]] -> Parsec Void  T.Text (Matrix Rational) #-}
 {-# SPECIALISE validateMatrix :: [[Rational]] -> Parsec Void LT.Text (Matrix Rational) #-}
 {-# SPECIALISE validateMatrix :: [[Rational]] -> Parsec Void  String (Matrix Rational) #-}
-validateMatrix :: MonadParsec e s m => [[Rational]] -> m (Matrix Rational)
+validateMatrix :: (MonadFail m, MonadParsec e s m) => [[Rational]] -> m (Matrix Rational)
 validateMatrix matrix
   | null matrix        = fail "No matrix specified"
   | null matrixErrors  = pure . M.fromList rows cols $ concat matrix
