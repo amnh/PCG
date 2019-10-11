@@ -1,7 +1,7 @@
 cabal-version:      2.2
 Category:           Biology
 build-type:         Simple
-name:               pcg-utility
+name:               pcg-graph
 version:            0.2.0
 
 author:             Ward Wheeler
@@ -9,19 +9,11 @@ maintainer:         wheeler@amnh.org
 license:            BSD-3-Clause
 license-file:       LICENSE
 
-synopsis:           Collection of utility functions and data structures
-                    
-description:        Defines custom data structures for special use cases,
-                    more abstract functions that base provides, and re-exported
-                    correcting to deficient libraries.
+synopsis:           Library for phylogenetic graphs
 
-        
-common dependencies
+description:        Defines data type for phylogenetic graphs and various
+                    helper functions.
 
-  build-depends:
-    base                     >= 4.11      && < 5.0,
-    deepseq                  >= 1.4       && < 2.0,
-    semigroups               >= 0.18      && < 1.0,
 
 
 -- A litany of GHC warnings designed to alert us during the build of any common
@@ -55,6 +47,7 @@ common ghc-flags
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
     -Wmissing-signatures
+    -Wnoncanonical-monadfail-instances
     -Wnoncanonical-monad-instances
     -Wnoncanonical-monoid-instances
     -Woverflowed-literals
@@ -81,120 +74,87 @@ common language-spec
 library
 
   import:
-    dependencies,
     ghc-flags,
-    language-spec     
+    language-spec
 
   hs-source-dirs:
     src
 
   build-depends:
-    binary                   >= 0.6       && < 1.0,
-    bv-little                >= 1.0.1     && < 2.0,
-    bytestring               >= 0.10.8    && < 0.11,
+    pcg-utility,
+    base                     >= 4.11      && < 5.0,
+    bifunctors               ^>= 5.5.4            ,
     -- >=0.5.8 Required for Data.Map.restrictKeys
-    containers               >= 0.5.8     && < 1.0,
-    directory                >= 1.3       && < 2.0,
+    comonad                  ^>= 5.0.5            ,
+    containers               >= 0.5.8     && < 0.7,
+    deepseq                  >= 1.4       && < 2.0,
     foldl                    >= 1.3.2     && < 2.0,
     hashable                 >= 1.2       && < 2.0,
-    integer-gmp              >= 1.0       && < 2.0,
     keys                     >= 3.0       && < 4.0,
-    lens                     >= 4.18      && < 5.0,
-    matrix                   >= 0.3.6     && < 0.4,
-    mono-traversable         >= 1.0       && < 2.0,
---    mono-traversable-keys    >= 0.1       && < 1.0,
-    parallel                 >= 3.2       && < 4.0,
-    pipes                    >= 4.0       && < 5.0,            
-    pointed                  >= 5.0       && < 6.0,
+    lens                     >= 4.17      && < 5.0,
+    mtl                      ^>= 2.2.2            ,
+    parallel                 >= 3.2       && < 4.0,    
     QuickCheck               >= 2.12      && < 3.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
-    semigroupoids            >= 5.2.1     && < 5.4,
-    tasty-hunit              >= 0.10      && < 1.0,
     text                     >= 1.2       && < 2.0,
-    text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    semigroupoids            >= 5.2.1     && < 5.4,
+    text-show                >= 3.0       && < 4.0,
     text-show-instances      >= 3.0       && < 4.0,
-    transformers             >= 0.5.6     && < 1.0,
-    validation               >= 1.1       && < 2.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
+    vector-builder           >= 0.3.7.2   && < 0.4,
     -- >=3.4 required for corrected definition of (!) & index
     vector-instances         >= 3.4       && < 3.5,
 
+
   exposed-modules:
-    Control.Parallel.Custom
-    Data.BitMatrix
-    Data.Binary.Utility
-    Data.Either.Custom
-    Data.Foldable.Custom
-    Data.List.Utility
-    Data.Matrix.NotStupid
-    Data.MutualExclusionSet
-    Data.Pair.Strict
-    Data.Range
-    Data.ShortText.Custom
-    Data.TextShow.Custom
-    Data.UnionSet
-    Data.Vector.Custom
-    Data.Vector.Memo
-    Data.Vector.NonEmpty
-    Numeric.Cost
-    Numeric.Extended
-    Numeric.Extended.Natural
-    Numeric.Extended.Real
-    Numeric.NonNegativeAverage
-    Test.HUnit.Custom
-    Test.QuickCheck.Arbitrary.Instances
+    Data.Graph
+    Data.Graph.Type
+    Data.Graph.Memo
+    Data.Graph.Internal
+    Data.Graph.Indices
+    Data.Graph.NodeContext
+    Data.Graph.Moves
+    Data.Graph.Hash
+    Data.Graph.Intermediate
+    Data.Graph.Build
+    Data.Graph.Sequence.Class
 
   other-modules:
-    Data.BitMatrix.Internal
-    Data.MutualExclusionSet.Internal
-    Numeric.Extended.Internal
 
 
-test-suite test-suite
+test-suite pcg-graph-test
 
   import:
-    dependencies,
     ghc-flags,
-    language-spec     
+    language-spec
 
-  main-is:          
+  main-is:
     TestSuite.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
   hs-source-dirs:
     test
 
   build-depends:
+    pcg-graph,
     pcg-utility,
-    bv-little                >= 1.0.1     && < 2.0,
-    integer-gmp              >= 1.0       && < 2.0,
-    mono-traversable         >= 1.0       && < 2.0,
-    parallel                 >= 3.2       && < 4.0,
+    base                     >= 4.11      && < 5.0,
     QuickCheck               >= 2.12      && < 3.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-hunit              >= 0.10      && < 1.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
                     
   other-modules:
-    Control.Parallel.Test
-    Data.BitMatrix.Test
-    Data.MutualExclusionSet.Test
-    Numeric.Cost.Test            
-    Numeric.Extended.Natural.Test
-    Numeric.Extended.Real.Test
-    Numeric.NonNegativeAverage.Test
-    Data.List.Test
+    Data.Graph.Test
 
 
 benchmark benchmark-suite
 
   import:
-    dependencies,
     ghc-flags,
     language-spec     
 
@@ -209,6 +169,7 @@ benchmark benchmark-suite
 
   build-depends:
     pcg-utility,
+    base                     >= 4.11      && < 5.0,
     criterion                >= 1.5       && < 2.0,
 
   ghc-options:
@@ -218,6 +179,5 @@ benchmark benchmark-suite
     -threaded
                     
   other-modules:
-    Data.MutualExclusionSet.Bench
-    Numeric.Extended.Natural.Bench
+    Data.Graph.Bench
 
