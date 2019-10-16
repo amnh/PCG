@@ -134,14 +134,14 @@
             ]
           }
 
-- ignore: { name: Monoid law, left identity
+- ignore: { name: "Monoid law, left identity"
           , within:
             [ Data.MutualExclusionSet.Test
             , Numeric.Cost.Test
             ]
           }
 
-- ignore: { name: Monoid law, right identity
+- ignore: { name: "Monoid law, right identity"
           , within:
             [ Data.MutualExclusionSet.Test
             , Numeric.Cost.Test

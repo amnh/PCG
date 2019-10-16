@@ -302,11 +302,5 @@ instance HasNormalizedTopology VER.VertexEdgeRoot where
           where
             f label = (pValues, Just . nodeLabel . fromString $ label, cValues)
               where
-                pValues =
-                    case label `lookup` parentMapping of
-                       Nothing -> []
-                       Just xs -> toList xs
-                cValues =
-                    case label `lookup` childMapping of
-                       Nothing -> []
-                       Just xs -> toList xs
+                pValues = maybe [] toList (label `lookup` parentMapping)
+                cValues = maybe [] toList (label `lookup`  childMapping)

@@ -601,10 +601,9 @@ factorTCM tcm
 --
 -- /Assumes/ the 'TCM' has already been factored with 'factorTCM'.
 isAdditive :: TCM -> Bool
-isAdditive tcm = all isAdditiveIndex [(i,j) | i <- range, j <- range ]
+isAdditive tcm = all isAdditiveIndex $ tcmPoints2D tcm
   where
     isAdditiveIndex (i,j) = tcm ! (i,j) == toEnum (max i j - min i j)
-    range = [0 .. size tcm - 1]
 
 
 -- |
@@ -614,11 +613,10 @@ isAdditive tcm = all isAdditiveIndex [(i,j) | i <- range, j <- range ]
 --
 -- /Assumes/ the 'TCM' has already been factored with 'factorTCM'.
 isNonAdditive :: TCM -> Bool
-isNonAdditive tcm = all isNonAdditiveIndex [(i,j) | i <- range, j <- range ]
+isNonAdditive tcm = all isNonAdditiveIndex $ tcmPoints2D tcm
   where
     isNonAdditiveIndex (i,j) =  (i == j && tcm ! (i,j) == 0)
                              || (i /= j && tcm ! (i,j) == 1)
-    range = [0 .. size tcm - 1]
 
 
 -- |
@@ -638,11 +636,9 @@ isMetric tcm = conditions `allSatisfiedBy` tcm
         [ zeroDiagonalOnly
         , triangleInequality
         ]
-    triangleInequality x = all triangleInequalityIndex
-        [(i, k, j) | i <- range, j <- range, i < j, k <- range, j < k]
+    triangleInequality x = all triangleInequalityIndex $ tcmPoints3D tcm
       where
         triangleInequalityIndex (i,j,k) = x ! (i,k) <= x ! (i,j) + x ! (j,k)
-        range = [0 .. size tcm - 1]
 
 
 -- |
@@ -668,19 +664,16 @@ isUltraMetric :: TCM -> Bool
 isUltraMetric tcm = conditions `allSatisfiedBy` tcm
   where
     conditions = [ ultraMetricInequality ]
-    ultraMetricInequality x = all ultraMetricInequalityIndex
-        [(i,k,j) | i <- range, j <- range, i < j, k <- range, j < k ]
+    ultraMetricInequality x = all ultraMetricInequalityIndex $ tcmPoints3D tcm
       where
         ultraMetricInequalityIndex (i,j,k) = x ! (i,k) <= max (x ! (i,j)) (x ! (j,k))
-        range = [0 .. size tcm - 1]
 
 
 -- |
 -- An internal helper function used in both 'isMetric' & 'isUltraMetric' exported functions.
 zeroDiagonalOnly :: TCM -> Bool
-zeroDiagonalOnly tcm = all zeroDiagonalIndex [ (i,j) | i <- range, j <- range ]
+zeroDiagonalOnly tcm = all zeroDiagonalIndex $ tcmPoints2D tcm
   where
-    range = [0 .. size tcm - 1]
     zeroDiagonalIndex (i,j)
       | i == j    = value == 0
       | otherwise = value /= 0
@@ -709,6 +702,21 @@ vec (TCM _ v) = v
 coerce :: Integral a => a -> Word32
 coerce = toEnum . fromEnum . toInteger
 
+
+-- |
+-- Generate all 2D points of a 'TCM'.
+tcmPoints2D :: TCM -> [(Int, Int)]
+tcmPoints2D tcm = [(i,j) | i <- range, j <- range]
+  where
+    range = [0 .. size tcm - 1]
+
+
+-- |
+-- Generate all 3D points of the lower triangular polygon of a 'TCM'.
+tcmPoints3D :: TCM -> [(Int, Int, Int)]
+tcmPoints3D tcm = [(i,k,j) | i <- range, j <- range, i < j, k <- range, j < k ]
+  where
+    range = [0 .. size tcm - 1]
 
 
 {-

@@ -10,7 +10,6 @@ import           Control.Monad              (join)
 import           Data.Char
 import           Data.DList                 (DList)
 import qualified Data.DList                 as DL (empty, fromList)
-import           Data.Either.Combinators    (isLeft, isRight)
 import qualified Data.Map                   as M
 import           Data.Set                   (toList)
 import           File.Format.Nexus.Data
@@ -20,7 +19,8 @@ import           Test.Custom.Parse
 import           Test.Tasty                 (TestTree, testGroup)
 import           Test.Tasty.HUnit
 import           Test.Tasty.QuickCheck
-import           Text.Megaparsec            (char, eof, parse, string)
+import           Text.Megaparsec            (eof, parse)
+import           Text.Megaparsec.Char       (char, string)
 
 
 testSuite :: TestTree
@@ -80,22 +80,6 @@ charFormatFieldDef' = testGroup "charFormatFieldDef" ([emptyString] <> testSingl
     emptyString     = testCase "Empty String" $ parseEquals charFormatFieldDef "" []
     testSingletons  = (\(x,y) -> testCase x (parseEquals charFormatFieldDef x [y])) <$> stringTypeList
     testCommutivity = (\(x,y) -> testCase x (parseEquals charFormatFieldDef x y))   <$> stringTypeListPerms
-    stringTypeList  =
-        [ ("datatype=xyz", CharDT "xyz")
-        , ("symbols=\"abc\"", SymStr (Right ["abc"]))
-        , ("transpose", Transpose True)
-        , ("interleave", Interleave True)
-        , ("tokens", Tokens True)
-        , ("equate=\"a={bc} d={ef}\"", EqStr (Right ["a={bc}", "d={ef}"]))
-        , ("missing=def", MissStr "def")
-        , ("gap=-", GapChar "-")
-        , ("matchchar=.", MatchChar ".")
-        , ("items=ghi", Items "ghi")
-        , ("respectcase", RespectCase True)
-        , ("nolabels", Unlabeled True)
-        , ("something ", IgnFF "something")
-        ]
-    stringTypeListPerms = [(string <> " " <> string', [result, result']) | (string, result) <- stringTypeList, (string', result') <- stringTypeList]
 
 
 deInterleave' :: TestTree
@@ -402,13 +386,15 @@ stringTypeList =
     , ("nolabels", Unlabeled True)
     , ("something ", IgnFF "something")
     ]
+  where
+    combineStrings strs =
+        [ (string <> " " <> string', [result, result'])
+        | (string, result)   <- strs
+        , (string', result') <- strs
+        ]
 
 
-stringTypeListPerms =
-    [ (string <> " " <> string', [result, result'])
-    | (string, result) <- stringTypeList
-    , (string', result') <- stringTypeList
-    ]
+stringTypeListPerms = combineStrings stringTypeList
 
 
 validtcmMatrix = "usertype name  = 4\n [a]A B C D\n 0 1 2 3\n 1 0 2 3\n 1 2 0 3\n 1 2 3 0\n;"
