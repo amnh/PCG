@@ -57,6 +57,10 @@ import           Data.Word
 import           Immutable.Shuffle                             (shuffleM)
 import           PCG.Command.Build
 
+import Debug.Trace
+import System.IO.Unsafe
+import Data.IORef
+
 
 type BuildType m =
      MetadataSequence m
@@ -221,7 +225,17 @@ naiveWagnerBuild metaSeq ns =
                   , ( IS.singleton 0, wipeNode False y, mempty )
                   ]
       x:|(y:z:xs) ->
-          let initTree = fromRefDAG $ DAG.fromList
+          let len      = length ns
+              initTree =
+                trace
+                (fold
+                   [ "Beginning Wagner Build...\n"
+                   , "Total number of taxa: " <> show len <> "\n"
+                   , "Progress : \n"
+                   , "  - 3 Taxa added"
+                   ]
+                )
+                fromRefDAG $ DAG.fromList
                   [ ( mempty        , wipeNode True  x, IM.fromList [(1,mempty), (4,mempty)] )
                   , ( IS.singleton 0, wipeNode True  x, IM.fromList [(2,mempty), (3,mempty)] )
                   , ( IS.singleton 1, wipeNode False x, mempty )
@@ -233,6 +247,12 @@ naiveWagnerBuild metaSeq ns =
 
   where
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
+
+
+taxaCounter :: IORef Int
+{-# NOINLINE taxaCounter #-}
+taxaCounter =
+  unsafePerformIO (newIORef 4)
 
 
 naiveNetworkBuild
@@ -362,7 +382,13 @@ iterativeBuild
   :: FinalDecorationDAG
   -> FinalCharacterNode
   -> FinalDecorationDAG
-iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
+iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf =
+  unsafePerformIO $
+    do
+      taxa <- readIORef taxaCounter
+      writeIORef taxaCounter (taxa + 1)
+      putStrLn $ "  - " <> show taxa <> " taxa added"
+      pure nextTree
   where
     (PDAG2 dag _) = wipeScoring currentTree
     edgeSet       = NE.fromList . toList $ referenceEdgeSet dag
