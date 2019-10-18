@@ -14,6 +14,7 @@
 
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE LambdaCase            #-}
@@ -38,8 +39,6 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Evaluation.Notification
 import           Control.Evaluation.Result
-import           Control.Monad.Fail              (MonadFail)
-import qualified Control.Monad.Fail              as F
 import           Control.Monad.Fix               (MonadFix (..))
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
@@ -51,7 +50,6 @@ import           Control.Monad.Zip               (MonadZip (..))
 import           Data.Functor.Alt                (Alt (..))
 import           Data.Functor.Apply              (Apply (..))
 import           Data.Functor.Bind               (Bind (..))
---import           Data.Functor.Classes        (Eq1 (..), Ord1 (..), Show1 (..))
 import           Data.Functor.Identity
 import           Data.Sequence                   (Seq, fromList)
 import           Data.String
@@ -62,11 +60,11 @@ import           TextShow                        (TextShow)
 
 
 -- |
--- A computational ``evaluation.''
+-- A computational "evaluation."
 --
 -- An evaluation has global state @r@, accessible to it's computation.
 --
--- An evaluation can be in one of two states, ``successful'' or ``failure''.
+-- An evaluation can be in one of two states, "successful" or "failure".
 -- Use 'pure' to place a value inside a successful computational context.
 -- Use 'fail' to indicate a computational failure.
 --
@@ -78,7 +76,7 @@ import           TextShow                        (TextShow)
 -- > foldr1 (<>)  [fail x, fail y, pure z] === fail x
 -- > foldr1 (<!>) [fail x, fail y, pure z] === pure z
 --
--- A computation also stores an ordered log of 'Notifications'.
+-- A computation also stores an ordered log of 'Notification's.
 -- Use the information operator '(<?>)' and the warning operator '(<@>)' to log computational notes.
 --
 -- Use 'runEvaluationT' to get the result of the computation.
@@ -86,13 +84,13 @@ type Evaluation r a = EvaluationT r Identity a
 
 
 -- |
--- A computational ``evaluation'' monad transformer.
+-- A computational "evaluation" monad transformer.
 --
 newtype EvaluationT r m a
       = EvaluationT
       { -- | Run the 'EvaluationT' monad transformer
         unwrapEvaluationT :: RWST r (Seq Notification) () m (EvaluationResult a)
-      } deriving (Generic)
+      } deriving stock (Generic)
 
 
 -- |
@@ -136,7 +134,6 @@ instance Monad m => Apply (EvaluationT r m) where
     (<.>) = apply
 
     (.>)  = propogate
-
 
 
 instance (Arbitrary a, Arbitrary1 m) => Arbitrary (EvalHelper m a) where
@@ -201,15 +198,12 @@ instance Monad m => Monad (EvaluationT r m) where
     {-# INLINEABLE (>>=)  #-}
     {-# INLINE     (>>)   #-}
     {-# INLINE     return #-}
-    {-# INLINE     fail   #-}
 
     (>>=)  = bind
 
     (>>)   = (*>)
 
     return = pure
-
-    fail   = F.fail
 
 
 instance Monad m => MonadFail (EvaluationT r m) where
@@ -264,34 +258,11 @@ instance Monad m => MonadZip (EvaluationT r m) where
     munzip !x = (fst <$> x, snd <$> x)
 
 
-{-
-instance (Ord1 m, Ord a) => Ord (EvaluationT r m a) where
-
-    {-# INLINE compare #-}
-
-    compare = liftCompare compare
-
-
-instance Ord1 m => Ord1 (EvaluationT r m) where
-
-    {-# INLINE liftCompare #-}
-
-    liftCompare cmp lhs = liftCompare (liftCompare cmp) (unwrapEvaluationT lhs) . unwrapEvaluationT
--}
-
-
 instance Monad m => Semigroup (EvaluationT r m a) where
 
     {-# INLINE (<>) #-}
 
     x <> y = EvaluationT $ liftA2 (<>) (unwrapEvaluationT x) (unwrapEvaluationT y)
-
-
-{-
-instance (Traversable m) => Traversable (EvaluationT r m) where
-
-    traverse f = fmap EvaluationT . traverse (traverse f) . unwrapEvaluationT
--}
 
 
 -- |

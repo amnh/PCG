@@ -1,6 +1,8 @@
 # HLint configuration file
 # https://github.com/ndmitchell/hlint
 
+# Optional rules
+- warn: { name: Use DerivingStrategies }
 
 # Custom warning hints
 - warn: { note: Prefer pure to reduce Monad constraint
@@ -41,21 +43,23 @@
               }
 
 
-
-
 # Replace a $ b $ c with a . b $ c
 - group: { name: dollar, enabled: true }
-
 
 # Generalise map to fmap, ++ to <>
 - group: { name: generalise, enabled: true }
 
-
 # Generalise Maybe, Either functions to fold, foldMap
 - group: { name: generalise-for-conciseness, enabled: true }
 
-# I don't like the TupleSections language extension, so we will ignore the hints
+# The TupleSections language extension's syntax can be confusing, so we will ignore the hints
 - ignore: { name: Use tuple-section }
+
+# Reports language extensions that ARE used, but are implied by other langauge
+# extensions. Since this whole implied extension idea is dodgy, we don't eschew
+# the extra information regarding what extensions are currently enabled.
+- ignore: { name: Unused LANGUAGE pragma }
+
 
 # Ignore some builtin hint in test modules where we need to test the hint.
 # These hints are inapplicable within test modules since the test-suites are
@@ -130,6 +134,20 @@
             ]
           }
 
+- ignore: { name: Monoid law, left identity
+          , within:
+            [ Data.MutualExclusionSet.Test
+            , Numeric.Cost.Test
+            ]
+          }
+
+- ignore: { name: Monoid law, right identity
+          , within:
+            [ Data.MutualExclusionSet.Test
+            , Numeric.Cost.Test
+            ]
+          }
+
 
 # unsafePerformIO can only appear in FFI modules
 - functions:
@@ -171,3 +189,4 @@
 - ignore: { name: Use camelCase
           , within: TestSuite.ScriptTests
           }
+

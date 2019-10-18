@@ -13,6 +13,7 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -65,32 +66,27 @@ import           TextShow.Instances         ()
 -- |
 -- A sequence of values that are repeated multiple times in contiguous blocks.
 newtype Vector a = NEV { unwrap :: V.Vector a }
-   deriving ( Adjustable
-            , Applicative
-            , Apply
-            , Bind
-            , Data
-            , Eq
-            , Eq1
-            , Extend
-            , Foldable
-            , FoldableWithKey
-            , Functor
-            , Hashable
-            , Indexable
-            , Keyed
-            , Lookup
-            , Monad
-            , NFData
-            , Ord
-            , Ord1
-            , Pointed
-            , Semigroup
-            , TextShow
-            , Traversable
-            , Zip
-            , ZipWithKey
-            )
+  deriving stock   (Data, Eq, Functor, Ord, Foldable, Traversable)
+  deriving newtype ( Adjustable
+                   , Applicative
+                   , Apply
+                   , Bind
+                   , Eq1
+                   , Extend
+                   , FoldableWithKey
+                   , Hashable
+                   , Indexable
+                   , Keyed
+                   , Lookup
+                   , Monad
+                   , NFData
+                   , Ord1
+                   , Pointed
+                   , Semigroup
+                   , TextShow
+                   , Zip
+                   , ZipWithKey
+                   )
 
 
 -- |
@@ -248,5 +244,7 @@ uncons (NEV v) = (first, stream)
     len   = length v
 
 
+-- |
+-- Fully evaluates the 'Vector'.
 force :: forall a . Vector a -> Vector a
 force = coerce $ V.force @a

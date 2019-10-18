@@ -8,12 +8,14 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- The core semigroupoid state of an 'Evaluation' monad.
+-- The core semigroupoid state of an 'Control.Evaluation.Evaluation' monad.
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
@@ -23,22 +25,20 @@
 
 module Control.Evaluation.Result where
 
-import           Control.DeepSeq
-import           Control.Monad.Fail        (MonadFail)
-import qualified Control.Monad.Fail        as F
-import           Control.Monad.Fix         (MonadFix)
-import           Control.Monad.Zip         (MonadZip (..))
-import           Data.Data
-import           Data.Functor.Alt          (Alt (..))
-import           Data.Functor.Apply        (Apply (..))
-import           Data.Functor.Bind         (Bind (..))
-import           Data.Functor.Classes      (Eq1, Ord1 (..), Show1)
-import           Data.Semigroup            (Semigroup (..))
-import           Data.Text.Lazy            (Text, pack)
-import           GHC.Generics
-import           Test.QuickCheck
-import           Test.QuickCheck.Instances ()
-import           TextShow
+import Control.DeepSeq
+import Control.Monad.Fix         (MonadFix)
+import Control.Monad.Zip         (MonadZip (..))
+import Data.Data
+import Data.Functor.Alt          (Alt (..))
+import Data.Functor.Apply        (Apply (..))
+import Data.Functor.Bind         (Bind (..))
+import Data.Functor.Classes      (Eq1, Ord1 (..), Show1)
+import Data.Semigroup            (Semigroup (..))
+import Data.Text.Lazy            (Text, pack)
+import GHC.Generics
+import Test.QuickCheck
+import Test.QuickCheck.Instances ()
+import TextShow
 
 
 -- |
@@ -52,26 +52,14 @@ import           TextShow
 -- Note that multiple errors can be aggregated before calling 'fail' or
 -- 'evalUnitWithPhase' using another 'Applicative' or 'Monad' locally. We will
 -- use the @Validation@ type to collect many error of the same "phase" before
--- failing in the 'Evaluation' monad. Consequently, the textual error message can
+-- failing in the 'Control.Evaluation' monad. Consequently, the textual error message can
 -- be quite long, representing the entire list of aggregated failures. We use
 -- 'Text' instead of 'String' to store the error message to save space and
 -- efficient rendering.
 newtype EvaluationResult a = EU { runEvaluationResult :: Either (ErrorPhase, Text) a }
-   deriving ( Applicative
-            , Apply
-            , Data
-            , Eq
-            , Eq1
-            , Foldable
-            , Functor
-            , Generic
-            , Generic1
-            , MonadFix
-            , NFData
-            , Show
-            , Show1
-            , Traversable
-            )
+   deriving stock    (Data, Eq, Foldable, Generic, Generic1, Show, Traversable, Typeable)
+   deriving anyclass (NFData)
+   deriving newtype  (Applicative, Apply, Eq1, Functor, MonadFix, Show1)
 
 -- |
 -- Keep track of which phase of the evaluation th error occured in.
@@ -159,15 +147,12 @@ instance Monad EvaluationResult where
     {-# INLINEABLE (>>=)  #-}
     {-# INLINE     (>>)   #-}
     {-# INLINE     return #-}
-    {-# INLINE     fail   #-}
 
     (>>=)  = (>>-)
 
     (>>)   = (*>)
 
     return = pure
-
-    fail   = F.fail
 
 
 instance MonadFail EvaluationResult where
@@ -232,6 +217,10 @@ instance Semigroup (EvaluationResult a) where
    stimes _ e = e
 
 
+-- |
+-- Create a failure result with a specified 'ErrorPhase'.
+--
+-- Use in place of 'fail' when you want to the associated 'ErrorPhase' to be a value other than 'Computing'.
 {-# INLINE[1] evalUnitWithPhase #-}
 evalUnitWithPhase :: TextShow s => ErrorPhase -> s -> EvaluationResult a
 evalUnitWithPhase p s = EU $ Left (p, showtl s)

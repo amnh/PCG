@@ -16,6 +16,7 @@
 
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -49,7 +50,8 @@ import Text.XML.Custom
 -- A newtype wrapper for a 'NonEmpty' collection of forests.
 newtype PhylogeneticForest a
       = PhylogeneticForest {getPhylogeneticForest :: NonEmpty a}
-      deriving (Foldable, Foldable1, Functor, Generic, Semigroup, Traversable)
+      deriving stock   (Foldable, Generic, Traversable)
+      deriving newtype (Foldable1, Functor, Semigroup)
 
 
 type instance Key PhylogeneticForest = Int

@@ -119,6 +119,7 @@ library
     Data.Graph.Hash
     Data.Graph.Intermediate
     Data.Graph.Build
+    Data.Graph.Sequence.Class
 
   other-modules:
 

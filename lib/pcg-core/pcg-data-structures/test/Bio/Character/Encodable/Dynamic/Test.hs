@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleInstances  #-}
 
 module Bio.Character.Encodable.Dynamic.Test
   ( testSuite
@@ -466,7 +467,7 @@ type ParsedChar' = Vector (NonEmptyList (NonEmptyList Char))
 
 newtype ParsedCharacterWithAlphabet
       = ParsedCharacterWithAlphabet (ParsedChar', Alphabet String)
-      deriving (Eq, Show)
+      deriving stock (Eq, Show)
 
 
 instance Arbitrary ParsedCharacterWithAlphabet where
@@ -480,7 +481,7 @@ instance Arbitrary ParsedCharacterWithAlphabet where
 newtype AlphabetAndSingleAmbiguityGroup
       = AlphabetAndSingleAmbiguityGroup
       { getAlphabetAndSingleAmbiguityGroup :: (Alphabet String, NonEmpty String)
-      } deriving (Eq, Show)
+      } deriving stock (Eq, Show)
 
 
 instance Arbitrary AlphabetAndSingleAmbiguityGroup where
@@ -493,7 +494,7 @@ instance Arbitrary AlphabetAndSingleAmbiguityGroup where
 newtype AlphabetAndTwoAmbiguityGroups
       = AlphabetAndTwoAmbiguityGroups
       { getAlphabetAndTwoAmbiguityGroups :: (Alphabet String, NonEmpty String, NonEmpty String)
-      } deriving (Eq, Show)
+      } deriving stock (Eq, Show)
 
 
 instance Arbitrary AlphabetAndTwoAmbiguityGroups where
@@ -508,7 +509,7 @@ instance Arbitrary AlphabetAndTwoAmbiguityGroups where
 newtype AlphabetAndCharacter
       = AlphabetAndCharacter
       { getAlphabetAndCharacter :: (Alphabet String, NonEmpty (NonEmpty String))
-      } deriving (Eq, Show)
+      } deriving stock (Eq, Show)
 
 
 instance Arbitrary AlphabetAndCharacter where

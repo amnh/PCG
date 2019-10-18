@@ -14,7 +14,6 @@ import Control.Arrow            ((***))
 import Control.DeepSeq
 import Control.Evaluation
 import Control.Monad            (void)
-import Control.Monad.Fail       (MonadFail)
 import Control.Monad.Logger     (Logger (..))
 import Control.Monad.Trans      (MonadTrans (..))
 import Control.Monad.Zip        (MonadZip (..))

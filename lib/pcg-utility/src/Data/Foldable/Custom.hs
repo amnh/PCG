@@ -18,7 +18,6 @@
 
 module Data.Foldable.Custom
   ( foldl''
-  , foldMap'
   , sum'
   , minimum'
   , maximum'
@@ -29,7 +28,7 @@ module Data.Foldable.Custom
 
 import Control.DeepSeq (NFData, ($!!))
 import Data.Coerce     (Coercible, coerce)
-import Data.Foldable   (Foldable (foldl', foldr))
+import Data.Foldable   (Foldable (foldl'))
 import Data.Maybe      (fromMaybe)
 import Data.Monoid     (Sum (..))
 
@@ -144,7 +143,7 @@ instance Ord a => Monoid (Min a) where
 
 
 -- |
--- There is an explanation in 'base' for why this is needed.
+-- There is an explanation in 'Data.Coerce' for why this is needed.
 {-# INLINE (#.) #-}
 (#.) :: Coercible b c => (b -> c) -> (a -> b) -> (a -> c)
 (#.) _f = coerce

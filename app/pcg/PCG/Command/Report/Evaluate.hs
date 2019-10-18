@@ -77,7 +77,7 @@ generateOutput g' format =
     DotFile  {} -> SingleStream . streamText $ generateDotFile g'
     Metadata {} -> either
                      (const $ ErrorCase "No metadata in topological solution")
-                     (SingleStream . streamBytes . outputMetadata)
+                     (SingleStream . streamText . outputMetadata)
                      g
     _           -> ErrorCase "Unrecognized 'report' command"
   where

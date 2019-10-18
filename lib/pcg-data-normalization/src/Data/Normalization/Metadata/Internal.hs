@@ -13,7 +13,9 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
@@ -29,6 +31,7 @@ module Data.Normalization.Metadata.Internal
 
 import           Control.DeepSeq
 import           Data.Alphabet
+import           Data.Data
 import           Data.Foldable
 import           Data.List.Utility            (transpose)
 import           Data.Monoid
@@ -44,15 +47,17 @@ import           Prelude                      hiding (zip, zipWith)
 
 -- |
 -- An intermediate composite type for parse result coercion.
-data NormalizedMetadata
-   = NormalizedMetadata
-   { alphabet      :: Alphabet ShortText
-   , characterName :: ShortText
-   , weight        :: Double
-   , parsedTCM     :: Maybe (TCM, TCMStructure)
-   , isDynamic     :: Bool
-   , isIgnored     :: Bool
-   } deriving (Eq, Generic, NFData, Show)
+data  NormalizedMetadata
+    = NormalizedMetadata
+    { alphabet      :: Alphabet ShortText
+    , characterName :: ShortText
+    , weight        :: Double
+    , parsedTCM     :: Maybe (TCM, TCMStructure)
+    , isDynamic     :: Bool
+    , isIgnored     :: Bool
+    }
+    deriving stock    (Data, Eq, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |

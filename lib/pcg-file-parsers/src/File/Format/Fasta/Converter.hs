@@ -12,10 +12,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns     #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
-{-# LANGUAGE UnboxedSums      #-}
+{-# LANGUAGE BangPatterns       #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module File.Format.Fasta.Converter
   ( FastaSequenceType(..)
@@ -25,6 +29,7 @@ module File.Format.Fasta.Converter
 import           Control.DeepSeq
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                 as BM
+import           Data.Data
 import           Data.List                  (intercalate)
 import           Data.List.NonEmpty         (NonEmpty (..))
 import           Data.Map                   hiding (filter, foldr, null, partition, (!))
@@ -38,6 +43,7 @@ import qualified Data.Vector.Unboxed        as V (filter, length, map, null, toL
 import           Data.Void
 import           File.Format.Fasta.Internal
 import           File.Format.Fasta.Parser
+import           GHC.Generics
 import           Text.Megaparsec            (MonadParsec, Parsec)
 import           Text.Megaparsec.Custom     (fails)
 
@@ -48,7 +54,8 @@ data  FastaSequenceType
     = DNA
     | RNA
     | AminoAcid
-    deriving (Bounded, Eq, Enum, Read, Show)
+    deriving stock    (Data, Bounded, Eq, Enum, Generic, Read, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |

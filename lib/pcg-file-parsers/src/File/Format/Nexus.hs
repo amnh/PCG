@@ -44,5 +44,5 @@ import Text.Megaparsec
 
 -- |
 -- Parses the entirety of a stream consisting of a single Nexus file resulting a 'Nexus'.
-nexusStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char {- , Show s -}) => m Nexus
+nexusStreamParser :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char {- , Show s -}) => m Nexus
 nexusStreamParser = validateNexusParseResult =<< parseNexus <* eof

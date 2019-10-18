@@ -13,6 +13,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Data.EdgeSet
@@ -49,7 +50,8 @@ import           TextShow.Instances   ()
 --
 -- Often used to represent a spanning tree in a DAG.
 newtype EdgeSet e = ES (Set e)
-  deriving (Eq, Foldable, Generic, Monoid, Ord, Semigroup, TextShow)
+  deriving stock   (Eq, Generic, Ord)
+  deriving newtype (Foldable, Monoid, Semigroup, TextShow)
 
 {--
 -- |

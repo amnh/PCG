@@ -11,10 +11,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Data.Range
   ( Bound()
@@ -41,6 +43,7 @@ module Data.Range
 
 import Control.DeepSeq
 import Data.Foldable
+import Data.Kind
 import GHC.Generics
 import TextShow        (TextShow (showb))
 
@@ -48,15 +51,13 @@ import TextShow        (TextShow (showb))
 -- A range between two bounds. The lower bound will always be less than or equal
 -- to the upper bound.
 newtype Range r = Range (r, r, Maybe Int)
-  deriving (Eq, Generic)
+  deriving stock    (Eq, Generic)
+  deriving anyclass (NFData)
 
 
 -- |
 -- The bound of a 'Ranged' type.
-type family Bound (f :: *)
-
-
-instance NFData r => NFData (Range r)
+type family Bound (f :: Type)
 
 
 -- |

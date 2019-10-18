@@ -21,7 +21,6 @@ module Bio.Character.Encodable.Internal
 
 import Bio.Character.Exportable
 import Control.Lens
-import Data.Bifunctor              (bimap)
 import Data.BitMatrix              (BitMatrix, fromRows)
 import Data.Bits
 import Data.BitVector.LittleEndian
@@ -75,9 +74,9 @@ bitVectorToBufferChunks elemWidth elemCount bv = fmap toUnsignedNumber $ ((`subR
     totalBits = elemWidth * elemCount
     (fullWords, remainingBits) = totalBits `divMod` longWidth
     slices   = take (fromEnum fullWords) $ iterate ((longWidth +) `bimap` (longWidth +)) ((0, longWidth - 1) :: (Word, Word))
-    tailWord = if   remainingBits == 0
-               then []
-               else [ (totalBits - remainingBits, totalBits - 1) `subRange` bv ]
+    tailWord = [ (totalBits - remainingBits, totalBits - 1) `subRange` bv
+               | remainingBits /= 0
+               ]
 
 
 -- |

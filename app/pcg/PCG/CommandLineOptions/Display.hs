@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -13,7 +12,6 @@ import Data.Foldable
 import Data.Key
 import Data.List                    (intersperse)
 import Data.MonoTraversable
-import Data.Semigroup               ((<>))
 import Data.Text                    hiding (filter, intersperse, replicate)
 import Data.Text.IO
 import PCG.CommandLineOptions.Types
@@ -87,7 +85,7 @@ printAuthorList = putStrLn $ renderedHeaderLines <> renderedAuthorLines
       , ""
       ]
     renderedAuthorLines = (<>"\n\n") . intercalate "\n\n" $ fmap ("    • " <>) rawAuthorLines
-    rawAuthorLines = mempty -- $(authorsList)
+    rawAuthorLines = $(authorsList)
 
 
 printFunderList :: IO ()
@@ -99,7 +97,7 @@ printFunderList = putStrLn $ renderedHeaderLines <> renderedFundingSources
       , ""
       ]
     renderedFundingSources = (<>"\n") . intercalate "\n\n" $ renderSource <$> rawFundingSources
-    rawFundingSources = mempty --  $(fundingList)
+    rawFundingSources = $(fundingList)
     renderSource (src, url) = "    • " <> src <> maybe "" ("\n      › " <>) url
 
 

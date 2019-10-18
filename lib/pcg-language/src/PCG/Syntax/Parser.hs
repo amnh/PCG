@@ -13,9 +13,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
-{-# LANGUAGE UnboxedSums      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module PCG.Syntax.Parser where
 
@@ -46,7 +47,7 @@ data  Command
 -- |
 -- A non-empty list of Commands to be sequentially evaluated.
 newtype Computation = Computation (NonEmpty Command)
-    deriving (Show)
+    deriving stock (Show)
 
 
 -- |

@@ -55,7 +55,7 @@ type Commands = ([CCode], [CNames], [Cost], [NStates], [TRead], [XRead])
 -- |
 -- Collects the subset of the TNT commands related to processing character
 -- sequences. Returns the relavent commands in a tuple.
-gatherCommands :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Commands
+gatherCommands :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m Commands
 gatherCommands = partition <$> many commands
   where
     commands  = choice

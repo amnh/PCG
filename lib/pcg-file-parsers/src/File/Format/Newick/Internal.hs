@@ -15,6 +15,7 @@
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveDataTypeable    #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 
@@ -34,6 +35,7 @@ module File.Format.Newick.Internal
 
 
 import           Control.DeepSeq    (NFData)
+import           Data.Data
 import           Data.Foldable
 import           Data.List.NonEmpty (NonEmpty (..))
 import           Data.String        (IsString (fromString))
@@ -79,7 +81,9 @@ data  NewickNode
     { childNodes     :: {-# UNPACK #-} !(Vector NewickNode)
     , internalName   :: {-# UNPACK #-} !ShortText
     , internalLength :: !(Maybe Rational)
-    } deriving (Eq, Generic, NFData, Ord)
+    }
+    deriving stock    (Data, Eq, Generic, Ord, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |
