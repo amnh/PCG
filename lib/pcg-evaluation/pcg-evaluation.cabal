@@ -56,11 +56,11 @@ common ghc-flags
     -Wincomplete-patterns
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
+    -Wmissing-deriving-strategies
     -Wmissing-fields
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
     -Wmissing-signatures
-    -Wnoncanonical-monadfail-instances
     -Wnoncanonical-monad-instances
     -Wnoncanonical-monoid-instances
     -Woverflowed-literals
@@ -97,11 +97,11 @@ library
     src
 
   build-depends:
-    bimap                    >= 0.3       && < 0.4,
-    containers               >= 0.5.8     && < 0.7,
+    bimap                    >= 0.3       && < 1.0,
+    containers               >= 0.5.8     && < 1.0,
     quickcheck-instances     >= 0.3.17    && < 1.0,
     text                     >= 1.2       && < 2.0,
-    text-show                >= 3.0       && < 4.0,            
+    text-show                >= 3.8.1     && < 4.0,            
                 
   exposed-modules:
     Control.Evaluation

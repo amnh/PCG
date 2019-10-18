@@ -33,13 +33,13 @@ import Text.Megaparsec.Char
 --  * One ore more specifications of the character state change
 --
 --  * One or more character indicies or index ranges of affected characters
-ccodeCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m CCode
+ccodeCommand :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m CCode
 ccodeCommand = ccodeHeader *> some1 ccodeAugment <* symbol (char ';')
 
 
 -- |
 -- The header of a CCODE command.
-ccodeHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+ccodeHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 ccodeHeader = symbol $ keyword "ccode" 2
 
 
@@ -48,7 +48,7 @@ ccodeHeader = symbol $ keyword "ccode" 2
 -- Mutations are specified for a nonempty set of characrter index ranges
 -- and also a nonempty set of metadata values.
 -- Validates that mutulally exclusive metadata options are not specified.
-ccodeAugment :: (MonadParsec e s m, Token s ~ Char) => m CCodeAugment
+ccodeAugment :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m CCodeAugment
 ccodeAugment = CCodeAugment
            <$> (validateStates =<< some1 ccodeCharacterState)
            <*> some1 characterIndicies
@@ -65,7 +65,7 @@ ccodeAugment = CCodeAugment
 
 -- |
 -- Parses a metadata value mutation.
-ccodeCharacterState :: (MonadParsec e s m, Token s ~ Char) => m CharacterState
+ccodeCharacterState :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m CharacterState
 ccodeCharacterState = choice states
   where
     state c = symbol (char c)

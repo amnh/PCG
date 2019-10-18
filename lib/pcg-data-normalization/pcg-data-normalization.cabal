@@ -44,11 +44,11 @@ common ghc-flags
     -Wincomplete-patterns
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
+    -Wmissing-deriving-strategies          
     -Wmissing-fields
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
     -Wmissing-signatures
-    -Wnoncanonical-monadfail-instances
     -Wnoncanonical-monad-instances
     -Wnoncanonical-monoid-instances
     -Woverflowed-literals
@@ -90,7 +90,7 @@ library
     pcg-utility,
     base                     >= 4.11      && < 5.0,
     -- >=0.5.8 Required for Data.Map.restrictKeys
-    containers               >= 0.5.8     && < 0.7,
+    containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     -- >=2999.20 Required for forgiving construction of DOT object
     graphviz                 >= 2999.20   && < 3000,

@@ -38,7 +38,7 @@ import Text.Megaparsec.Custom
 --  * Fasta file to read-in
 --
 --  * Command file to be interpreted
-procedureCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+procedureCommand :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 procedureCommand =  procHeader *> procBody
   where
     procBody = choice
@@ -50,7 +50,7 @@ procedureCommand =  procHeader *> procBody
 
 -- |
 -- Consumes the superflous heading for a PROCEDURE command.
-procHeader :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m ()
+procHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 procHeader = symbol $ keyword "procedure" 4
 
 

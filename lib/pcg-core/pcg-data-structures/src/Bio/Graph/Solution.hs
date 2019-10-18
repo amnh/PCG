@@ -36,7 +36,6 @@ import           Control.DeepSeq
 import           Control.Lens              as Lens hiding (Indexable)
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding (indent)
-import           Data.GraphViz.Printing    (renderDot, toDot)
 import           Data.GraphViz.Types       hiding (attrs)
 import           Data.GraphViz.Types.Graph
 import           Data.Key

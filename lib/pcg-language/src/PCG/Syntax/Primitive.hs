@@ -46,6 +46,7 @@ import           Data.Char                  (isControl)
 import           Data.Foldable              (fold)
 import           Data.Functor               (void, ($>))
 import           Data.Key
+import           Data.Kind                  (Type)
 import           Data.List.NonEmpty         (NonEmpty (..))
 import qualified Data.List.NonEmpty         as NE
 import qualified Data.Map                   as M
@@ -236,7 +237,7 @@ intValue
 intValue  = label intLabel $ numValue >>= convertToInt
   where
     convertToInt
-      :: forall a (f :: * -> *) e s
+      :: forall a (f :: Type -> Type) e s
       .  (MonadParsec e s f, Integral a, Bounded a)
       => Scientific -> f a
     convertToInt  s

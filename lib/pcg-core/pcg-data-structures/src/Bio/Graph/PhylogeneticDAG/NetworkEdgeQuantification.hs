@@ -26,7 +26,6 @@ import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import qualified Bio.Sequence.Block                 as BLK
-import           Bio.Sequence.Metadata              (MetadataSequence)
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable

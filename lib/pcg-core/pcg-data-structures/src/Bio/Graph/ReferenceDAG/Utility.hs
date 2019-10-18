@@ -465,7 +465,7 @@ incrementNetworkInformation n NetworkInformation{..}
 
   where
     _candidateNetworkEdges'
-      = Set.map (\ (e1,e2) -> (incrementEdge e1, incrementEdge e2)) _candidateNetworkEdges
+      = Set.map (bimap incrementEdge incrementEdge) _candidateNetworkEdges
     _networkAdjacentEdges'
       = Set.map incrementEdge _networkAdjacentEdges
     _edgeSet'

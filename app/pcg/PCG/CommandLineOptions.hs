@@ -12,7 +12,6 @@ module PCG.CommandLineOptions
   ) where
 
 import Data.Foldable
-import Data.Semigroup                 ((<>))
 import Data.String
 import Options.Applicative            hiding (ParseError)
 import PCG.CommandLineOptions.Display

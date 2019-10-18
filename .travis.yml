@@ -1,26 +1,41 @@
-dist: xenial #Required for GCC >= v5.0
+dist: bionic #Required for GCC >= v5.0
 sudo: true
 
+
 language: haskell
-cabal: "2.4"
+cabal: "3.0"
+
+
+git:
+  depth: 5
+
+
+notifications:
+  email: false
 
 
 cache:
   directories:
-  - "$HOME/.cabal/store"
-  - "$HOME/.stack"
-  - "$TRAVIS_BUILD_DIR/.stack-work"
+    - "$HOME/.cabal/store"
+    - "$HOME/.stack"
+    - "$TRAVIS_BUILD_DIR/.stack-work"
 
 
 matrix:
   include:
 
-  # Cabal
-  - ghc: 8.6.5
+    # Cabal
+    - ghc: 8.8.1
+#      addons:
+#        apt:
+#          sources:
+#          - hvr-ghc
+#          packages:
+#          - cabal-install-3.0
 
-  # Stack
-  - ghc: 8.6.5
-    env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
+    # Stack
+    - ghc: 8.8.1
+      env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
 
 
 before_install:
@@ -39,31 +54,26 @@ before_install:
 #  - which weeder || tar -xzf weeder.tar.gz
 #  - which weeder || cp weeder-*/weeder ~/.local/bin/weeder
 
+
 install:
   - gcc --version
   - ghc --version
   - hlint  --version
-#  - weeder --version
+# - weeder --version
   - |
     if [ -z "$STACK_YAML" ]; then
       cabal --version
       cabal new-update
-      cabal new-build --enable-benchmarks --enable-documentation --enable-tests --haddock-all --haddock-hyperlink-source --haddock-internal
+      cabal new-build --allow-newer --enable-benchmarks --enable-documentation --enable-tests --haddock-all --haddock-hyperlink-source --haddock-internal
     else
       # install stack
       curl -sSL https://get.haskellstack.org/ | sh
 
       # build project with stack
       stack --version
-      stack build --fast --system-ghc --bench --test --haddock --haddock-deps --haddock-hyperlink-source --haddock-internal --no-run-benchmarks --no-run-tests 
+      stack build --fast --system-ghc --bench --test --haddock --haddock-deps --haddock-hyperlink-source --haddock-internal --no-run-benchmarks --no-run-tests --verbosity warn
     fi
 
 
 script:
   - make run-hlint
-  
-git:
-  depth: 5
-
-notifications:
-  email: false

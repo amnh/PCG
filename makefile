@@ -1,3 +1,5 @@
+SHELL=/bin/bash
+
 #Flags for GHC
 linking       = --make
 warnings      = -w -W -Wall -Werror
@@ -298,9 +300,8 @@ clean: phylogenetic-component-graph.cabal stack.yaml
 	@echo -n -e "\33[2K\r"
 	@echo "[✓] Cleaning complete!"
 
-# Calls other make files to pre-process FFI files
-ffi-code-cleaning: ffi/Analysis/Parsimony/Binary/SequentialAlign/makefile
-	$(MAKE) -C ffi/Analysis/Parsimony/Binary/SequentialAlign
+code-lines:
+	loc --exclude 'css|html|js|md|tex|sh|yaml' --sort lines
 
 # Legacy cabal build option
 cabal-build: phylogenetic-component-graph.cabal
