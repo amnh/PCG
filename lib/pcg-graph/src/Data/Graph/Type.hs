@@ -45,6 +45,17 @@ import Test.QuickCheck.Arbitrary
 import TextShow                  hiding (Builder)
 import VectorBuilder.Builder
 import VectorBuilder.Vector
+import Data.Set (Set)
+import qualified Data.Set as S
+import Control.Monad.State.Strict
+import Data.Maybe (catMaybes)
+import Control.Arrow (first)
+import Control.Lens.Tuple
+import Data.HashSet (HashSet)
+import qualified Data.HashSet as HS
+import Data.Hashable
+import Data.List.Extra (maximumOn)
+import Data.Foldable (toList)
 
 --      ┌─────────────┐
 --      │    Types    │
@@ -254,116 +265,6 @@ getRootInds graph =
     roots = generate numberOfRoots (`TaggedIndex` RootTag)
   in
     roots
-
-
-{-
-size :: Builder a -> Int
-size = length . build @Vector
--}
-
-
-data RoseTree e t = RoseTree
-  { root      :: t
-  , subForest :: ([(RoseTree e t, e)], [(t, e)])
-  }
-
-
---type RoseForest e t = [RoseTree e t]
-
-
-{-
-unfoldToRoseForest
-  :: forall a e t. Ord t
-  => (a -> ([(a,e)], t, [(a,e)]))
-  -> a
-  -> RoseForest e t
-unfoldToRoseForest unfoldFn seed = unfoldFromRoots roots
-  where
-    roots :: [a]
-    roots = findRootsFrom seed `evalState` mempty
-
-    isRoot :: a -> [b] -> Maybe a
-    isRoot start pars =
-        if null pars
-          then Just start
-          else Nothing
-
-    -- To do: use hashmaps instead of set
-    addRoot :: a -> State (Set t) (Maybe a)
-    addRoot start = do
-      let (pars, val, childs) = unfoldFn start
-      seenNodes <- get
-      put (val `S.insert` seenNodes)
-      pure $ if   val `S.member` seenNodes
-             then Nothing
-             else isRoot start pars
-
-    findRootsFrom :: a -> State (Set t) [a]
-    findRootsFrom start = do
-      let (pars, val, childs) = unfoldFn start
-      let otherNodes = fst <$> pars <> childs
-      startRoot <- addRoot start
-      let
-        otherRootNodes :: State (Set t) [a]
-        otherRootNodes = catMaybes <$> traverse addRoot otherNodes
-
-      case startRoot of
-        Nothing -> otherRootNodes
-        Just r  -> (r :) <$> otherRootNodes
-
-
-    unfoldFromRoots :: [a] -> RoseForest e t
-    unfoldFromRoots = fmap unfoldFromRoot
-
-    unfoldFromRoot :: a -> RoseTree e t
-    unfoldFromRoot root =
-      let
-        (pars, val, childs) = unfoldFn root
-        subtrees = first unfoldFromRoot <$> childs
-        parVals  = first (view _2 . unfoldFn) <$> pars
-      in
-        RoseTree
-          { root = val
-          , subForest = (subtrees, parVals)
-          }
-
-
--- |
--- This function will convert a rose tree into a binary tree which we then convert to our internal format.
-normaliseRoseTree :: RoseTree e t -> RoseTree e t
-normaliseRoseTree = undefined
-
-
-fromRoseTree :: RoseTree e t -> Graph Identity () e t t
-fromRoseTree = undefined
--}
-
-
--- |
--- This function is intended as a way to convert from unstructured
--- external tree formats to our *internal* phylogenetic binary networks.
--- It is not intended to be used for internal logic.
-unfoldGraph
-  :: forall a e t. -- (Eq a, Show a, Monoid e) =>
-     (a -> ([(a,e)], t, [(a,e)]))
-  -> a
-  -> Graph Identity () e t t
-unfoldGraph _unfoldFn _seed = undefined
-{-
-  where
-    go :: a -> GraphBuilder Identity e t t -> GraphBuilder Identity e t t
-    go a (GraphBuilder currTreeRefs currLeafRefs currNetRefs currRootRefs)
-      = case unfoldFn  a of
-          ([], t, [(par, e)]) ->
-            let
-              newInd = undefined
-            in
-              undefined
--}
-
-
-
-
 
 
 --      ┌───────────────────────┐
