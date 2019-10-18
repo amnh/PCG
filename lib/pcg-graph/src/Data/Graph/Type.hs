@@ -287,6 +287,7 @@ getRootInds graph =
   in
     roots
 
+
 --      ┌───────────────────────┐
 --      │    Unsafe Indexing    │
 --      └───────────────────────┘
