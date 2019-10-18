@@ -46,6 +46,11 @@ import Control.Monad.State.Strict
 import Data.Maybe (catMaybes)
 import Control.Arrow (first)
 import Control.Lens.Tuple
+import Data.HashSet (HashSet)
+import qualified Data.HashSet as HS
+import Data.Hashable
+import Data.List.Extra (maximumOn)
+import Data.Foldable (toList)
 
 --      ┌─────────────┐
 --      │    Types    │
@@ -248,22 +253,40 @@ size = length . build @Vector
 
 data RoseTree e t = RoseTree
   { root      :: t
-  , subForest :: ([(RoseTree e t, e)], [(t, e)])
+  , subForest :: [(RoseTree e t, e)]
   }
+
+roseBranch :: (Monoid t, Monoid e) => RoseForest e t -> RoseTree e t
+roseBranch forests =
+  let
+    labelledForests = fmap (\f -> (f,mempty)) forests
+  in
+    RoseTree mempty labelledForests
 
 type RoseForest e t = [RoseTree e t]
 
 
+class (Hashable t) => Fresh t where
+  -- We ask that `hash . fromInt` gives the identity
+  fromInt :: Int -> t
+  fresh   :: HashSet t -> t
+  fresh hs =
+    let
+      m = maximumOn hash . toList $ hs
+    in
+      fromInt . (+ 1) . hash $ m
                 
 unfoldToRoseForest
-  :: forall a e t. (Eq a, Show a, Monoid e, Ord a, Ord t)
+  :: forall a e t. (Eq a, Show a, Monoid e, Ord a, Hashable t, Eq t)
   => (a -> ([(a,e)], t, [(a,e)]))
   -> a
-  -> RoseForest e t
-unfoldToRoseForest unfoldFn seed = unfoldFromRoots roots
+  -> (RoseForest e t, HashSet t)
+unfoldToRoseForest unfoldFn seed = (unfoldFromRoots roots, nodeIDs)
   where
-    roots :: [a]
-    roots = findRootsFrom seed `evalState` mempty
+    (roots, nodeIDs) = rootsAndNodes
+
+    rootsAndNodes :: ([a], HashSet t)
+    rootsAndNodes = findRootsFrom seed `runState` mempty
 
     isRoot :: a -> [b] -> Maybe a
     isRoot start pars =
@@ -271,25 +294,24 @@ unfoldToRoseForest unfoldFn seed = unfoldFromRoots roots
           then (Just start)
           else Nothing
 
-    -- To do: use hashmaps instead of set
-    addRoot :: a -> State (Set t) (Maybe a)
+    addRoot :: a -> State (HashSet t) (Maybe a)
     addRoot start = do
       let (pars, val, childs) = unfoldFn start
       seenNodes <- get
-      put (val `S.insert` seenNodes)
-      case val `S.member` seenNodes of
+      put (val `HS.insert` seenNodes)
+      case val `HS.member` seenNodes of
         True  -> pure Nothing
         False ->
           do
             pure $ isRoot start pars
 
-    findRootsFrom :: a -> State (Set t) [a]
+    findRootsFrom :: a -> State (HashSet t) [a]
     findRootsFrom start = do
       let (pars, val, childs) = unfoldFn start
       let otherNodes = fst <$> pars <> childs
       startRoot <- addRoot start
       let
-        otherRootNodes :: State (Set t) [a]
+        otherRootNodes :: State (HashSet t) [a]
         otherRootNodes = catMaybes <$> traverse addRoot otherNodes
 
       case startRoot of
@@ -309,14 +331,37 @@ unfoldToRoseForest unfoldFn seed = unfoldFromRoots roots
       in
         RoseTree
           { root = val
-          , subForest = (subtrees, parVals)
+          , subForest = undefined --(subtrees, parVals)
           }
 
 -- |
 -- This function will convert a rose tree into a binary tree which we then convert to our internal format.
-normaliseRoseTree :: RoseTree e t -> RoseTree e t
-normaliseRoseTree = undefined
+normaliseRoseTree
+  :: forall e t
+  .  (Ord t, Fresh t, Monoid e)
+  => (RoseTree e t, HashSet t) -> RoseTree e t
+normaliseRoseTree (rt, nodeIDs) = undefined
 
+
+createBinaryForest :: (Monoid t, Monoid e) => RoseForest e t -> RoseForest e t
+createBinaryForest forest =
+  case length forest of
+    1 -> forest
+    2 -> forest
+    3 ->
+      let
+        (left : right) = forest
+      in
+        [left, roseBranch right]
+    n ->
+      let
+        lenHalf = n `div` 2
+        (leftTrees, rightTrees) = splitAt lenHalf forest
+        leftBin  = createBinaryForest leftTrees
+        rightBin = createBinaryForest rightTrees
+      in
+        [roseBranch leftBin, roseBranch rightBin]
+        
 
 fromRoseTree :: RoseTree e t -> Graph Identity () e t t
 fromRoseTree = undefined
