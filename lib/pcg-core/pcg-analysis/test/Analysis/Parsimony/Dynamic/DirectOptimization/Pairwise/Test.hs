@@ -28,11 +28,15 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Needlema
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 -}
 import           Bio.Character.Encodable
+import           Data.Alphabet
+import           Data.Bifunctor
+import           Data.List (intercalate)
 import           Data.List.NonEmpty                                     (NonEmpty (..))
 import           Data.MonoTraversable
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Test.Custom.NucleotideSequence
+import           Test.QuickCheck
 import           Test.Tasty
 import           Test.Tasty.QuickCheck
 import qualified Test.Tasty.SmallCheck                                  as SC
@@ -41,9 +45,9 @@ import qualified Test.Tasty.SmallCheck                                  as SC
 testSuite :: TestTree
 testSuite = testGroup "Pariwise alignment tests"
     [ testSuiteNaiveDO
-    , testSuiteMemoizedDO
-    , testSuiteUkkonnenDO
-    , testSuiteForeignDO
+--    , testSuiteMemoizedDO
+--    , testSuiteUkkonnenDO
+--    , testSuiteForeignDO
     , constistentImplementation
     ]
 
@@ -65,12 +69,31 @@ consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll check
     f :: DynamicCharacterElement -> DynamicCharacter
     f = constructDynamic . (:|[])
 
-    checkConsistency :: (NucleotideBase, NucleotideBase) -> Bool
-    checkConsistency (NB x, NB y) = naiveResult == memoedResult && naiveResult == foreignResult
+    checkConsistency :: (NucleotideBase, NucleotideBase) -> Either String String
+    checkConsistency v@(NB x, NB y) =
+        let res = naiveResult == memoedResult && naiveResult == foreignResult
+        in  if   res
+            then Right $ show v
+            else Left errorMessage
       where
         naiveResult   = naiveDO           (f x) (f y) metric
         memoedResult  = naiveDOMemo       (f x) (f y) memoed
         foreignResult = foreignPairwiseDO (f x) (f y) dense
+        errorMessage  = unlines
+                   [ ""
+                   , "Naive:   " <> showResult   naiveResult
+                   , "Memoed:  " <> showResult  memoedResult
+                   , "Foreign: " <> showResult foreignResult
+                   ]
+
+
+showResult (cost, w, x, y, z) = (\x->"("<>x<>")") $ intercalate ","
+    [ show cost
+    , showStream alphabet w
+    , showStream alphabet x
+    , showStream alphabet y
+    , showStream alphabet z
+    ]
 
 
 testSuiteNaiveDO :: TestTree
@@ -244,9 +267,10 @@ preferSubMetric i j
   | otherwise = 1
 
 
-{-
 alphabet :: Alphabet String
 alphabet = fromSymbols ["A","C","G","T"]
+
+{-
 
 
 standardAlph :: Alphabet String
