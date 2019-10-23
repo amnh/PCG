@@ -33,7 +33,7 @@ import PCG.Syntax.Combinators
 -- which to which the save state may be user specified. A default, hidden file
 -- path will be used if no file path is specified by the user.
 newtype LoadCommand = LoadCommand FileSource
-  deriving stock Show
+    deriving stock (Show)
 
 
 -- |

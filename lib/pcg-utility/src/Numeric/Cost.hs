@@ -25,6 +25,7 @@
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE TypeFamilies       #-}
 
@@ -55,7 +56,8 @@ import TextShow                  (TextShow (showb))
 -- |
 -- A /non-negative/, rational number extended to include infinity.
 data Cost = Cost !Natural !Natural
-    deriving (Data, Generic, NFData, Typeable)
+    deriving stock    (Data, Generic, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |

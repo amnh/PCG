@@ -22,6 +22,7 @@
 
 
 {-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE DerivingStrategies  #-}                                                                
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -83,7 +84,7 @@ data  ArgList z
     = Exact (       Ap SyntacticArgument  z)
     | SomeZ (Alt   (Ap SyntacticArgument) z)
     | ManyZ (Alt   (Ap SyntacticArgument) z)
-    deriving (Functor)
+    deriving stock (Functor)
 
 
 -- |
@@ -103,7 +104,7 @@ data  SyntacticArgument z
 -- TODO: Add this "Such That" constructor
 --       might require Monad constraint and be impossible...
 --    | SuchThat       (Ap SyntacticArgument z) (z -> Bool) String
-    deriving (Functor)
+    deriving stock (Functor)
 
 
 -- |

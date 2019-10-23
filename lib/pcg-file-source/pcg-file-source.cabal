@@ -75,7 +75,9 @@ common language-spec
   default-language: Haskell2010
 
   -- Always use MonadFail(fail), not Monad(fail)
-  other-extensions: MonadFailDesugaring
+  other-extensions:
+    DerivingStrategies
+    MonadFailDesugaring
 
 
 library

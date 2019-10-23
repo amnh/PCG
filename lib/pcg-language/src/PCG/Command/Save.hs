@@ -13,6 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UnboxedSums      #-}
 
@@ -36,7 +37,7 @@ import PCG.Syntax.Combinators
 -- may be user specified. A default, hidden file path exists if no file path is
 -- specified by the user.
 data SaveCommand = SaveCommand !FileSource !SerialType
-    deriving Show
+    deriving stock (Show)
 
 
 -- |
@@ -44,7 +45,7 @@ data SaveCommand = SaveCommand !FileSource !SerialType
 data  SerialType
     = Compact
     | Binary
-    deriving Show
+    deriving stock (Show)
 
 
 -- |

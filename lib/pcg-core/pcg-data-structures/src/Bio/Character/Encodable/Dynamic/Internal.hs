@@ -14,6 +14,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -73,7 +74,8 @@ import           TextShow                              (TextShow (showb))
 data  DynamicCharacter
     = Missing {-# UNPACK #-} !Word
     | DC      {-# UNPACK #-} !BitMatrix
-    deriving (Eq, Generic, Ord, Show)
+    deriving stock    (Eq, Generic, Ord, Show)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -81,7 +83,7 @@ data  DynamicCharacter
 newtype DynamicCharacterElement
       = DCE BitVector
       deriving stock   (Generic)
-      deriving newtype (Bits, Eq, FiniteBits, MonoFoldable, MonoFunctor, Ord, Show, TextShow)
+      deriving newtype (Bits, Eq, FiniteBits, MonoFoldable, MonoFunctor, NFData, Ord, Show, TextShow)
 
 
 type instance Bound DynamicCharacterElement = Word
@@ -311,11 +313,6 @@ instance MonoTraversable DynamicCharacterElement where
 
     {-# INLINE omapM #-}
     omapM = otraverse
-
-
-instance NFData DynamicCharacter
-
-instance NFData DynamicCharacterElement
 
 
 instance PossiblyMissingCharacter DynamicCharacter where

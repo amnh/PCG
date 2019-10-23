@@ -10,13 +10,14 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
-
 
 {-# LANGUAGE UndecidableInstances  #-}
 
@@ -44,64 +45,69 @@ import TextShow                               (Builder, TextShow (showb), unline
 -- |
 -- An abstract direct optimization dynamic character decoration with a
 -- polymorphic character type.
-data DynamicDecorationDirectOptimization d
-   = DynamicDecorationDirectOptimization
-   { dynamicDecorationDirectOptimizationCharacterCost            :: {-# UNPACK #-} !Word
-   , dynamicDecorationDirectOptimizationCharacterLocalCost       :: {-# UNPACK #-} !Word
-   , dynamicDecorationDirectOptimizationCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
-   , dynamicDecorationDirectOptimizationSingleDisambiguation     :: !d
-   , dynamicDecorationDirectOptimizationEncodedField             :: !d
-   , dynamicDecorationDirectOptimizationFinalGappedField         :: !d
-   , dynamicDecorationDirectOptimizationFinalUngappedField       :: !d
-   , dynamicDecorationDirectOptimizationPreliminaryGappedField   :: !d
-   , dynamicDecorationDirectOptimizationPreliminaryUngappedField :: !d
-   , dynamicDecorationDirectOptimizationLeftAlignmentField       :: !d
-   , dynamicDecorationDirectOptimizationRightAlignmentField      :: !d
-   } deriving (Eq, Generic)
+data  DynamicDecorationDirectOptimization d
+    = DynamicDecorationDirectOptimization
+    { dynamicDecorationDirectOptimizationCharacterCost            :: {-# UNPACK #-} !Word
+    , dynamicDecorationDirectOptimizationCharacterLocalCost       :: {-# UNPACK #-} !Word
+    , dynamicDecorationDirectOptimizationCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
+    , dynamicDecorationDirectOptimizationSingleDisambiguation     :: !d
+    , dynamicDecorationDirectOptimizationEncodedField             :: !d
+    , dynamicDecorationDirectOptimizationFinalGappedField         :: !d
+    , dynamicDecorationDirectOptimizationFinalUngappedField       :: !d
+    , dynamicDecorationDirectOptimizationPreliminaryGappedField   :: !d
+    , dynamicDecorationDirectOptimizationPreliminaryUngappedField :: !d
+    , dynamicDecorationDirectOptimizationLeftAlignmentField       :: !d
+    , dynamicDecorationDirectOptimizationRightAlignmentField      :: !d
+    }
+    deriving stock    (Eq, Generic)
+    deriving anyclass (NFData)
 
 
 -- |
 -- Represents the partial character decoration result of a post-order traversal.
-data DynamicDecorationDirectOptimizationPostorderResult d
-   = DynamicDecorationDirectOptimizationPostorderResult
-   { dynamicDecorationDirectOptimizationPostorderCharacterCost            :: {-# UNPACK #-} !Word
-   , dynamicDecorationDirectOptimizationPostorderCharacterLocalCost       :: {-# UNPACK #-} !Word
-   , dynamicDecorationDirectOptimizationPostorderCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
-   , dynamicDecorationDirectOptimizationPostorderEncodedField             :: !d
-   , dynamicDecorationDirectOptimizationPostorderPreliminaryGappedField   :: !d
-   , dynamicDecorationDirectOptimizationPostorderPreliminaryUngappedField :: !d
-   , dynamicDecorationDirectOptimizationPostorderLeftAlignmentField       :: !d
-   , dynamicDecorationDirectOptimizationPostorderRightAlignmentField      :: !d
-   } deriving (Eq, Generic)
+data  DynamicDecorationDirectOptimizationPostorderResult d
+    = DynamicDecorationDirectOptimizationPostorderResult
+    { dynamicDecorationDirectOptimizationPostorderCharacterCost            :: {-# UNPACK #-} !Word
+    , dynamicDecorationDirectOptimizationPostorderCharacterLocalCost       :: {-# UNPACK #-} !Word
+    , dynamicDecorationDirectOptimizationPostorderCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
+    , dynamicDecorationDirectOptimizationPostorderEncodedField             :: !d
+    , dynamicDecorationDirectOptimizationPostorderPreliminaryGappedField   :: !d
+    , dynamicDecorationDirectOptimizationPostorderPreliminaryUngappedField :: !d
+    , dynamicDecorationDirectOptimizationPostorderLeftAlignmentField       :: !d
+    , dynamicDecorationDirectOptimizationPostorderRightAlignmentField      :: !d
+    }
+    deriving stock (Eq, Generic)
 
 
 -- |
 -- An abstract implied alignment dynamic character decoration with a polymorphic
 -- character type.
-data DynamicDecorationImpliedAlignment d
-   = DynamicDecorationImpliedAlignment
-   { dynamicDecorationImpliedAlignmentCharacterCost            :: {-# UNPACK #-} !Word
-   , dynamicDecorationImpliedAlignmentCharacterLocalCost       :: {-# UNPACK #-} !Word
-   , dynamicDecorationImpliedAlignmentCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
-   , dynamicDecorationImpliedAlignmentEncodedField             :: !d
-   , dynamicDecorationImpliedAlignmentFinalGappedField         :: !d
-   , dynamicDecorationImpliedAlignmentFinalUngappedField       :: !d
-   , dynamicDecorationImpliedAlignmentPreliminaryGappedField   :: !d
-   , dynamicDecorationImpliedAlignmentPreliminaryUngappedField :: !d
-   , dynamicDecorationImpliedAlignmentLeftAlignmentField       :: !d
-   , dynamicDecorationImpliedAlignmentRightAlignmentField      :: !d
-   , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: !d
-   } deriving (Eq, Generic)
+data  DynamicDecorationImpliedAlignment d
+    = DynamicDecorationImpliedAlignment
+    { dynamicDecorationImpliedAlignmentCharacterCost            :: {-# UNPACK #-} !Word
+    , dynamicDecorationImpliedAlignmentCharacterLocalCost       :: {-# UNPACK #-} !Word
+    , dynamicDecorationImpliedAlignmentCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
+    , dynamicDecorationImpliedAlignmentEncodedField             :: !d
+    , dynamicDecorationImpliedAlignmentFinalGappedField         :: !d
+    , dynamicDecorationImpliedAlignmentFinalUngappedField       :: !d
+    , dynamicDecorationImpliedAlignmentPreliminaryGappedField   :: !d
+    , dynamicDecorationImpliedAlignmentPreliminaryUngappedField :: !d
+    , dynamicDecorationImpliedAlignmentLeftAlignmentField       :: !d
+    , dynamicDecorationImpliedAlignmentRightAlignmentField      :: !d
+    , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: !d
+    }
+    deriving stock (Eq, Generic)
 
 
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character
 -- type.
-data DynamicDecorationInitial d
-   = DynamicDecorationInitial
-   { dynamicDecorationInitialEncodedField           :: !d
-   , dynamicDecorationInitialCharacterAverageLength :: {-# UNPACK #-} !AverageLength
-   } deriving (Eq, Generic)
+data  DynamicDecorationInitial d
+    = DynamicDecorationInitial
+    { dynamicDecorationInitialEncodedField           :: !d
+    , dynamicDecorationInitialCharacterAverageLength :: {-# UNPACK #-} !AverageLength
+    }
+    deriving stock (Eq, Generic)
 
 
 -- | (✔)
@@ -109,7 +115,7 @@ instance NFData d => NFData (DynamicDecorationInitial d)
 
 
 -- | (✔)
-instance NFData d => NFData (DynamicDecorationDirectOptimization d)
+--instance NFData d => NFData (DynamicDecorationDirectOptimization d)
 
 
 -- | (✔)

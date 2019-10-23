@@ -13,7 +13,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE UnboxedSums #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 
 module PCG.Command.Build
@@ -36,7 +37,7 @@ import PCG.Syntax.Combinators
 -- output should be directed.
 data  BuildCommand
     = BuildCommand {-# UNPACK #-} !Int !ConstructionType !ClusterOption
-    deriving (Show)
+    deriving stock (Show)
 
 -- |
 -- Different possible types of component graph construction.
@@ -44,7 +45,7 @@ data  ConstructionType
     = WagnerTree
     | WheelerNetwork
     | WheelerForest
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 
 -- |
@@ -57,13 +58,13 @@ data  ClusterLabel
     | WeightedLinkage
     | WardLinkage
     | KMedians
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 
 -- |
 -- A clustering specification with type and grouping.
 data ClusterOption = ClusterOption !ClusterLabel !Int
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 
 -- |

@@ -1,3 +1,5 @@
+{-# LANGUAGE DerivingStrategies #-}
+
 module PCG.Command.Internal where
 
 data  Command
@@ -6,5 +8,5 @@ data  Command
     | PCG_ECHO String
     | PCG_ANALYZE String
     | PCG_EXIT
-    deriving (Show)
+    deriving stock(Show)
 

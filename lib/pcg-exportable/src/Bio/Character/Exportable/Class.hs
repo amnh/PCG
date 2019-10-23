@@ -12,6 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DerivingStrategies     #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -35,23 +36,25 @@ import Foreign.C.Types
 -- A structure used for FFI calls.
 --
 -- 'exportedBufferChunks' contains the bit-packed representation of the character sequence.
-data ExportableCharacterSequence
-   = ExportableCharacterSequence
-   { exportedElementCountSequence :: {-# UNPACK #-} !Word
-   , exportedElementWidthSequence :: {-# UNPACK #-} !Word
-   , exportedBufferChunks         :: ![CULong]
-   } deriving (Eq, Show)
+data  ExportableCharacterSequence 
+    = ExportableCharacterSequence
+    { exportedElementCountSequence :: {-# UNPACK #-} !Word
+    , exportedElementWidthSequence :: {-# UNPACK #-} !Word
+    , exportedBufferChunks         :: ![CULong]
+    }
+    deriving stock (Eq, Show)
 
 
 -- |
 -- A structure used for FFI calls--
 -- 'exportedCharacterElements' contains the integral value for each character element.
-data ExportableCharacterElements
-   = ExportableCharacterElements
-   { exportedElementCountElements :: {-# UNPACK #-} !Word
-   , exportedElementWidthElements :: {-# UNPACK #-} !Word
-   , exportedCharacterElements    :: ![CUInt]
-   } deriving (Eq, Show)
+data  ExportableCharacterElements
+    = ExportableCharacterElements
+    { exportedElementCountElements :: {-# UNPACK #-} !Word
+    , exportedElementWidthElements :: {-# UNPACK #-} !Word
+    , exportedCharacterElements    :: ![CUInt]
+    }
+    deriving stock (Eq, Show)
 
 
 -- |

@@ -80,7 +80,8 @@ data  ParseStreamErrorMessage
 data  DataSerializationFormat
     = BinaryFormat
     | CompactFormat
-    deriving (Data, Generic, NFData, Show, Typeable)
+    deriving stock    (Data, Generic, Show, Typeable)
+    deriving anyclass (NFData)
 
 
 instance Semigroup ParseStreamError where

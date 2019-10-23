@@ -30,7 +30,7 @@ import PCG.Syntax.Combinators
 -- may be user specified. A default, hidden file path exists if no file path is
 -- specified by the user.
 newtype EchoCommand = EchoCommand ShortText
-  deriving stock Show
+  deriving stock (Show)
 
 
 -- |

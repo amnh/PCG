@@ -12,6 +12,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE PatternSynonyms       #-}
@@ -48,6 +49,7 @@ data  PostorderContext n c
       { leftChild  :: c
       , rightChild :: c
       }
+
 
 -- |
 -- Smart elimination principle for a 'PostorderContext' where we do not change
@@ -91,7 +93,7 @@ data  ChildContext c
     = NoChildren
     | OneChild c
     | TwoChildren c c
-    deriving Functor
+    deriving stock (Functor)
 
 
 -- |
@@ -170,7 +172,7 @@ data  ParentContext p
     = NoParent
     | OneParent p
     | TwoParents p p
-    deriving Functor
+    deriving stock (Functor)
 
 -- |
 -- Construct a 'ParentContext' from a monoTraversable structure ignoring

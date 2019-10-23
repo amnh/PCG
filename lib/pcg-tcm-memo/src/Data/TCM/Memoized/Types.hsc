@@ -8,6 +8,7 @@
 
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE DeriveGeneric            #-}
+{-# LANGUAGE DerivingStrategies       #-}
 {-# LANGUAGE FlexibleInstances        #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# LANGUAGE TypeSynonymInstances     #-}
@@ -66,12 +67,14 @@ data  DCElement
     = DCElement
     { alphabetSizeElem :: CSize
     , characterElement :: Ptr CBufferUnit
-    } deriving (Show)
+    }
+    deriving stock (Show)
 
 
 -- |
 -- A closed type wrapping a void pointer in C to the C++ memoized TCM.
-data ForeignVoid deriving (Generic)
+data  ForeignVoid
+    deriving stock(Generic)
 
 
 -- |
@@ -79,7 +82,8 @@ data ForeignVoid deriving (Generic)
 data  MemoizedCostMatrix
     = MemoizedCostMatrix
     { costMatrix :: StablePtr ForeignVoid
-    } deriving (Eq, Generic)
+    }
+    deriving stock (Eq, Generic)
 
 
 instance Show MemoizedCostMatrix where
