@@ -3,6 +3,7 @@ module Main
   ) where
 
 import qualified Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test as Pairwise
+import qualified Analysis.Clustering.Test as Clustering
 import           Test.Tasty
 import           Test.Tasty.Ingredients.Rerun                                (rerunningTests)
 
@@ -16,4 +17,8 @@ main =
 
 
 testSuite :: TestTree
-testSuite = testGroup "Analysis Test Suite" [ Pairwise.testSuite]
+testSuite = testGroup
+              "Analysis Test Suite"
+              [ Pairwise.testSuite
+              , Clustering.testSuite
+              ]

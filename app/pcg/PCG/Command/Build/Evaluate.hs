@@ -256,10 +256,11 @@ taxaCounter =
 
 
 naiveNetworkBuild
-  :: MetadataSequence m
+  :: (Foldable1 f)
+  => MetadataSequence m
   -> f FinalCharacterNode
   -> FinalDecorationDAG
-naiveNetworkBuild = error "Naive network build not yet implemented!"
+naiveNetworkBuild meta = iterativeNetworkBuild . naiveWagnerBuild meta
 
 
 naiveForestBuild
