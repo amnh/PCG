@@ -437,7 +437,8 @@ threeWayMean sigma char1 char2 char3 =
                   gap  = gapOfStream char1
               in  case NE.filter (/= gap) meanStates of
                     []   -> error $ unlines
-                                  [ "The zipped sequence was length zero after filtering gaps!"
+                                  [ "The zipped/ sequence was length zero after filtering gaps!"
+                                  , "gap: "    <> show gap
                                   , "Zipped: " <> show meanStates
                                   , "1st :   " <> show a
                                   , "2nd :   " <> show b
