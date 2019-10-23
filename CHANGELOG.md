@@ -7,7 +7,9 @@ Releases are available [on GitHub][2].
 
 ## _0.2.1_ - Unreleased Changes
 
-* None
+* Updated to GHC-8.6.5
+* Updated to Cabal-2.4
+* Updated Travis CI build script
 
 
 ## [0.2.0][5] - 2019-07-09
