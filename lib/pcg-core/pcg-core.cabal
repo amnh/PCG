@@ -449,6 +449,7 @@ test-suite analysis-tests
     pcg-analysis/test
 
   build-depends:
+    pcg-alphabet,
     pcg-analysis,
     pcg-data-structures,
     pcg-utility,
