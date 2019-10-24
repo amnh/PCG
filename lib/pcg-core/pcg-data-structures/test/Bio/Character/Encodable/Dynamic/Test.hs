@@ -429,7 +429,7 @@ monoFoldablePropertiesGen
      , Show f
      , Show (Element f)
      )
-  => TestTree 
+  => TestTree
 monoFoldablePropertiesGen = testGroup "Properties of MonoFoldable"
     [ testProperty "ofoldr f z t === appEndo (ofoldMap (Endo . f) t ) z" testFoldrFoldMap
     , testProperty "ofoldl' f z t === appEndo (getDual (ofoldMap (Dual . Endo . flip f) t)) z" testFoldlFoldMap

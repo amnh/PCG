@@ -14,10 +14,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns     #-}
-{-# LANGUAGE ConstraintKinds  #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE BangPatterns       #-}
+{-# LANGUAGE ConstraintKinds    #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   ( Cost
@@ -83,7 +84,7 @@ import           Prelude                    hiding (lookup)
 -- deterministic way. Without loss of generality in determining the ordering,
 -- we choose the same biasing as the C code called from the FFI for consistency.
 data Direction = DiagArrow | LeftArrow | UpArrow
-  deriving (Eq, Ord)
+  deriving stock (Eq, Ord)
 
 
 -- | (✔)

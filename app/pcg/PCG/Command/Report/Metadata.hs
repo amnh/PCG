@@ -12,10 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE LambdaCase         #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
 
 module PCG.Command.Report.Metadata
   ( outputMetadata
@@ -53,7 +54,7 @@ data  CharacterType
     | Metric
     | NonMetric
     | Dynamic
-    deriving Show
+    deriving stock (Show)
 
 
 -- |

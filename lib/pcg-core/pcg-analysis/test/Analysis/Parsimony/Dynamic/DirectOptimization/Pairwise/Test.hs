@@ -30,7 +30,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.Bifunctor
-import           Data.List (intercalate)
+import           Data.List                                              (intercalate)
 import           Data.List.NonEmpty                                     (NonEmpty (..))
 import           Data.MonoTraversable
 import           Data.TCM.Dense
