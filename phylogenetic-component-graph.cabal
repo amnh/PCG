@@ -146,6 +146,12 @@ executable pcg
     vector                   >= 0.12.0.2  && < 0.13,
     xml                      >= 1.3.14    && < 1.4,
 
+  -- Apparently this is needed to compile with profiling, which is really stupid.
+  -- It should only be in the modules which use TemplateHaskell, not all modules.
+  -- I consider this a temporary hack to get things to compile with profiling.
+  -- TODO: remove this in the future when cabal gets it's act together.
+  other-extensions: TemplateHaskell
+  
   other-modules:
     Paths_phylogenetic_component_graph
     PCG.Command.Build.Evaluate

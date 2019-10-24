@@ -382,41 +382,43 @@ traceback :: ( DOCharConstraint s
           -> s
           -> s
           -> (Word, s, s, s, s)
-traceback alignMatrix longerChar lesserChar =
-    ( unsafeToFinite cost
-    , constructDynamic . NE.fromList $ toList ungappedMedianStates
-    , constructDynamic . NE.fromList $ toList medianStates
-    , constructDynamic . NE.fromList $ toList alignedLongerChar
-    , constructDynamic . NE.fromList $ toList alignedLesserChar
-    )
+traceback alignMatrix longerChar lesserChar = (finalCost, ungapped, medians, longer, lesser)
   where
-      (ungappedMedianStates, medianStates, alignedLongerChar, alignedLesserChar) = go lastCell
-      lastCell     = (row, col)
-      (cost, _, _) = alignMatrix ! lastCell
+    finalCost = unsafeToFinite cost
+    ungapped  = dlistToDynamic ungappedMedianStates
+    medians   = dlistToDynamic medianStates
+    longer    = dlistToDynamic alignedLongerChar
+    lesser    = dlistToDynamic alignedLesserChar
 
-      col = olength longerChar
-      row = olength lesserChar
-      gap = gapOfStream longerChar
+    (ungappedMedianStates, medianStates, alignedLongerChar, alignedLesserChar) = go lastCell
+    lastCell     = (row, col)
+    (cost, _, _) = alignMatrix ! lastCell
 
-      go p@(i, j)
-        | p == (0,0) = (mempty, mempty, mempty, mempty)
-        | otherwise  = ( if   medianElement == gap
-                         then previousUngapped
-                         else previousUngapped      `snoc` medianElement
-                       , previousMedianCharElements `snoc` medianElement
-                       , previousLongerCharElements `snoc` longerElement
-                       , previousLesserCharElements `snoc` lesserElement
-                       )
-        where
-          (previousUngapped, previousMedianCharElements, previousLongerCharElements, previousLesserCharElements) = go (row', col')
+    dlistToDynamic = constructDynamic . NE.fromList . toList
 
-          (_, directionArrow, medianElement) = alignMatrix ! p
+    col = olength longerChar
+    row = olength lesserChar
+    gap = gapOfStream longerChar
 
-          (row', col', longerElement, lesserElement) =
-              case directionArrow of
-                LeftArrow -> (i    , j - 1, longerChar `indexStream` (j - 1),                             gap )
-                UpArrow   -> (i - 1, j    ,                             gap , lesserChar `indexStream` (i - 1))
-                DiagArrow -> (i - 1, j - 1, longerChar `indexStream` (j - 1), lesserChar `indexStream` (i - 1))
+    go p@(i, j)
+      | p == (0,0) = (mempty, mempty, mempty, mempty)
+      | otherwise  = ( if   medianElement == gap
+                       then previousUngapped
+                       else previousUngapped `snoc` medianElement
+                     ,      previousMedians  `snoc` medianElement
+                     ,      previousLongers  `snoc` longerElement
+                     ,      previousLessers  `snoc` lesserElement
+                     )
+      where
+        (previousUngapped, previousMedians, previousLongers, previousLessers) = go (row', col')
+
+        (_, directionArrow, medianElement) = alignMatrix ! p
+
+        (row', col', longerElement, lesserElement) =
+            case directionArrow of
+              LeftArrow -> (i    , j - 1, longerChar `indexStream` (j - 1),                             gap )
+              UpArrow   -> (i - 1, j    ,                             gap , lesserChar `indexStream` (i - 1))
+              DiagArrow -> (i - 1, j - 1, longerChar `indexStream` (j - 1), lesserChar `indexStream` (i - 1))
 
 
 {--
