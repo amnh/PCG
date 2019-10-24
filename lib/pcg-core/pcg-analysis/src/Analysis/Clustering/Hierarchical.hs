@@ -81,6 +81,18 @@ clusterIntoGroups meta leaves link =
   where
     dendro = clusterLeaves meta leaves link
 
+clusterIntoCuts
+  :: (Applicative f, Foldable f)
+  => MetadataSequence m
+  -> LeafSet (DecoratedCharacterNode f)
+  -> Linkage
+  -> Double
+  -> NE.Vector (NE.Vector (DecoratedCharacterNode f))
+clusterIntoCuts meta leaves link =
+    cutCluster dendro
+  where
+    dendro = clusterLeaves meta leaves link
+
 
 dendroToList :: Dendrogram a -> DList a
 dendroToList = \case
@@ -151,3 +163,20 @@ dendroToVectorClusters numberOfClusters i =
               then largerClusters
               else largerClusters <> smallerClusters
 
+
+
+cutCluster
+  :: forall a
+  . Dendrogram a
+  -> Double
+  -> NE.Vector (NE.Vector a)
+cutCluster d f = case d of
+  Leaf a  -> pure . pure $ a
+  Branch _ dist _ _ ->
+    let
+      clusters :: [Dendrogram a]
+      clusters = d `cutAt` (f * dist)
+      clustersV :: [NE.Vector a]
+      clustersV = fmap dendroToNonEmptyVector clusters
+    in
+      NE.unsafeFromVector . fromList $ clustersV

@@ -12,7 +12,8 @@
 -----------------------------------------------------------------------------
 
 module Analysis.Clustering
-  ( ClusterOptions
+  ( ClusterOptions(..)
+  , ClusterCut(..)
   , pattern UPGMA
   , pattern SingleLinkage
   , pattern CompleteLinkage
@@ -31,28 +32,46 @@ import           Bio.Graph.LeafSet
 import           Bio.Sequence
 import qualified Data.Vector.NonEmpty             as NE
 
+
+data ClusterCut
+  = ClusterGroup Int
+  | ClusterSplit Double
+
 data ClusterOptions
-  = Hierarchical H.Linkage
+  = Hierarchical H.Linkage ClusterCut
   | Median
   | None
 
-pattern UPGMA :: ClusterOptions
-pattern UPGMA = Hierarchical H.Average
 
-pattern SingleLinkage :: ClusterOptions
-pattern SingleLinkage = Hierarchical H.Single
+pattern UPGMA :: ClusterCut -> ClusterOptions
+pattern UPGMA s <- Hierarchical H.Average s
+  where
+    UPGMA s = Hierarchical H.Average s
 
-pattern CompleteLinkage :: ClusterOptions
-pattern CompleteLinkage = Hierarchical H.Complete
+pattern SingleLinkage :: ClusterCut ->  ClusterOptions
+pattern SingleLinkage s <- Hierarchical H.Single s
+  where
+    SingleLinkage s = Hierarchical H.Single s
 
-pattern UPGMALinkage :: ClusterOptions
-pattern UPGMALinkage = Hierarchical H.Average
+pattern CompleteLinkage :: ClusterCut -> ClusterOptions
+pattern CompleteLinkage s <- Hierarchical H.Complete s
+  where
+    CompleteLinkage s = Hierarchical H.Complete s
 
-pattern WeightedLinkage :: ClusterOptions
-pattern WeightedLinkage = Hierarchical H.Weighted
+pattern UPGMALinkage :: ClusterCut ->  ClusterOptions
+pattern UPGMALinkage s <- Hierarchical H.Average s
+  where
+    UPGMALinkage s = Hierarchical H.Average s
 
-pattern WardLinkage :: ClusterOptions
-pattern WardLinkage = Hierarchical H.Ward
+pattern WeightedLinkage :: ClusterCut -> ClusterOptions
+pattern WeightedLinkage s <- Hierarchical H.Weighted s
+  where
+    WeightedLinkage s = Hierarchical H.Weighted s
+
+pattern WardLinkage :: ClusterCut -> ClusterOptions
+pattern WardLinkage s <- Hierarchical H.Ward s
+  where
+    WardLinkage s = Hierarchical H.Ward s
 
 pattern KMedians :: ClusterOptions
 pattern KMedians = Median
@@ -66,12 +85,11 @@ clusterIntoGroups
   => MetadataSequence m
   -> LeafSet (DecoratedCharacterNode f)
   -> ClusterOptions
-  -> Int
   -> NE.Vector (NE.Vector (DecoratedCharacterNode f))
-clusterIntoGroups meta leaves clusterOption numberOfClusters =
+clusterIntoGroups meta leaves clusterOption =
   case clusterOption of
-    Hierarchical hierarchicalOpt
-      -> CH.clusterIntoGroups meta leaves hierarchicalOpt numberOfClusters
-
+    Hierarchical linkage cut -> case cut of
+      ClusterGroup n -> CH.clusterIntoGroups meta leaves linkage n
+      ClusterSplit d -> CH.clusterIntoCuts   meta leaves linkage d
     Median -> error "Median clustering not yet implemented."
     None   -> error "ToDO"
