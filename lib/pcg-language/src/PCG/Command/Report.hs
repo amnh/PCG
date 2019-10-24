@@ -13,7 +13,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE UnboxedSums #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module PCG.Command.Report
   ( ReportCommand(..)
@@ -35,7 +36,7 @@ import PCG.Syntax.Combinators
 -- output should be directed.
 data  ReportCommand
     = ReportCommand !OutputFormat !OutputTarget
-    deriving (Show)
+    deriving stock (Show)
 
 
 -- |
@@ -54,7 +55,7 @@ data  OutputFormat
     | TreeCosts
     | TreeStats
     | XML
-    deriving (Show)
+    deriving stock (Show)
 
 
 -- |
@@ -62,7 +63,7 @@ data  OutputFormat
 data  OutputTarget
     = OutputToStdout
     | OutputToFile !FileSource !FileWriteMethod
-    deriving (Show)
+    deriving stock (Show)
 
 
 -- |
@@ -71,7 +72,7 @@ data  FileWriteMethod
     = Append
     | Move
     | Overwrite
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 
 -- |

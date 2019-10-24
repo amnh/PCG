@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
@@ -92,30 +93,48 @@ evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
                 WagnerTree     -> naiveWagnerBuild @NE.Vector
                 WheelerNetwork -> naiveNetworkBuild
                 WheelerForest  -> naiveForestBuild
-        let cluster = clusterBuildLogic buildMethod
+        let
+          cluster
+            :: AC.ClusterOptions
+            -> PhylogeneticSolution FinalDecorationDAG
+            -> Int
+            -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
+          cluster = clusterBuildLogic buildMethod
+
         let clusterLogic =
               case clusterType of
-                ClusterOption _ 1               -> buildLogic
-                ClusterOption NoCluster       n -> cluster AC.NoCluster       n
-                ClusterOption SingleLinkage   n -> cluster AC.SingleLinkage   n
-                ClusterOption CompleteLinkage n -> cluster AC.CompleteLinkage n
-                ClusterOption UPGMALinkage    n -> cluster AC.UPGMALinkage    n
-                ClusterOption WeightedLinkage n -> cluster AC.WeightedLinkage n
-                ClusterOption WardLinkage     n -> cluster AC.WardLinkage     n
-                ClusterOption KMedians        n -> cluster AC.KMedians        n
-        if clusterCount < 1 then
-          fail "A non-positive number was supplied to the number of BUILD trajectories."
+                ClusterOption _ (ClusterGroup 1) -> buildLogic
+                ClusterOption _ _                -> cluster clusterOptions
+        if numberOfClusterCheck clusterType then
+          fail "A non-positive number was supplied to the number of clusters."
         else
           do
             bestNetwork <- clusterLogic v trajectoryCount
             liftIO . compact . Right $ toSolution bestNetwork
 
   where
+
+    numberOfClusterCheck :: ClusterOption -> Bool
+    numberOfClusterCheck (ClusterOption _ (ClusterGroup n)) = n < 1
+    numberOfClusterCheck _                                  = False
+
     toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
 
-    clusterCount :: Int
-    clusterCount = numberOfClusters clusterType
+    toClusterSplit :: ClusterSplit -> AC.ClusterCut
+    toClusterSplit = \case
+      ClusterGroup n -> AC.ClusterGroup n
+      ClusterCut   d -> AC.ClusterSplit d
+
+    clusterOptions :: AC.ClusterOptions
+    clusterOptions = case clusterType of
+      ClusterOption NoCluster       _     -> AC.NoCluster
+      ClusterOption KMedians        _     -> AC.KMedians
+      ClusterOption SingleLinkage   split -> AC.SingleLinkage   (toClusterSplit split)
+      ClusterOption CompleteLinkage split -> AC.CompleteLinkage (toClusterSplit split)
+      ClusterOption UPGMALinkage    split -> AC.UPGMALinkage    (toClusterSplit split)
+      ClusterOption WeightedLinkage split -> AC.WeightedLinkage (toClusterSplit split)
+      ClusterOption WardLinkage     split -> AC.WardLinkage     (toClusterSplit split)
 
 
 wagnerBuildLogic
@@ -146,12 +165,11 @@ forestBuildLogic _ _ = fail "The BUILD command type 'Forest' is not yet implemen
 clusterBuildLogic
   :: BuildType FinalMetadata
   -> AC.ClusterOptions
-  -> Int
   -> PhylogeneticSolution FinalDecorationDAG
   -> Int
   -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
-clusterBuildLogic buildMethod clusterOption totalClusters
-  = buildLogicMethod (clusterParallelBuild buildMethod clusterOption totalClusters)
+clusterBuildLogic buildMethod clusterOption
+  = buildLogicMethod (clusterParallelBuild buildMethod clusterOption)
 
 
 buildLogicMethod
@@ -200,12 +218,11 @@ clusterParallelBuild
   :: (Traversable t)
   => BuildType FinalMetadata
   -> AC.ClusterOptions
-  -> Int
   -> MetadataSequence FinalMetadata
   -> t (NE.Vector FinalCharacterNode)
   -> t FinalDecorationDAG
-clusterParallelBuild buildMethod clusterOptions totalClusters m
-  = parmap rpar (clusterBuildMethod buildMethod clusterOptions totalClusters m)
+clusterParallelBuild buildMethod clusterOptions m
+  = parmap rpar (clusterBuildMethod buildMethod clusterOptions m)
 
 
 naiveWagnerBuild
@@ -283,18 +300,17 @@ naiveForestBuild = error "Naive forest build not yet implemented!"
 clusterBuildMethod
   :: BuildType m
   -> AC.ClusterOptions
-  -> Int
   -> MetadataSequence m
   -> NE.Vector FinalCharacterNode
   -> FinalDecorationDAG
-clusterBuildMethod buildMethod option totalClusters meta leafSetV
+clusterBuildMethod buildMethod option meta leafSetV
     = parallelClusterMethod buildMethod meta clusters
   where
     leafSetId :: LeafSet (DecoratedCharacterNode Identity)
     leafSetId = coerce leafSetV
 
     clusters :: NE.Vector (NE.Vector (DecoratedCharacterNode Identity))
-    clusters = AC.clusterIntoGroups meta leafSetId option totalClusters
+    clusters = AC.clusterIntoGroups meta leafSetId option
 
 
 parallelClusterMethod

@@ -17,14 +17,15 @@
 
 module Analysis.Clustering.Test
   ( testSuite
+  , example
   ) where
 
 
-import Analysis.Clustering.Hierarchical
-import qualified Data.Vector.NonEmpty as NE
-import Data.Vector hiding (length)
-import Data.Foldable
 import           AI.Clustering.Hierarchical
+import           Analysis.Clustering.Hierarchical
+import           Data.Foldable
+import           Data.Vector                      hiding (length)
+import qualified Data.Vector.NonEmpty             as NE
 import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
@@ -34,6 +35,21 @@ testSuite = testGroup "Clustering Tests"
     [ hierarchicalClusteringProperties
     ]
 
+example :: IO ()
+example =
+  do
+    putStrLn . drawDendrogram $ fmap show myDendro
+    putStrLn ""
+    print cut
+  where
+    cut = myDendro `cutCluster` 0.7
+
+    inputs = fromList  [1,1,1,1,4,10,11,804,814,834, 769]
+
+    myDendro :: Dendrogram Double
+    myDendro = hclust Average inputs (\x y -> sqrt (x^2 + y^2))
+
+
 
 hierarchicalClusteringProperties :: TestTree
 hierarchicalClusteringProperties = testGroup "Properties of hierarchical clustering"
@@ -42,14 +58,14 @@ hierarchicalClusteringProperties = testGroup "Properties of hierarchical cluster
 
 preservesNumber :: NonEmptyList Double -> Property
 preservesNumber lv =
-    length v === length (afterCluster)
+    length v === length afterCluster
   where
     v :: Vector Double
     v = fromList . getNonEmpty $ lv
 
 
     afterCluster :: Vector Double
-    afterCluster = fold . NE.toVector . fmap (NE.toVector) $ clusters
+    afterCluster = fold . NE.toVector . fmap NE.toVector $ clusters
 
     clusters :: NE.Vector (NE.Vector Double)
     clusters = dendroToVectorClusters dendro 20

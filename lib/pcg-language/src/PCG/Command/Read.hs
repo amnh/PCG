@@ -48,7 +48,7 @@ data  FileSpecification
     | CustomAlphabetFile !(NonEmpty FileSource) !TcmReference
     | WithSpecifiedTCM   !FileSpecification   !TcmReference
     | PrealignedFile     !FileSpecification
-    deriving (Show)
+    deriving stock (Show)
 
 
 -- |

@@ -2,8 +2,8 @@ module Main
   ( main
   ) where
 
+import qualified Analysis.Clustering.Test                                    as Clustering
 import qualified Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test as Pairwise
-import qualified Analysis.Clustering.Test as Clustering
 import           Test.Tasty
 import           Test.Tasty.Ingredients.Rerun                                (rerunningTests)
 
