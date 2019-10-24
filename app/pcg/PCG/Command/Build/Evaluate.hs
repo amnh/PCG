@@ -28,7 +28,7 @@ import           Bio.Graph.PhylogeneticDAG                     (PostorderContext
 import qualified Bio.Graph.ReferenceDAG                        as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Arrow                                 ((&&&))
+import           Control.Arrow                                 ((&&&), first)
 import           Control.DeepSeq
 import           Control.Evaluation
 import           Control.Lens                                  hiding (snoc, _head)
@@ -57,9 +57,9 @@ import           Data.Word
 import           Immutable.Shuffle                             (shuffleM)
 import           PCG.Command.Build
 
-import Debug.Trace
-import System.IO.Unsafe
+-- For adhoc logging. Obviously unsafe, TODO: remove later
 import Data.IORef
+import System.IO.Unsafe
 
 
 type BuildType m =
@@ -226,16 +226,7 @@ naiveWagnerBuild metaSeq ns =
                   ]
       x:|(y:z:xs) ->
           let len      = length ns
-              initTree =
-                trace
-                (fold
-                   [ "Beginning Wagner Build...\n"
-                   , "Total number of taxa: " <> show len <> "\n"
-                   , "Progress : \n"
-                   , "  - 3 Taxa added"
-                   ]
-                )
-                fromRefDAG $ DAG.fromList
+              initTree = initTaxaCounter len . fromRefDAG $ DAG.fromList
                   [ ( mempty        , wipeNode True  x, IM.fromList [(1,mempty), (4,mempty)] )
                   , ( IS.singleton 0, wipeNode True  x, IM.fromList [(2,mempty), (3,mempty)] )
                   , ( IS.singleton 1, wipeNode False x, mempty )
@@ -249,10 +240,29 @@ naiveWagnerBuild metaSeq ns =
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
 
-taxaCounter :: IORef Int
+taxaCounter :: IORef (Word, Word)
 {-# NOINLINE taxaCounter #-}
 taxaCounter =
-  unsafePerformIO (newIORef 4)
+  unsafePerformIO (newIORef (0,1))
+
+
+initTaxaCounter :: NFData a => Int -> a -> a
+initTaxaCounter totalTaxa x = unsafePerformIO $ do 
+    writeIORef taxaCounter (3, toEnum totalTaxa)
+    putStrLn $ unwords ["Beginning Wagner build of ", show totalTaxa, "taxa"]
+    pure $ force x
+
+
+printTaxaCounter :: NFData a => a -> a
+printTaxaCounter x = unsafePerformIO $ do
+    let res = force x
+    modifyIORef taxaCounter (first succ)
+    (count, total) <- readIORef taxaCounter
+    let shownTotal = show total
+    let shownCount = show count
+    let shownInfo  = replicate (length shownTotal - length shownCount) ' ' <> shownCount 
+    putStrLn $ mconcat ["  - ", shownInfo, "/", shownTotal, " taxa"]
+    pure res
 
 
 naiveNetworkBuild
@@ -383,13 +393,7 @@ iterativeBuild
   :: FinalDecorationDAG
   -> FinalCharacterNode
   -> FinalDecorationDAG
-iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf =
-  unsafePerformIO $
-    do
-      taxa <- readIORef taxaCounter
-      writeIORef taxaCounter (taxa + 1)
-      putStrLn $ "  - " <> show taxa <> " taxa added"
-      pure nextTree
+iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = printTaxaCounter nextTree
   where
     (PDAG2 dag _) = wipeScoring currentTree
     edgeSet       = NE.fromList . toList $ referenceEdgeSet dag
