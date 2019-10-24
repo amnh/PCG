@@ -382,17 +382,19 @@ traceback :: ( DOCharConstraint s
           -> s
           -> s
           -> (Word, s, s, s, s)
-traceback alignMatrix longerChar lesserChar =
-    ( unsafeToFinite cost
-    , constructDynamic . NE.fromList $ toList ungappedMedianStates
-    , constructDynamic . NE.fromList $ toList medianStates
-    , constructDynamic . NE.fromList $ toList alignedLongerChar
-    , constructDynamic . NE.fromList $ toList alignedLesserChar
-    )
+traceback alignMatrix longerChar lesserChar = (finalCost, ungapped, medians, longer, lesser)
   where
+      finalCost = unsafeToFinite cost
+      ungapped  = dlistToDynamic ungappedMedianStates
+      medians   = dlistToDynamic medianStates
+      longer    = dlistToDynamic alignedLongerChar
+      lesser    = dlistToDynamic alignedLesserChar
+
       (ungappedMedianStates, medianStates, alignedLongerChar, alignedLesserChar) = go lastCell
       lastCell     = (row, col)
       (cost, _, _) = alignMatrix ! lastCell
+
+      dlistToDynamic = constructDynamic . NE.fromList . toList
 
       col = olength longerChar
       row = olength lesserChar
@@ -402,13 +404,13 @@ traceback alignMatrix longerChar lesserChar =
         | p == (0,0) = (mempty, mempty, mempty, mempty)
         | otherwise  = ( if   medianElement == gap
                          then previousUngapped
-                         else previousUngapped      `snoc` medianElement
-                       , previousMedianCharElements `snoc` medianElement
-                       , previousLongerCharElements `snoc` longerElement
-                       , previousLesserCharElements `snoc` lesserElement
+                         else previousUngapped `snoc` medianElement
+                       ,      previousMedians  `snoc` medianElement
+                       ,      previousLongers  `snoc` longerElement
+                       ,      previousLessers  `snoc` lesserElement
                        )
         where
-          (previousUngapped, previousMedianCharElements, previousLongerCharElements, previousLesserCharElements) = go (row', col')
+          (previousUngapped, previousMedians, previousLongers, previousLessers) = go (row', col')
 
           (_, directionArrow, medianElement) = alignMatrix ! p
 
