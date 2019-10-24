@@ -109,6 +109,7 @@ evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
           fail "A non-positive number was supplied to the number of clusters."
         else
           do
+            liftIO $ print clusterType
             bestNetwork <- clusterLogic v trajectoryCount
             liftIO . compact . Right $ toSolution bestNetwork
 
@@ -146,12 +147,17 @@ wagnerBuildLogic = buildLogicMethod naiveWagnerParallelBuild
 
 networkBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
-  -> a
+  -> Int
   -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
-networkBuildLogic v _ = do
-    let bestTrees = toNonEmpty . NE.head $ phylogeneticForests v
-    liftIO $ putStrLn "Beginning network construction."
-    pure $ parmap rpar iterativeNetworkBuild bestTrees
+networkBuildLogic sol n = do
+--    let
+--      bestTrees :: NonEmpty FinalDecorationDAG
+--      bestTrees = toNonEmpty . NE.head $ phylogeneticForests sol
+    liftIO $ putStrLn "Beginning network construction..."
+    liftIO $ putStrLn ""
+    buildLogicMethod naiveNetworkParallelBuild sol n
+
+--    pure $ parmap rpar iterativeNetworkBuild bestTrees
 --  pure $ fmap iterativeNetworkBuild bestTrees
 
 
@@ -211,7 +217,17 @@ naiveWagnerParallelBuild
   => MetadataSequence m
   -> t (f FinalCharacterNode)
   -> t FinalDecorationDAG
-naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
+naiveWagnerParallelBuild meta = parmap rpar (naiveWagnerBuild meta)
+
+
+naiveNetworkParallelBuild
+  :: (Foldable1 f
+     , Traversable t
+     )
+  => MetadataSequence m
+  -> t (f FinalCharacterNode)
+  -> t FinalDecorationDAG
+naiveNetworkParallelBuild meta = parmap rpar (naiveNetworkBuild meta)
 
 
 clusterParallelBuild
@@ -270,6 +286,11 @@ taxaCounter :: IORef Int
 {-# NOINLINE taxaCounter #-}
 taxaCounter =
   unsafePerformIO (newIORef 4)
+
+netEdgeCounter :: IORef Int
+{-# NOINLINE netEdgeCounter #-}
+netEdgeCounter =
+  unsafePerformIO (newIORef 1)
 
 
 naiveNetworkBuild
@@ -459,21 +480,35 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
         -- DO NOT use rdeepseq! Prefer rseq!
         -- When trying candidate edges, we can construct graphs for which a
         -- pre-order traversal is not logically possible. These graphs will
-        -- necissarily result in an infinite cost. So long as we lazily compute
+        -- necessarily result in an infinite cost. So long as we lazily compute
         -- the cost, the minimization routine will discard the incoherent,
         -- infinite-cost candidates and we won't run into interesting runtime problems.
         let !edgesToTry = x:|xs
-            (minNewCost, !bestNewNetwork) = minimumBy (comparing fst)
-                                          . parmap (rparWith rseq) (getCost &&& id)
-                                          $ tryNetworkEdge <$> edgesToTry
+            len = length xs + 1
+            (minNewCost, !bestNewNetwork) =
+              unsafePerformIO $
+                do
+                putStrLn ""
+                putStrLn "Starting network edge search..."
+                putStrLn $ "Number of candidate network edges: " <> (show len)
+                putStrLn $ "Progress   "
+                pure $
+                    minimumBy (comparing fst)
+                  . parmap (rparWith rseq) (getCost &&& id)
+                  $ unsafePerformIO $ traverse tryNetworkEdge edgesToTry
         in  if   getCost currentNetwork <= minNewCost
             then currentNetwork
             else iterativeNetworkBuild bestNewNetwork
   where
     (PDAG2 dag _) = force $ wipeScoring currentNetwork
 
-    tryNetworkEdge :: ((Int, Int), (Int, Int)) -> FinalDecorationDAG
-    tryNetworkEdge = performDecoration . (`PDAG2` metaSeq) . connectEdge'
+    tryNetworkEdge :: ((Int, Int), (Int, Int)) -> IO FinalDecorationDAG
+    tryNetworkEdge e =
+        do
+          networkEdges <- readIORef netEdgeCounter
+          writeIORef netEdgeCounter (networkEdges + 1)
+          putStrLn $ "  - " <> show networkEdges <> " network edges tried."
+          pure $ performDecoration . (`PDAG2` metaSeq) . connectEdge' $ e
 
     getCost (PDAG2 v _) = dagCost $ graphData v
 
