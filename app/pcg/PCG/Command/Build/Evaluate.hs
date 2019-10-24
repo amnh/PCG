@@ -29,7 +29,7 @@ import           Bio.Graph.PhylogeneticDAG                     (PostorderContext
 import qualified Bio.Graph.ReferenceDAG                        as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Arrow                                 ((&&&), first)
+import           Control.Arrow                                 ((&&&), first, second)
 import           Control.DeepSeq
 import           Control.Evaluation
 import           Control.Lens                                  hiding (snoc, _head)
@@ -266,7 +266,7 @@ taxaCounter =
 initTaxaCounter :: NFData a => Int -> a -> a
 initTaxaCounter totalTaxa x = unsafePerformIO $ do 
     writeIORef taxaCounter (3, toEnum totalTaxa)
-    putStrLn $ unwords ["Beginning Wagner build of ", show totalTaxa, "taxa"]
+    putStrLn $ unwords ["Beginning Wagner build of", show totalTaxa, "taxa"]
     pure $ force x
 
 
@@ -277,8 +277,11 @@ printTaxaCounter x = unsafePerformIO $ do
     (count, total) <- readIORef taxaCounter
     let shownTotal = show total
     let shownCount = show count
-    let shownInfo  = replicate (length shownTotal - length shownCount) ' ' <> shownCount 
-    putStrLn $ mconcat ["  - ", shownInfo, "/", shownTotal, " taxa"]
+    let shownInfo  = replicate (length shownTotal - length shownCount) ' ' <> shownCount
+    let ratioDone  = 100 * (realToFrac count / realToFrac total) :: Double
+    let (num,dec)  = second (take 4) . span (/='.') $ show ratioDone
+    let percentStr = mconcat [replicate (3 - length num) ' ', num, dec, replicate (4 - length dec) ' ']
+    putStrLn $ mconcat [ "  - ", percentStr, "% ", shownInfo, "/", shownTotal, " taxa"]
     pure res
 
 
