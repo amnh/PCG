@@ -25,6 +25,7 @@ module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
   , PhylogeneticForest(..)
   , phylogeneticForests
+  , extractPhylogeneticForest
   , extractSolution
   ) where
 
@@ -67,10 +68,17 @@ phylogeneticForests :: PhylogeneticSolution a -> NonEmpty (PhylogeneticForest a)
 phylogeneticForests (PhylogeneticSolution x) = x
 
 -- |
+-- Extract a phylogenetic forest from a phylogenetic solution.
+{-# INLINE extractPhylogeneticForest #-}
+extractPhylogeneticForest :: PhylogeneticSolution a -> PhylogeneticForest a
+extractPhylogeneticForest = NE.head . phylogeneticForests
+
+-- |
 -- Extract a solution without loss of generality.
 {-# INLINE extractSolution #-}
 extractSolution :: PhylogeneticSolution a -> a
 extractSolution = NE.head . getPhylogeneticForest . NE.head . getPhylogeneticSolution
+
 
 instance Functor PhylogeneticSolution where
   fmap f = PhylogeneticSolution . fmap (fmap f) . getPhylogeneticSolution
