@@ -36,7 +36,7 @@ import Foreign.C.Types
 -- A structure used for FFI calls.
 --
 -- 'exportedBufferChunks' contains the bit-packed representation of the character sequence.
-data  ExportableCharacterSequence 
+data  ExportableCharacterSequence
     = ExportableCharacterSequence
     { exportedElementCountSequence :: {-# UNPACK #-} !Word
     , exportedElementWidthSequence :: {-# UNPACK #-} !Word

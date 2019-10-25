@@ -15,6 +15,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
@@ -80,7 +81,8 @@ data  InputData
     , taxaSet       :: Set Identifier
     , allForests    :: Maybe (NonEmpty PartialInputData)
     , forestTaxa    :: Maybe (NonEmpty ([NonEmpty Identifier], PartialInputData))
-    } deriving (Show)
+    }
+    deriving stock (Show)
 
 
 instance Show PartialInputData where

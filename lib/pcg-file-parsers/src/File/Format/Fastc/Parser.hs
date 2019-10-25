@@ -38,13 +38,11 @@ import           Control.Monad.Combinators.NonEmpty
 import           Data.Char                          (isSpace)
 import           Data.Data
 import           Data.List.NonEmpty                 (NonEmpty (..))
-import           Data.Maybe
 import           Data.Semigroup.Foldable
 import           Data.String
 import qualified Data.Text                          as T
 import qualified Data.Text.Lazy                     as LT
 import           Data.Text.Short                    (ShortText, toString)
-import qualified Data.Text.Short                    as ST
 import           Data.Vector.NonEmpty               (Vector)
 import qualified Data.Vector.NonEmpty               as V
 import           Data.Void

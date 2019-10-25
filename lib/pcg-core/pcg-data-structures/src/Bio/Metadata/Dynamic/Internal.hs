@@ -13,6 +13,7 @@
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE DerivingStrategies     #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -106,15 +107,17 @@ type PairwiseTransitionCostMatrix e = e -> e -> (e, Word)
 -- |
 -- Represents a concrete type containing metadata fields shared across all
 -- discrete different bins. Continous bins do not have Alphabets.
-data DynamicCharacterMetadataDec c
-   = DynamicCharacterMetadataDec
-   { optimalTraversalFoci        :: !(Maybe TraversalFoci)
-   , structuralRepresentationTCM :: !(Either
-                                        (DenseTransitionCostMatrix, MetricRepresentation ())
-                                        (MetricRepresentation MemoizedCostMatrix)
-                                     )
-   , metadata                    :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
-   } deriving (Generic, NFData)
+data  DynamicCharacterMetadataDec c
+    = DynamicCharacterMetadataDec
+    { optimalTraversalFoci        :: !(Maybe TraversalFoci)
+    , structuralRepresentationTCM :: !(Either
+                                         (DenseTransitionCostMatrix, MetricRepresentation ())
+                                         (MetricRepresentation MemoizedCostMatrix)
+                                      )
+    , metadata                    :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
+    }
+    deriving stock    (Generic)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -475,7 +478,7 @@ deriveOverlap costStruct char1 char2 = F.fold
 {-# SPECIALISE overlap :: FiniteBits e => (Word -> Word -> Word) -> NonEmpty e -> (e, Word) #-}
 {-# SPECIALISE overlap :: (Word -> Word -> Word) -> NonEmpty DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
 overlap
-  :: 
+  ::
      ( FiniteBits e
      , Foldable1 f
      , Functor f
@@ -483,10 +486,10 @@ overlap
   => (Word -> Word -> Word) -- ^ Symbol change matrix (SCM) to determin cost
   -> f e                    -- ^ List of elements for of which to find the k-median and cost
   -> (e, Word)              -- ^ K-median and cost
-overlap sigma xs = go size maxBound zero
+overlap sigma xs = go n maxBound zero
   where
-    (size, zero) = let wlog = getFirst $ foldMap1 First xs
-                   in  (finiteBitSize wlog, wlog `xor` wlog)
+    (n, zero) = let wlog = getFirst $ foldMap1 First xs
+                in  (finiteBitSize wlog, wlog `xor` wlog)
 
     go 0 theCost bits = (bits, theCost)
     go i oldCost bits =
@@ -498,7 +501,7 @@ overlap sigma xs = go size maxBound zero
                                  GT -> (newCost, zero `setBit` i')
         in go i' minCost bits'
 
-    getDistance i b = go' size (maxBound :: Word)
+    getDistance i b = go' n (maxBound :: Word)
       where
         go' :: Int -> Word -> Word
         go' 0 a = a

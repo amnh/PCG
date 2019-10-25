@@ -12,6 +12,7 @@
 
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -80,10 +81,11 @@ import           TextShow                     (TextShow (showb, showt), fromText
 -- networks.
 --
 -- Use '(<>)' to construct larger blocks.
-data CharacterBlock u v w x y z
+data  CharacterBlock u v w x y z
     = BlockDoesNotExist
     | CB {-# UNPACK #-} !(Block u v w x y z)
-    deriving (Eq, Generic, NFData)
+    deriving stock    (Eq, Generic)
+    deriving anyclass (NFData)
 
 
 instance HasContinuousBin (CharacterBlock u v w x y z) (Vector u) where

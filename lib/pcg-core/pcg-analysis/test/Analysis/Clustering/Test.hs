@@ -47,14 +47,14 @@ example =
     inputs = fromList  [1,1,1,1,4,10,11,804,814,834, 769]
 
     myDendro :: Dendrogram Double
-    myDendro = hclust Average inputs (\x y -> sqrt (x^2 + y^2))
-
+    myDendro = hclust Average inputs dist
 
 
 hierarchicalClusteringProperties :: TestTree
 hierarchicalClusteringProperties = testGroup "Properties of hierarchical clustering"
     [ testProperty "Clustering preserves the number of inputs" preservesNumber
     ]
+
 
 preservesNumber :: NonEmptyList Double -> Property
 preservesNumber lv =
@@ -71,4 +71,10 @@ preservesNumber lv =
     clusters = dendroToVectorClusters dendro 20
 
     dendro :: Dendrogram Double
-    dendro = hclust Average v (\x y -> sqrt (x^2 + y^2))
+    dendro = hclust Average v dist
+
+
+dist :: _
+dist x y = sqrt (x^two + y^two)
+  where
+    two = 2 :: Word

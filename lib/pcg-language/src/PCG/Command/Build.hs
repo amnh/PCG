@@ -59,25 +59,19 @@ data  ClusterLabel
     | WardLinkage
     | KMedians
     deriving stock (Eq, Show)
-<<<<<<< HEAD
-=======
+
 
 -- |
 -- Options on how to divide a clustering
-data ClusterSplit
-  = ClusterGroup Int
-  | ClusterCut   Double
-  deriving stock (Eq, Show)
->>>>>>> master
+data  ClusterSplit
+    = ClusterGroup Int
+    | ClusterCut   Double
+    deriving stock (Eq, Show)
 
 
 -- |
 -- A clustering specification with type and grouping.
-<<<<<<< HEAD
-data ClusterOption = ClusterOption !ClusterLabel !Int
-=======
 data ClusterOption = ClusterOption !ClusterLabel !ClusterSplit
->>>>>>> master
     deriving stock (Eq, Show)
 
 

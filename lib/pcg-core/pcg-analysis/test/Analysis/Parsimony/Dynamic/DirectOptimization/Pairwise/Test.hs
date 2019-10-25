@@ -29,7 +29,6 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 -}
 import           Bio.Character.Encodable
 import           Data.Alphabet
-import           Data.Bifunctor
 import           Data.List                                              (intercalate)
 import           Data.List.NonEmpty                                     (NonEmpty (..))
 import           Data.MonoTraversable
@@ -77,8 +76,8 @@ consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll check
             else Left errorMessage
       where
         -- Ignore the ungapped value, It might be empty and throw an exception!
-        (=~=) (a,_,b,c,d) (w,_,x,y,z) = (a,b,c,d) == (w,x,y,z)
-        
+        (=~=) (a,_,b,c,d) (s,_t,u,v) = (a,b,c,d) == (s,t,u,v)
+
         naiveResult   = naiveDO           (f x) (f y) metric
         memoedResult  = naiveDOMemo       (f x) (f y) memoed
         foreignResult = foreignPairwiseDO (f x) (f y) dense
@@ -88,6 +87,7 @@ consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll check
                    , "Memoed:  " <> showResult  memoedResult
                    , "Foreign: " <> showResult foreignResult
                    ]
+
 
 showResult :: (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) -> String
 showResult (cost, w, x, y, z) = (\a->"("<>a<>")") $ intercalate ","

@@ -28,17 +28,17 @@ module Data.NodeLabel
   ) where
 
 
-import Control.DeepSeq
-import Data.Binary
-import Data.Coerce          (coerce)
-import Data.Data            (Data, Typeable)
-import Data.Default
-import Data.MonoTraversable
-import Data.String          (IsString)
-import Data.Text.Short      as TS
-import GHC.Generics
-import TextShow             (TextShow (showb))
-import qualified TextShow   as Show
+import           Control.DeepSeq
+import           Data.Binary
+import           Data.Coerce          (coerce)
+import           Data.Data            (Data, Typeable)
+import           Data.Default
+import           Data.MonoTraversable
+import           Data.String          (IsString)
+import           Data.Text.Short      as TS
+import           GHC.Generics
+import           TextShow             (TextShow (showb))
+import qualified TextShow             as Show
 
 
 -- |

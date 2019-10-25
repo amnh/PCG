@@ -12,6 +12,7 @@
 
 {-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE DerivingStrategies     #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -59,7 +60,9 @@ data  Block u v w x y z
     , _metricBin      :: Vector x
     , _nonMetricBin   :: Vector y
     , _dynamicBin     :: Vector z
-    } deriving (Eq, Generic, NFData)
+    }
+    deriving stock    (Eq, Generic)
+    deriving anyclass (NFData)
 
 
 -- |

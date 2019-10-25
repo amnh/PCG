@@ -29,7 +29,7 @@ import           Bio.Graph.PhylogeneticDAG                     (PostorderContext
 import qualified Bio.Graph.ReferenceDAG                        as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Arrow                                 ((&&&), first, second)
+import           Control.Arrow                                 (first, second, (&&&))
 import           Control.DeepSeq
 import           Control.Evaluation
 import           Control.Lens                                  hiding (snoc, _head)
@@ -59,8 +59,8 @@ import           Immutable.Shuffle                             (shuffleM)
 import           PCG.Command.Build
 
 -- For adhoc logging. Obviously unsafe, TODO: remove later
-import Data.IORef
-import System.IO.Unsafe
+import           Data.IORef
+import           System.IO.Unsafe
 
 
 type BuildType m =
@@ -280,7 +280,7 @@ taxaCounter =
 
 
 initTaxaCounter :: NFData a => Int -> a -> a
-initTaxaCounter totalTaxa x = unsafePerformIO $ do 
+initTaxaCounter totalTaxa x = unsafePerformIO $ do
     writeIORef taxaCounter (3, toEnum totalTaxa)
     putStrLn $ unwords ["Beginning Wagner build of", show totalTaxa, "taxa"]
     pure $ force x

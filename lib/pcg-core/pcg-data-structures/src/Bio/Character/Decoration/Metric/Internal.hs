@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -39,46 +40,42 @@ import TextShow                              (TextShow (showb))
 newtype MetricDecorationInitial c
     = MetricDecorationInitial
     { metricDecorationInitialCharacter :: c
-    } deriving stock (Generic)
+    }
+    deriving stock    (Generic)
+    deriving anyclass (NFData)
 
 
 -- |
 -- A concrete type representing the results of performing Sankoff's algorithm.
-data SankoffOptimizationDecoration c
-   = SankoffOptimizationDecoration
+data  SankoffOptimizationDecoration c
+    = SankoffOptimizationDecoration
                                      -- tuple of (a,a) where a is a per-parent-state list of
                                      -- lists of child states that contributed to the minimum
                                      -- cost of that state
-   { sankoffMinStateTuple         :: {-# UNPACK #-} !([StateContributionList], [StateContributionList])
-   , sankoffMinCostVector         :: ![ExtendedNatural]   -- minimum total cost per state (left + right)
-   , sankoffMinCost               :: {-# UNPACK #-} !Word -- overall minimum cost for all states
-   , sankoffPreliminaryExtraCosts :: ![ExtendedNatural]   -- list of preliminary per-character-state extra costs
+    { sankoffMinStateTuple         :: {-# UNPACK #-} !([StateContributionList], [StateContributionList])
+    , sankoffMinCostVector         :: ![ExtendedNatural]   -- minimum total cost per state (left + right)
+    , sankoffMinCost               :: {-# UNPACK #-} !Word -- overall minimum cost for all states
+    , sankoffPreliminaryExtraCosts :: ![ExtendedNatural]   -- list of preliminary per-character-state extra costs
                                                           -- for the node; these store only the costs for assigning
                                                           -- this state to THIS node, rather than the accumulated
                                                           -- extra costs down through the tree when this assignment
                                                           -- is chosen
-   , sankoffFinalExtraCosts       :: ![ExtendedNatural]   -- list of final extra costs for the node, so the sum of
+    , sankoffFinalExtraCosts       :: ![ExtendedNatural]   -- list of final extra costs for the node, so the sum of
                                                           -- ALL of the extra costs, on the whole tree, for this
                                                           -- assignment
-   , sankoffBeta                  :: ![ExtendedNatural]   -- this is Goloboff's beta, where
+    , sankoffBeta                  :: ![ExtendedNatural]   -- this is Goloboff's beta, where
                                                           -- beta_(s,n) = min[t_(s,x) + prelimExtraCost_(x,n)]
                                                           -- where t_(s,x) is the transition cost from state s to x
-   , sankoffCharacterField        :: c                    -- Bit Vector version of median character
-   , sankoffIsLeaf                :: !Bool
-   } deriving (Generic)
+    , sankoffCharacterField        :: c                    -- Bit Vector version of median character
+    , sankoffIsLeaf                :: !Bool
+    }
+    deriving stock    (Generic)
+    deriving anyclass (NFData)
 
 
 -- | A list of states on the child that contribute to the lowest score on each state in the parent
 -- Used to simplify? SankoffOptimizationDecoration
 type StateContributionList = [Word]
-
-
--- | (✔)
-instance NFData c => NFData (MetricDecorationInitial c)
-
-
--- | (✔)
-instance NFData c => NFData (SankoffOptimizationDecoration c)
 
 
 -- | (✔)

@@ -10,7 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -18,7 +20,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 module Bio.Character.Decoration.Fitch.Internal where
-
 
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Fitch.Class
@@ -35,18 +36,20 @@ import TextShow                             (TextShow (showb), unlinesB)
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character
 -- type.
-data FitchOptimizationDecoration f
-   = FitchOptimizationDecoration
-   { fitchMinCost           :: {-# UNPACK #-} !Word   -- Cost of the subtree
-   , fitchPreliminaryMedian :: !f                     -- Held here until final state is
+data  FitchOptimizationDecoration f
+    = FitchOptimizationDecoration
+    { fitchMinCost           :: {-# UNPACK #-} !Word   -- Cost of the subtree
+    , fitchPreliminaryMedian :: !f                     -- Held here until final state is
                                                       --     determined and we can assign that
                                                       --     into discreteCharacter
-   , fitchFinalMedian       :: !f                     -- Eventually gets assigned to discreteCharacter
-   , fitchChildMedians      :: {-# UNPACK #-} !(f, f) -- (left, right) so that we can do post order
+    , fitchFinalMedian       :: !f                     -- Eventually gets assigned to discreteCharacter
+    , fitchChildMedians      :: {-# UNPACK #-} !(f, f) -- (left, right) so that we can do post order
                                                       --     pass with all of Fitch's rules
-   , fitchIsLeaf            :: !Bool                  -- need this in preorder
-   , fitchCharacterField    :: !f
-   } deriving (Generic)
+    , fitchIsLeaf            :: !Bool                  -- need this in preorder
+    , fitchCharacterField    :: !f
+    }
+    deriving stock    (Generic)
+    deriving anyclass (NFData)
 
 
 -- | (✔)
@@ -137,10 +140,6 @@ instance EncodableStaticCharacter f => DiscreteExtensionFitchDecoration (FitchOp
         , fitchFinalMedian       = finMedian
         , fitchCharacterField    = subDecoration ^. discreteCharacter
         }
-
-
--- | (✔)
-instance NFData f => NFData (FitchOptimizationDecoration f)
 
 
 -- | (✔)

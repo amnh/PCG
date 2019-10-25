@@ -24,9 +24,9 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
   ) where
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+import Bio.Metadata.Dynamic                                            (overlap2)
 import Data.Matrix.NotStupid                                           (matrix)
 import Data.MonoTraversable
-import Bio.Metadata.Dynamic              (overlap2)
 
 
 -- |
