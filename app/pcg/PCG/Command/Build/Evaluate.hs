@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
@@ -28,7 +29,7 @@ import           Bio.Graph.PhylogeneticDAG                     (PostorderContext
 import qualified Bio.Graph.ReferenceDAG                        as DAG
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
-import           Control.Arrow                                 ((&&&))
+import           Control.Arrow                                 ((&&&), first, second)
 import           Control.DeepSeq
 import           Control.Evaluation
 import           Control.Lens                                  hiding (snoc, _head)
@@ -56,6 +57,10 @@ import qualified Data.Vector.NonEmpty                          as NE
 import           Data.Word
 import           Immutable.Shuffle                             (shuffleM)
 import           PCG.Command.Build
+
+-- For adhoc logging. Obviously unsafe, TODO: remove later
+import Data.IORef
+import System.IO.Unsafe
 
 
 type BuildType m =
@@ -88,30 +93,49 @@ evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
                 WagnerTree     -> naiveWagnerBuild @NE.Vector
                 WheelerNetwork -> naiveNetworkBuild
                 WheelerForest  -> naiveForestBuild
-        let cluster = clusterBuildLogic buildMethod
+        let
+          cluster
+            :: AC.ClusterOptions
+            -> PhylogeneticSolution FinalDecorationDAG
+            -> Int
+            -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
+          cluster = clusterBuildLogic buildMethod
+
         let clusterLogic =
               case clusterType of
-                ClusterOption _ 1               -> buildLogic
-                ClusterOption NoCluster       n -> cluster AC.NoCluster       n
-                ClusterOption SingleLinkage   n -> cluster AC.SingleLinkage   n
-                ClusterOption CompleteLinkage n -> cluster AC.CompleteLinkage n
-                ClusterOption UPGMALinkage    n -> cluster AC.UPGMALinkage    n
-                ClusterOption WeightedLinkage n -> cluster AC.WeightedLinkage n
-                ClusterOption WardLinkage     n -> cluster AC.WardLinkage     n
-                ClusterOption KMedians        n -> cluster AC.KMedians        n
-        if clusterCount < 1 then
-          fail "A non-positive number was supplied to the number of BUILD trajectories."
+                ClusterOption _ (ClusterGroup 1) -> buildLogic
+                ClusterOption _ _                -> cluster clusterOptions
+        if numberOfClusterCheck clusterType then
+          fail "A non-positive number was supplied to the number of clusters."
         else
           do
+            liftIO $ print clusterType
             bestNetwork <- clusterLogic v trajectoryCount
             liftIO . compact . Right $ toSolution bestNetwork
 
   where
+
+    numberOfClusterCheck :: ClusterOption -> Bool
+    numberOfClusterCheck (ClusterOption _ (ClusterGroup n)) = n < 1
+    numberOfClusterCheck _                                  = False
+
     toSolution :: NonEmpty a -> PhylogeneticSolution a
     toSolution = PhylogeneticSolution . pure . PhylogeneticForest
 
-    clusterCount :: Int
-    clusterCount = numberOfClusters clusterType
+    toClusterSplit :: ClusterSplit -> AC.ClusterCut
+    toClusterSplit = \case
+      ClusterGroup n -> AC.ClusterGroup n
+      ClusterCut   d -> AC.ClusterSplit d
+
+    clusterOptions :: AC.ClusterOptions
+    clusterOptions = case clusterType of
+      ClusterOption NoCluster       _     -> AC.NoCluster
+      ClusterOption KMedians        _     -> AC.KMedians
+      ClusterOption SingleLinkage   split -> AC.SingleLinkage   (toClusterSplit split)
+      ClusterOption CompleteLinkage split -> AC.CompleteLinkage (toClusterSplit split)
+      ClusterOption UPGMALinkage    split -> AC.UPGMALinkage    (toClusterSplit split)
+      ClusterOption WeightedLinkage split -> AC.WeightedLinkage (toClusterSplit split)
+      ClusterOption WardLinkage     split -> AC.WardLinkage     (toClusterSplit split)
 
 
 wagnerBuildLogic
@@ -123,12 +147,17 @@ wagnerBuildLogic = buildLogicMethod naiveWagnerParallelBuild
 
 networkBuildLogic
   :: PhylogeneticSolution FinalDecorationDAG
-  -> a
+  -> Int
   -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
-networkBuildLogic v _ = do
-    let bestTrees = toNonEmpty . NE.head $ phylogeneticForests v
-    liftIO $ putStrLn "Beginning network construction."
-    pure $ parmap rpar iterativeNetworkBuild bestTrees
+networkBuildLogic sol n = do
+--    let
+--      bestTrees :: NonEmpty FinalDecorationDAG
+--      bestTrees = toNonEmpty . NE.head $ phylogeneticForests sol
+    liftIO $ putStrLn "Beginning network construction..."
+    liftIO $ putStrLn ""
+    buildLogicMethod naiveNetworkParallelBuild sol n
+
+--    pure $ parmap rpar iterativeNetworkBuild bestTrees
 --  pure $ fmap iterativeNetworkBuild bestTrees
 
 
@@ -142,12 +171,11 @@ forestBuildLogic _ _ = fail "The BUILD command type 'Forest' is not yet implemen
 clusterBuildLogic
   :: BuildType FinalMetadata
   -> AC.ClusterOptions
-  -> Int
   -> PhylogeneticSolution FinalDecorationDAG
   -> Int
   -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
-clusterBuildLogic buildMethod clusterOption totalClusters
-  = buildLogicMethod (clusterParallelBuild buildMethod clusterOption totalClusters)
+clusterBuildLogic buildMethod clusterOption
+  = buildLogicMethod (clusterParallelBuild buildMethod clusterOption)
 
 
 buildLogicMethod
@@ -189,19 +217,28 @@ naiveWagnerParallelBuild
   => MetadataSequence m
   -> t (f FinalCharacterNode)
   -> t FinalDecorationDAG
-naiveWagnerParallelBuild m = parmap rpar (naiveWagnerBuild m)
+naiveWagnerParallelBuild meta = parmap rpar (naiveWagnerBuild meta)
+
+
+naiveNetworkParallelBuild
+  :: (Foldable1 f
+     , Traversable t
+     )
+  => MetadataSequence m
+  -> t (f FinalCharacterNode)
+  -> t FinalDecorationDAG
+naiveNetworkParallelBuild meta = parmap rpar (naiveNetworkBuild meta)
 
 
 clusterParallelBuild
   :: (Traversable t)
   => BuildType FinalMetadata
   -> AC.ClusterOptions
-  -> Int
   -> MetadataSequence FinalMetadata
   -> t (NE.Vector FinalCharacterNode)
   -> t FinalDecorationDAG
-clusterParallelBuild buildMethod clusterOptions totalClusters m
-  = parmap rpar (clusterBuildMethod buildMethod clusterOptions totalClusters m)
+clusterParallelBuild buildMethod clusterOptions m
+  = parmap rpar (clusterBuildMethod buildMethod clusterOptions m)
 
 
 naiveWagnerBuild
@@ -221,7 +258,8 @@ naiveWagnerBuild metaSeq ns =
                   , ( IS.singleton 0, wipeNode False y, mempty )
                   ]
       x:|(y:z:xs) ->
-          let initTree = fromRefDAG $ DAG.fromList
+          let len      = length ns
+              initTree = initTaxaCounter len . fromRefDAG $ DAG.fromList
                   [ ( mempty        , wipeNode True  x, IM.fromList [(1,mempty), (4,mempty)] )
                   , ( IS.singleton 0, wipeNode True  x, IM.fromList [(2,mempty), (3,mempty)] )
                   , ( IS.singleton 1, wipeNode False x, mempty )
@@ -235,11 +273,45 @@ naiveWagnerBuild metaSeq ns =
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
 
+taxaCounter :: IORef (Word, Word)
+{-# NOINLINE taxaCounter #-}
+taxaCounter =
+  unsafePerformIO (newIORef (0,1))
+
+
+initTaxaCounter :: NFData a => Int -> a -> a
+initTaxaCounter totalTaxa x = unsafePerformIO $ do 
+    writeIORef taxaCounter (3, toEnum totalTaxa)
+    putStrLn $ unwords ["Beginning Wagner build of", show totalTaxa, "taxa"]
+    pure $ force x
+
+
+printTaxaCounter :: NFData a => a -> a
+printTaxaCounter x = unsafePerformIO $ do
+    let res = force x
+    modifyIORef taxaCounter (first succ)
+    (count, total) <- readIORef taxaCounter
+    let shownTotal = show total
+    let shownCount = show count
+    let shownInfo  = replicate (length shownTotal - length shownCount) ' ' <> shownCount
+    let ratioDone  = 100 * (realToFrac count / realToFrac total) :: Double
+    let (num,dec)  = second (take 4) . span (/='.') $ show ratioDone
+    let percentStr = mconcat [replicate (3 - length num) ' ', num, dec, replicate (4 - length dec) ' ']
+    putStrLn $ mconcat [ "  - ", percentStr, "% ", shownInfo, "/", shownTotal, " taxa"]
+    pure res
+
+netEdgeCounter :: IORef Int
+{-# NOINLINE netEdgeCounter #-}
+netEdgeCounter =
+  unsafePerformIO (newIORef 1)
+
+
 naiveNetworkBuild
-  :: MetadataSequence m
+  :: (Foldable1 f)
+  => MetadataSequence m
   -> f FinalCharacterNode
   -> FinalDecorationDAG
-naiveNetworkBuild = error "Naive network build not yet implemented!"
+naiveNetworkBuild meta = iterativeNetworkBuild . naiveWagnerBuild meta
 
 
 naiveForestBuild
@@ -252,18 +324,17 @@ naiveForestBuild = error "Naive forest build not yet implemented!"
 clusterBuildMethod
   :: BuildType m
   -> AC.ClusterOptions
-  -> Int
   -> MetadataSequence m
   -> NE.Vector FinalCharacterNode
   -> FinalDecorationDAG
-clusterBuildMethod buildMethod option totalClusters meta leafSetV
+clusterBuildMethod buildMethod option meta leafSetV
     = parallelClusterMethod buildMethod meta clusters
   where
     leafSetId :: LeafSet (DecoratedCharacterNode Identity)
     leafSetId = coerce leafSetV
 
     clusters :: NE.Vector (NE.Vector (DecoratedCharacterNode Identity))
-    clusters = AC.clusterIntoGroups meta leafSetId option totalClusters
+    clusters = AC.clusterIntoGroups meta leafSetId option
 
 
 parallelClusterMethod
@@ -362,7 +433,7 @@ iterativeBuild
   :: FinalDecorationDAG
   -> FinalCharacterNode
   -> FinalDecorationDAG
-iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = nextTree
+iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = printTaxaCounter nextTree
   where
     (PDAG2 dag _) = wipeScoring currentTree
     edgeSet       = NE.fromList . toList $ referenceEdgeSet dag
@@ -416,21 +487,35 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
         -- DO NOT use rdeepseq! Prefer rseq!
         -- When trying candidate edges, we can construct graphs for which a
         -- pre-order traversal is not logically possible. These graphs will
-        -- necissarily result in an infinite cost. So long as we lazily compute
+        -- necessarily result in an infinite cost. So long as we lazily compute
         -- the cost, the minimization routine will discard the incoherent,
         -- infinite-cost candidates and we won't run into interesting runtime problems.
         let !edgesToTry = x:|xs
-            (minNewCost, !bestNewNetwork) = minimumBy (comparing fst)
-                                          . parmap (rparWith rseq) (getCost &&& id)
-                                          $ tryNetworkEdge <$> edgesToTry
+            len = length xs + 1
+            (minNewCost, !bestNewNetwork) =
+              unsafePerformIO $
+                do
+                putStrLn ""
+                putStrLn "Starting network edge search..."
+                putStrLn $ "Number of candidate network edges: " <> (show len)
+                putStrLn $ "Progress   "
+                pure $
+                    minimumBy (comparing fst)
+                  . parmap (rparWith rseq) (getCost &&& id)
+                  $ unsafePerformIO $ traverse tryNetworkEdge edgesToTry
         in  if   getCost currentNetwork <= minNewCost
             then currentNetwork
             else iterativeNetworkBuild bestNewNetwork
   where
     (PDAG2 dag _) = force $ wipeScoring currentNetwork
 
-    tryNetworkEdge :: ((Int, Int), (Int, Int)) -> FinalDecorationDAG
-    tryNetworkEdge = performDecoration . (`PDAG2` metaSeq) . connectEdge'
+    tryNetworkEdge :: ((Int, Int), (Int, Int)) -> IO FinalDecorationDAG
+    tryNetworkEdge e =
+        do
+          networkEdges <- readIORef netEdgeCounter
+          writeIORef netEdgeCounter (networkEdges + 1)
+          putStrLn $ "  - " <> show networkEdges <> " network edges tried."
+          pure $ performDecoration . (`PDAG2` metaSeq) . connectEdge' $ e
 
     getCost (PDAG2 v _) = dagCost $ graphData v
 

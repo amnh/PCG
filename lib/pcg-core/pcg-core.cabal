@@ -17,7 +17,7 @@ description:        Exposes core data-types for constructing, mutating, and scor
                     phylogenetic forests. Character sequences and matricies, character
                     and graph metadata, and scoring methods are defined as well.
 
-        
+
 common dependencies
 
   build-depends:
@@ -83,7 +83,7 @@ common ghc-flags
     -Wincomplete-patterns
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
-    -Wmissing-deriving-strategies          
+    -Wmissing-deriving-strategies
     -Wmissing-fields
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
@@ -112,7 +112,7 @@ common language-specs
   -- Always use MonadFail(fail), not Monad(fail)
   other-extensions: MonadFailDesugaring
 
- 
+
 library
 
   import:
@@ -120,7 +120,7 @@ library
 
   build-depends:
     pcg-analysis,
-    pcg-data-structures,           
+    pcg-data-structures,
     pcg-tcm,
 
   reexported-modules:
@@ -219,6 +219,7 @@ library pcg-analysis
 
   exposed-modules:
     Analysis.Clustering
+    Analysis.Clustering.Hierarchical
     Analysis.Parsimony.Additive
     Analysis.Parsimony.Dynamic.DirectOptimization
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
@@ -228,7 +229,6 @@ library pcg-analysis
     Analysis.TotalEdgeCost
 
   other-modules:
-    Analysis.Clustering.Hierarchical
     Analysis.Clustering.Metric
     Analysis.Parsimony.Additive.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Internal
@@ -241,7 +241,7 @@ library pcg-analysis
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
 
-    
+
 library pcg-data-structures
 
   import:
@@ -442,18 +442,21 @@ test-suite analysis-tests
   main-is:
     TestSuite.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
-  hs-source-dirs:   
+  hs-source-dirs:
     pcg-analysis/test
 
   build-depends:
+    pcg-alphabet,
     pcg-analysis,
     pcg-data-structures,
+    pcg-utility,
     pcg-tcm,
-    pcg-tcm-memo,                    
+    pcg-tcm-memo,
     base                     >= 4.11      && < 5.0,
+    clustering               >= 0.4       && < 0.5,
     mono-traversable         >= 1.0       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
     semigroups               >= 0.18      && < 1.0,
@@ -462,9 +465,11 @@ test-suite analysis-tests
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
     tasty-smallcheck         >= 0.8       && < 1.0,
+    vector                   >= 0.12.0.2  && < 0.13,
 
   other-modules:
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
+    Analysis.Clustering.Test
 
 
 test-suite data-structures-tests

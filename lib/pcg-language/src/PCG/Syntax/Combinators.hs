@@ -22,7 +22,7 @@
 
 
 {-# LANGUAGE DeriveFunctor       #-}
-{-# LANGUAGE DerivingStrategies  #-}                                                                
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}

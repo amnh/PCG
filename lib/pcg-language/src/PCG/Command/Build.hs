@@ -16,14 +16,14 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE UnboxedSums        #-}
 
-
 module PCG.Command.Build
   ( BuildCommand(..)
   , ConstructionType(..)
   , ClusterLabel(..)
   , ClusterOption(..)
+  , ClusterSplit(..)
   , buildCommandSpecification
-  , numberOfClusters
+  , clusterSplit
   ) where
 
 
@@ -59,18 +59,32 @@ data  ClusterLabel
     | WardLinkage
     | KMedians
     deriving stock (Eq, Show)
+<<<<<<< HEAD
+=======
+
+-- |
+-- Options on how to divide a clustering
+data ClusterSplit
+  = ClusterGroup Int
+  | ClusterCut   Double
+  deriving stock (Eq, Show)
+>>>>>>> master
 
 
 -- |
 -- A clustering specification with type and grouping.
+<<<<<<< HEAD
 data ClusterOption = ClusterOption !ClusterLabel !Int
+=======
+data ClusterOption = ClusterOption !ClusterLabel !ClusterSplit
+>>>>>>> master
     deriving stock (Eq, Show)
 
 
 -- |
 -- Get the number of clusters from a 'ClusterOption'.
-numberOfClusters :: ClusterOption -> Int
-numberOfClusters (ClusterOption _ n) = n
+clusterSplit :: ClusterOption -> ClusterSplit
+clusterSplit (ClusterOption _ s) = s
 
 -- |
 -- Defines the semantics of interpreting a valid \"BUILD\" command from the PCG
@@ -94,8 +108,8 @@ constructionType = choiceFrom [ buildTree, buildNetwork, buildForest ] `withDefa
 
 clusterOptionType :: Ap SyntacticArgument ClusterOption
 clusterOptionType =
-  (argId "cluster" . argList $ ClusterOption <$> clusterLabelType <*> int)
-  `withDefault` ClusterOption NoCluster 1
+  (argId "cluster" . argList $ ClusterOption <$> clusterLabelType <*> clusterSplitType)
+  `withDefault` ClusterOption NoCluster (ClusterGroup 1)
 
 clusterLabelType :: Ap SyntacticArgument ClusterLabel
 clusterLabelType =
@@ -117,3 +131,17 @@ clusterLabelType =
     weightedLinkage = value "weighted"   $> WeightedLinkage
     wardLinkage     = value "ward"       $> WardLinkage
     kMedians        = value "k-medians"  $> KMedians
+
+
+clusterSplitType :: Ap SyntacticArgument ClusterSplit
+clusterSplitType =
+    choiceFrom
+      [ groupCluster
+      , cutCluster
+      ]
+      `withDefault`
+        ClusterCut 0.7
+  where
+    groupCluster = argId "group" $ ClusterGroup <$> int
+    cutCluster   = argId "cut"   $ ClusterCut   <$> real `withDefault` 0.7
+

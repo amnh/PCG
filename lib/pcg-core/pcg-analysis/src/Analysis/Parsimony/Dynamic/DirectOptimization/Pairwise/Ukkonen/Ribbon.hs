@@ -12,10 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveFoldable   #-}
-{-# LANGUAGE DeriveFunctor    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DeriveFoldable     #-}
+{-# LANGUAGE DeriveFunctor      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
   ( Ribbon()
@@ -42,7 +43,7 @@ data Ribbon a
    , diagonal :: {-# UNPACK #-} !Int
    , offset   :: {-# UNPACK #-} !Int
    , linear   :: Vector a
-   } deriving (Eq, Foldable, Functor)
+   } deriving stock (Eq, Foldable, Functor)
 
 
 type instance Key Ribbon = (Int, Int)

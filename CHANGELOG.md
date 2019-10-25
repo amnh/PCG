@@ -7,7 +7,11 @@ Releases are available [on GitHub][2].
 
 ## _0.2.1_ - Unreleased Changes
 
-* None
+* Updated to GHC-8.6.5
+* Updated to Cabal-2.4
+* Updated Travis CI build script
+* Improved efficiency of median state calculations
+* Corrected defect regarding syntany prefixes in FASTC parser
 
 
 ## [0.2.0][5] - 2019-07-09

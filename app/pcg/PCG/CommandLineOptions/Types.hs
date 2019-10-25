@@ -1,4 +1,5 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
 
 module PCG.CommandLineOptions.Types
   ( CommandLineOptions(..)
@@ -22,7 +23,7 @@ data  CommandLineOptions
     , printCredits   :: Bool
     , printExitCodes :: Bool
     , verbosity      :: Verbosity
-    } deriving (Generic)
+    } deriving stock (Generic)
 
 
 -- |
@@ -33,7 +34,7 @@ data Verbosity
    | Warnings
    | Informational
    | Debugging
-   deriving (Eq, Enum, Generic, Show)
+   deriving stock (Eq, Enum, Generic, Show)
 
 
 instance NFData CommandLineOptions

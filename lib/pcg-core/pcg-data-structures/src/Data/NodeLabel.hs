@@ -38,6 +38,7 @@ import Data.String          (IsString)
 import Data.Text.Short      as TS
 import GHC.Generics
 import TextShow             (TextShow (showb))
+import qualified TextShow   as Show
 
 
 -- |
@@ -128,4 +129,4 @@ instance TextShow NodeLabel where
 
     -- TODO: When text-show-instances is updated to have an instance
     --        for ShortText then use that instead.
-    showb = showb . TS.toString . getNodeLabel
+    showb = Show.fromString . TS.toString . getNodeLabel
