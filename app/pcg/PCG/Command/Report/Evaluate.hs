@@ -22,7 +22,7 @@ import Data.Validation
 import PCG.Command.Report
 import PCG.Command.Report.GraphViz
 import PCG.Command.Report.Metadata
-import Prelude                        hiding (appendFile, getContents, readFile, writeFile)
+import Prelude                        hiding (appendFile, writeFile)
 import Text.XML
 import TextShow                       (TextShow (showtl))
 

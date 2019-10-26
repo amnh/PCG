@@ -28,12 +28,12 @@ import           Control.Lens
 import           Data.Coerce
 import           Data.DList                 (DList)
 import           Data.Monoid                (Sum (..))
-import           Data.Vector                hiding (length, toList)
+import           Data.Vector
 import qualified Data.Vector.NonEmpty       as NE
-import           Prelude                    hiding (length)
 import           VectorBuilder.Builder      (Builder)
 import qualified VectorBuilder.Builder      as VB
 import           VectorBuilder.Vector       (build)
+
 
 clusterLeaves
   :: forall f m . (Applicative f, Foldable f)

@@ -37,7 +37,7 @@ import Data.Foldable
 import Data.Ord        (comparing)
 import Data.Range
 import Data.TCM        as TCM
-import GHC.Generics    hiding (to)
+import GHC.Generics
 
 
 -- |

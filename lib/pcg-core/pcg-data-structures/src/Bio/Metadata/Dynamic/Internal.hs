@@ -61,9 +61,7 @@ import           Data.Foldable
 import           Data.Functor                 (($>))
 import           Data.List                    (intercalate)
 import           Data.List.NonEmpty           (NonEmpty (..))
-import           Data.Maybe
 import           Data.MetricRepresentation
-import           Data.Ord
 import           Data.Range
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
@@ -73,7 +71,6 @@ import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Data.TopologyRepresentation
 import           GHC.Generics                 (Generic)
-import           Prelude                      hiding (lookup)
 import           Text.XML
 
 
@@ -509,7 +506,6 @@ overlap sigma xs = go n maxBound zero
           let j' = j - 1
               a' = if b `testBit` j' then min a $ sigma i (toEnum j') else a
           in  go' j' a'
-
 
 
 {-# INLINE overlap2 #-}

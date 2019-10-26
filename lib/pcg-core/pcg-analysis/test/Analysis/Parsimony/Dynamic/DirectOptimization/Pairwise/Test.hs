@@ -69,14 +69,17 @@ consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll check
     f = constructDynamic . (:|[])
 
     checkConsistency :: (NucleotideBase, NucleotideBase) -> Either String String
-    checkConsistency v@(NB x, NB y) =
+    checkConsistency p@(NB x, NB y) =
         let res = naiveResult =~= memoedResult && naiveResult =~= foreignResult
         in  if   res
-            then Right $ show v
+            then Right $ show p
             else Left errorMessage
       where
         -- Ignore the ungapped value, It might be empty and throw an exception!
-        (=~=) (a,_,b,c,d) (s,_t,u,v) = (a,b,c,d) == (s,t,u,v)
+        (=~=) :: (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter)
+              -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter)
+              -> Bool
+        (=~=) (a,_,b,c,d) (s,_,t,u,v) = (a,b,c,d) == (s,t,u,v)
 
         naiveResult   = naiveDO           (f x) (f y) metric
         memoedResult  = naiveDOMemo       (f x) (f y) memoed
@@ -90,7 +93,7 @@ consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll check
 
 
 showResult :: (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) -> String
-showResult (cost, w, x, y, z) = (\a->"("<>a<>")") $ intercalate ","
+showResult (cost, _w, x, y, z) = (\a->"("<>a<>")") $ intercalate ","
     [ show cost
     , "_" -- showStream alphabet w
     , showStream alphabet x

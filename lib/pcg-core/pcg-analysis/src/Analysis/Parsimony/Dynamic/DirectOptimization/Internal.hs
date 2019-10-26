@@ -34,7 +34,7 @@ import           Bio.Character.Encodable
 import           Bio.Character.Exportable
 import           Bio.Graph.Node.Context
 import           Bio.Metadata                                           hiding (DenseTransitionCostMatrix)
-import           Control.Lens                                           hiding ((<|), (|>))
+import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
 import           Data.Foldable.Custom                                   (sum')
@@ -47,12 +47,11 @@ import           Data.List.Utility                                      (invaria
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
---import           Data.Sequence                                          ((<|), (|>))
 import qualified Data.Sequence                                          as Seq
 import           Data.TCM.Dense                                         (DenseTransitionCostMatrix)
 import           Data.Word
 import           Numeric.Extended.Natural
-import           Prelude                                                hiding (lookup, zipWith)
+import           Prelude                                                hiding (zipWith)
 
 
 -- |

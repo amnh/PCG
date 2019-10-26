@@ -22,6 +22,7 @@ module Analysis.Clustering.Test
 
 
 import           AI.Clustering.Hierarchical
+import           AI.Clustering.Hierarchical.Types (Distance)
 import           Analysis.Clustering.Hierarchical
 import           Data.Foldable
 import           Data.Vector                      hiding (length)
@@ -34,6 +35,7 @@ testSuite :: TestTree
 testSuite = testGroup "Clustering Tests"
     [ hierarchicalClusteringProperties
     ]
+
 
 example :: IO ()
 example =
@@ -74,7 +76,7 @@ preservesNumber lv =
     dendro = hclust Average v dist
 
 
-dist :: _
+dist :: Distance -> Distance -> Distance
 dist x y = sqrt (x^two + y^two)
   where
     two = 2 :: Word

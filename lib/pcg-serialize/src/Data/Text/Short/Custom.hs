@@ -21,7 +21,7 @@ module Data.Text.Short.Custom where
 
 import Data.Char       (intToDigit, isSpace)
 import Data.Text.Short as TS
-import Prelude         hiding (break, dropWhile, reverse, words)
+import Prelude         hiding (break, dropWhile, words)
 import TextShow        hiding (singleton)
 
 

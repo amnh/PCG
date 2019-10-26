@@ -75,7 +75,7 @@ leafFunction postFn = postFn . LeafContext
 -- Extract the function on an internal binary context from a function on a
 -- 'PostorderContext'.
 postBinaryFunction :: (PostorderContext n c -> e) -> ((c, c) -> e)
-postBinaryFunction postFn (leftChild, rightChild) = postFn $ PostBinaryContext{..}
+postBinaryFunction postFn (leftChild, rightChild) = postFn PostBinaryContext{..}
 
 
 -- |

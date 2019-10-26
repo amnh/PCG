@@ -17,7 +17,6 @@ import Control.Monad.Except    (ExceptT (..), runExceptT)
 import Data.Bimap              (toMap)
 import Data.Binary             (decodeOrFail)
 import Data.ByteString.Lazy    (ByteString)
-import Data.Either
 import Data.Foldable
 import Data.Key
 import Data.List               (intercalate)
@@ -25,12 +24,10 @@ import Data.List.NonEmpty      (NonEmpty (..))
 import Data.List.Utility       (equalityOf)
 import Data.Semigroup.Foldable
 import Numeric.Extended.Real
-import Prelude                 hiding (writeFile)
 import System.Directory        (getPermissions, setOwnerReadable, setOwnerWritable, setPermissions)
 import System.ErrorPhase
 import System.Exit
 import System.FilePath.Posix   (splitFileName, takeFileName, (</>))
---import System.IO               (IOMode (..), hClose, hGetContents, openFile)
 import System.Process
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -314,9 +311,6 @@ scriptOutputError_NoPermissions = withResource
 
 
 {--
--- |
--- This test case is more involved because we need to open the input file as
--- part of the "set up" and "tear down" parts of the test.
 scriptInputError_FileAlreadyInUse :: TestTree
 scriptInputError_FileAlreadyInUse = withResource
       (openFile (testDirectory </> "failure/file-already-in-use/opened.fasta") AppendMode)

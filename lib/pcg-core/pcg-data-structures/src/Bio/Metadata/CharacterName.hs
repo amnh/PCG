@@ -57,7 +57,7 @@ module Bio.Metadata.CharacterName
 import Control.DeepSeq
 import Control.Monad.State.Lazy
 import Data.FileSource
-import Data.Map                 hiding (null)
+import Data.Map
 import Data.Monoid
 import Data.String
 import Data.Text.Short          (ShortText, isPrefixOf, uncons)

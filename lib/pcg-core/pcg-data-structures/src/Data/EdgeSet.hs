@@ -36,11 +36,9 @@ import           Data.Coerce
 import           Data.Foldable
 import           Data.IntSet          (IntSet)
 import           Data.MonoTraversable (MonoFoldable (..))
-import           Data.Semigroup
 import           Data.Set             (Set)
 import qualified Data.Set             as Set
 import           GHC.Generics         (Generic)
-import           Prelude              hiding (zipWith)
 import           TextShow             (TextShow)
 import           TextShow.Instances   ()
 
@@ -50,8 +48,9 @@ import           TextShow.Instances   ()
 --
 -- Often used to represent a spanning tree in a DAG.
 newtype EdgeSet e = ES (Set e)
-  deriving stock   (Eq, Generic, Ord)
-  deriving newtype (Foldable, Monoid, Semigroup, TextShow)
+    deriving stock   (Eq, Generic, Ord)
+    deriving newtype (Foldable, Monoid, Semigroup, TextShow)
+
 
 {--
 -- |

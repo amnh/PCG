@@ -580,11 +580,10 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
 
                                 parentalDecoration = transformation m (RootContext x)
                             in  transformation m
-                                  (PreInternalContext
-                                     { preParent       = parentalDecoration
-                                     , preChildContext = Left currentDecoration
-                                     }
-                                  )
+                                  PreInternalContext
+                                    { preParent       = parentalDecoration
+                                    , preChildContext = Left currentDecoration
+                                    }
 
                           NormalNode   p   ->
                             let isDeadEndNode = -- This only checks one edge away, probably should be transitive.
@@ -597,11 +596,10 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                             in  if   isDeadEndNode
                                 then parentalDecoration
                                 else transformation m
-                                       (PreInternalContext
-                                          { preParent       = parentalDecoration
-                                          , preChildContext = Left currentDecoration
-                                          }
-                                       )
+                                       PreInternalContext
+                                         { preParent       = parentalDecoration
+                                         , preChildContext = Left currentDecoration
+                                         }
                       where
                         parentRefContext     = (parentVectors ! (i,j)) ! k
                         -- Stupid monomorphisms prevent elegant code reuse

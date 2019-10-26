@@ -296,8 +296,8 @@ printTaxaCounter x = unsafePerformIO $ do
     let shownInfo  = replicate (length shownTotal - length shownCount) ' ' <> shownCount
     let ratioDone  = 100 * (realToFrac count / realToFrac total) :: Double
     let (num,dec)  = second (take 4) . span (/='.') $ show ratioDone
-    let percentStr = mconcat [replicate (3 - length num) ' ', num, dec, replicate (4 - length dec) ' ']
-    putStrLn $ mconcat [ "  - ", percentStr, "% ", shownInfo, "/", shownTotal, " taxa"]
+    let percentStr = fold [replicate (3 - length num) ' ', num, dec, replicate (4 - length dec) ' ']
+    putStrLn $ fold [ "  - ", percentStr, "% ", shownInfo, "/", shownTotal, " taxa"]
     pure res
 
 netEdgeCounter :: IORef Int
@@ -495,14 +495,15 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
             (minNewCost, !bestNewNetwork) =
               unsafePerformIO $
                 do
-                putStrLn ""
-                putStrLn "Starting network edge search..."
-                putStrLn $ "Number of candidate network edges: " <> (show len)
-                putStrLn $ "Progress   "
-                pure $
-                    minimumBy (comparing fst)
-                  . parmap (rparWith rseq) (getCost &&& id)
-                  $ unsafePerformIO $ traverse tryNetworkEdge edgesToTry
+                putStrLn $ unlines
+                         [ ""
+                         ,  "Starting network edge search..."
+                         , "Number of candidate network edges: " <> show len
+                         , "Progress   "
+                         ]
+                pure . minimumBy (comparing fst)
+                     . parmap (rparWith rseq) (getCost &&& id)
+                     . unsafePerformIO $ traverse tryNetworkEdge edgesToTry
         in  if   getCost currentNetwork <= minNewCost
             then currentNetwork
             else iterativeNetworkBuild bestNewNetwork
@@ -515,7 +516,7 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
           networkEdges <- readIORef netEdgeCounter
           writeIORef netEdgeCounter (networkEdges + 1)
           putStrLn $ "  - " <> show networkEdges <> " network edges tried."
-          pure $ performDecoration . (`PDAG2` metaSeq) . connectEdge' $ e
+          pure . performDecoration . (`PDAG2` metaSeq) . connectEdge' $ e
 
     getCost (PDAG2 v _) = dagCost $ graphData v
 
