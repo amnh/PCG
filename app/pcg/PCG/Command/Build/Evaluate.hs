@@ -47,6 +47,7 @@ import           Data.List.NonEmpty                            (NonEmpty (..))
 import qualified Data.List.NonEmpty                            as NE
 import           Data.List.Utility                             (HasHead (_head))
 import qualified Data.Map                                      as M
+import           Data.Monoid
 import           Data.NodeLabel
 import           Data.Ord                                      (comparing)
 import           Data.Semigroup.Foldable
@@ -83,10 +84,16 @@ evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
     case getCompact cpctInState of
       Left  _ -> pure cpctInState
       Right v -> do
+        let isInitialBuild =
+              let
+                leafNumber = length . fromLeafSet $ v ^. leafSet
+                rootNumber = extractNumberOfRoots v
+              in
+                (leafNumber == rootNumber)
         let buildLogic =
               case buildType of
                 WagnerTree     -> wagnerBuildLogic
-                WheelerNetwork -> networkBuildLogic
+                WheelerNetwork -> networkBuildLogic isInitialBuild
                 WheelerForest  -> forestBuildLogic
         let buildMethod =
               case buildType of
@@ -115,6 +122,11 @@ evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
 
   where
 
+    extractNumberOfRoots :: PhylogeneticSolution FinalDecorationDAG -> Int
+    extractNumberOfRoots =
+        getSum
+      . foldMap1 (Sum . length . view (_phylogeneticForest . _rootRefs))
+      . extractPhylogeneticForest
     numberOfClusterCheck :: ClusterOption -> Bool
     numberOfClusterCheck (ClusterOption _ (ClusterGroup n)) = n < 1
     numberOfClusterCheck _                                  = False
@@ -146,19 +158,26 @@ wagnerBuildLogic = buildLogicMethod naiveWagnerParallelBuild
 
 
 networkBuildLogic
-  :: PhylogeneticSolution FinalDecorationDAG
+  :: Bool
+  -> PhylogeneticSolution FinalDecorationDAG
   -> Int
   -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
-networkBuildLogic sol n = do
+networkBuildLogic isInitialBuild sol n = do
 --    let
 --      bestTrees :: NonEmpty FinalDecorationDAG
 --      bestTrees = toNonEmpty . NE.head $ phylogeneticForests sol
     liftIO $ putStrLn "Beginning network construction..."
     liftIO $ putStrLn ""
-    buildLogicMethod naiveNetworkParallelBuild sol n
-
---    pure $ parmap rpar iterativeNetworkBuild bestTrees
---  pure $ fmap iterativeNetworkBuild bestTrees
+    if isInitialBuild then
+   -- If we have only the trivial forest solution then first perform a
+   -- Wagner build before tryig to add network edges.
+      buildLogicMethod naiveNetworkParallelBuild sol n
+    else
+      do
+        let
+          bestTrees :: NonEmpty FinalDecorationDAG
+          bestTrees = toNonEmpty . NE.head $ phylogeneticForests sol
+        pure $ parmap rpar iterativeNetworkBuild bestTrees
 
 
 forestBuildLogic
@@ -312,6 +331,7 @@ naiveNetworkBuild
   -> f FinalCharacterNode
   -> FinalDecorationDAG
 naiveNetworkBuild meta = iterativeNetworkBuild . naiveWagnerBuild meta
+
 
 
 naiveForestBuild
