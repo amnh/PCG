@@ -51,6 +51,9 @@ import VectorBuilder.Builder as VB
 import VectorBuilder.Vector as VB
 
 
+import Data.Map (Map)
+import qualified Data.Map as M
+
 --      ┌─────────────┐
 --      │    Types    │
 --      └─────────────┘
@@ -286,7 +289,6 @@ getRootInds graph =
     roots = generate numberOfRoots (`TaggedIndex` RootTag)
   in
     roots
-
 
 --      ┌───────────────────────┐
 --      │    Unsafe Indexing    │
