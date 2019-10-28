@@ -8,6 +8,11 @@
 {-# LANGUAGE RecordWildCards        #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeApplications       #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Data.Graph.Type
   ( Graph(..)
@@ -56,6 +61,9 @@ import qualified Data.HashSet as HS
 import Data.Hashable
 import Data.List.Extra (maximumOn)
 import Data.Foldable (toList)
+
+import Data.Map (Map)
+import qualified Data.Map as M
 
 --      ┌─────────────┐
 --      │    Types    │
