@@ -34,7 +34,6 @@ module Data.Graph.Type
   , unsafeNetworkInd
   )where
 
---import           Control.Arrow              (first)
 import Control.Lens              hiding (index)
 --import           Control.Monad.State.Strict
 import Data.Graph.Indices
@@ -54,14 +53,16 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import Control.Monad.State.Strict
 import Data.Maybe (catMaybes)
-import Control.Arrow (first)
+import qualified Control.Arrow as Arr
+import qualified Data.Bifunctor as BF
 import Control.Lens.Tuple
 import Data.HashSet (HashSet)
 import qualified Data.HashSet as HS
 import Data.Hashable
 import Data.List.Extra (maximumOn)
 import Data.Foldable (toList)
-
+import VectorBuilder.Vector
+import Data.Foldable
 import Data.Map (Map)
 import qualified Data.Map as M
 
