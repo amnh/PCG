@@ -49,8 +49,7 @@ import Test.QuickCheck.Arbitrary
 import TextShow                  hiding (Builder)
 import VectorBuilder.Builder as VB
 import VectorBuilder.Vector as VB
-
-
+import Data.Foldable
 import Data.Map (Map)
 import qualified Data.Map as M
 
@@ -289,6 +288,8 @@ getRootInds graph =
     roots = generate numberOfRoots (`TaggedIndex` RootTag)
   in
     roots
+
+
 
 --      ┌───────────────────────┐
 --      │    Unsafe Indexing    │
