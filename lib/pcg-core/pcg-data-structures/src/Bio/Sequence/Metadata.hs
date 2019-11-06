@@ -62,7 +62,8 @@ import           Text.XML
 -- Blocks are optimized atomically with resepect to network resolutions.
 newtype MetadataSequence m
     = MetaSeq (Vector (MetadataBlock m))
-    deriving stock (Generic)
+    deriving stock (Generic, Show)
+
 
 
 type instance Element (MetadataSequence m) = MetadataBlock m
