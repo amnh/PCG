@@ -324,6 +324,11 @@ netEdgeCounter :: IORef Int
 netEdgeCounter =
   unsafePerformIO (newIORef 1)
 
+costCounter :: IORef Int
+{-# NOINLINE costCounter #-}
+costCounter =
+  unsafePerformIO (newIORef 0)
+
 
 naiveNetworkBuild
   :: (Foldable1 f)
@@ -513,21 +518,30 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
         let !edgesToTry = x:|xs
             len = length xs + 1
             (minNewCost, !bestNewNetwork) =
-              unsafePerformIO $
-                do
+              unsafePerformIO $ do
                 putStrLn $ unlines
                          [ ""
                          ,  "Starting network edge search..."
                          , "Number of candidate network edges: " <> show len
                          , "Progress   "
                          ]
-                pure . minimumBy (comparing fst)
-                     . parmap (rparWith rseq) (getCost &&& id)
-                     . unsafePerformIO $ traverse tryNetworkEdge edgesToTry
-        in  if   getCost currentNetwork <= minNewCost
+                let !v = minimumBy (comparing fst)
+                       . parmap (rparWith rseq) f
+                       . unsafePerformIO $ traverse tryNetworkEdge edgesToTry
+                pure v
+        in
+          if getCost currentNetwork <= minNewCost
             then currentNetwork
             else iterativeNetworkBuild bestNewNetwork
   where
+    f p =
+      unsafePerformIO $
+        do
+          counter <- readIORef costCounter
+          writeIORef costCounter (counter + 1)
+          putStrLn $ "  - " <> show counter <> " cost computed."
+          pure $ (getCost &&& id) p
+
     (PDAG2 dag _) = force $ wipeScoring currentNetwork
 
     tryNetworkEdge :: ((Int, Int), (Int, Int)) -> IO FinalDecorationDAG
