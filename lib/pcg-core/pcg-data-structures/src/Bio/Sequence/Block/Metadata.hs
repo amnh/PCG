@@ -73,7 +73,7 @@ data MetadataBlock m = MB
           (DynamicCharacterMetadataDec DynamicCharacterElement)
       )
     }
-    deriving stock   (Generic)
+    deriving stock   (Generic, Show)
     deriving anyclass(NFData)
 
 
