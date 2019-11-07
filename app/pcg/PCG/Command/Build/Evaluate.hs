@@ -116,7 +116,6 @@ evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
           fail "A non-positive number was supplied to the number of clusters."
         else
           do
-            liftIO $ print clusterType
             bestNetwork <- clusterLogic v trajectoryCount
             liftIO . compact . Right $ toSolution bestNetwork
 
