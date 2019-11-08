@@ -25,6 +25,7 @@ module Data.NodeLabel
   , isEmpty
   , nodeLabel
   , nodeLabelString
+  , nodeLabelToString
   ) where
 
 
@@ -77,6 +78,11 @@ nodeLabelString = NL. fromString
 -- Check if a NodeLabel is empty.
 isEmpty :: NodeLabel -> Bool
 isEmpty = coerce TS.null
+
+-- |
+-- Converts a NodeLabel to a string.
+nodeLabelToString :: NodeLabel -> String
+nodeLabelToString = coerce TS.toString
 
 
 instance Default NodeLabel where
