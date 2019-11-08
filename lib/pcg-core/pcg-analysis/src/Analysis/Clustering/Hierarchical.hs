@@ -22,7 +22,8 @@ import           AI.Clustering.Hierarchical
 import           Analysis.Clustering.Metric
 import           Bio.Graph.Constructions
 import           Bio.Graph.LeafSet
-import           Bio.Graph.Node             (HasSequenceDecoration (..))
+import           Bio.Graph.Node
+import           Data.NodeLabel
 import           Bio.Sequence
 import           Control.Lens
 import           Data.Coerce
@@ -33,6 +34,8 @@ import qualified Data.Vector.NonEmpty       as NE
 import           VectorBuilder.Builder      (Builder)
 import qualified VectorBuilder.Builder      as VB
 import           VectorBuilder.Vector       (build)
+
+import Debug.Trace
 
 
 clusterLeaves
@@ -57,6 +60,10 @@ clusterLeaves meta leaves opt = dendro
 
     dendro :: Dendrogram (DecoratedCharacterNode f)
     dendro =
+      (\x -> trace
+               (drawDendrogram
+                  $ fmap (nodeLabelToString . (view _nodeDecorationDatum)) x)
+               x) $
       hclust opt leafSetVector distance
 
 
