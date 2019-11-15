@@ -13,6 +13,7 @@ import           Data.Graph.Type
 import           Data.Key
 import           Data.Pair.Strict
 import           Data.Vector.Instances  ()
+import           Control.Monad.Par
 
 import           Data.Maybe             (fromJust)
 
@@ -129,7 +130,7 @@ memoPostorder leafFn treeFn netFn graph = f
 
 
 memoGraphPostorder
-  :: forall g f c e n t val . (Applicative g)
+  :: forall g f c e n t val . (Applicative g, NFData (g val))
   => (t    -> val)
   -> (g val -> g val -> g val)
   -> (val -> val)
@@ -153,10 +154,21 @@ memoGraphPostorder leafFn treeFn netFn graph = f
 
 
         fromTwoChildren  :: ChildIndex :!: ChildIndex -> g val
-        fromTwoChildren c =
-            treeFn
-              (childVal (coerce $ c ^. _left))
-              (childVal (coerce $ c ^. _right))
+        fromTwoChildren c = runPar $ go
+          where
+            go :: Par (g val)
+            go = do
+              leftNew  <- new
+              rightNew <- new
+           -- Note: if we already fully evaluate the node values then
+          --  we should use put_ instead of put. This should be tested.
+              fork $ pure (childVal (coerce $ c ^. _left))   >>= put leftNew
+              fork $ pure (childVal (coerce $ c ^. _right))  >>= put rightNew
+              leftVal  <- get leftNew
+              rightVal <- get rightNew
+              pure $
+                treeFn leftVal rightVal
+                  
 
         fromOneChild :: ChildIndex -> g val
         fromOneChild c =

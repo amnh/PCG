@@ -22,6 +22,7 @@ import qualified Data.Vector            as V
 import           Data.Vector.Instances  ()
 import           Data.Vector.Mutable    (MVector)
 import qualified Data.Vector.Mutable    as MV
+import           Control.DeepSeq
 
 import           Control.Monad.ST
 --import Debug.Trace
@@ -89,7 +90,7 @@ postorderFold _leafFn _internalFn _graph = undefined -- foldMap (view _rootRefer
 
 
 postorder
-  :: forall g f e c n1 n2 t . (Applicative g)
+  :: forall g f e c n1 n2 t . (Applicative g, NFData (g n2))
   => (t -> n2)
   -> (g n2 -> g n2 -> g n2)
   -> Graph f c e n1 t

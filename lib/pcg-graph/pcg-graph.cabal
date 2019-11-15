@@ -93,6 +93,7 @@ library
     hashable                 >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.17      && < 5.0,
+    monad-par                >= 0.3.5     && < 4.0,
     mtl                      ^>= 2.2.2            ,
     parallel                 >= 3.2       && < 4.0,    
     QuickCheck               >= 2.12      && < 3.0,
@@ -110,6 +111,7 @@ library
 
   exposed-modules:
     Data.Graph
+    Data.Graph.Convert
     Data.Graph.Type
     Data.Graph.Memo
     Data.Graph.Internal
