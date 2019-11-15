@@ -16,6 +16,11 @@
 
 module Data.Graph.Type
   ( Graph(..)
+  , GraphBuilder(..)
+  , leafGB
+  , treeGB
+  , rootGB
+  , networkGB
   , HasTreeReferences(..)
   , HasNetworkReferences(..)
   , HasRootReferences(..)
@@ -27,7 +32,6 @@ module Data.Graph.Type
   , buildGraph
   , index
   , getRootInds
-  , unfoldGraph
   , unsafeLeafInd
   , unsafeRootInd
   , unsafeTreeInd
@@ -35,36 +39,17 @@ module Data.Graph.Type
   )where
 
 import Control.Lens              hiding (index)
---import           Control.Monad.State.Strict
 import Data.Graph.Indices
 import Data.Graph.NodeContext
 import Data.Kind                 (Type)
---import           Data.Maybe                 (catMaybes)
 import Data.Pair.Strict
---import           Data.Set                   (Set)
---import qualified Data.Set                   as S
 import Data.Vector               (Vector, generate)
 import Data.Vector.Instances     ()
 import Test.QuickCheck.Arbitrary
 import TextShow                  hiding (Builder)
-import VectorBuilder.Builder
-import VectorBuilder.Vector
-import Data.Set (Set)
-import qualified Data.Set as S
-import Control.Monad.State.Strict
-import Data.Maybe (catMaybes)
-import qualified Control.Arrow as Arr
-import qualified Data.Bifunctor as BF
-import Control.Lens.Tuple
-import Data.HashSet (HashSet)
-import qualified Data.HashSet as HS
-import Data.Hashable
-import Data.List.Extra (maximumOn)
-import Data.Foldable (toList)
-import VectorBuilder.Vector
-import Data.Foldable
-import Data.Map (Map)
-import qualified Data.Map as M
+import VectorBuilder.Builder as VB
+import VectorBuilder.Vector as VB
+
 
 --      ┌─────────────┐
 --      │    Types    │
@@ -103,11 +88,22 @@ data  GraphBuilder
         (n :: Type)
         (t :: Type)
    = GraphBuilder
-   { leafReferencesBuilder    :: Builder (LeafIndexData       t   )
-   , treeReferencesBuilder    :: Builder (TreeIndexData    (f n) e)
-   , networkReferencesBuilder :: Builder (NetworkIndexData (f n) e)
-   , rootReferencesBuilder    :: Builder (RootIndexData    (f n) e)
+   { leafReferencesBuilder    :: {-# UNPACK #-} !(Builder (LeafIndexData       t   ))
+   , treeReferencesBuilder    :: {-# UNPACK #-} !(Builder (TreeIndexData    (f n) e))
+   , networkReferencesBuilder :: {-# UNPACK #-} !(Builder (NetworkIndexData (f n) e))
+   , rootReferencesBuilder    :: {-# UNPACK #-} !(Builder (RootIndexData    (f n) e))
    }
+
+instance Semigroup (GraphBuilder f e n t) where
+  (<>) (GraphBuilder l1 t1 n1 r1) (GraphBuilder l2 t2 n2 r2)
+    = GraphBuilder
+        (l1 <> l2)
+        (t1 <> t2)
+        (n1 <> n2)
+        (r1 <> r2)
+
+instance Monoid (GraphBuilder f e n t) where
+  mempty = GraphBuilder mempty mempty mempty mempty
 
 
 buildGraph :: GraphBuilder f e n t -> c -> Graph f c e n t
@@ -119,6 +115,22 @@ buildGraph GraphBuilder{..} cachedData =
       rootReferences    = build rootReferencesBuilder
     in
       Graph{..}
+
+leafGB :: LeafIndexData t -> GraphBuilder f e n t
+leafGB leafInd =
+  GraphBuilder (VB.singleton leafInd) mempty mempty mempty
+
+treeGB :: TreeIndexData (f n) e -> GraphBuilder f e n t
+treeGB treeInd =
+  GraphBuilder mempty (VB.singleton treeInd) mempty mempty
+
+networkGB :: NetworkIndexData (f n) e -> GraphBuilder f e n t
+networkGB networkInd =
+  GraphBuilder mempty mempty (VB.singleton networkInd) mempty
+
+rootGB :: RootIndexData (f n) e -> GraphBuilder f e n t
+rootGB rootInd =
+  GraphBuilder mempty mempty mempty (VB.singleton rootInd)
 
 
 type  Focus = Pair IndexType UntaggedIndex
@@ -275,7 +287,6 @@ getRootInds graph =
   in
     roots
 
-
 --      ┌───────────────────────┐
 --      │    Unsafe Indexing    │
 --      └───────────────────────┘
@@ -318,4 +329,3 @@ referenceRendering = undefined
 toBinaryRenderingTree :: (n -> String) -> Graph f e c n t -> NonEmpty BinaryRenderingTree
 toBinaryRenderingTree = undefined
 -}
-
