@@ -41,7 +41,7 @@ class Tagged t where
 
 data TaggedIndex  = TaggedIndex
   { untaggedIndex :: {-# UNPACK #-} !Int
-  , tag           :: !IndexType
+  , tag           :: {-# UNPACK #-} !IndexType
   }
 
   deriving stock (Eq, Show)
@@ -70,8 +70,8 @@ newtype ChildIndex   = ChildIndex  {getChildIndex :: TaggedIndex}
 
 data ChildInfo e =
   ChildInfo
-  { childIndex :: ChildIndex
-  , edgeData   :: e
+  { childIndex :: {-# UNPACK #-} !ChildIndex
+  , edgeData   :: {-# UNPACK #-} !e
   }
   deriving stock (Eq, Show, Functor)
 
@@ -118,7 +118,7 @@ toUntagged ind = getTag ind :!: getIndex ind
 --      └───────────────────────┘
 
 data EdgeIndex = EdgeIndex
-  { edgeParType    :: IndexType
-  , edgeParIndex   :: ParentIndex
-  , edgeChildIndex :: ChildIndex
+  { edgeParType    :: {-# UNPACK #-} !IndexType
+  , edgeParIndex   :: {-# UNPACK #-} !ParentIndex
+  , edgeChildIndex :: {-# UNPACK #-} !ChildIndex
   }
