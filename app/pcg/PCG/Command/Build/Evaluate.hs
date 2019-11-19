@@ -58,6 +58,7 @@ import qualified Data.Vector.NonEmpty                          as NE
 import           Data.Word
 import           Immutable.Shuffle                             (shuffleM)
 import           PCG.Command.Build
+import Numeric.Extended.Real (ExtendedReal)
 
 -- For adhoc logging. Obviously unsafe, TODO: remove later
 import           Data.IORef
@@ -176,7 +177,7 @@ networkBuildLogic isInitialBuild sol n = do
         let
           bestTrees :: NonEmpty FinalDecorationDAG
           bestTrees = toNonEmpty . NE.head $ phylogeneticForests sol
-        pure $ parmap rpar iterativeNetworkBuild bestTrees
+        pure $ parmap rpar iterativeGreedyNetworkBuild bestTrees
 
 
 forestBuildLogic
@@ -334,7 +335,7 @@ naiveNetworkBuild
   => MetadataSequence m
   -> f FinalCharacterNode
   -> FinalDecorationDAG
-naiveNetworkBuild meta = iterativeNetworkBuild . naiveWagnerBuild meta
+naiveNetworkBuild meta = iterativeGreedyNetworkBuild . naiveWagnerBuild meta
 
 
 
@@ -570,6 +571,88 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
 
 
+
+iterativeGreedyNetworkBuild
+  :: FinalDecorationDAG
+  -> FinalDecorationDAG
+iterativeGreedyNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
+    case toList $ DAG.candidateNetworkEdges inputDag of
+      []   -> currentNetwork
+      x:xs ->
+        -- DO NOT use rdeepseq! Prefer rseq!
+        -- When trying candidate edges, we can construct graphs for which a
+        -- pre-order traversal is not logically possible. These graphs will
+        -- necessarily result in an infinite cost. So long as we lazily compute
+        -- the cost, the minimization routine will discard the incoherent,
+        -- infinite-cost candidates and we won't run into interesting runtime problems.
+        let edgesToTry :: [((Int, Int), (Int, Int))]
+            !edgesToTry = x : xs
+
+            len = length xs + 1
+
+            currCost :: ExtendedReal
+            currCost = getCost currentNetwork
+
+            smallerThanCurr :: (ExtendedReal, FinalDecorationDAG) -> Bool
+            smallerThanCurr (c, _) = c <= currCost
+
+            newNetworkOpt :: Maybe (ExtendedReal, FinalDecorationDAG)
+            newNetworkOpt =
+              unsafePerformIO $ do
+                putStrLn $ unlines
+                         [ ""
+                         ,  "Starting network edge search..."
+                         , "Number of candidate network edges: " <> show len
+                         , "Progress   "
+                         ]
+
+                v    <- find smallerThanCurr
+                                   -- See note above about rseq
+                      . parMapBuffer 50 (rparWith rseq) f
+                    <$> traverse tryNetworkEdge edgesToTry
+                pure v
+        in
+          case newNetworkOpt of
+            Nothing              -> currentNetwork
+            Just (_, newNetwork) ->
+              unsafePerformIO $
+                do
+                  putStrLn "Added network edge"
+                  putStrLn "Continuing search:"
+                  pure $ iterativeGreedyNetworkBuild newNetwork
+  where
+    f :: FinalDecorationDAG -> (ExtendedReal, FinalDecorationDAG)
+    f = (getCost &&& id)
+
+    (PDAG2 dag _) = force $ wipeScoring currentNetwork
+
+    tryNetworkEdge :: ((Int, Int), (Int, Int)) -> IO FinalDecorationDAG
+    tryNetworkEdge e = do
+      networkEdges <- readIORef netEdgeCounter
+      writeIORef netEdgeCounter (networkEdges + 1)
+      putStrLn $ "  - " <> show networkEdges <> " network edges tried."
+      pure . performDecoration . (`PDAG2` metaSeq) . connectEdge' $ e
+
+    getCost (PDAG2 v _) = dagCost $ graphData v
+
+    resetDAG = resetEdgeData $ resetMetadata dag
+
+    connectEdge'
+      = uncurry (connectEdge resetDAG deriveOriginEdgeNode deriveTargetEdgeNode)
+
+    deriveOriginEdgeNode
+      :: DecoratedCharacterNode Maybe
+      -> DecoratedCharacterNode Maybe
+      -> DecoratedCharacterNode Maybe
+      -> DecoratedCharacterNode Maybe
+    deriveOriginEdgeNode parentDatum oldChildDatum _newChildDatum =
+        PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
+
+    deriveTargetEdgeNode parentDatum oldChildDatum =
+        PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
+
+
+
 resetMetadata :: ReferenceDAG d e n -> ReferenceDAG (PostorderContextualData t) e n
 resetMetadata ref = ref & _graphData %~ setDefaultMetadata
 
@@ -577,3 +660,6 @@ resetEdgeData :: ReferenceDAG d (e,a) n -> ReferenceDAG d e n
 resetEdgeData ref = ref & _references . (mapped . _childRefs . mapped) %~ fst
 
 
+parMapBuffer :: Int -> Strategy b -> (a -> b) -> [a] -> [b]
+parMapBuffer buffer strat f =
+  withStrategy (parBuffer buffer strat) . fmap f
