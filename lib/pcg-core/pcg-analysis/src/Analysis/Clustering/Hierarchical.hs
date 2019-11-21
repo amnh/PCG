@@ -23,19 +23,19 @@ import           Analysis.Clustering.Metric
 import           Bio.Graph.Constructions
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
-import           Data.NodeLabel
 import           Bio.Sequence
 import           Control.Lens
 import           Data.Coerce
 import           Data.DList                 (DList)
 import           Data.Monoid                (Sum (..))
+import           Data.NodeLabel
 import           Data.Vector
 import qualified Data.Vector.NonEmpty       as NE
 import           VectorBuilder.Builder      (Builder)
 import qualified VectorBuilder.Builder      as VB
 import           VectorBuilder.Vector       (build)
 
-import Debug.Trace
+import           Debug.Trace
 
 
 clusterLeaves

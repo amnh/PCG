@@ -18,8 +18,8 @@
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   ( Cost
@@ -46,28 +46,28 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   ) where
 
 import           Bio.Character.Encodable
-import           Control.Foldl              (Fold (..))
-import qualified Control.Foldl              as F
+import           Control.Foldl               (Fold (..))
+import qualified Control.Foldl               as F
 import           Control.Monad.State.Strict
 import           Data.Bits
-import           Data.DList                 (snoc)
+import           Data.DList                  (snoc)
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty         (NonEmpty (..))
-import qualified Data.List.NonEmpty         as NE
-import           Data.Matrix.NotStupid      (Matrix)
-import           Data.Maybe                 (fromMaybe)
+import           Data.List.NonEmpty          (NonEmpty (..))
+import qualified Data.List.NonEmpty          as NE
+import           Data.Matrix.NotStupid       (Matrix)
+import           Data.Maybe                  (fromMaybe)
 import           Data.MonoTraversable
 import           Data.Ord
 import           Data.Semigroup.Foldable
 import           Numeric.Extended.Natural
-import           Prelude                    hiding (lookup)
+import           Prelude                     hiding (lookup)
 
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Generic         as G
 import qualified Data.Vector.Generic.Mutable as M
-import qualified Data.Vector.Primitive as P
-import Data.Word (Word8)
+import qualified Data.Vector.Primitive       as P
+import qualified Data.Vector.Unboxed         as U
+import           Data.Word                   (Word8)
 
 
 -- |
@@ -103,9 +103,9 @@ instance Show Direction where
 
 fromDirection :: Direction -> Word8
 {-# INLINE fromDirection #-}
-fromDirection DiagArrow  = 0
-fromDirection LeftArrow  = 1
-fromDirection UpArrow    = 2
+fromDirection DiagArrow = 0
+fromDirection LeftArrow = 1
+fromDirection UpArrow   = 2
 
 toDirection :: Word8 -> Direction
 {-# INLINE toDirection #-}

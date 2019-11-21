@@ -57,8 +57,8 @@ import           Data.Vector.NonEmpty                          (unsafeFromVector
 import qualified Data.Vector.NonEmpty                          as NE
 import           Data.Word
 import           Immutable.Shuffle                             (shuffleM)
+import           Numeric.Extended.Real                         (ExtendedReal)
 import           PCG.Command.Build
-import Numeric.Extended.Real (ExtendedReal)
 
 -- For adhoc logging. Obviously unsafe, TODO: remove later
 import           Data.IORef
