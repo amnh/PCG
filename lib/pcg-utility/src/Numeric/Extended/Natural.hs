@@ -10,11 +10,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric      #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE MagicHash          #-}
-{-# LANGUAGE Strict             #-}
-{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
+{-# LANGUAGE MagicHash             #-}
+{-# LANGUAGE Strict                #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Numeric.Extended.Natural
   ( ExtendedNatural()
@@ -23,12 +24,17 @@ module Numeric.Extended.Natural
   ) where
 
 import Control.DeepSeq
+import Control.Monad
 import Data.Bits
 import GHC.Exts
 import GHC.Generics
 import GHC.Integer.Logarithms
 import Numeric.Extended.Internal
 import Test.QuickCheck
+import qualified Data.Vector.Generic as G
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.Vector.Primitive as P
 
 
 -- |
@@ -206,6 +212,55 @@ instance Show ExtendedNatural where
     show (Cost input)
       | input == maxBound = "∞"
       | otherwise         = show input
+
+
+data instance U.MVector s ExtendedNatural = MV_ExtendedNatural (P.MVector s Word)
+data instance U.Vector ExtendedNatural    = V_ExtendedNatural  (P.Vector    Word)
+
+instance U.Unbox ExtendedNatural
+instance M.MVector U.MVector ExtendedNatural where
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicOverlaps #-}
+  {-# INLINE basicUnsafeNew #-}
+  {-# INLINE basicInitialize #-}
+  {-# INLINE basicUnsafeReplicate #-}
+  {-# INLINE basicUnsafeRead #-}
+  {-# INLINE basicUnsafeWrite #-}
+  {-# INLINE basicClear #-}
+  {-# INLINE basicSet #-}
+  {-# INLINE basicUnsafeCopy #-}
+  {-# INLINE basicUnsafeGrow #-}
+  basicLength (MV_ExtendedNatural v) = M.basicLength v
+  basicUnsafeSlice i n (MV_ExtendedNatural v) = MV_ExtendedNatural $ M.basicUnsafeSlice i n v
+  basicOverlaps (MV_ExtendedNatural v1) (MV_ExtendedNatural v2) = M.basicOverlaps v1 v2
+  basicUnsafeNew n = MV_ExtendedNatural `liftM` M.basicUnsafeNew n
+  basicInitialize (MV_ExtendedNatural v) = M.basicInitialize v
+  basicUnsafeReplicate n x = MV_ExtendedNatural `liftM` M.basicUnsafeReplicate n (toWord x)
+  basicUnsafeRead (MV_ExtendedNatural v) i = fromWord `liftM` M.basicUnsafeRead v i
+  basicUnsafeWrite (MV_ExtendedNatural v) i x = M.basicUnsafeWrite v i (toWord x)
+  basicClear (MV_ExtendedNatural v) = M.basicClear v
+  basicSet (MV_ExtendedNatural v) x = M.basicSet v (toWord x)
+  basicUnsafeCopy (MV_ExtendedNatural v1) (MV_ExtendedNatural v2) = M.basicUnsafeCopy v1 v2
+  basicUnsafeMove (MV_ExtendedNatural v1) (MV_ExtendedNatural v2) = M.basicUnsafeMove v1 v2
+  basicUnsafeGrow (MV_ExtendedNatural v) n = MV_ExtendedNatural `liftM` M.basicUnsafeGrow v n
+
+instance G.Vector U.Vector ExtendedNatural where
+  {-# INLINE basicUnsafeFreeze #-}
+  {-# INLINE basicUnsafeThaw #-}
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicUnsafeIndexM #-}
+  {-# INLINE elemseq #-}
+  basicUnsafeFreeze (MV_ExtendedNatural v) = V_ExtendedNatural `liftM` G.basicUnsafeFreeze v
+  basicUnsafeThaw (V_ExtendedNatural v) = MV_ExtendedNatural `liftM` G.basicUnsafeThaw v
+  basicLength (V_ExtendedNatural v) = G.basicLength v
+  basicUnsafeSlice i n (V_ExtendedNatural v) = V_ExtendedNatural $ G.basicUnsafeSlice i n v
+  basicUnsafeIndexM (V_ExtendedNatural v) i = fromWord `liftM` G.basicUnsafeIndexM v i
+  basicUnsafeCopy (MV_ExtendedNatural mv) (V_ExtendedNatural v) = G.basicUnsafeCopy mv v
+  elemseq _ = seq
+
+
 
 
 {-# INLINE toWord #-}
