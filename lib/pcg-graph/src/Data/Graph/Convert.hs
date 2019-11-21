@@ -13,6 +13,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE MagicHash     #-}
+{-# LANGUAGE UnboxedTuples #-}
 
 module Data.Graph.Convert where
   
@@ -29,6 +31,9 @@ import Data.Hashable
 import Data.Foldable
 import Data.Bifunctor
 import Data.Monoid
+import qualified Data.Vector.Mutable as MV
+import Control.Monad.ST
+import Data.Coerce
 
 
 import Data.Map (Map)
@@ -100,39 +105,194 @@ hasNetworkValence unfoldFn = getAll . foldMap checkNode
           (1, 0) -> All True
           _      -> All False
 
+addIndices
+  :: forall a e t . (Ord t)
+  => (a -> ([(a,e)], t, [(a,e)]))
+  -> [a]
+  -> ((Int, Int, Int, Int), Map t ([(t, e)], [(t, e)], TaggedIndex))
+addIndices unfoldFn input =
+    case go (# 0, 0, 0, 0 #) input mempty of
+      (# (# numL, numT, numN, numR #), taggedNodes #) -> ((numL, numT, numN, numR), taggedNodes)
+  where
+    go
+      :: (# Int, Int, Int, Int #)
+      -> [a]
+      -> Map t ([(t, e)], [(t, e)], TaggedIndex)
+      -> (# (# Int, Int, Int, Int #), Map t ([(t, e)], [(t, e)], TaggedIndex) #)
+    go lens [] res = (# lens, res #)
+    go (# l, t, n, r #) (a:as) res =
+      let
+        (parSeeds, nodeVal, childSeeds) = unfoldFn a
+        parentVals, childVals :: [(t, e)]
+        parentVals = first ((view _2) . unfoldFn) <$> parSeeds
+        childVals  = first ((view _2) . unfoldFn) <$> childSeeds
+        parLen   = length parentVals
+        childLen = length childVals
+      in
+        case (# parLen, childLen #) of
+          (# 0, 1 #)
+            -> go
+                (# l, t, n, (r + 1) #)
+                as
+                (M.insert nodeVal (parentVals, childVals, (TaggedIndex r RootTag)) res)
+          (# 0, 2 #)
+            -> go
+                 (# l, t, n, (r + 1) #)
+                 as
+                 (M.insert nodeVal (parentVals, childVals, (TaggedIndex r RootTag)) res)
+          (# 1, 2 #)
+            -> go
+                 (# l + 1, t, n, r   #)
+                 as
+                 (M.insert nodeVal (parentVals, childVals, (TaggedIndex r TreeTag)) res)
+          (# 2, 1 #)
+            -> go
+                 (# l + 1, t, n, r   #)
+                 as
+                 (M.insert nodeVal (parentVals, childVals, (TaggedIndex r NetworkTag)) res)
+          (# 1, 0 #)
+            -> go
+                 (# l + 1, t, n, r   #)
+                 as
+                 (M.insert nodeVal (parentVals, childVals, (TaggedIndex r LeafTag   )) res)
+          _          ->
+            error $
+              unlines
+                [ "Data.Graph.Convert.addIndices :"
+                , "Whilst adding indices we encountered an index with number of parents:"
+                , "parent length: " <> show parLen
+                , "and children length:"
+                , "children length: " <> show childLen
+                , "This violates the valency conditions of a phylogenetic network."
+                ]
+
+
 directConversion
-  :: forall a f c e t . (Applicative f)
+  :: forall a f c e t . (Applicative f, Ord t)
   => (a -> ([(a,e)], t, [(a,e)]))
   -> [a]
   -> Graph f c e t t
 directConversion unfoldFn nodes = undefined
   where
-    addNodeToBuilder :: a -> GraphBuilder f e t t -> GraphBuilder f e t t
-    addNodeToBuilder nodeSeed =
-      let
-        (parSeeds, nodeVal, childSeeds) = unfoldFn nodeSeed
-        numberOfParents  = length parSeeds
-        numberOfChildren = length childSeeds
-     --   parentEdges, childrenEdges :: [(Either Int t, e)]
-     --   parentEdges   = first (Right . (view _2) . unfoldFn) <$> parSeeds
-     --   childrenEdges = first (Right . (view _2) . unfoldFn) <$> childSeeds
-      in
-        case (numberOfParents, numberOfChildren) of
-          (0, 1) ->
+    getPair :: [list] -> (list :!: list)
+    getPair (t1 : t2 : ts) = t1 :!: t2
+    getPair _ = error "getPair called on list with less than two arguments."
+
+    indicesMap :: Map t TaggedIndex
+    indicesMap = undefined
+
+    addNodes :: ST s ()
+    addNodes = undefined
+    
+    addNode :: (t, ([(t,e)], [t], TaggedIndex)) -> MGraph s f e t t -> ST s ()
+    addNode (nodeVal, (parEdges, childEdges, TaggedIndex{..})) MGraph{..} =
+      case tag of
+        RootTag ->
+          case
+            length childEdges of
+              1 -> undefined
+              2 -> undefined
+        LeafTag ->
+          do
             let
-              rootIndData =
+              ~(parName, edgeVal) = head parEdges
+              
+              taggedParentIndex :: TaggedIndex
+              taggedParentIndex = indicesMap M.! parName
+
+              parentInd :: ParentIndex
+              parentInd = coerce taggedParentIndex
+
+              leafIndData :: LeafIndexData t
+              leafIndData = leafIndexData nodeVal parentInd
+              
+            MV.write leafReferencesM untaggedIndex leafIndData
+        TreeTag ->
+          do
+            let
+              ~(parName, edgeVal) = head parEdges
+              
+              taggedParentIndex :: TaggedIndex
+              taggedParentIndex = indicesMap M.! parName
+
+              (leftChildVal :!: rightChildVal)
+                = getPair childEdges
+
+              leftChildTag, rightChildTag :: TaggedIndex
+              leftChildTag
+             
+ 
+              parentInd :: ParentIndex
+              parentInd = coerce taggedParentIndex
+
+              childInds :: ChildInfo e :!: ChildInfo e
+              childInds =
+                (childInfo _a _ _) :!:
+                  (childInfo _ _ _)
+
+              leafIndData :: TreeIndexData (f t) e
+              leafIndData = treeIndexDataA nodeVal parentInd childInds
+              
+            MV.write treeReferencesM untaggedIndex leafIndData
+        NetworkTag ->
+          do
+            let
+              ~(parName, edgeVal) = head parEdges
+              
+              taggedParentIndex :: TaggedIndex
+              taggedParentIndex = indicesMap M.! parName
+
+              parentInd :: ParentIndex :!: ParentIndex
+              parentInd = undefined
+
+              childInds :: ChildInfo e
+              childInds = undefined
+
+              networkIndData :: NetworkIndexData (f t) e
+              networkIndData = networkIndexDataA nodeVal parentInd childInds
+              
+            MV.write networkReferencesM untaggedIndex networkIndData
+        
+        
+                
+
+{-
+    addNodeToBuilder :: (a, TaggedIndex) -> GraphBuilder f e t t -> GraphBuilder f e t t
+    addNodeToBuilder (nodeSeed, TaggedIndex{..}) =
+      let
+        (parVals, nodeVal, childVals) = unfoldFn nodeSeed
+        parentEdges, childrenEdges :: [(t, e)]
+        parentEdges   = first ((view _2) . unfoldFn) <$> parVals
+        childrenEdges = first ((view _2) . unfoldFn) <$> childVals
+      in
+      case tag of
+        RootTag ->
+          let
+              rootIndData = undefined
                 rootIndexData
                   (pure nodeVal)
                   (Left $ childInfo RootTag undefined undefined)
-             in
-               (<> rootGB rootIndData)
-          (0, 2) -> undefined
-          (1, 2) -> undefined
-          (2, 1) -> undefined
-          (1, 0) -> undefined
-          _      -> undefined
+          in
+            undefined
+        TreeTag    ->
+          let
+            treeIndData
+              = treeIndexData (pure nodeVal) (childInfo TreeTag undefined undefined)
+          in
+            undefined
+        LeafTag    -> undefined
+        NetworkTag -> undefined
+-}
+        
+--               (<> rootGB rootIndData)
 
 
+-- AdjacencyGraph t e = Map t (AdjacencyRelations t e)
+
+--fromAdjacencyGraph
+--  :: Map t (AdjacencyRelations t e)
+--  -> 
+  
 
 addLegalNode
   :: forall t e . (Ord t)
@@ -180,7 +340,6 @@ buildAdjacencyGraph unfoldFn nodes = adjacencyGraph
 
         addNode (Right val) parentEdges childrenEdges
 
-
 addNode
   :: forall t e . (Monoid e, Ord t)
   => Either Int t
@@ -223,24 +382,27 @@ addNode currVal parentEdges childrenEdges = do
     (p, c) | p == 1 || p == 2 ->
       do
         bifurcateChildren numChilds currVal parentEdges childrenEdges
-        pure undefined
-    (p, 1) -> -- fan out
+    (p, c) | c == 1 || c == 2 ->
       do
---        bifurcateChildren numcurrVal parentEdges childrenEdges
-        pure undefined -- fan out children
-    (p, 2) -> -- fan out
+        bifurcateParents numPars currVal parentEdges childrenEdges
+    (p, c) ->
       do
-
-        pure undefined -- fan out children
-    (n, m) -> undefined -- add in-between then fan out then add children
+        fresh <- gets (view _left)
+        incrementFresh 1
+        let newNode = Left fresh
+        let newChildEdges  = [(newNode, mempty)]
+        let newParentEdges = [(currVal, mempty)]
+        bifurcateParents numPars currVal parentEdges newChildEdges
+        bifurcateChildren numChilds newNode newParentEdges childrenEdges
+        
 
 bifurcateParents
   :: forall t e . (Monoid e, Ord t)
   => Int
-  -> Either Int t
-  -> [(Either Int t, e)]
-  -> [(Either Int t, e)]
-  -> AdjacencyState t e
+  -> Either Int t         -- ^ Number of parents
+  -> [(Either Int t, e)]  -- ^ Current Node value
+  -> [(Either Int t, e)]  -- ^ Parent edge value
+  -> AdjacencyState t e   -- ^ Child edge values
 bifurcateParents n currVal parentEdges childrenEdges = do
   fresh <- gets (view _left)
   let
@@ -257,12 +419,13 @@ bifurcateParents n currVal parentEdges childrenEdges = do
   addNode (Left fresh)       leftParents  (pure valEdge)
   addNode (Left (fresh + 1)) rightParents (pure valEdge)
 
+
 bifurcateChildren
   :: forall t e . (Monoid e, Ord t)
-  => Int
-  -> Either Int t
-  -> [(Either Int t, e)]
-  -> [(Either Int t, e)]
+  => Int                  -- ^ Number of children
+  -> Either Int t         -- ^ Current Node value
+  -> [(Either Int t, e)]  -- ^ Parent edge values
+  -> [(Either Int t, e)]  -- ^ Child edge values
   -> AdjacencyState t e
 bifurcateChildren n currVal parentEdges childrenEdges = do
   fresh <- gets (view _left)
@@ -362,48 +525,6 @@ updatePreviousChildNodes cs oldParent newParent =
                               , "with more than two children: "
                               , "   " <> (show cs)
                               ]
-{-
-findRoots
-  :: forall a e t. (Eq a, Show a, Monoid e, Ord a, Hashable t, Eq t)
-  => (a -> ([(a,e)], t, [(a,e)]))
-  -> a
-  -> [a]
-findRoots unfoldFn seed = roots
-  where
-    roots :: [a]
-    roots = findRootsFrom seed `evalState` mempty
-
-    isRoot :: a -> [b] -> Maybe a
-    isRoot start pars =
-        if null pars
-          then (Just start)
-          else Nothing
-
-    addRoot :: a -> State (HashSet t) (Maybe a)
-    addRoot start = do
-      let (pars, val, childs) = unfoldFn start
-      seenNodes <- get
-      put (val `HS.insert` seenNodes)
-      case val `HS.member` seenNodes of
-        True  -> pure Nothing
-        False ->
-          do
-            pure $ isRoot start pars
-
-    findRootsFrom :: a -> State (HashSet t) [a]
-    findRootsFrom start = do
-      let (pars, val, childs) = unfoldFn start
-      let otherNodes = fst <$> pars <> childs
-      startRoot <- addRoot start
-      let
-        otherRootNodes :: State (HashSet t) [a]
-        otherRootNodes = catMaybes <$> traverse addRoot otherNodes
-
-      case startRoot of
-        Nothing -> otherRootNodes
-        Just r  -> (r :) <$> otherRootNodes
-
--}
 
 
 -- |

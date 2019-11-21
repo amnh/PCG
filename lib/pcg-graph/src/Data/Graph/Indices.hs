@@ -35,6 +35,8 @@ newtype TreeInd = TreeInd {getTreeInd :: Int}
 
 class Tagged t where
   tagValue   :: IndexType -> Int -> t
+  fromTagged :: TaggedIndex -> t
+  fromTagged (TaggedIndex ind tag) = tagValue tag ind
   getTag     :: t -> IndexType
   getIndex   :: t -> Int
 
@@ -110,7 +112,6 @@ instance Show IndexType where
 
 toUntagged :: (Tagged t) => t -> Pair IndexType UntaggedIndex
 toUntagged ind = getTag ind :!: getIndex ind
-
 
 
 --      ┌───────────────────────┐

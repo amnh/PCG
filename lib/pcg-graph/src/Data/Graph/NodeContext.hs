@@ -74,12 +74,23 @@ type RootIndexData d e = IndexData (RootContext e) d
 
 
 rootIndexData
-  :: d
+  :: r
   -> Either (ChildInfo e) (ChildInfo e :!: ChildInfo e)
-  -> RootIndexData d e
-rootIndexData d inds =
+  -> RootIndexData r e
+rootIndexData r inds =
   IndexData
-  { nodeData = d
+  { nodeData = r
+  , nodeContext = RootContext inds
+  }
+
+rootIndexDataA
+  :: forall r e f . (Applicative f)
+  => r
+  -> Either (ChildInfo e) (ChildInfo e :!: ChildInfo e)
+  -> RootIndexData (f r) e
+rootIndexDataA r inds =
+  IndexData
+  { nodeData = pure r
   , nodeContext = RootContext inds
   }
 
@@ -126,6 +137,22 @@ networkIndexData d parInd childInd =
           }
   }
 
+networkIndexDataA
+  :: forall n e f . (Applicative f)
+  => n
+  -> ParentIndex :!: ParentIndex
+  -> ChildInfo e
+  -> NetworkIndexData (f n) e
+networkIndexDataA n parInd childInd =
+  IndexData
+  { nodeData = pure n
+  , nodeContext
+      = NetworkContext
+          { parentIndsN = parInd
+          , childInfoN  = childInd
+          }
+  }
+
 
 data TreeContext e = TreeContext
   { parentIndsT :: {-# UNPACK #-} !ParentIndex
@@ -145,6 +172,22 @@ treeIndexData
 treeIndexData d parInd childInd =
   IndexData
   { nodeData = d
+  , nodeContext
+      = TreeContext
+          { parentIndsT = parInd
+          , childInfoT  = childInd
+          }
+  }
+
+treeIndexDataA
+  :: forall t e f . (Applicative f)
+  => t
+  -> ParentIndex
+  -> ChildInfo e :!: ChildInfo e
+  -> TreeIndexData (f t) e
+treeIndexDataA t parInd childInd =
+  IndexData
+  { nodeData = pure t
   , nodeContext
       = TreeContext
           { parentIndsT = parInd

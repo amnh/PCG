@@ -17,6 +17,7 @@
 module Data.Graph.Type
   ( Graph(..)
   , GraphBuilder(..)
+  , MGraph(..)
   , leafGB
   , treeGB
   , rootGB
@@ -49,6 +50,7 @@ import Test.QuickCheck.Arbitrary
 import TextShow                  hiding (Builder)
 import VectorBuilder.Builder as VB
 import VectorBuilder.Vector as VB
+import Data.Vector.Mutable (MVector)
 
 --      ┌─────────────┐
 --      │    Types    │
@@ -72,13 +74,26 @@ data  Graph
         (n :: Type)
         (t :: Type)
    = Graph
-   { leafReferences    :: Vector (LeafIndexData       t   )
-   , treeReferences    :: Vector (TreeIndexData    (f n) e)
-   , networkReferences :: Vector (NetworkIndexData (f n) e)
-   , rootReferences    :: Vector (RootIndexData    (f n) e)
+   { leafReferences    :: {-# unpack #-} !(Vector (LeafIndexData       t   ))
+   , treeReferences    :: {-# unpack #-} !(Vector (TreeIndexData    (f n) e))
+   , networkReferences :: {-# unpack #-} !(Vector (NetworkIndexData (f n) e))
+   , rootReferences    :: {-# unpack #-} !(Vector (RootIndexData    (f n) e))
    , cachedData        :: c
    }
    deriving stock Show
+
+data  MGraph
+        (s :: Type)
+        (f :: Type -> Type)
+        (e :: Type)
+        (n :: Type)
+        (t :: Type)
+   = MGraph
+   { leafReferencesM    :: {-# UNPACK #-} !(MVector s (LeafIndexData       t   ))
+   , treeReferencesM    :: {-# UNPACK #-} !(MVector s (TreeIndexData    (f n) e))
+   , networkReferencesM :: {-# UNPACK #-} !(MVector s (NetworkIndexData (f n) e))
+   , rootReferencesM    :: {-# UNPACK #-} !(MVector s (RootIndexData    (f n) e))
+   }
 
 
 data  GraphBuilder
