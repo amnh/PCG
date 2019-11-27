@@ -25,8 +25,8 @@ main = do
      Right filePaths -> do
        fileData <- readFiles filePaths
        case performFileDiff =<< parseFiles fileData of
-         Left  parseError   -> putStr parseError
-         Right resultStream -> putStr resultStream
+         Left  parseErrorMsg -> putStr parseErrorMsg
+         Right resultStream  -> putStr resultStream
 
 
 parseArgs :: [String] -> Either String (FilePath, FilePath)
