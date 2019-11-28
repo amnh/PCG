@@ -100,7 +100,7 @@ library
     mtl                      >= 2.0       && < 3.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
 
   exposed-modules:

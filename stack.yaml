@@ -1,6 +1,7 @@
 allow-newer: true
 
-compiler: ghc-8.8.1
+#compiler: ghc-8.8.1
+compiler: ghc-8.10.0.20191123
 
 compiler-check: match-exact
 
@@ -8,7 +9,6 @@ dump-logs: all
 
 extra-deps:
   - algebraic-graphs-0.4
-  - bv-little-1.1.1
   - clustering-0.4.1
   - compact-0.1.0.1
   - graphviz-2999.20.0.3
@@ -18,6 +18,10 @@ extra-deps:
   - tasty-rerun-1.1.14
   - vector-th-unbox-0.2.1.7
   - wl-pprint-text-1.2.0.0
+  - git: https://github.com/ekmett/lens
+    commit: 12768f14b1112d4f4f1036861197e0610c325853
+  - git: https://github.com/sol/doctest
+    commit: ddef72d3512534533a87f7ca16d25e4d9a80ebed
 
 ghc-options:
   "$everything": -j -fdiagnostics-color=always
@@ -44,4 +48,50 @@ packages:
 
 require-stack-version: ">=2.1.3"
 
-resolver: nightly-2019-11-25
+resolver: nightly-2019-12-10
+#resolver: ghc-8.10.0.20191123
+
+setup-info:
+  ghc:
+    linux-aarch64:
+        8.10.0.20191123:
+            url: "https://downloads.haskell.org/ghc/8.10.1-alpha1/ghc-8.10.0.20191123-aarch64-deb9-linux.tar.xz"
+            content-length: 309558936
+            sha1: 278b854f5cd1b19e24bc6eb3fc54e782be3e1713
+            sha256: 10bd2bce6452d0def47a8cd62c2e19d8640bbc13a44f0a6c24611c583503a13d
+    linux32:
+        8.10.0.20191123:
+            url: "https://downloads.haskell.org/ghc/8.10.1-alpha1/ghc-8.10.0.20191123-i386-deb9-linux.tar.xz"
+            content-length: 213157420
+            sha1: 786087d3157927a0468178ec528a3f77c2234b07
+            sha256: b39797c19a247999f52003ad64a50a05d6753049d54a1034cb173ee2d1a59876
+    macosx:
+        8.10.0.20191123:
+            url: "https://downloads.haskell.org/ghc/8.10.1-alpha1/ghc-8.10.0.20191123-x86_64-apple-darwin.tar.xz"
+            content-length: 190813292
+            sha1: 8f6e1edcbf03a303d9ce801158252a5f5ecb6702
+            sha256: 06ddd563840203e4914a36a923d3aaa8d730871859d5c2846cdf32018def3600
+    linux64-gmp4:
+        8.10.0.20191123:
+            url: "https://downloads.haskell.org/ghc/8.10.1-alpha1/ghc-8.10.0.20191123-x86_64-centos7-linux.tar.xz"
+            content-length: 197987052
+            sha1: 933ae437c462a3dfce495578500fe903317c3423
+            sha256: 702c9b15dfa425d019f6bdc5d5fa9deeb7442eb879b990988c534cbf067dcfaa
+    linux64-tinfo6:
+        8.10.0.20191123:
+            url: "https://downloads.haskell.org/ghc/8.10.1-alpha1/ghc-8.10.0.20191123-x86_64-fedora27-linux.tar.xz"
+            content-length: 212077296
+            sha1: 70178b743bb94b7d0e89d59036f6d7ef15240919
+            sha256: c82f3b924ac961bfd83f066c68c541593a48bd43a3c1514966a9429790ab40a8
+    windows64:
+        8.10.0.20191123:
+            url: "https://downloads.haskell.org/ghc/8.10.1-alpha1/ghc-8.10.0.20191123-x86_64-unknown-mingw32.tar.xz"
+            content-length: 425170216
+            sha1: aae4a9b83e5ad44235ec183e5155cf9099913190
+            sha256: f75d28793fb093df9de1329be62604a980150b159909d608b826f1b29bb369cc
+    linux64:
+        8.10.0.20191123:
+            url: "https://downloads.haskell.org/ghc/8.10.1-alpha1/ghc-8.10.0.20191123-x86_64-deb9-linux.tar.xz"
+            content-length: 166414600
+            sha1: c7372bd0c42a63a59e07f1dc4fc74ff55e3a4f1d
+            sha256: 33e29f716bd7364bdf5005a91d7b926c72e376111898233dc281fc2849f4bea7
