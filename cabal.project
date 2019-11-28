@@ -16,41 +16,21 @@ packages: .
           lib/pcg-validation-transformer
 
 constraints: algebraic-graphs==0.4,
-             attoparsec==0.13.2.3,
              bv-little==1.1.1,
-             optparse-applicative==0.15.0.0,
-             Cabal==3.0.0.0,
              clustering==0.4.1,
              compact==0.1.0.1,
              graphviz==2999.20.0.3,
-             lens==4.18.1,
-             microlens==0.4.11.2,
              pretty-tree==0.1.0.0,
-             polyparse==1.13,
-             primitive==0.7.0.0,
              tasty-rerun==1.1.14,
-             text-show-instances==3.8.1,
-             validation==1.1,
              vector-th-unbox==0.2.1.7,
              wl-pprint-text==1.2.0.0
 
-
-
 allow-newer: algebraic-graphs:*
-             attoparsec:*
              bv-little:*
-             optparse-applicative:*
-             Cabal:*
              clustering:*
              compact:*
              graphviz:*
-             lens:*
-             microlens:*
              pretty-tree:*
-             polyparse:*
-             primitive:*
              tasty-rerun:*
-             text-show-instances:*
-             validation:*
              vector-th-unbox:*
              wl-pprint-text:*
