@@ -1,36 +1,21 @@
 with-compiler: ghc-8.8.1
+
 packages: .
-          lib/pcg-alphabet
-          lib/pcg-core
-          lib/pcg-data-normalization
-          lib/pcg-data-unification
-          lib/pcg-evaluation
-          lib/pcg-exportable
-          lib/pcg-file-parsers
-          lib/pcg-file-source
-          lib/pcg-graph
-          lib/pcg-language
-          lib/pcg-serialize
-          lib/pcg-tcm-memo
-          lib/pcg-utility
-          lib/pcg-validation-transformer
+  lib/pcg-alphabet
+  lib/pcg-core
+  lib/pcg-data-normalization
+  lib/pcg-data-unification
+  lib/pcg-evaluation
+  lib/pcg-exportable
+  lib/pcg-file-parsers
+  lib/pcg-file-source
+  lib/pcg-graph
+  lib/pcg-language
+  lib/pcg-serialize
+  lib/pcg-tcm-memo
+  lib/pcg-utility
+  lib/pcg-validation-transformer
 
-constraints: algebraic-graphs==0.4,
-             bv-little==1.1.1,
-             clustering==0.4.1,
-             compact==0.1.0.1,
-             graphviz==2999.20.0.3,
-             pretty-tree==0.1.0.0,
-             tasty-rerun==1.1.14,
-             vector-th-unbox==0.2.1.7,
-             wl-pprint-text==1.2.0.0
-
-allow-newer: algebraic-graphs:*
-             bv-little:*
-             clustering:*
-             compact:*
-             graphviz:*
-             pretty-tree:*
-             tasty-rerun:*
-             vector-th-unbox:*
-             wl-pprint-text:*
+allow-newer:
+  base
+  polyparse
