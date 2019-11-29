@@ -319,10 +319,12 @@ printTaxaCounter x = unsafePerformIO $ do
     putStrLn $ fold [ "  - ", percentStr, "% ", shownInfo, "/", shownTotal, " taxa"]
     pure res
 
+
 netEdgeCounter :: IORef Int
 {-# NOINLINE netEdgeCounter #-}
 netEdgeCounter =
   unsafePerformIO (newIORef 1)
+
 
 costCounter :: IORef Int
 {-# NOINLINE costCounter #-}
@@ -601,16 +603,15 @@ iterativeGreedyNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
               unsafePerformIO $ do
                 putStrLn $ unlines
                          [ ""
-                         ,  "Starting network edge search..."
+                         , "Starting network edge search..."
                          , "Number of candidate network edges: " <> show len
                          , "Progress   "
                          ]
-
-                v    <- find smallerThanCurr
+                find smallerThanCurr
                                    -- See note above about rseq
                       . parMapBuffer 50 (rparWith rseq) f
                     <$> traverse tryNetworkEdge edgesToTry
-                pure v
+
         in
           case newNetworkOpt of
             Nothing              -> currentNetwork
@@ -622,7 +623,7 @@ iterativeGreedyNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
                   pure $ iterativeGreedyNetworkBuild newNetwork
   where
     f :: FinalDecorationDAG -> (ExtendedReal, FinalDecorationDAG)
-    f = (getCost &&& id)
+    f = getCost &&& id
 
     (PDAG2 dag _) = force $ wipeScoring currentNetwork
 

@@ -10,7 +10,7 @@
 
 module Data.Graph.Build where
 
-import           Control.Lens              hiding (indexed)
+import           Control.Lens
 import           Control.Monad
 import           Data.Foldable
 import           Data.Graph.Indices
@@ -106,7 +106,7 @@ naiveWagnerBuild
   => f t -> c -> FinalDecorationGraph c e n t
 naiveWagnerBuild ts cache =
   case toNonEmpty ts of
-      t:|[]  -> decorate @c @e @n @t $
+      t:|[]  -> decorate @c @e @n @t
                   Graph
                   { leafReferences
                       = fromList
@@ -122,7 +122,7 @@ naiveWagnerBuild ts cache =
                   , cachedData = cache
                   }
 
-      x:|[y] -> decorate @c @e @n @t $
+      x:|[y] -> decorate @c @e @n @t
                   Graph
                    { leafReferences
                       = fromList

@@ -62,7 +62,7 @@ clusterLeaves meta leaves opt = dendro
     dendro =
       (\x -> trace
                (drawDendrogram
-                  $ fmap (nodeLabelToString . (view _nodeDecorationDatum)) x)
+                  $ fmap (nodeLabelToString . view _nodeDecorationDatum) x)
                x) $
       hclust opt leafSetVector distance
 

@@ -13,9 +13,9 @@
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE MagicHash             #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE Strict                #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Numeric.Extended.Natural
   ( ExtendedNatural()
@@ -23,18 +23,18 @@ module Numeric.Extended.Natural
   , Finite
   ) where
 
-import Control.DeepSeq
-import Control.Monad
-import Data.Bits
-import GHC.Exts
-import GHC.Generics
-import GHC.Integer.Logarithms
-import Numeric.Extended.Internal
-import Test.QuickCheck
-import qualified Data.Vector.Generic as G
-import qualified Data.Vector.Unboxed as U
+import           Control.DeepSeq
+import           Control.Monad
+import           Data.Bits
+import qualified Data.Vector.Generic         as G
 import qualified Data.Vector.Generic.Mutable as M
-import qualified Data.Vector.Primitive as P
+import qualified Data.Vector.Primitive       as P
+import qualified Data.Vector.Unboxed         as U
+import           GHC.Exts
+import           GHC.Generics
+import           GHC.Integer.Logarithms
+import           Numeric.Extended.Internal
+import           Test.QuickCheck
 
 
 -- |
