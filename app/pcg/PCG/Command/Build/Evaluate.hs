@@ -40,6 +40,7 @@ import           Control.Parallel.Strategies
 import           Data.Coerce                                   (coerce)
 import           Data.Compact                                  (compact, getCompact)
 import           Data.Foldable
+import           Data.GraphViz.Printing
 import qualified Data.IntMap                                   as IM
 import qualified Data.IntSet                                   as IS
 import           Data.Key
@@ -52,6 +53,7 @@ import           Data.NodeLabel
 import           Data.Ord                                      (comparing)
 import           Data.Semigroup.Foldable
 import           Data.ShortText.Custom
+import           Data.Text.Lazy                                (unpack)
 import           Data.Vector                                   (Vector, snoc)
 import           Data.Vector.NonEmpty                          (unsafeFromVector)
 import qualified Data.Vector.NonEmpty                          as NE
@@ -166,11 +168,16 @@ networkBuildLogic isInitialBuild sol n = do
 --    let
 --      bestTrees :: NonEmpty FinalDecorationDAG
 --      bestTrees = toNonEmpty . NE.head $ phylogeneticForests sol
-    liftIO $ putStrLn "Beginning network construction..."
-    liftIO $ putStrLn ""
+    liftIO . putStrLn $ unlines
+      [ "Beginning network construction..."
+      , "Input Graph:"
+      , replicate 16 '<'
+      , unpack . renderDot $ toDot sol
+      , replicate 16 '>'
+      ]
     if isInitialBuild then
    -- If we have only the trivial forest solution then first perform a
-   -- Wagner build before tryig to add network edges.
+   -- Wagner build before trying to add network edges.
       buildLogicMethod naiveNetworkParallelBuild sol n
     else
       do
@@ -533,12 +540,12 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
         -- the cost, the minimization routine will discard the incoherent,
         -- infinite-cost candidates and we won't run into interesting runtime problems.
         let !edgesToTry = x:|xs
-            len = length xs + 1
+            len = length xs
             (minNewCost, !bestNewNetwork) =
               unsafePerformIO $ do
                 putStrLn $ unlines
                          [ ""
-                         ,  "Starting network edge search..."
+                         , "Starting network edge search..."
                          , "Number of candidate network edges: " <> show len
                          , "Progress   "
                          ]
@@ -594,8 +601,8 @@ iterativeGreedyNetworkBuild
   -> FinalDecorationDAG
 iterativeGreedyNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
     case toList $ DAG.candidateNetworkEdges inputDag of
-      []   -> currentNetwork
-      x:xs ->
+      [] -> currentNetwork
+      xs ->
         -- DO NOT use rdeepseq! Prefer rseq!
         -- When trying candidate edges, we can construct graphs for which a
         -- pre-order traversal is not logically possible. These graphs will
@@ -603,32 +610,18 @@ iterativeGreedyNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
         -- the cost, the minimization routine will discard the incoherent,
         -- infinite-cost candidates and we won't run into interesting runtime problems.
         let edgesToTry :: [((Int, Int), (Int, Int))]
-            !edgesToTry = x : xs
-
-            len = length xs + 1
+            !edgesToTry = xs
 
             currCost :: ExtendedReal
-            currCost = initNetworkEdgeCounter len $ getCost currentNetwork
+            !currCost = initNetworkEdgeCounter (length xs) $ getCost currentNetwork
 
             smallerThanCurr :: (ExtendedReal, FinalDecorationDAG) -> Bool
             smallerThanCurr (c, _) = c <= currCost
 
+            -- See note above about rseq
             newNetworkOpt :: Maybe (ExtendedReal, FinalDecorationDAG)
-            newNetworkOpt = 
-{-            
-              unsafePerformIO $ do
-                putStrLn $ unlines
-                         [ ""
-                         , "Starting network edge search..."
-                         , "Number of candidate network edges: " <> show len
-                         , "Progress   "
-                         ]
--}
-                find smallerThanCurr
-                                   -- See note above about rseq
-                      $ parMapBuffer 8 (rparWith rseq) (f
-                      . tryNetworkEdge) edgesToTry
-
+            newNetworkOpt = find smallerThanCurr $
+              parMapBuffer 8 (rparWith rseq) (f . tryNetworkEdge) edgesToTry
         in
           case newNetworkOpt of
             Nothing              -> currentNetwork
@@ -636,6 +629,10 @@ iterativeGreedyNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
               unsafePerformIO $
                 do
                   putStrLn "Added network edge"
+                  putStrLn "New Graph:"
+                  putStrLn $ replicate 16 '<'
+                  putStrLn . unpack . renderDot $ toDot newNetwork
+                  putStrLn $ replicate 16 '>'
                   putStrLn "Continuing search:"
                   pure $ iterativeGreedyNetworkBuild newNetwork
   where
