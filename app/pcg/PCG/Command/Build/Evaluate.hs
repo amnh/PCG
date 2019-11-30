@@ -292,24 +292,18 @@ naiveWagnerBuild metaSeq ns =
     fromRefDAG = performDecoration . (`PDAG2`  metaSeq) . resetMetadata
 
 
-taxaCounter :: IORef (Word, Word)
-{-# NOINLINE taxaCounter #-}
-taxaCounter =
-  unsafePerformIO (newIORef (0,1))
-
-
-initTaxaCounter :: NFData a => Int -> a -> a
-initTaxaCounter totalTaxa x = unsafePerformIO $ do
-    writeIORef taxaCounter (3, toEnum totalTaxa)
-    putStrLn $ unwords ["Beginning Wagner build of", show totalTaxa, "taxa"]
+initCounter :: (Enum x, NFData a) => IORef (x, x) -> String -> String -> Int -> Int -> a -> a
+initCounter ref prefix name startNum totalNum x = unsafePerformIO $ do
+    writeIORef ref (toEnum startNum, toEnum totalNum)
+    putStrLn $ unwords [prefix, show totalNum, name]
     pure $ force x
 
 
-printTaxaCounter :: NFData a => a -> a
-printTaxaCounter x = unsafePerformIO $ do
+printCounter :: (Enum x, NFData a, Real x, Real y, Show x, Show y) => IORef (x, y) -> a -> a
+printCounter ref x = unsafePerformIO $ do
     let res = force x
-    modifyIORef taxaCounter (first succ)
-    (count, total) <- readIORef taxaCounter
+    modifyIORef ref (first succ)
+    (count, total) <- readIORef ref
     let shownTotal = show total
     let shownCount = show count
     let shownInfo  = replicate (length shownTotal - length shownCount) ' ' <> shownCount
@@ -320,10 +314,32 @@ printTaxaCounter x = unsafePerformIO $ do
     pure res
 
 
-netEdgeCounter :: IORef Int
+taxaCounter :: IORef (Word, Word)
+{-# NOINLINE taxaCounter #-}
+taxaCounter =
+  unsafePerformIO $ newIORef (0,1)
+
+
+initTaxaCounter :: NFData a => Int -> a -> a
+initTaxaCounter = initCounter taxaCounter "Beginning Wagner build of" "taxa" 3
+
+
+printTaxaCounter :: NFData a => a -> a
+printTaxaCounter = printCounter taxaCounter
+
+  
+netEdgeCounter :: IORef (Word, Word)
 {-# NOINLINE netEdgeCounter #-}
 netEdgeCounter =
-  unsafePerformIO (newIORef 1)
+  unsafePerformIO $ newIORef (0,1)
+
+
+initNetworkEdgeCounter :: NFData a => Int -> a -> a
+initNetworkEdgeCounter = initCounter netEdgeCounter "Beginning network search with" "edges" 0
+
+
+printNetworkEdgeCounter :: NFData a => a -> a
+printNetworkEdgeCounter = printCounter netEdgeCounter
 
 
 costCounter :: IORef Int
@@ -338,7 +354,6 @@ naiveNetworkBuild
   -> f FinalCharacterNode
   -> FinalDecorationDAG
 naiveNetworkBuild meta = iterativeGreedyNetworkBuild . naiveWagnerBuild meta
-
 
 
 naiveForestBuild
@@ -549,8 +564,8 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
     tryNetworkEdge :: ((Int, Int), (Int, Int)) -> IO FinalDecorationDAG
     tryNetworkEdge e =
         do
-          networkEdges <- readIORef netEdgeCounter
-          writeIORef netEdgeCounter (networkEdges + 1)
+          networkEdges <- readIORef costCounter
+          modifyIORef costCounter $ succ
           putStrLn $ "  - " <> show networkEdges <> " network edges tried."
           pure . performDecoration . (`PDAG2` metaSeq) . connectEdge' $ e
 
@@ -593,13 +608,14 @@ iterativeGreedyNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
             len = length xs + 1
 
             currCost :: ExtendedReal
-            currCost = getCost currentNetwork
+            currCost = initNetworkEdgeCounter len $ getCost currentNetwork
 
             smallerThanCurr :: (ExtendedReal, FinalDecorationDAG) -> Bool
             smallerThanCurr (c, _) = c <= currCost
 
             newNetworkOpt :: Maybe (ExtendedReal, FinalDecorationDAG)
-            newNetworkOpt =
+            newNetworkOpt = 
+{-            
               unsafePerformIO $ do
                 putStrLn $ unlines
                          [ ""
@@ -607,10 +623,11 @@ iterativeGreedyNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
                          , "Number of candidate network edges: " <> show len
                          , "Progress   "
                          ]
+-}
                 find smallerThanCurr
                                    -- See note above about rseq
-                      . parMapBuffer 50 (rparWith rseq) f
-                    <$> traverse tryNetworkEdge edgesToTry
+                      $ parMapBuffer 8 (rparWith rseq) (f
+                      . tryNetworkEdge) edgesToTry
 
         in
           case newNetworkOpt of
@@ -623,16 +640,19 @@ iterativeGreedyNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
                   pure $ iterativeGreedyNetworkBuild newNetwork
   where
     f :: FinalDecorationDAG -> (ExtendedReal, FinalDecorationDAG)
-    f = getCost &&& id
+    f = printNetworkEdgeCounter . getCost &&& id
 
     (PDAG2 dag _) = force $ wipeScoring currentNetwork
 
-    tryNetworkEdge :: ((Int, Int), (Int, Int)) -> IO FinalDecorationDAG
-    tryNetworkEdge e = do
-      networkEdges <- readIORef netEdgeCounter
-      writeIORef netEdgeCounter (networkEdges + 1)
-      putStrLn $ "  - " <> show networkEdges <> " network edges tried."
-      pure . performDecoration . (`PDAG2` metaSeq) . connectEdge' $ e
+    tryNetworkEdge :: ((Int, Int), (Int, Int)) -> FinalDecorationDAG
+    tryNetworkEdge = performDecoration . (`PDAG2` metaSeq) . connectEdge'
+
+--    tryNetworkEdge e = do
+--      networkEdges <- readIORef netEdgeCounter
+--      writeIORef netEdgeCounter (networkEdges + 1)
+--      putStrLn $ "  - " <> show networkEdges <> " network edges tried."
+--      pure . performDecoration . (`PDAG2` metaSeq) . connectEdge' $ e
+
 
     getCost (PDAG2 v _) = dagCost $ graphData v
 
