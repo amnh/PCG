@@ -78,6 +78,7 @@ import           Data.Unification.Error
 import           Data.Unification.InputData
 import           Data.Validation
 import           Prelude                             hiding (lookup)
+import qualified Data.DList.NonEmpty                 as NEDL
 
 
 --type FileSource = ShortText
@@ -117,17 +118,29 @@ performUnification inputPaths InputData{..} = fmap reifiedSolution <$> dagForest
           (Just someForests, Nothing) -> Success . Left  . PhylogeneticSolution $ someForests
 
           -- Build a default forest of singleton components
-          (Nothing, Just v@(charSeqs, _)) -> Success . Right . PhylogeneticSolution . pure
-                          . foldMap1 (singletonComponent v) . NE.fromList $ toKeyedList charSeqs
-
+          (Nothing, Just v@(charSeqs, _))
+            -> Success . Right . PhylogeneticSolution . pure
+             . PhylogeneticForest . NEDL.toNonEmpty
+             . (foldMap1 (singletonComponentDL v)) . NE.fromList $ toKeyedList charSeqs
           -- Build a forest with the corresponding character data on the nodes
           (Just someForests, Just (charSeqs, meta)) -> Success . Right . PhylogeneticSolution $ matchToChars meta charSeqs <$> someForests
       where
+        trivialRootName = nodeLabel "Trivial Root"
+        trivialRootIndex cs
+          = DAG.IndexData
+              (PNode trivialRootName (defaultCharacterSequenceDatum cs))
+              mempty
+              (IM.singleton 1 mempty)
 
-        singletonComponent (charSeqs, meta) (label, datum) = PhylogeneticForest . pure . PDAG meta $ DAG.fromList
-            [ (        mempty, PNode (nodeLabel "Trivial Root") (defaultCharacterSequenceDatum charSeqs), IM.singleton 1 mempty)
-            , (IS.singleton 0, PNode (nodeLabel label         )                         datum, mempty               )
-            ]
+        leafNodeIndex l d
+          = DAG.IndexData
+              (PNode (nodeLabel l) d)
+              (IS.singleton 0)
+              mempty
+
+        singletonComponentDL (charSeqs, meta) (label, datum) =  NEDL.singleton . PDAG meta $
+          DAG.trivialRefDAG (trivialRootIndex charSeqs) (leafNodeIndex label datum)
+
 
 
 defaultCharacterSequenceDatum
@@ -306,8 +319,24 @@ collapseAndMerge xs = extractResult $ foldlM sequenceMerge initialMap ms
 
     -- Run the stateful computation and extract the resulting tree from the
     -- computation value and the metadata sequence from the computation state
-    extractResult = (fmap CS.fromNonEmpty *** MD.fromNonEmpty . fmap fst)
-                  . (`runState` initialState)
+    extractResult
+      :: State (NonEmpty (UnifiedMetadataBlock, UnifiedCharacterBlock))
+                           (Map ShortText (NonEmpty UnifiedCharacterBlock))
+      -> ( Map ShortText
+                (CharacterSequence
+                   UnifiedContinuousCharacter
+                   UnifiedDiscreteCharacter
+                   UnifiedDiscreteCharacter
+                   UnifiedDiscreteCharacter
+                   UnifiedDiscreteCharacter
+                   UnifiedDynamicCharacter)
+         , MetadataSequence ()
+         )
+    extractResult st =
+      let
+        res = st `runState` initialState
+      in
+        (fmap CS.fromNonEmpty *** MD.fromNonEmpty . fmap fst) $ res
 
     sequenceMerge :: Map ShortText (NonEmpty UnifiedCharacterBlock)
                   -> PartiallyUnififedCharacterSequences (TCM, TCMStructure)
