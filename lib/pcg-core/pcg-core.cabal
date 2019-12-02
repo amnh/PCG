@@ -291,6 +291,7 @@ library pcg-data-structures
     unordered-containers     >= 0.2.9     && < 1.0,
     -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
+    vector-builder           >= 0.3.7     && < 0.4,
     vector-binary-instances  >= 0.2.1.1   && < 0.3,
     -- >=3.4 required for corrected definition of (!) & index
     vector-instances         >= 3.4       && < 3.5,
