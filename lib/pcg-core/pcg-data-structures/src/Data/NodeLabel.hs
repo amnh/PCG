@@ -67,12 +67,14 @@ type instance Element NodeLabel = Char
 -- |
 -- Constructor for a 'NodeLabel'
 nodeLabel :: ShortText -> NodeLabel
-nodeLabel = NL
+{-# INLINE nodeLabel #-}
+nodeLabel = coerce
 
 -- |
 -- Construct a 'NodeLabel' from a 'String'
 nodeLabelString :: String -> NodeLabel
-nodeLabelString = NL. fromString
+{-# INLINE nodeLabelString #-}
+nodeLabelString = coerce . fromString
 
 -- |
 -- Check if a NodeLabel is empty.
