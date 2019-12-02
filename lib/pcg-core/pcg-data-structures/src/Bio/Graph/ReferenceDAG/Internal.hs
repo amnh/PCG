@@ -1446,7 +1446,7 @@ mapRefDAG eFn lFn iFn refDAG =
 
 
 trivialRefDAG :: IndexData e n ->  IndexData e n -> ReferenceDAG () e n
-{-# trivialRefDAG #-}
+{-# INLINE trivialRefDAG #-}
 trivialRefDAG root node =
     ReferenceDAG
     { references = V.fromList [root, node]
