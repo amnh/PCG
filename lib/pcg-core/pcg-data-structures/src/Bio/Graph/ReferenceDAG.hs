@@ -13,6 +13,7 @@
 module Bio.Graph.ReferenceDAG
   ( -- * Efficient access
     ReferenceDAG(graphData)
+  , IndexData(..)
   , GraphData(..)
   , NodeRef()
   , nodeFoldMap
@@ -33,6 +34,7 @@ module Bio.Graph.ReferenceDAG
   -- * Effciently construct a DAG
   , fromList
   , unfoldDAG
+  , trivialRefDAG
   -- * Remove metadata information and replace with a default
   , defaultGraphMetadata
   , defaultMetadata
