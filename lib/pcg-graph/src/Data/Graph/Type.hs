@@ -18,6 +18,17 @@ module Data.Graph.Type
   ( Graph(..)
   , GraphBuilder(..)
   , MGraph(..)
+  , newMGraph
+  , writeL
+  , writeR
+  , writeN
+  , writeT
+  , readL
+  , readR
+  , readN
+  , readT
+  , unsafeFreezeGraph
+  , unsafeThawGraph
   , leafGB
   , treeGB
   , rootGB
@@ -39,18 +50,20 @@ module Data.Graph.Type
   , unsafeNetworkInd
   )where
 
+import Prelude hiding (read)
 import Control.Lens              hiding (index)
 import Data.Graph.Indices
 import Data.Graph.NodeContext
 import Data.Kind                 (Type)
 import Data.Pair.Strict
-import Data.Vector               (Vector, generate)
+import Data.Vector               (Vector, generate, unsafeFreeze, unsafeThaw)
 import Data.Vector.Instances     ()
 import Test.QuickCheck.Arbitrary
 import TextShow                  hiding (Builder)
 import VectorBuilder.Builder as VB
 import VectorBuilder.Vector as VB
-import Data.Vector.Mutable (MVector)
+import Data.Vector.Mutable (MVector, new, write, read)
+import Control.Monad.Primitive
 
 --      ┌─────────────┐
 --      │    Types    │
@@ -94,6 +107,57 @@ data  MGraph
    , networkReferencesM :: {-# UNPACK #-} !(MVector s (NetworkIndexData (f n) e))
    , rootReferencesM    :: {-# UNPACK #-} !(MVector s (RootIndexData    (f n) e))
    }
+
+newMGraph :: PrimMonad m => (Int, Int, Int, Int) -> m (MGraph (PrimState m) f e n t)
+newMGraph (numL, numT, numN, numR) =
+  do
+    leafReferencesM     <- new numL
+    treeReferencesM     <- new numT
+    networkReferencesM  <- new numN
+    rootReferencesM     <- new numR
+    pure MGraph{..}
+
+writeL :: PrimMonad m => MGraph (PrimState m) f e n t -> Int -> LeafIndexData t -> m ()
+writeL MGraph{..} ind li = write leafReferencesM ind li
+
+writeT :: PrimMonad m => MGraph (PrimState m) f e n t -> Int -> TreeIndexData (f n) e -> m ()
+writeT MGraph{..} ind ti = write treeReferencesM ind ti
+
+writeN :: PrimMonad m => MGraph (PrimState m) f e n t -> Int -> NetworkIndexData (f n) e -> m ()
+writeN MGraph{..} ind ni = write networkReferencesM ind ni
+
+writeR :: PrimMonad m => MGraph (PrimState m) f e n t -> Int -> RootIndexData (f n) e  -> m ()
+writeR MGraph{..} ind ri = write rootReferencesM ind ri
+
+readL :: PrimMonad m => MGraph (PrimState m) f e n t -> Int -> m (LeafIndexData t)
+readL MGraph{..} ind = read leafReferencesM ind
+
+readT :: PrimMonad m => MGraph (PrimState m) f e n t -> Int -> m (TreeIndexData (f n) e)
+readT MGraph{..} ind = read treeReferencesM ind
+
+readN :: PrimMonad m => MGraph (PrimState m) f e n t -> Int -> m (NetworkIndexData (f n) e)
+readN MGraph{..} ind = read networkReferencesM ind
+
+readR :: PrimMonad m => MGraph (PrimState m) f e n t -> Int -> m (RootIndexData (f n) e)
+readR MGraph{..} ind = read rootReferencesM ind
+
+unsafeFreezeGraph :: PrimMonad m => MGraph (PrimState m) f e n t -> c -> m (Graph f c e n t)
+unsafeFreezeGraph MGraph{..} c =
+  do
+    l <- unsafeFreeze leafReferencesM
+    t <- unsafeFreeze treeReferencesM
+    n <- unsafeFreeze networkReferencesM
+    r <- unsafeFreeze rootReferencesM
+    pure $ Graph l t n r c
+
+unsafeThawGraph :: PrimMonad m => Graph f c e n t -> m (MGraph (PrimState m) f e n t)
+unsafeThawGraph Graph{..} =
+  do
+    l <- unsafeThaw leafReferences
+    t <- unsafeThaw treeReferences
+    n <- unsafeThaw networkReferences
+    r <- unsafeThaw rootReferences
+    pure $ MGraph l t n r
 
 
 data  GraphBuilder
