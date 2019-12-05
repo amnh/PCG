@@ -15,6 +15,7 @@ module Data.Graph.Indices where
 import Control.Lens
 import Data.Monoid
 import Data.Pair.Strict
+import Data.Coerce
 
 
 newtype LeafInd = LeafInd {getLeafInd :: Int}
@@ -83,6 +84,14 @@ childInfo indtype n e =
   { childIndex = tagValue indtype n
   , edgeData   = e
   }
+
+childInfoTag :: TaggedIndex -> e -> ChildInfo e
+childInfoTag tag e =
+  ChildInfo
+  { childIndex = coerce tag
+  , edgeData   = e
+  }
+
 
 class HasChildIndex s a | s -> a where
   _childIndex :: Lens' s a
