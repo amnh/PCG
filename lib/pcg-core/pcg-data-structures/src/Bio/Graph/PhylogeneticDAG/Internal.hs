@@ -802,4 +802,3 @@ renderDisplayForestNewick dag topo = fromText . T.unlines $ renderDisplayTree <$
         openParensIn = T.length . T.filter (== '(')
 
     renderLeaf _k = showt
-

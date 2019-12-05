@@ -14,6 +14,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module Bio.Sequence.Block.Builder
   ( PartialCharacterBlock(..)
@@ -23,9 +24,11 @@ module Bio.Sequence.Block.Builder
   ) where
 
 
-import Data.DList
 import Data.TCM
 import Data.Vector.Instances ()
+import VectorBuilder.Builder (Builder)
+import qualified VectorBuilder.Builder as VB
+
 
 
 -- |
@@ -36,14 +39,13 @@ import Data.Vector.Instances ()
 -- Use '(<>)' to construct larger blocks.
 data  PartialCharacterBlock u v w x y z
     = PartialCharacterBlock
-    { partialContinuousCharacterBins  :: DList u
-    , partialNonAdditiveCharacterBins :: DList v
-    , partialAdditiveCharacterBins    :: DList w
-    , partialMetricCharacterBins      :: DList x
-    , partialNonMetricCharacterBins   :: DList y
-    , partialDynamicCharacters        :: DList z
+    { partialContinuousCharacterBins  :: Builder u
+    , partialNonAdditiveCharacterBins :: Builder v
+    , partialAdditiveCharacterBins    :: Builder w
+    , partialMetricCharacterBins      :: Builder x
+    , partialNonMetricCharacterBins   :: Builder y
+    , partialDynamicCharacters        :: Builder z
     }
-    deriving stock    (Eq)
 
 
 instance Semigroup (PartialCharacterBlock u v w x y z) where
@@ -62,12 +64,12 @@ instance Semigroup (PartialCharacterBlock u v w x y z) where
 -- |
 -- Construct a singleton block containing a /continuous/ character.
 continuousSingleton :: c -> PartialCharacterBlock c v w x y z
-continuousSingleton dec = PartialCharacterBlock (pure dec) mempty mempty mempty mempty mempty
+continuousSingleton dec = PartialCharacterBlock (VB.singleton dec) mempty mempty mempty mempty mempty
 
 
 -- |
 -- Construct a singleton block containing a /discrete/ character.
-discreteSingleton :: TCMStructure -> s -> PartialCharacterBlock c s s s s d
+discreteSingleton :: forall c s d . TCMStructure -> s -> PartialCharacterBlock c s s s s d
 discreteSingleton struct dec =
     case struct of
       NonSymmetric -> PartialCharacterBlock mempty mempty mempty mempty bin    mempty
@@ -77,11 +79,12 @@ discreteSingleton struct dec =
       Additive     -> PartialCharacterBlock mempty mempty bin    mempty mempty mempty
       NonAdditive  -> PartialCharacterBlock mempty bin    mempty mempty mempty mempty
   where
-    bin = pure dec
+    bin :: Builder s
+    {-# INLINE bin #-}
+    bin = VB.singleton dec
 
 
 -- |
 -- Construct a singleton block containing a /dynamic/ character.
 dynamicSingleton :: d -> PartialCharacterBlock u v w x y d
-dynamicSingleton = PartialCharacterBlock mempty mempty mempty mempty mempty . pure
-
+dynamicSingleton = PartialCharacterBlock mempty mempty mempty mempty mempty . VB.singleton

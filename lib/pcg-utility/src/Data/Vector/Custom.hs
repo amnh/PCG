@@ -26,7 +26,4 @@ import qualified Data.Vector   as V
 -- Construct a 'Vector' from a list.
 {-# INLINE fromList' #-}
 fromList' :: [a] -> Vector a
-fromList' = uncurry V.fromListN . L.fold f
-  where
-    f :: L.Fold a (Int, [a])
-    f = (,) <$> L.length <*> L.list
+fromList' = V.fromList
