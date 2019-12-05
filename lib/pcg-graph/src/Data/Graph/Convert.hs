@@ -34,6 +34,7 @@ import Data.Monoid
 import qualified Data.Vector.Mutable as MV
 import Control.Monad.ST
 import Data.Coerce
+import Control.Monad.ST
 
 
 import Data.Map (Map)
@@ -50,7 +51,9 @@ data AdjacencyRelations t e =
 
 type AdjacencyGraph t e = Map t (AdjacencyRelations t e)
 
-
+-- |
+-- This function takes an unfold functin and gives a list of the distinct
+-- vertex seed names.
 getVertexNames
   :: forall a e t . (Ord a, Hashable a)
   => (a -> ([(a,e)], t, [(a,e)]))
@@ -83,6 +86,18 @@ getVertexNames unfoldFn start = nodes
               nodeChildren = fst <$> childEdges
             traverse_ tryAddNode (nodeParents <> nodeChildren)
 
+-- |
+-- This function takes an unfold function and a list of vertex seeds
+-- and checks they satisfy the valency condition for a phylogenetic netowrk namely,
+-- a node should be one of the following:
+--
+-- * A root node which has no parents and one or two children.
+--
+-- * A leaf node which has one parent and no children.
+--
+-- * A tree node which has one parent and two children.
+--
+-- * A network node which has two parents and one child.
 hasNetworkValence
   :: forall a e t . ()
   => (a -> ([(a,e)], t, [(a,e)]))
@@ -166,6 +181,96 @@ addIndices unfoldFn input =
                 , "This violates the valency conditions of a phylogenetic network."
                 ]
 
+indexAdjacencyGraphToGraph
+  :: forall a f c e t . (Applicative f, Ord t)
+  => ((Int, Int, Int, Int), Map t ([(t, e)], [(t, e)], TaggedIndex))
+  -> Graph f () e t t
+indexAdjacencyGraphToGraph ((numL, numT, numN, numR), adjGraph) = undefined
+  where
+    lookupTagInd :: t -> TaggedIndex
+    lookupTagInd =
+      (view _3) . (adjGraph M.!)
+
+    getTwoChildren :: [(t, e)] -> ChildInfo e :!: ChildInfo e
+    getTwoChildren cVals =
+      let
+        cEdges = getPair cVals
+        cTagIndL  = lookupTagInd . (view (_left . _1)) $ cEdges
+        ctagIndR  = lookupTagInd . (view (_left . _1)) $ cEdges
+        cInfo1 = childInfoTag cTagIndL (view (_left  . _2) cEdges)
+        cInfo2 = childInfoTag cTagIndL (view (_right . _2) cEdges)
+      in
+        cInfo1 :!: cInfo2
+
+    getOneChild :: [(t, e)] -> ChildInfo e
+    getOneChild cVals =
+      let
+        cEdge    = head $ cVals
+        cTagInd  = lookupTagInd . (view _1) $ cEdge
+      in
+        childInfoTag cTagInd (view _2 cEdge)
+
+    getParentIndex :: (t, e) -> ParentIndex
+    getParentIndex = coerce . (view _3) . (adjGraph M.!) . (view _1)
+
+    getOneParent :: [(t, e)] -> ParentIndex
+    getOneParent = getParentIndex . head
+
+    getTwoParents :: [(t, e)] -> ParentIndex :!: ParentIndex
+    getTwoParents = bimap getParentIndex getParentIndex . (getPair)
+
+    toLeafData :: t -> ([(t, e)], [(t, e)], TaggedIndex) -> LeafIndexData t
+    toLeafData name (parVals, _, untaggedIndex)
+      = leafIndexData name (getOneParent parVals)
+
+    toRootData :: t -> ([(t, e)], [(t, e)], TaggedIndex) -> RootIndexData (f t) e
+    toRootData name (_, childVals, untaggedIndex)
+      = let
+          cInfo :: Either (ChildInfo e) (ChildInfo e :!: ChildInfo e)
+          cInfo =
+            case length childVals of
+              1 -> Left  (getOneChild childVals)
+              2 -> Right (getTwoChildren childVals)
+              _ -> error
+                     $ fold
+                        [ "In Data.Graph.Convert.indexAdjacencyGraphToGraph.toRootData"
+                        , "found root with more than 2 roots"
+                        ]
+        in
+          rootIndexDataA name cInfo
+
+    toTreeData :: t -> ([(t, e)], [(t, e)], TaggedIndex) -> TreeIndexData (f t) e
+    toTreeData name (parVals, childVals, untaggedIndex)
+      = treeIndexDataA name (getOneParent parVals) (getTwoChildren childVals)
+
+    toNetworkData :: t -> ([(t, e)], [(t, e)], TaggedIndex) -> NetworkIndexData (f t) e
+    toNetworkData name (parVals, childVals, untaggedIndex)
+      = networkIndexDataA name (getTwoParents parVals) (getOneChild childVals)
+
+    addNodeContext
+      :: MGraph s f e t t
+      -> t -> ([(t, e)], [(t, e)], TaggedIndex) -> ST s ()
+    addNodeContext mgraph name rels@(parVals, childVals, nodeInd) =
+      let ind = untaggedIndex nodeInd in
+      case getTag nodeInd of
+        LeafTag    -> writeL mgraph ind (toLeafData name rels)
+        RootTag    -> writeR mgraph ind (toRootData name rels)
+        TreeTag    -> writeT mgraph ind (toTreeData name rels)
+        NetworkTag -> writeN mgraph ind (toNetworkData name rels)
+    
+    buildGraphM :: ST s (MGraph s f e t t)
+    buildGraphM =
+      do
+        mgraph <- newMGraph (numL, numT, numN, numR)
+        void (M.traverseWithKey (addNodeContext mgraph) adjGraph)
+        pure mgraph
+        
+        
+
+        
+        
+
+
 
 directConversion
   :: forall a f c e t . (Applicative f, Ord t)
@@ -219,16 +324,17 @@ directConversion unfoldFn nodes = undefined
                 = getPair childEdges
 
               leftChildTag, rightChildTag :: TaggedIndex
-              leftChildTag
+              leftChildTag = undefined
+              rightChildTag = undefined
              
  
               parentInd :: ParentIndex
               parentInd = coerce taggedParentIndex
 
               childInds :: ChildInfo e :!: ChildInfo e
-              childInds =
-                (childInfo _a _ _) :!:
-                  (childInfo _ _ _)
+              childInds = undefined
+--                (childInfo _a _ _) :!:
+--                  (childInfo _ _ _)
 
               leafIndData :: TreeIndexData (f t) e
               leafIndData = treeIndexDataA nodeVal parentInd childInds
@@ -313,6 +419,10 @@ addNewNode leftFr p c = modify (second (M.insert (leftFr) (AdjacencyRelations p 
 
 incrementFresh :: Int -> AdjacencyState t e
 incrementFresh n = modify (first (+ n))
+
+getPair :: [a] -> a :!: a
+getPair (x:y:xs) = x :!: y
+getPair _ = error "Called getPair on list of length less than 2"
 
 
 buildAdjacencyGraph
