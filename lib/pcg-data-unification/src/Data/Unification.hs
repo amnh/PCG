@@ -78,7 +78,6 @@ import           Data.Unification.Error
 import           Data.Unification.InputData
 import           Data.Validation
 import           Prelude                             hiding (lookup)
-import qualified Data.DList.NonEmpty                 as NEDL
 
 
 --type FileSource = ShortText
@@ -120,8 +119,8 @@ performUnification inputPaths InputData{..} = fmap reifiedSolution <$> dagForest
           -- Build a default forest of singleton components
           (Nothing, Just v@(charSeqs, _))
             -> Success . Right . PhylogeneticSolution . pure
-             . PhylogeneticForest . NEDL.toNonEmpty
-             . (foldMap1 (singletonComponentDL v)) . NE.fromList $ toKeyedList charSeqs
+             . PhylogeneticForest . NE.fromList
+             . foldr ((:) . (singletonComponent v)) mempty $ toKeyedList charSeqs
           -- Build a forest with the corresponding character data on the nodes
           (Just someForests, Just (charSeqs, meta)) -> Success . Right . PhylogeneticSolution $ matchToChars meta charSeqs <$> someForests
       where
@@ -138,7 +137,7 @@ performUnification inputPaths InputData{..} = fmap reifiedSolution <$> dagForest
               (IS.singleton 0)
               mempty
 
-        singletonComponentDL (charSeqs, meta) (label, datum) =  NEDL.singleton . PDAG meta $
+        singletonComponent (charSeqs, meta) (label, datum) = PDAG meta $
           DAG.trivialRefDAG (trivialRootIndex charSeqs) (leafNodeIndex label datum)
 
 
