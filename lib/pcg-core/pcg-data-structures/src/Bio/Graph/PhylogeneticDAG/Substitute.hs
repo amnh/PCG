@@ -33,7 +33,7 @@ import qualified Data.Map                           as M
 import           Data.Monoid                        (First (..))
 import           Data.Vector                        (Vector, (!))
 import qualified Data.Vector                        as V
-import           Prelude                            hiding (length, zip)
+import           Prelude                            hiding (length)
 
 
 type CharacterIndexData e n u v w x y z = (IndexData e (PhylogeneticNode (CharacterSequence u v w x y z) n))

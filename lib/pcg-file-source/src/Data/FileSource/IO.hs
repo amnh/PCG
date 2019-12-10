@@ -65,11 +65,11 @@ import qualified Data.Text.Lazy.IO                 as T
 import           Data.Typeable                     (Typeable)
 import           Data.Validation
 import           Pipes                             (for, runEffect, yield)
-import           Prelude                           hiding (appendFile, getContents, readFile, writeFile)
+import           Prelude                           hiding (appendFile, readFile, writeFile)
 import           System.Directory
 import           System.FilePath.Glob
 import           System.FilePath.Posix             (takeDirectory, takeExtension)
-import           System.IO                         hiding (appendFile, putStrLn, readFile, writeFile)
+import           System.IO                         hiding (appendFile, readFile, writeFile)
 import           System.IO.Error
 
 

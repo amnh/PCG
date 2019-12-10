@@ -10,7 +10,8 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
 -- We add this because we have some 'realToFrac' calls which are necissary,
 -- but the -Widentities flag from the .cabal file erroneously warns to omit it.
 {-# OPTIONS_GHC -fno-warn-identities #-}
@@ -360,7 +361,7 @@ ignoreDynamicCharacterTraversalFoci = fmap (\(a,b,c,_) -> (a,b,c))
 
 -- | Used for convient accumulation.
 data BlockMinimizationContext c = BMC TraversalTopology (NEV.Vector (c, c, Vector (NonEmpty TraversalFocusEdge)))
-    deriving (Eq)
+    deriving stock (Eq)
 
 
 instance Num c => Semigroup (BlockMinimizationContext c) where

@@ -50,7 +50,6 @@ import           Data.Semigroup.Foldable
 import           Data.Vector.NonEmpty         (Vector)
 import qualified Data.Vector.NonEmpty         as V
 import           GHC.Generics
-import           Prelude                      hiding (zipWith)
 import           Text.XML
 
 
@@ -63,7 +62,8 @@ import           Text.XML
 -- Blocks are optimized atomically with resepect to network resolutions.
 newtype MetadataSequence m
     = MetaSeq (Vector (MetadataBlock m))
-    deriving stock (Generic)
+    deriving stock (Generic, Show)
+
 
 
 type instance Element (MetadataSequence m) = MetadataBlock m

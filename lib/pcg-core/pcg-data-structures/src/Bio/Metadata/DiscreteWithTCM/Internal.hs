@@ -10,7 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -52,11 +54,12 @@ import Text.XML
 -- |
 -- Represents a concrete type containing metadata fields shared across all
 -- discrete different bins. Continous bins do not have Alphabets.
-data DiscreteWithTCMCharacterMetadataDec c
-   = DiscreteWithTCMCharacterMetadataDec
-   { metricRepresentation :: !(MetricRepresentation MemoizedCostMatrix)
-   , discreteData         :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
-   } deriving (Eq, Generic)
+data  DiscreteWithTCMCharacterMetadataDec c
+    = DiscreteWithTCMCharacterMetadataDec
+    { metricRepresentation :: !(MetricRepresentation MemoizedCostMatrix)
+    , discreteData         :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
+    }
+    deriving stock (Eq, Generic)
 
 
 foreignPointerData :: DiscreteWithTCMCharacterMetadataDec c -> Maybe MemoizedCostMatrix

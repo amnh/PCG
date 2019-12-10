@@ -41,7 +41,7 @@ import Text.XML
 -- |
 -- Metadata type for a continuous character.
 newtype ContinuousCharacterMetadataDec = CCM GeneralCharacterMetadataDec
-  deriving stock (Generic)
+  deriving stock (Generic, Show)
 
 
 -- | (✔)

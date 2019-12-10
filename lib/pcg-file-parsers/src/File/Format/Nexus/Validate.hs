@@ -498,10 +498,7 @@ getCharMetadata mayMtx seqBlock =
         -- All the `case form of` statements are to handle the possibly missing format values.
         -- I think I appropriately use default values... but maybe not!
         aligned     = alignedSeq seqBlock
-        cType       =
-          case form of
-            Nothing -> Standard
-            Just fm -> charDataType fm
+        cType       = maybe Standard charDataType form
         alph        =
           case form of
             Nothing -> g $ headMay syms

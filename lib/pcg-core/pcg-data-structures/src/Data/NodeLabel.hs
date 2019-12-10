@@ -25,19 +25,21 @@ module Data.NodeLabel
   , isEmpty
   , nodeLabel
   , nodeLabelString
+  , nodeLabelToString
   ) where
 
 
-import Control.DeepSeq
-import Data.Binary
-import Data.Coerce          (coerce)
-import Data.Data            (Data, Typeable)
-import Data.Default
-import Data.MonoTraversable
-import Data.String          (IsString)
-import Data.Text.Short      as TS
-import GHC.Generics
-import TextShow             (TextShow (showb))
+import           Control.DeepSeq
+import           Data.Binary
+import           Data.Coerce          (coerce)
+import           Data.Data            (Data, Typeable)
+import           Data.Default
+import           Data.MonoTraversable
+import           Data.String          (IsString)
+import           Data.Text.Short      as TS
+import           GHC.Generics
+import           TextShow             (TextShow (showb))
+import qualified TextShow             as Show
 
 
 -- |
@@ -65,17 +67,24 @@ type instance Element NodeLabel = Char
 -- |
 -- Constructor for a 'NodeLabel'
 nodeLabel :: ShortText -> NodeLabel
-nodeLabel = NL
+{-# INLINE nodeLabel #-}
+nodeLabel = coerce
 
 -- |
 -- Construct a 'NodeLabel' from a 'String'
 nodeLabelString :: String -> NodeLabel
-nodeLabelString = NL. fromString
+{-# INLINE nodeLabelString #-}
+nodeLabelString = coerce . fromString
 
 -- |
 -- Check if a NodeLabel is empty.
 isEmpty :: NodeLabel -> Bool
 isEmpty = coerce TS.null
+
+-- |
+-- Converts a NodeLabel to a string.
+nodeLabelToString :: NodeLabel -> String
+nodeLabelToString = coerce TS.toString
 
 
 instance Default NodeLabel where
@@ -128,4 +137,4 @@ instance TextShow NodeLabel where
 
     -- TODO: When text-show-instances is updated to have an instance
     --        for ShortText then use that instead.
-    showb = showb . TS.toString . getNodeLabel
+    showb = Show.fromString . TS.toString . getNodeLabel

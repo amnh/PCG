@@ -52,6 +52,7 @@ module Bio.Graph
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , extractSolution
+  , extractPhylogeneticForest
   , extractReferenceDAG
   , generateLocalResolutions
   , phylogeneticForests

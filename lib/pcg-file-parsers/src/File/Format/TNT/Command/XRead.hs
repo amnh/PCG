@@ -13,8 +13,9 @@
 -- specified as contiguous segments of character types.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module File.Format.TNT.Command.XRead
   ( xreadCommand
@@ -366,7 +367,7 @@ data XReadTag
    | TagNoGaps
    | TagTrimHead
    | TagTrimTail
-   deriving (Eq,Ord,Show)
+   deriving stock (Eq, Ord, Show)
 
 
 -- |
@@ -376,7 +377,7 @@ data XReadParseType
    | ParseDna
    | ParseNumeric
    | ParseProtein
-   deriving (Eq)
+   deriving stock (Eq)
 
 
 -- |
@@ -387,7 +388,7 @@ data XReadInterpretation
    , parseGaps     :: Bool
    , parseTrimHead :: Bool
    , parseTrimTail :: Bool
-   } deriving (Eq)
+   } deriving stock (Eq)
 
 
 -- |

@@ -10,11 +10,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns      #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Strict            #-}
-{-# LANGUAGE TypeFamilies      #-}
+{-# LANGUAGE BangPatterns       #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE Strict             #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 
 module Data.BitMatrix.Internal where
@@ -44,9 +45,9 @@ import TextShow                    (TextShow (showb), singleton, unlinesB, unwor
 -- The bit at position @(x,i)@ will be of less significance than position @(x,i+1)@,
 -- for the resulting xth 'BitVector' column when calling 'cols' on a 'BitMatrix'.
 -}
-data BitMatrix
-   = BitMatrix {-# UNPACK #-} !Int {-# UNPACK #-} !BitVector
-   deriving (Eq, Generic)
+data  BitMatrix
+    = BitMatrix {-# UNPACK #-} !Int {-# UNPACK #-} !BitVector
+    deriving stock (Eq, Generic)
 
 
 -- |

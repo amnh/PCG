@@ -164,10 +164,7 @@ singleton = NEV . V.singleton
 -- Construct a 'Vector' from a non-empty structure.
 {-# INLINE fromNonEmpty #-}
 fromNonEmpty :: Foldable1 f => f a -> Vector a
-fromNonEmpty = NEV . uncurry V.fromListN . L.fold f
-  where
-    f :: L.Fold a (Int, [a])
-    f = (,) <$> L.length <*> L.list
+fromNonEmpty = NEV . V.fromList . NE.toList . toNonEmpty
 
 
 -- |

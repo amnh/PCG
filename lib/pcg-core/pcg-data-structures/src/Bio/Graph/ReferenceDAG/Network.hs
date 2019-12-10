@@ -10,6 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass      #-}
+{-# LANGUAGE DeriveGeneric       #-}
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -19,6 +22,7 @@ import           Bio.Graph.Node.Context
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.ReferenceDAG.Traversal
 import           Control.Applicative              as Alt (Alternative (empty, (<|>)))
+import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad                    (guard)
 import           Data.EdgeSet
@@ -34,13 +38,18 @@ import           Data.Set                         (Set)
 import qualified Data.Set                         as S
 import           Data.Vector                      (Vector)
 import           Data.Vector.Memo                 as Memo
+import           GHC.Generics
 
-data NetworkContext = NetworkContext
-  { netNode    :: Int
-  , netParent1 :: Int
-  , netParent2 :: Int
-  }
-  deriving (Eq, Ord, Show)
+
+data  NetworkContext
+    = NetworkContext
+    { netNode    :: Int
+    , netParent1 :: Int
+    , netParent2 :: Int
+    }
+    deriving stock    (Eq, Ord, Generic, Show)
+    deriving anyclass (NFData)
+
 
 getNetworkContextParents :: NetworkContext -> IntSet
 getNetworkContextParents NetworkContext{..} = IS.fromList [netParent1, netParent2]

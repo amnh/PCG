@@ -1,5 +1,9 @@
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleInstances  #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DerivingStrategies  #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Bio.Character.Encodable.Dynamic.Test
   ( testSuite
@@ -34,90 +38,21 @@ testSuite = testGroup "Dynamic Character tests"
 
 dynamicCharacterTests :: TestTree
 dynamicCharacterTests = testGroup "Dynamic Character tests"
-    [ monoFoldableProperties
+    [ monoFoldablePropertiesGen @DynamicCharacter
     , monoFunctorProperties
     , orderingProperties
     , datastructureTests
     ]
 
+
 dynamicCharacterElementTests :: TestTree
 dynamicCharacterElementTests = testGroup "Dynamic Character Element tests"
     [ elementBitsTests
     , elementFiniteBitsTests
-    , elementMonoFoldableProperties
+    , monoFoldablePropertiesGen @DynamicCharacterElement
     , elementMonoFunctorProperties
     , elementOrderingProperties
     ]
-
-
-monoFoldableProperties :: TestTree
-monoFoldableProperties = testGroup "Properties of MonoFoldable"
-    [ testProperty "ofoldr f z t === appEndo (ofoldMap (Endo . f) t ) z" testFoldrFoldMap
-    , testProperty "ofoldl' f z t === appEndo (getDual (ofoldMap (Dual . Endo . flip f) t)) z" testFoldlFoldMap
-    , testProperty "ofoldr f z === ofoldr f z . otoList" testFoldr
-    , testProperty "ofoldl' f z === ofoldl' f z . otoList" testFoldl
-    , testProperty "ofoldr1Ex f z === ofoldr1Ex f z . otoList" testFoldr1
-    , testProperty "ofoldl1Ex' f z === ofoldl1Ex' f z . otoList" testFoldl1
-    , testProperty "oall f === getAll . ofoldMap (All . f)" testAll
-    , testProperty "oany f === getAny . ofoldMap (Any . f)" testAny
-    , testProperty "olength === length . otoList" testLength
-    , testProperty "onull === (0 ==) . olength" testNull
-    , testProperty "headEx === getFirst . ofoldMap1Ex First" testHead
-    , testProperty "lastEx === getLast . ofoldMap1Ex Last" testTail
-    , testProperty "oelem e /== onotElem e" testInclusionConsistency
-    ]
-  where
-    testFoldrFoldMap :: (Blind (DynamicCharacterElement -> Word -> Word), Word, DynamicCharacter) -> Property
-    testFoldrFoldMap (Blind f, z, bv) =
-        ofoldr f z bv === appEndo (ofoldMap (Endo . f) bv) z
-
-    testFoldlFoldMap :: (Blind (Word -> DynamicCharacterElement -> Word), Word, DynamicCharacter) -> Property
-    testFoldlFoldMap (Blind f, z, bv) =
-        ofoldl' f z bv === appEndo (getDual (ofoldMap (Dual . Endo . flip f) bv)) z
-
-    testFoldr :: (Blind (DynamicCharacterElement -> Word -> Word), Word, DynamicCharacter) -> Property
-    testFoldr (Blind f, z, bv) =
-        ofoldr f z bv === (ofoldr f z . otoList) bv
-
-    testFoldl :: (Blind (Word -> DynamicCharacterElement -> Word), Word, DynamicCharacter) -> Property
-    testFoldl (Blind f, z, bv) =
-        ofoldl' f z bv === (ofoldl' f z . otoList) bv
-
-    testFoldr1 :: (Blind (DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement), DynamicCharacter) -> Property
-    testFoldr1 (Blind f, bv) =
-        (not . onull) bv  ==> ofoldr1Ex f bv === (ofoldr1Ex f . otoList) bv
-
-    testFoldl1 :: (Blind (DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement), DynamicCharacter) -> Property
-    testFoldl1 (Blind f, bv) =
-        (not . onull) bv  ==> ofoldl1Ex' f bv === (ofoldl1Ex' f . otoList) bv
-
-    testAll :: (Blind (DynamicCharacterElement -> Bool), DynamicCharacter) -> Property
-    testAll (Blind f, bv) =
-        oall f bv === (getAll . ofoldMap (All . f)) bv
-
-    testAny :: (Blind (DynamicCharacterElement -> Bool), DynamicCharacter) -> Property
-    testAny (Blind f, bv) =
-        oany f bv === (getAny . ofoldMap (Any . f)) bv
-
-    testLength :: DynamicCharacter -> Property
-    testLength bv =
-        olength bv === (length . otoList) bv
-
-    testNull :: DynamicCharacter -> Property
-    testNull bv =
-        onull bv === ((0 ==) . olength) bv
-
-    testHead :: DynamicCharacter -> Property
-    testHead bv =
-        (not . onull) bv ==> headEx bv === (getFirst . ofoldMap1Ex First) bv
-
-    testTail :: DynamicCharacter -> Property
-    testTail bv =
-        (not . onull) bv ==> lastEx bv === (getLast . ofoldMap1Ex Last) bv
-
-    testInclusionConsistency :: (DynamicCharacterElement, DynamicCharacter) -> Property
-    testInclusionConsistency (e, bv) =
-        oelem e bv === (not . onotElem e) bv
 
 
 monoFunctorProperties :: TestTree
@@ -241,76 +176,6 @@ elementFiniteBitsTests = testGroup "FiniteBits instance consistency"
     countTrailingZeroAndToBits :: DynamicCharacterElement -> Property
     countTrailingZeroAndToBits x =
       (length . takeWhile not . reverse . otoList) x === countTrailingZeros x
-
-
-elementMonoFoldableProperties :: TestTree
-elementMonoFoldableProperties = testGroup "Properties of MonoFoldable"
-    [ testProperty "ofoldr f z t === appEndo (ofoldMap (Endo . f) t ) z" testFoldrFoldMap
-    , testProperty "ofoldl' f z t === appEndo (getDual (ofoldMap (Dual . Endo . flip f) t)) z" testFoldlFoldMap
-    , testProperty "ofoldr f z === ofoldr f z . otoList" testFoldr
-    , testProperty "ofoldl' f z === ofoldl' f z . otoList" testFoldl
-    , testProperty "ofoldr1Ex f z === ofoldr1Ex f z . otoList" testFoldr1
-    , testProperty "ofoldl1Ex' f z === ofoldl1Ex' f z . otoList" testFoldl1
-    , testProperty "oall f === getAll . ofoldMap (All . f)" testAll
-    , testProperty "oany f === getAny . ofoldMap (Any . f)" testAny
-    , testProperty "olength === length . otoList" testLength
-    , testProperty "onull === (0 ==) . olength" testNull
-    , testProperty "headEx === getFirst . ofoldMap1Ex First" testHead
-    , testProperty "lastEx === getLast . ofoldMap1Ex Last" testTail
-    , testProperty "oelem e /== onotElem e" testInclusionConsistency
-    ]
-  where
-    testFoldrFoldMap :: (Blind (Bool -> Word -> Word), Word, DynamicCharacterElement) -> Property
-    testFoldrFoldMap (Blind f, z, bv) =
-        ofoldr f z bv === appEndo (ofoldMap (Endo . f) bv) z
-
-    testFoldlFoldMap :: (Blind (Word -> Bool -> Word), Word, DynamicCharacterElement) -> Property
-    testFoldlFoldMap (Blind f, z, bv) =
-        ofoldl' f z bv === appEndo (getDual (ofoldMap (Dual . Endo . flip f) bv)) z
-
-    testFoldr :: (Blind (Bool -> Word -> Word), Word, DynamicCharacterElement) -> Property
-    testFoldr (Blind f, z, bv) =
-        ofoldr f z bv === (ofoldr f z . otoList) bv
-
-    testFoldl :: (Blind (Word -> Bool -> Word), Word, DynamicCharacterElement) -> Property
-    testFoldl (Blind f, z, bv) =
-        ofoldl' f z bv === (ofoldl' f z . otoList) bv
-
-    testFoldr1 :: (Blind (Bool -> Bool -> Bool), DynamicCharacterElement) -> Property
-    testFoldr1 (Blind f, bv) =
-        (not . onull) bv  ==> ofoldr1Ex f bv === (ofoldr1Ex f . otoList) bv
-
-    testFoldl1 :: (Blind (Bool -> Bool -> Bool), DynamicCharacterElement) -> Property
-    testFoldl1 (Blind f, bv) =
-        (not . onull) bv  ==> ofoldl1Ex' f bv === (ofoldl1Ex' f . otoList) bv
-
-    testAll :: (Blind (Bool -> Bool), DynamicCharacterElement) -> Property
-    testAll (Blind f, bv) =
-        oall f bv === (getAll . ofoldMap (All . f)) bv
-
-    testAny :: (Blind (Bool -> Bool), DynamicCharacterElement) -> Property
-    testAny (Blind f, bv) =
-        oany f bv === (getAny . ofoldMap (Any . f)) bv
-
-    testLength :: DynamicCharacterElement -> Property
-    testLength bv =
-        olength bv === (length . otoList) bv
-
-    testNull :: DynamicCharacterElement -> Property
-    testNull bv =
-        onull bv === ((0 ==) . olength) bv
-
-    testHead :: DynamicCharacterElement -> Property
-    testHead bv =
-        (not . onull) bv ==> headEx bv === (getFirst . ofoldMap1Ex First) bv
-
-    testTail :: DynamicCharacterElement -> Property
-    testTail bv =
-        (not . onull) bv ==> lastEx bv === (getLast . ofoldMap1Ex Last) bv
-
-    testInclusionConsistency :: (Bool, DynamicCharacterElement) -> Property
-    testInclusionConsistency (e, bv) =
-        oelem e bv === (not . onotElem e) bv
 
 
 elementMonoFunctorProperties :: TestTree
@@ -551,3 +416,85 @@ equalityWithExceptions x y = monadicIO $ do
 
     anyException :: Property
     anyException = True === True
+
+
+
+monoFoldablePropertiesGen
+  :: forall f.
+     ( MonoFoldable f
+     , Arbitrary f
+     , Arbitrary (Element f)
+     , CoArbitrary (Element f)
+     , Eq (Element f)
+     , Show f
+     , Show (Element f)
+     )
+  => TestTree
+monoFoldablePropertiesGen = testGroup "Properties of MonoFoldable"
+    [ testProperty "ofoldr f z t === appEndo (ofoldMap (Endo . f) t ) z" testFoldrFoldMap
+    , testProperty "ofoldl' f z t === appEndo (getDual (ofoldMap (Dual . Endo . flip f) t)) z" testFoldlFoldMap
+    , testProperty "ofoldr f z === ofoldr f z . otoList" testFoldr
+    , testProperty "ofoldl' f z === ofoldl' f z . otoList" testFoldl
+    , testProperty "ofoldr1Ex f z === ofoldr1Ex f z . otoList" testFoldr1
+    , testProperty "ofoldl1Ex' f z === ofoldl1Ex' f z . otoList" testFoldl1
+    , testProperty "oall f === getAll . ofoldMap (All . f)" testAll
+    , testProperty "oany f === getAny . ofoldMap (Any . f)" testAny
+    , testProperty "olength === length . otoList" testLength
+    , testProperty "onull === (0 ==) . olength" testNull
+    , testProperty "headEx === getFirst . ofoldMap1Ex First" testHead
+    , testProperty "lastEx === getLast . ofoldMap1Ex Last" testTail
+    , testProperty "oelem e /== onotElem e" testInclusionConsistency
+    ]
+  where
+    testFoldrFoldMap :: (Blind (Element f -> Word -> Word), Word, f) -> Property
+    testFoldrFoldMap (Blind f, z, bv) =
+        ofoldr f z bv === appEndo (ofoldMap (Endo . f) bv) z
+
+    testFoldlFoldMap :: (Blind (Word -> Element f -> Word), Word, f) -> Property
+    testFoldlFoldMap (Blind f, z, bv) =
+        ofoldl' f z bv === appEndo (getDual (ofoldMap (Dual . Endo . flip f) bv)) z
+
+    testFoldr :: (Blind (Element f -> Word -> Word), Word, f) -> Property
+    testFoldr (Blind f, z, bv) =
+        ofoldr f z bv === (ofoldr f z . otoList) bv
+
+    testFoldl :: (Blind (Word -> Element f -> Word), Word, f) -> Property
+    testFoldl (Blind f, z, bv) =
+        ofoldl' f z bv === (ofoldl' f z . otoList) bv
+
+    testFoldr1 :: (Blind (Element f -> Element f -> Element f), f) -> Property
+    testFoldr1 (Blind f, bv) =
+        (not . onull) bv  ==> ofoldr1Ex f bv === (ofoldr1Ex f . otoList) bv
+
+    testFoldl1 :: (Blind (Element f -> Element f -> Element f), f) -> Property
+    testFoldl1 (Blind f, bv) =
+        (not . onull) bv  ==> ofoldl1Ex' f bv === (ofoldl1Ex' f . otoList) bv
+
+    testAll :: (Blind (Element f -> Bool), f) -> Property
+    testAll (Blind f, bv) =
+        oall f bv === (getAll . ofoldMap (All . f)) bv
+
+    testAny :: (Blind (Element f -> Bool), f) -> Property
+    testAny (Blind f, bv) =
+        oany f bv === (getAny . ofoldMap (Any . f)) bv
+
+    testLength :: f -> Property
+    testLength bv =
+        olength bv === (length . otoList) bv
+
+    testNull :: f -> Property
+    testNull bv =
+        onull bv === ((0 ==) . olength) bv
+
+    testHead :: f -> Property
+    testHead bv =
+        (not . onull) bv ==> headEx bv === (getFirst . ofoldMap1Ex First) bv
+
+    testTail :: f -> Property
+    testTail bv =
+        (not . onull) bv ==> lastEx bv === (getLast . ofoldMap1Ex Last) bv
+
+    testInclusionConsistency :: (Element f, f) -> Property
+    testInclusionConsistency (e, bv) =
+        oelem e bv === (not . onotElem e) bv
+

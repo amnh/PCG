@@ -13,10 +13,12 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveFoldable         #-}
 {-# LANGUAGE DeriveFunctor          #-}
 {-# LANGUAGE DeriveGeneric          #-}
 {-# LANGUAGE DeriveTraversable      #-}
+{-# LANGUAGE DerivingStrategies     #-}
 {-# LANGUAGE DuplicateRecordFields  #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -107,7 +109,9 @@ data  PhylogeneticFreeDAG m e n u v w x y z
     = PDAG
     { simpleColumnMetadata     :: MetadataSequence m
     , simplePhylogeneticForest :: ReferenceDAG () e (PhylogeneticFreeNode n (CharacterSequence u v w x y z))
-    } deriving (Generic)
+    }
+    deriving stock    (Generic)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -124,53 +128,13 @@ data  PhylogeneticFreeDAG m e n u v w x y z
 -- * z = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Dynamic'    specified as 'DynamicCharacter'     or 'Bio.Metadata.DiscreteWithTCM'
 
 
-data PostorderContextualData t = PostorderContextualData
-  { virtualNodeMapping    :: HashMap EdgeReference (ResolutionCache t)
-  , contextualNodeDatum   :: Vector (HashMap EdgeReference (ResolutionCache t))
-  , minimalNetworkContext :: Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
-  }
-  deriving
-    ( Eq
-    , Show
-    , Generic
-    , Functor
-    , Foldable
-    , Traversable
-    )
-
-instance Semigroup (PostorderContextualData t) where
-   (<>)
-     PostorderContextualData
-       { virtualNodeMapping    = v1
-       , contextualNodeDatum   = c1
-       , minimalNetworkContext = m1
-       }
-     PostorderContextualData
-       { virtualNodeMapping    = v2
-       , contextualNodeDatum   = c2
-       , minimalNetworkContext = m2
-       }
-    = PostorderContextualData
-        { virtualNodeMapping    = v1 <> v2
-        , contextualNodeDatum   = c1 <> c2
-        , minimalNetworkContext = m1 <> m2
-        }
-
-
-defaultPostorderContextualData :: PostorderContextualData t
-defaultPostorderContextualData =
-  PostorderContextualData
-    { virtualNodeMapping    = mempty
-    , contextualNodeDatum   = mempty
-    , minimalNetworkContext = Nothing
+data  PostorderContextualData t = PostorderContextualData
+    { virtualNodeMapping    :: HashMap EdgeReference (ResolutionCache t)
+    , contextualNodeDatum   :: Vector (HashMap EdgeReference (ResolutionCache t))
+    , minimalNetworkContext :: Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
     }
-
-
-zeroPhylogeneticGraphData :: GraphData (PostorderContextualData t)
-zeroPhylogeneticGraphData = zeroGraphMetadataWith defaultPostorderContextualData
-
--- | (✔)
-instance NFData t => NFData (PostorderContextualData t)
+    deriving stock    (Eq, Show, Generic, Functor, Foldable, Traversable)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -185,7 +149,9 @@ data  PhylogeneticDAG m e n u v w x y z
                               e
                               (PhylogeneticNode (CharacterSequence u v w x y z) n)
     , columnMetadata     :: MetadataSequence m
-    } deriving (Generic, Typeable)
+    }
+    deriving stock    (Generic, Typeable)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -274,19 +240,6 @@ instance HasLeafSet (PhylogeneticDAG m e n u v w x y z) (LeafSet (PhylogeneticNo
 
 
 -- | (✔)
-instance ( NFData m
-         , NFData e
-         , NFData n
-         , NFData u
-         , NFData v
-         , NFData w
-         , NFData x
-         , NFData y
-         , NFData z
-         ) => NFData (PhylogeneticDAG m e n u v w x y z)
-
-
--- | (✔)
 instance TextShow n => PrintDot (PhylogeneticDAG m e n u v w x y z) where
 
     unqtDot       = unqtDot . discardCharacters
@@ -296,6 +249,25 @@ instance TextShow n => PrintDot (PhylogeneticDAG m e n u v w x y z) where
     unqtListToDot = unqtListToDot . fmap discardCharacters
 
     listToDot     = listToDot . fmap discardCharacters
+
+
+instance Semigroup (PostorderContextualData t) where
+   (<>)
+     PostorderContextualData
+       { virtualNodeMapping    = v1
+       , contextualNodeDatum   = c1
+       , minimalNetworkContext = m1
+       }
+     PostorderContextualData
+       { virtualNodeMapping    = v2
+       , contextualNodeDatum   = c2
+       , minimalNetworkContext = m2
+       }
+    = PostorderContextualData
+        { virtualNodeMapping    = v1 <> v2
+        , contextualNodeDatum   = c1 <> c2
+        , minimalNetworkContext = m1 <> m2
+        }
 
 
 -- | (✔)
@@ -399,6 +371,19 @@ instance ( TextShow n
          ) => ToXML (PhylogeneticDAG m e n u v w x y z)  where
 
     toXML (PDAG2 refDag _) = toXML refDag
+
+
+defaultPostorderContextualData :: PostorderContextualData t
+defaultPostorderContextualData =
+  PostorderContextualData
+    { virtualNodeMapping    = mempty
+    , contextualNodeDatum   = mempty
+    , minimalNetworkContext = Nothing
+    }
+
+
+zeroPhylogeneticGraphData :: GraphData (PostorderContextualData t)
+zeroPhylogeneticGraphData = zeroGraphMetadataWith defaultPostorderContextualData
 
 
 -- |
@@ -817,4 +802,3 @@ renderDisplayForestNewick dag topo = fromText . T.unlines $ renderDisplayTree <$
         openParensIn = T.length . T.filter (== '(')
 
     renderLeaf _k = showt
-

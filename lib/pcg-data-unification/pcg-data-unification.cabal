@@ -42,6 +42,7 @@ common ghc-flags
     -Wincomplete-patterns
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
+    -Wmissing-deriving-strategies          
     -Wmissing-fields
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
@@ -91,6 +92,7 @@ library
     containers               >= 0.5.8     && < 1.0,
     data-default             >= 0.5.2     && < 0.8,
     deepseq                  >= 1.4       && < 2.0,
+    dlist-nonempty           >= 0.1.1     && < 1.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.18      && < 5.0,
     mtl                      >= 2.0       && < 3.0,
@@ -103,6 +105,7 @@ library
     text-show                >= 3.8.1     && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
     validation               >= 1.1       && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
 
   exposed-modules:
     Data.Unification

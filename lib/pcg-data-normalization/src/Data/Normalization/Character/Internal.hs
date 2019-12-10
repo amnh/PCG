@@ -61,8 +61,8 @@ data NormalizedCharacter
    = NormalizedContinuousCharacter (Maybe Double)
    | NormalizedDiscreteCharacter   (Maybe (AmbiguityGroup ShortText))
    | NormalizedDynamicCharacter    (Maybe (NonEmpty (AmbiguityGroup ShortText)))
-   deriving (Data, Eq, Ord, Generic, Show, Typeable)
-   deriving (NFData)
+   deriving stock    (Data, Eq, Ord, Generic, Show, Typeable)
+   deriving anyclass (NFData)
 
 
 -- |

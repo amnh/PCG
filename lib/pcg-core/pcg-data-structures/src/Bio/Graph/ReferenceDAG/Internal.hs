@@ -13,6 +13,7 @@
 {-# OPTIONS_GHC -Wno-unused-matches #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
@@ -25,8 +26,6 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UnboxedSums                #-}
-
-
 
 module Bio.Graph.ReferenceDAG.Internal where
 
@@ -83,6 +82,12 @@ import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
 import           TextShow                      (TextShow (..), toString, unlinesB)
+import qualified Data.DList                    as DL
+import qualified VectorBuilder.Builder as BV
+import qualified VectorBuilder.Vector  as BV
+import           Data.Text.Short (ShortText)
+import           Data.NodeLabel
+import           Bio.Graph.Node
 
 
 -- |
@@ -92,8 +97,9 @@ data  ReferenceDAG d e n
     { references :: {-# UNPACK #-} !(Vector (IndexData e n))
     , rootRefs   :: !(NonEmpty Int)
     , graphData  :: !(GraphData d)
-    } deriving (Generic)
-
+    }
+    deriving stock    (Generic)
+    deriving anyclass (NFData)
 
 -- |
 -- A labeled record for each "node" in the graph containing the node decoration,
@@ -107,7 +113,9 @@ data  IndexData e n
     { nodeDecoration :: !n
     , parentRefs     :: !IntSet
     , childRefs      :: !(IntMap e)
-    } deriving (Generic, Show)
+    }
+    deriving stock    (Generic, Show)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -122,7 +130,9 @@ data  GraphData d
     , rootingCost     :: {-# UNPACK #-} !Double
     , totalBlockCost  :: {-# UNPACK #-} !Double
     , graphMetadata   :: d
-    } deriving (Functor, Generic)
+    }
+    deriving stock    (Functor, Generic)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -133,7 +143,8 @@ data NodeClassification
     | NetworkNode
     | RootNode
     | TreeNode
-   deriving (Eq, Show)
+    deriving stock    (Eq, Generic, Show)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -379,18 +390,6 @@ instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
 
             f e | null (childRefs e) = pure $ nodeDecoration e
                 | otherwise          = mempty
-
-
--- | (✔)
-instance (NFData d, NFData e, NFData n) => NFData (ReferenceDAG d e n)
-
-
--- | (✔)
-instance (NFData e, NFData n) => NFData (IndexData e n)
-
-
--- | (✔)
-instance (NFData d) => NFData (GraphData d)
 
 
 -- | (✔)
@@ -1188,11 +1187,13 @@ fromList xs =
     , graphData  = GraphData 0 0 0 0 ()
     }
   where
-    listValue = toList xs
+    listValue   = toList xs
+    indexedList = Prelude.zip [0..] listValue
     referenceVector =
-      V.fromList' $ (\(pSet, datum, cMap) -> IndexData datum pSet cMap) <$> listValue
+      V.fromList . fmap (\ (pSet, datum, cMap) -> IndexData datum pSet cMap) $ listValue
     rootSet =
-      case foldMapWithKey (\k (pSet,_,_) -> [ k | onull pSet ]) listValue of
+      let isRootDL (k, (pSet,_,_)) = if onull pSet then DL.singleton k else mempty in
+      case DL.toList $ foldMap isRootDL indexedList of
         []   -> error "No root nodes supplied in call to ReferenceDAG.fromList"
         y:ys -> y:|ys
 
@@ -1444,3 +1445,11 @@ mapRefDAG eFn lFn iFn refDAG =
                  & _childRefs      %~ fmap eFn
 
 
+trivialRefDAG :: IndexData e n ->  IndexData e n -> ReferenceDAG () e n
+{-# INLINE trivialRefDAG #-}
+trivialRefDAG root node =
+    ReferenceDAG
+    { references = V.fromList [root, node]
+    , rootRefs   = 0 :| []
+    , graphData  = GraphData 0 0 0 0 ()
+    }

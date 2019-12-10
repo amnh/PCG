@@ -12,6 +12,8 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DerivingStrategies #-}
+
 module Bio.Graph.BinaryRenderingTree where
 
 
@@ -28,7 +30,7 @@ import Prelude                 hiding (head)
 data  BinaryRenderingTree
     = Leaf !String
     | Node {-# UNPACK #-} !Word !(Maybe String) !(NonEmpty BinaryRenderingTree)
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 
 -- |

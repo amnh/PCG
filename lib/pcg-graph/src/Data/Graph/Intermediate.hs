@@ -13,7 +13,7 @@ import qualified Data.Foldable              as F
 import           Data.Graph.Indices
 import           Data.Graph.NodeContext
 import           Data.Graph.Type
-import           Data.Map                   hiding (fromList, (!))
+import           Data.Map
 import           Data.Maybe
 import           Data.Pair.Strict
 import           Data.Set                   (Set)

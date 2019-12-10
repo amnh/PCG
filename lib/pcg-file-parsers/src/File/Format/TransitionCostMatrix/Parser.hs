@@ -55,8 +55,9 @@ import           Text.Megaparsec.Custom
 
 -- |
 -- Intermediate parse result prior to consistancy validation
-data TCMParseResult
-   = TCMParseResult (Vector ShortText) (Matrix Rational) deriving (Show)
+data  TCMParseResult
+    = TCMParseResult (Vector ShortText) (Matrix Rational)
+    deriving stock (Show)
 
 
 -- |

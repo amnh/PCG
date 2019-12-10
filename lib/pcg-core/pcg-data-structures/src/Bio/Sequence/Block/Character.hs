@@ -12,6 +12,7 @@
 
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -56,7 +57,6 @@ import           Bio.Sequence.Block.Builder
 import           Bio.Sequence.Block.Internal
 import           Bio.Sequence.Block.Metadata  (MetadataBlock)
 import           Control.DeepSeq
-import qualified Control.Foldl                as L
 import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
@@ -67,12 +67,13 @@ import           Data.MonoTraversable         (Element)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import qualified Data.Text                    as T (Text, lines, unlines)
-import           Data.Vector                  (Vector, fromListN)
+import           Data.Vector                  (Vector)
 import qualified Data.Vector                  as V
 import           Data.Vector.Instances        ()
 import           GHC.Generics
 import           Text.XML
 import           TextShow                     (TextShow (showb, showt), fromText)
+import qualified VectorBuilder.Vector         as VB
 
 
 -- |
@@ -80,10 +81,11 @@ import           TextShow                     (TextShow (showb, showt), fromText
 -- networks.
 --
 -- Use '(<>)' to construct larger blocks.
-data CharacterBlock u v w x y z
+data  CharacterBlock u v w x y z
     = BlockDoesNotExist
     | CB {-# UNPACK #-} !(Block u v w x y z)
-    deriving (Eq, Generic, NFData)
+    deriving stock    (Eq, Generic)
+    deriving anyclass (NFData)
 
 
 instance HasContinuousBin (CharacterBlock u v w x y z) (Vector u) where
@@ -347,20 +349,18 @@ instance ( ToXML u -- This is NOT a redundant constraint.
 -- Converts a 'PartialCharacterBlock' to a 'CharacterBlock', finalizing the
 -- efficient construction process.
 finalizeCharacterBlock :: PartialCharacterBlock u v w x y z -> CharacterBlock u v w x y z
-finalizeCharacterBlock = CB . (
-    Block
-      <$> fromDList . partialContinuousCharacterBins
-      <*> fromDList . partialNonAdditiveCharacterBins
-      <*> fromDList . partialAdditiveCharacterBins
-      <*> fromDList . partialMetricCharacterBins
-      <*> fromDList . partialNonMetricCharacterBins
-      <*> fromDList . partialDynamicCharacters
+finalizeCharacterBlock =
+  CB .
+    (Block
+      <$> VB.build . partialContinuousCharacterBins
+      <*> VB.build . partialNonAdditiveCharacterBins
+      <*> VB.build . partialAdditiveCharacterBins
+      <*> VB.build . partialMetricCharacterBins
+      <*> VB.build . partialNonMetricCharacterBins
+      <*> VB.build . partialDynamicCharacters
     )
-  where
-    fromDList = uncurry fromListN . L.fold f
-      where
-        f :: L.Fold a (Int, [a])
-        f = (,) <$> L.length <*> L.list
+
+
 
 
 -- |

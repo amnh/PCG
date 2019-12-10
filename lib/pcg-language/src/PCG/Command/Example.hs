@@ -8,7 +8,8 @@ import qualified Data.List.NonEmpty     as NE
 import           PCG.Syntax.Combinators
 
 
-newtype RRead = Read (NonEmpty FileSpec) deriving stock (Show)
+newtype RRead = Read (NonEmpty FileSpec)
+    deriving stock (Show)
 
 data FileSpec
     = Unspecified String
@@ -16,4 +17,4 @@ data FileSpec
     | AminoAcids  String
     | TCMFile     String String
     | FunnyValues Int String Double Time
-    deriving (Show)
+    deriving stock (Show)

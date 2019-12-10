@@ -45,6 +45,7 @@ characterSequenceDistance
   , (HasDiscreteCharacter v StaticCharacter       )
   , (HasDiscreteCharacter w StaticCharacter       )
   , (HasDiscreteCharacter x StaticCharacter       )
+  , (HasDiscreteCharacter y StaticCharacter       )
   , (DirectOptimizationPostorderDecoration z DynamicCharacter)
   , Applicative f
   , Foldable f
@@ -63,6 +64,7 @@ blockDistance
      , (HasDiscreteCharacter v StaticCharacter       )
      , (HasDiscreteCharacter w StaticCharacter       )
      , (HasDiscreteCharacter x StaticCharacter       )
+     , (HasDiscreteCharacter y StaticCharacter       )
      , (DirectOptimizationPostorderDecoration z DynamicCharacter)
      , Applicative f
      , Foldable f
@@ -78,7 +80,7 @@ blockDistance meta block1 block2
       (characterDistance @Word         (^.   discreteCharacter))
       (characterDistance @Word         (^.   discreteCharacter))
       (characterDistance @Word         (^.   discreteCharacter))
-      mempty
+      (characterDistance @Word         (^.   discreteCharacter))
       dynamicCharacterDistance
       meta
       block1

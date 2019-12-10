@@ -15,6 +15,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE RecordWildCards     #-}
@@ -29,7 +30,6 @@ module Data.Unification.InputData
 import           Bio.Graph.Component
 import           Bio.Graph.ReferenceDAG
 import           Control.Arrow                ((&&&))
-import           Control.Monad.State.Strict
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor               (first)
@@ -49,12 +49,10 @@ import           Data.Normalization.Topology
 import           Data.Semigroup.Foldable
 import           Data.Set                     (Set, (\\))
 import qualified Data.Set                     as Set
-import           Data.String
 import           Data.TCM                     (TCM, TCMStructure (..))
 import           Data.Unification.Error
 import           Data.Validation
 import           Data.Vector.NonEmpty         (Vector)
-import           Prelude                      hiding (lookup, zipWith)
 
 
 -- |
@@ -80,7 +78,8 @@ data  InputData
     , taxaSet       :: Set Identifier
     , allForests    :: Maybe (NonEmpty PartialInputData)
     , forestTaxa    :: Maybe (NonEmpty ([NonEmpty Identifier], PartialInputData))
-    } deriving (Show)
+    }
+    deriving stock (Show)
 
 
 instance Show PartialInputData where

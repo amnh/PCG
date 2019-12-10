@@ -1,3 +1,4 @@
+{-# LANGUAGE DerivingStrategies     #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -60,33 +61,33 @@ data GraphShape i n r t
 -}
 
 
-data Graph
-       (f :: Type -> Type)
-       (c :: Type)
-       (e :: Type)
-       (n :: Type)
-       (t :: Type)
-  = Graph
-  { leafReferences    :: Vector (LeafIndexData       t   )
-  , treeReferences    :: Vector (TreeIndexData    (f n) e)
-  , networkReferences :: Vector (NetworkIndexData (f n) e)
-  , rootReferences    :: Vector (RootIndexData    (f n) e)
-  , cachedData        :: c
-  }
-  deriving Show
+data  Graph
+        (f :: Type -> Type)
+        (c :: Type)
+        (e :: Type)
+        (n :: Type)
+        (t :: Type)
+   = Graph
+   { leafReferences    :: Vector (LeafIndexData       t   )
+   , treeReferences    :: Vector (TreeIndexData    (f n) e)
+   , networkReferences :: Vector (NetworkIndexData (f n) e)
+   , rootReferences    :: Vector (RootIndexData    (f n) e)
+   , cachedData        :: c
+   }
+   deriving stock Show
 
 
-data GraphBuilder
-       (f :: Type -> Type)
-       (e :: Type)
-       (n :: Type)
-       (t :: Type)
-  = GraphBuilder
-  { leafReferencesBuilder    :: Builder (LeafIndexData       t   )
-  , treeReferencesBuilder    :: Builder (TreeIndexData    (f n) e)
-  , networkReferencesBuilder :: Builder (NetworkIndexData (f n) e)
-  , rootReferencesBuilder    :: Builder (RootIndexData    (f n) e)
-  }
+data  GraphBuilder
+        (f :: Type -> Type)
+        (e :: Type)
+        (n :: Type)
+        (t :: Type)
+   = GraphBuilder
+   { leafReferencesBuilder    :: Builder (LeafIndexData       t   )
+   , treeReferencesBuilder    :: Builder (TreeIndexData    (f n) e)
+   , networkReferencesBuilder :: Builder (NetworkIndexData (f n) e)
+   , rootReferencesBuilder    :: Builder (RootIndexData    (f n) e)
+   }
 
 
 buildGraph :: GraphBuilder f e n t -> c -> Graph f c e n t
@@ -100,8 +101,8 @@ buildGraph GraphBuilder{..} cachedData =
       Graph{..}
 
 
-type Focus = Pair IndexType UntaggedIndex
-type RootFocusGraph f c e n t = Pair Focus (Graph f c e n t)
+type  Focus = Pair IndexType UntaggedIndex
+type  RootFocusGraph f c e n t = Pair Focus (Graph f c e n t)
 
 -- |
 -- This makes a list of graphs along with the roots to focus upon.
