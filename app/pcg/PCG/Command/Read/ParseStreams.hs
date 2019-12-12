@@ -17,6 +17,8 @@
 
 module PCG.Command.Read.ParseStreams
   ( parseSpecifiedFile
+  , parseAndSetTCM
+  , progressiveParse
   , removeGaps
   ) where
 

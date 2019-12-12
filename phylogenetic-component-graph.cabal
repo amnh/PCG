@@ -447,19 +447,44 @@ benchmark benchmark
     exitcode-stdio-1.0
 
   main-is:
-    Benchmark.hs
+    BenchSuite/StringAlignment.hs
 
   build-depends:
+    pcg-alphabet,
     pcg-core,
+    pcg-data-normalization,
+    pcg-data-unification,
     pcg-evaluation,
     pcg-file-parsers,
+    pcg-file-source,
+    pcg-language,
     pcg-utility,
+    pcg-validation-transformer,
     base                     >= 4.11      && < 5.0,
+    containers               >= 0.5.8     && < 1.0,
     criterion,
+    deepseq                  >= 1.4       && < 2.0,
+    directory                >= 1.3       && < 1.4,
     filepath                 >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.17      && < 5.0,
+    megaparsec               >= 8.0       && < 9.0,
+    mono-traversable         >= 1.0       && < 2.0,
+    semigroupoids            >= 5.2.1     && < 5.4,
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1       && < 1.0,
+    text-show                >= 3.8.1     && < 4.0,
+    validation               >= 1.1       && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
 
   hs-source-dirs:
+    app/pcg
     bench
 
   other-modules:
-    BenchSuite.FileStreaming
+--    BenchSuite.FileStreaming
+--    BenchSuite.StringAlignment
+    PCG.Command.Read.InputStreams
+    PCG.Command.Read.ParseStreams
+    PCG.Command.Read.ReadCommandError
+            
