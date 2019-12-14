@@ -27,20 +27,6 @@ local-bin-path: bin
 
 packages:
   - .
-  - lib/pcg-alphabet
-  - lib/pcg-core
-  - lib/pcg-data-normalization
-  - lib/pcg-data-unification
-  - lib/pcg-evaluation
-  - lib/pcg-exportable
-  - lib/pcg-file-parsers
-  - lib/pcg-file-source
-  - lib/pcg-graph
-  - lib/pcg-language
-  - lib/pcg-serialize
-  - lib/pcg-tcm-memo
-  - lib/pcg-utility
-  - lib/pcg-validation-transformer
 
 require-stack-version: ">=2.1.3"
 
