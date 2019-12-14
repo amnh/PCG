@@ -4,19 +4,20 @@ module Main
   ( main
   ) where
 
+import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character
 import           Bio.Character.Decoration.Dynamic hiding (characterName)
-import           Bio.Character.Encodable
 import           Bio.Graph
-import           Bio.Graph.Constructions
 import           Bio.Graph.Node
 import           Bio.Graph.ReferenceDAG
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
+import           Control.DeepSeq
 import           Control.Lens  ((^.))
 import           Control.Monad ((<=<), join)
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Validation
+import           Control.Parallel.Strategies
 import           Criterion.Main
 import           Data.Alphabet
 import           Data.Bifunctor
@@ -29,7 +30,6 @@ import           Data.List.NonEmpty (NonEmpty, nonEmpty)
 import qualified Data.List.NonEmpty as NE
 import           Data.FileSource
 import           Data.Foldable
-import           Data.Map (Map)
 import qualified Data.Map as Map
 import           Data.Maybe
 import           Data.MonoTraversable
@@ -52,27 +52,6 @@ import           System.Directory
 import           System.FilePath
 
 
-main = benchSuite
-
-
-benchSuite = do
-    res <- buildSequences
-    case res of
-      Left  err  -> putStrLn err
---      Right seqs -> do print . columnMetadata     $ extractSolution seqs
---                       putStr . topologyRendering  . phylogeneticForest $ extractSolution seqs
---                       putStr . referenceRendering . phylogeneticForest $ extractSolution seqs
-      Right seqs -> do -- print seqs
-                       putStrLn . unlines $ (\(m,_,_) -> show $ m ^. characterName) <$> toList seqs
-
-
-{-
-  defaultMain
-    [ bench "Score and writeFile" . nfIO $ pure ()
-    ]
--}
-
-
 inputDirectories :: NonEmpty FilePath
 inputDirectories = NE.fromList $ ("bench/strings/" <>) <$>
     [ "dna"
@@ -81,6 +60,30 @@ inputDirectories = NE.fromList $ ("bench/strings/" <>) <$>
 --    , "two-hex"
 --    , "unfamiliar"
     ]
+
+
+main :: IO ()
+main = do
+    points <- force <$> gatherBenchmarkData
+    defaultMain [ bgroup "main" $ parMap rpar measureStringAlignment points ]
+
+ 
+measureStringAlignment
+  :: (DynamicCharacterMetadataDec DynamicCharacterElement, DynamicCharacter, DynamicCharacter)
+  -> Benchmark
+measureStringAlignment (metadata, lhs, rhs) =
+    bench label $ nf (uncurry metric) (lhs, rhs) 
+  where
+    label  = show $ metadata ^. characterName
+    metric = selectDynamicMetric metadata
+
+
+gatherBenchmarkData :: IO [(DynamicCharacterMetadataDec DynamicCharacterElement, DynamicCharacter, DynamicCharacter)]
+gatherBenchmarkData = do
+    res <- buildSequences
+    case res of
+      Left  err  -> putStrLn err *> pure mempty
+      Right seqs -> pure $ toList seqs
 
 
 buildSequences :: IO (Either String (Vector (DynamicCharacterMetadataDec DynamicCharacterElement, DynamicCharacter, DynamicCharacter)))
@@ -130,6 +133,7 @@ gatherInputFiles path = groupFiles . fmap (path </>) <$> listDirectory path
 
     isTCM = (/= Just "tcm") . extractExtension
 
+    -- Sort tcm files, case-insensitively
     organizeTCMs = NE.fromList . sortBy (comparing (omap toLower))
 
 
@@ -139,9 +143,7 @@ readPartialInput (sequencesSources, metricSources) = do
     metaPID <- traverse (assignTCM charMap) metricSources
     pure $ join metaPID
   where
-    getName (NormalizedMetadata _ c _ _ _ _) = c
 
---    assignTCM ::
     assignTCM charMap tcmPath = do
         xs <- parseAndSetTCM tcmPath $ pure charMap
         pure $ prependName <$> xs
@@ -161,6 +163,7 @@ readPartialInput (sequencesSources, metricSources) = do
         getNumberChunk :: Identifier -> Word
         getNumberChunk = read . takeWhile isDigit . dropWhile (not . isDigit) . toString
 
+        -- Create the n(n+1)/2 unique pairs of strings
         go :: [(Identifier, a)] -> [(Identifier, Identifier, a, a)] 
         go    []  = mempty
         go (_:[]) = mempty

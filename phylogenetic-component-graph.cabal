@@ -2006,7 +2006,7 @@ benchmark bench-graph
     Data.Graph.Bench
 
 
-benchmark benchmark
+benchmark bench-string-alignment
 
   import:
     ghc-flags,
@@ -2018,17 +2018,22 @@ benchmark benchmark
   main-is:
     BenchSuite/StringAlignment.hs
 
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
   build-depends:
-    pcg-alphabet,
-    pcg-core,
-    pcg-data-normalization,
-    pcg-data-unification,
-    pcg-evaluation,
-    pcg-file-parsers,
-    pcg-file-source,
-    pcg-language,
-    pcg-utility,
-    pcg-validation-transformer,
+    alphabet,
+    core,
+    data-normalization,
+    data-unification,
+    evaluation,
+    file-parsers,
+    file-source,
+    language,
+    utility,
+    validation-transformer,
     base                     >= 4.11      && < 5.0,
     containers               >= 0.5.8     && < 1.0,
     criterion,
@@ -2039,6 +2044,7 @@ benchmark benchmark
     lens                     >= 4.17      && < 5.0,
     megaparsec               >= 8.0       && < 9.0,
     mono-traversable         >= 1.0       && < 2.0,
+    parallel                 >= 3.2       && < 4.0,
     semigroupoids            >= 5.2.1     && < 5.4,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
