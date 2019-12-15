@@ -41,6 +41,7 @@
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE OverloadedStrings  #-}
 {-# LANGUAGE StrictData         #-}
+{-# LANGUAGE TypeFamilies       #-}
 {-# LANGUAGE UnboxedSums        #-}
 
 
@@ -57,13 +58,17 @@ module Bio.Metadata.CharacterName
 import Control.DeepSeq
 import Control.Monad.State.Lazy
 import Data.FileSource
-import Data.Map
+import Data.Foldable
+import Data.Map                 (Map, insertWith)
 import Data.Monoid
+import Data.Key                 (lookup)
 import Data.String
 import Data.Text.Short          (ShortText, isPrefixOf, uncons)
+import qualified Data.Text.Short as TS
 -- TODO: Remove when text-show-instances is updated
 import Data.Text.Short.Custom   ()
 import Data.Traversable
+import Data.MonoTraversable
 import GHC.Generics             (Generic)
 import Prelude                  hiding (lookup)
 import TextShow                 (TextShow (showb, showbList), toString)
@@ -79,18 +84,62 @@ data CharacterName
    deriving anyclass (NFData)
 
 
+type instance Element CharacterName = Char
+
+
 instance IsString CharacterName where
 
     fromString = UserDefined "Unspecified Path" . fromString
 
 
--- A custom 'Show' instance for more legible rendering of lists.
+instance MonoFoldable CharacterName where
+
+    ofoldMap f   = foldMap f . getList
+
+    ofoldr   f a = foldr f a . getList
+
+    ofoldl'  f a = foldl' f a . getList
+
+    otoList      = getList
+
+    oall     p   = all p . getList
+
+    oany     p   = any p . getList
+
+    onull        = onull . getList
+
+    olength      = length . getList
+
+    ofoldr1Ex f m =
+        case getList m of
+          []   -> error "Data.MonoTraversable.ofoldr1Ex"
+          x:xs -> foldr f x xs 
+
+    ofoldl1Ex' f m =
+        case getList m of
+          []   -> error "Data.MonoTraversable.ofoldl1Ex'"
+          x:xs -> foldl' f x xs 
+
+
+-- Ordering biases user defined names with a file path prefix before defaulted names with the same prefix.
+instance Ord CharacterName where
+
+    lhs@Default{} `compare` rhs@UserDefined{} =
+        case rhs `compare` lhs of
+          LT -> GT
+          GT -> LT
+          EQ -> EQ
+    lhs@(UserDefined _ name) `compare` rhs@(Default path _index)
+      | toShortText (path <> ":") `isPrefixOf` name = LT
+      | otherwise = strCmp lhs rhs
+    lhs `compare` rhs = strCmp lhs rhs
+
+
 instance Show CharacterName where
 
     show = toString . showb
 
 
--- A custom 'TextShow' instance that agrees with the 'Show' instance.
 instance TextShow CharacterName where
 
     showb (UserDefined _ name) = showb name
@@ -99,20 +148,6 @@ instance TextShow CharacterName where
     showbList = showbListWith f
       where
         f x = "\"" <> showb x <> "\""
-
-
--- Ordering biases user defined names with a file path prefix before defaulted names with the same prefix.
-instance Ord CharacterName where
-
-  lhs@Default{} `compare` rhs@UserDefined{} =
-      case rhs `compare` lhs of
-        LT -> GT
-        GT -> LT
-        EQ -> EQ
-  lhs@(UserDefined _ name) `compare` rhs@(Default path _index)
-    | toShortText (path <> ":") `isPrefixOf` name = LT
-    | otherwise = strCmp lhs rhs
-  lhs `compare` rhs = strCmp lhs rhs
 
 
 -- Used internally for ordering logic after special cases are checked.
@@ -132,6 +167,11 @@ isUserDefined _             = False
 sourceFile :: CharacterName -> FileSource
 sourceFile (UserDefined x _) = x
 sourceFile (Default     x _) = x
+
+
+getList :: CharacterName -> String
+getList (UserDefined _ name) = TS.toString name
+getList (Default path index) = otoList path <> ":" <> show index
 
 
 -- |

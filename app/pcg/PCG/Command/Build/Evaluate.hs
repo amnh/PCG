@@ -334,7 +334,7 @@ initTaxaCounter = initCounter taxaCounter "Beginning Wagner build of" "taxa" 3
 printTaxaCounter :: NFData a => a -> a
 printTaxaCounter = printCounter taxaCounter
 
-  
+
 netEdgeCounter :: IORef (Word, Word)
 {-# NOINLINE netEdgeCounter #-}
 netEdgeCounter =

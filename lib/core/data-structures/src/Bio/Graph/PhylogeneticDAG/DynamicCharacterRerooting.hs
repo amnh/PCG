@@ -67,7 +67,6 @@ import           TextShow
 -- cost of the Cartesian product of the resolutions of the adjacent nodes minus any
 -- resolutions that contain the incident network edge contained on the current
 -- network edge.
-
 assignOptimalDynamicCharacterRootEdges
   :: ( HasBlockCost u v w x y z
      , TextShow n
@@ -205,7 +204,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     -- Construct the directed subtree resolutions for each memoized datum index 'n' in the vector 'memo'.
     -- E.g., given node 'n' in the following undirected subgraph store the directed subtree resolutions of
     -- the complete graph: '[(i,n),(j,n),(k,n)]'
-    -- >
+    --
     -- >    (i)
     -- >     |
     -- >    (n)
@@ -399,7 +398,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         -- in each block.
         --
         -- It is important to remember that since this minimization is performed
-        -- independently on each display tree, the rooting edges on the display
+        -- independently on each display tree, the traversal foci on the display
         -- tree can all be chosen independantly also.
         deriveMinimalSequenceForDisplayTree
           :: HasBlockCost u v w x y z
@@ -451,7 +450,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         recomputeCost (staticCostVal, dynCharVect) = (staticCostVal + minDynCharCost, dynCharNoWeight)
           where
             minDynCharCost  = sum' $ (\(c, w,  _) -> fromIntegral c * w) <$> dynCharVect
-            dynCharNoWeight =       (\(c, _, es) -> (c, es)           ) <$> dynCharVect
+            dynCharNoWeight =        (\(c, _, es) -> (c, es)           ) <$> dynCharVect
 
 {-
     -- Here we calculate, for each character block, for each display tree in the

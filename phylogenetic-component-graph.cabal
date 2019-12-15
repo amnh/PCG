@@ -1336,7 +1336,6 @@ executable generate-data-set
     alphabet,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
@@ -1348,7 +1347,37 @@ executable generate-data-set
     text                     >= 1.2       && < 2.0,
     text-show                >= 3.8.1     && < 4.0,
     validation               >= 1.1       && < 2.0,
-    -- >=0.12.0.2 required for compatability with "compact regions"
+    vector                   >= 0.12.0.2  && < 0.13,
+
+
+executable generate-random-sequence
+
+  import:
+    ghc-flags,
+    language-specs
+
+  main-is:
+    generate-random-sequence.hs
+
+  hs-source-dirs:
+    app
+
+  build-depends:             
+    alphabet,
+    ansi-wl-pprint           >= 0.6.8     && < 0.7,
+    base                     >= 4.11      && < 5.0,
+    bimap                    >= 0.3       && < 1.0,
+    bv-little                >= 1.1.1     && < 2.0,
+    containers               >= 0.5.8     && < 1.0,
+    deepseq                  >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    optparse-applicative     >= 0.15      && < 2.0,
+    mtl                      >= 2.0       && < 3.0,
+    random                   >= 1.0       && < 2.0,
+    scientific               >= 0.3.6     && < 0.4,
+    text                     >= 1.2       && < 2.0,
+    text-show                >= 3.8.1     && < 4.0,
+    validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
 
 
@@ -1423,6 +1452,42 @@ executable newick-resolver
     semigroupoids            >= 5.2.1     && < 5.4,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
+
+
+executable reduce-fastc
+
+  import:
+    ghc-flags,
+    language-specs
+
+  main-is:
+    reduce-fastc.hs
+
+  hs-source-dirs:
+    app
+
+  build-depends:             
+    alphabet,
+    file-parsers,
+    utility,                         
+    ansi-wl-pprint           >= 0.6.8     && < 0.7,
+    base                     >= 4.11      && < 5.0,
+    bimap                    >= 0.3       && < 1.0,
+    bv-little                >= 1.1.1     && < 2.0,
+    containers               >= 0.5.8     && < 1.0,
+    deepseq                  >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    optparse-applicative     >= 0.15      && < 2.0,
+    megaparsec               >= 8.0       && < 9.0,
+    mtl                      >= 2.0       && < 3.0,
+    random                   >= 1.0       && < 2.0,
+    scientific               >= 0.3.6     && < 0.4,
+    semigroupoids            >= 5.2.1     && < 5.4,
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1.3     && < 1.0,
+    text-show                >= 3.8.1     && < 4.0,
+    validation               >= 1.1       && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
 
 
 executable ukkonen-do-comparison
@@ -2016,7 +2081,7 @@ benchmark bench-string-alignment
     exitcode-stdio-1.0
 
   main-is:
-    BenchSuite/StringAlignment.hs
+    bench-string-alignment.hs
 
   ghc-options:
     -threaded
@@ -2057,8 +2122,64 @@ benchmark bench-string-alignment
     bench
 
   other-modules:
---    BenchSuite.FileStreaming
---    BenchSuite.StringAlignment
+    Benchmark.StringAlignment
+    PCG.Command.Read.InputStreams
+    PCG.Command.Read.ParseStreams
+    PCG.Command.Read.ReadCommandError
+            
+
+benchmark bench-string-alignment-small
+
+  import:
+    ghc-flags,
+    language-specs
+
+  type:
+    exitcode-stdio-1.0
+
+  main-is:
+    bench-string-alignment-small.hs
+
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-N
+
+  build-depends:
+    alphabet,
+    core,
+    data-normalization,
+    data-unification,
+    evaluation,
+    file-parsers,
+    file-source,
+    language,
+    utility,
+    validation-transformer,
+    base                     >= 4.11      && < 5.0,
+    containers               >= 0.5.8     && < 1.0,
+    criterion,
+    deepseq                  >= 1.4       && < 2.0,
+    directory                >= 1.3       && < 1.4,
+    filepath                 >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.17      && < 5.0,
+    megaparsec               >= 8.0       && < 9.0,
+    mono-traversable         >= 1.0       && < 2.0,
+    parallel                 >= 3.2       && < 4.0,
+    semigroupoids            >= 5.2.1     && < 5.4,
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1       && < 1.0,
+    text-show                >= 3.8.1     && < 4.0,
+    validation               >= 1.1       && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
+
+  hs-source-dirs:
+    app/pcg
+    bench
+
+  other-modules:
+    Benchmark.StringAlignment
     PCG.Command.Read.InputStreams
     PCG.Command.Read.ParseStreams
     PCG.Command.Read.ReadCommandError

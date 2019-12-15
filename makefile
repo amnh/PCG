@@ -12,7 +12,7 @@ haddock       = --haddock --haddock-deps
               # --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
-code-dirs     = app test $(shell find . -maxdepth 2 -type d -name "pcg-*") 
+code-dirs     = app bench test $(shell find . -maxdepth 2 -type d -name "pcg-*") 
 
 sub-libs      = pcg-file-parsers pcg-language pcg-utility
 
@@ -296,6 +296,7 @@ clean: phylogenetic-component-graph.cabal stack.yaml
 	  find $$dir -type f -name 'log.out'       -delete; \
 	  find $$dir -type f -name '*dump\-hi*'    -delete; \
 	  find $$dir -type f -name '*dump\-simpl*' -delete; \
+	  find $$dir -type d -name '.stack-work*'  -print0 | xargs -0 rm -rf; \
 	done
 	@echo -n -e "\33[2K\r"
 	@echo "[✓] Cleaning complete!"

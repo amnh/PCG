@@ -265,6 +265,7 @@ progressiveParse inputPath = do
 
         associationMap = M.fromList
             [ ("fas", (makeParser         nukeParser, ["fast","fasta"]))
+            , ("fsc", (makeParser  fastcStreamParser, ["fastc"]))
             , ("tre", (makeParser newickStreamParser, ["tree","new","newick","enew","enewick"]))
             , ("dot", (makeParser    dotStreamParser, []))
             , ("ver", (makeParser    verStreamParser, []))

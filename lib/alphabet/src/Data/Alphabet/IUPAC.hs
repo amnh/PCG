@@ -22,11 +22,12 @@ import           Data.Alphabet.Internal (AmbiguityGroup)
 import           Data.Bimap             (Bimap)
 import qualified Data.Bimap             as BM
 import qualified Data.List.NonEmpty     as NE
+import           Data.String
 
 
 -- |
 -- Substitutions for converting to an Amino Acid sequence based on IUPAC codes.
-iupacToAminoAcid :: Bimap (AmbiguityGroup String) (AmbiguityGroup String)
+iupacToAminoAcid :: (IsString s, Ord s) => Bimap (AmbiguityGroup s) (AmbiguityGroup s)
 iupacToAminoAcid = toBimap
     [ ('A', "A")
     , ('B', "DN")
@@ -58,7 +59,7 @@ iupacToAminoAcid = toBimap
 
 -- |
 -- Substitutions for converting to a DNA sequence based on IUPAC codes.
-iupacToDna :: Bimap (AmbiguityGroup String) (AmbiguityGroup String)
+iupacToDna :: (IsString s, Ord s) => Bimap (AmbiguityGroup s) (AmbiguityGroup s)
 iupacToDna = toBimap
     [ ('A', "A")
     , ('C', "C")
@@ -97,17 +98,17 @@ iupacToDna = toBimap
 
 -- |
 -- Substitutions for converting to a RNA sequence based on IUPAC codes.
-iupacToRna :: Bimap (AmbiguityGroup String) (AmbiguityGroup String)
+iupacToRna :: (IsString s, Ord s) => Bimap (AmbiguityGroup s) (AmbiguityGroup s)
 iupacToRna = BM.mapMonotonic setUpdate $ BM.mapMonotonicR setUpdate iupacToDna
   where
     setUpdate = fmap f
       where
         f x
-          | x == "T"  = "U"
+          | x == fromString "T" = fromString "U"
           | otherwise =  x
 
 
-toBimap :: [(Char, String)] ->  Bimap (AmbiguityGroup String) (AmbiguityGroup String)
+toBimap :: (IsString s, Ord s) => [(Char, String)] ->  Bimap (AmbiguityGroup s) (AmbiguityGroup s)
 toBimap = BM.fromList . fmap transform
   where
-    transform = pure . pure *** fmap pure . NE.fromList
+    transform = pure . fromString . pure *** fmap (fromString . pure) . NE.fromList

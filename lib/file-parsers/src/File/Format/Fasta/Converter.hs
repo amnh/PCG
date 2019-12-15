@@ -27,7 +27,9 @@ module File.Format.Fasta.Converter
   ) where
 
 import           Control.DeepSeq
+import           Data.Alphabet
 import           Data.Alphabet.IUPAC
+import           Data.Bimap                 (Bimap)
 import qualified Data.Bimap                 as BM
 import           Data.Data
 import           Data.List                  (intercalate)
@@ -111,6 +113,7 @@ validateStreamConversion seqType xs =
     f = V.filter ((`notElem` s) . pure . pure)
       where
         s  = keysSet $ BM.toMap bm
+        bm :: Bimap (AmbiguityGroup String) (AmbiguityGroup String)
         bm = case seqType of
                AminoAcid -> iupacToAminoAcid
                DNA       -> iupacToDna
