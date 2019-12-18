@@ -83,11 +83,6 @@ import           Text.Newick.Class
 import           Text.XML.Custom
 import           TextShow                      (TextShow (..), toString, unlinesB)
 import qualified Data.DList                    as DL
-import qualified VectorBuilder.Builder as BV
-import qualified VectorBuilder.Vector  as BV
-import           Data.Text.Short (ShortText)
-import           Data.NodeLabel
-import           Bio.Graph.Node
 
 
 -- |

@@ -201,11 +201,11 @@ instance HasNormalizedTopology (NonEmpty NewickForest) where
                 case ref `lookup` prevMap of
                   Just (xs, datum, ys) -> IM.insert ref ((fromRationalMay costMay, fromJust parentMay):xs, datum, ys) prevMap
                   Nothing              ->
-                    let parentRefs =
+                    let parentRef =
                           case parentMay of
                             Nothing -> []
                             Just x  -> [(fromRationalMay costMay, x)]
-                        currMap    = IM.insert ref (parentRefs, labelMay, f <$> children) prevMap
+                        currMap    = IM.insert ref (parentRef, labelMay, f <$> children) prevMap
                     in  foldr (subCall (Just ref)) currMap children
               where
                 f (NE x _ y _) = (fromRationalMay y,x)
@@ -229,9 +229,9 @@ instance HasNormalizedTopology TntResult where
         -- | Apply the generating function referencing the relational mapping.
         coerceTree mapping = unfoldDAG f 0
           where
-            f i = (g $ toList parentMay, datum, g childRefs)
+            f i = (g $ toList parentMay, datum, g children)
               where
-                (parentMay, datum, childRefs) = mapping ! i
+                (parentMay, datum, children) = mapping ! i
                 g = fmap (const mempty &&& id)
 
         -- | We assign a unique index to each node and create an adjcency matrix.

@@ -4,7 +4,7 @@ module Data.Graph.Test
 
 -- import Data.Foldable
 -- import Data.Functor.Identity
-import Data.Graph
+--import Data.Graph
 import Test.Tasty
 -- import Test.Tasty.HUnit      as HU
 -- import Test.Tasty.QuickCheck as QC

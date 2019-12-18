@@ -16,7 +16,7 @@ module Data.Vector.Custom
   ( fromList'
   ) where
 
-import qualified Control.Foldl as L
+--import qualified Control.Foldl as L
 import           Data.Vector   (Vector)
 import qualified Data.Vector   as V
 

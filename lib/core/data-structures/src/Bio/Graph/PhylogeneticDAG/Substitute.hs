@@ -17,7 +17,6 @@ module Bio.Graph.PhylogeneticDAG.Substitute where
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG
-import           Bio.Graph.ReferenceDAG.Internal    (IndexData)
 import           Bio.Graph.ReferenceDAG.Utility     (incrementRefVector)
 import           Bio.Sequence
 import           Control.Lens                       hiding (_head)
