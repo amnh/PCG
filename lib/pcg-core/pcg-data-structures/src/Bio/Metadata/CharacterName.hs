@@ -35,11 +35,13 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE StrictData        #-}
-{-# LANGUAGE UnboxedSums       #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE StrictData         #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 
 module Bio.Metadata.CharacterName
@@ -55,7 +57,7 @@ module Bio.Metadata.CharacterName
 import Control.DeepSeq
 import Control.Monad.State.Lazy
 import Data.FileSource
-import Data.Map                 hiding (null)
+import Data.Map
 import Data.Monoid
 import Data.String
 import Data.Text.Short          (ShortText, isPrefixOf, uncons)
@@ -73,15 +75,13 @@ import TextShow.Data.List       (showbListWith)
 data CharacterName
    = UserDefined !FileSource !ShortText
    | Default     !FileSource {-# UNPACK #-} !Word
-   deriving (Eq, Generic)
+   deriving stock    (Eq, Generic)
+   deriving anyclass (NFData)
 
 
 instance IsString CharacterName where
 
     fromString = UserDefined "Unspecified Path" . fromString
-
-
-instance NFData CharacterName
 
 
 -- A custom 'Show' instance for more legible rendering of lists.

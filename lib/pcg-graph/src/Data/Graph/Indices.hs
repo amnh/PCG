@@ -1,20 +1,21 @@
-{-# LANGUAGE LambdaCase     #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DerivingVia                #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DerivingStrategies         #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE InstanceSigs #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DerivingVia                #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs               #-}
+{-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 
 module Data.Graph.Indices where
 
+import Control.Lens
 import Data.Monoid
 import Data.Pair.Strict
-import Control.Lens
+import Data.Coerce
 
 
 newtype LeafInd = LeafInd {getLeafInd :: Int}
@@ -35,6 +36,8 @@ newtype TreeInd = TreeInd {getTreeInd :: Int}
 
 class Tagged t where
   tagValue   :: IndexType -> Int -> t
+  fromTagged :: TaggedIndex -> t
+  fromTagged (TaggedIndex ind tag) = tagValue tag ind
   getTag     :: t -> IndexType
   getIndex   :: t -> Int
 
@@ -70,8 +73,8 @@ newtype ChildIndex   = ChildIndex  {getChildIndex :: TaggedIndex}
 
 data ChildInfo e =
   ChildInfo
-  { childIndex :: ChildIndex
-  , edgeData   :: e
+  { childIndex :: {-# UNPACK #-} !ChildIndex
+  , edgeData   :: {-# UNPACK #-} !e
   }
   deriving stock (Eq, Show, Functor)
 
@@ -81,6 +84,14 @@ childInfo indtype n e =
   { childIndex = tagValue indtype n
   , edgeData   = e
   }
+
+childInfoTag :: TaggedIndex -> e -> ChildInfo e
+childInfoTag tag e =
+  ChildInfo
+  { childIndex = coerce tag
+  , edgeData   = e
+  }
+
 
 class HasChildIndex s a | s -> a where
   _childIndex :: Lens' s a
@@ -112,13 +123,12 @@ toUntagged :: (Tagged t) => t -> Pair IndexType UntaggedIndex
 toUntagged ind = getTag ind :!: getIndex ind
 
 
-
 --      ┌───────────────────────┐
 --      │    Edge Index Data    │
 --      └───────────────────────┘
 
 data EdgeIndex = EdgeIndex
-  { edgeParType    :: IndexType
-  , edgeParIndex   :: ParentIndex
-  , edgeChildIndex :: ChildIndex
+  { edgeParType    :: {-# UNPACK #-} !IndexType
+  , edgeParIndex   :: {-# UNPACK #-} !ParentIndex
+  , edgeChildIndex :: {-# UNPACK #-} !ChildIndex
   }

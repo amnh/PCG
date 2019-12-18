@@ -12,6 +12,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE PatternSynonyms       #-}
@@ -49,6 +50,7 @@ data  PostorderContext n c
       , rightChild :: c
       }
 
+
 -- |
 -- Smart elimination principle for a 'PostorderContext' where we do not change
 -- the network context.
@@ -73,7 +75,7 @@ leafFunction postFn = postFn . LeafContext
 -- Extract the function on an internal binary context from a function on a
 -- 'PostorderContext'.
 postBinaryFunction :: (PostorderContext n c -> e) -> ((c, c) -> e)
-postBinaryFunction postFn (leftChild, rightChild) = postFn $ PostBinaryContext{..}
+postBinaryFunction postFn (leftChild, rightChild) = postFn PostBinaryContext{..}
 
 
 -- |
@@ -91,7 +93,7 @@ data  ChildContext c
     = NoChildren
     | OneChild c
     | TwoChildren c c
-    deriving Functor
+    deriving stock (Functor)
 
 
 -- |
@@ -170,7 +172,7 @@ data  ParentContext p
     = NoParent
     | OneParent p
     | TwoParents p p
-    deriving Functor
+    deriving stock (Functor)
 
 -- |
 -- Construct a 'ParentContext' from a monoTraversable structure ignoring

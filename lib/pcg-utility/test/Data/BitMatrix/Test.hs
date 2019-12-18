@@ -334,7 +334,7 @@ testIsZeroMatrix = testProperty "isZeroMatrix bm <===> ∀ i, not (bm `isSet` i)
     f :: BitMatrix -> Bool
     f bm = all (not . isSet bm) indices == isZeroMatrix bm
       where
-        indices = [ (i, j) | i <- [ 0 .. numRows bm - 1 ], j <- [ 0 .. numCols bm - 1 ] ]
+        indices = bmIndices bm
 
 
 testRowsToList :: TestTree
@@ -366,7 +366,7 @@ testExpandRows = testProperty "toBits . expandRows === fmap (isSet bm)" f
     f :: BitMatrix -> Property
     f bm = (toBits . expandRows) bm === (isSet bm <$> indices)
       where
-        indices = [ (i, j) | i <- [ 0 .. numRows bm - 1 ], j <- [ 0 .. numCols bm - 1 ] ]
+        indices = bmIndices bm
 
 
 testFactorRows :: TestTree
@@ -376,7 +376,7 @@ testFactorRows = testProperty "toBits === fmap (isSet bm) . factorRows n" f
     f input = toBits bv === (isSet bm <$> indices)
       where
         bm = factorRows colCount bv
-        indices = [ (i, j) | i <- [ 0 .. numRows bm - 1 ], j <- [ 0 .. numCols bm - 1 ] ]
+        indices = bmIndices bm
         (_, colCount, bv) = getFactoredBitVector input
 
 
@@ -419,3 +419,7 @@ cornerCases = testGroup "Corner case values of a BitMatrix"
     [ testCase "maxBound :: Word is represented correctly"
       $ expandRows (bitMatrix 8 8 $ const True) @?= fromNumber (64 :: Word) (2^(64 :: Int) - 1 :: Integer)
     ]
+
+
+bmIndices :: BitMatrix -> [(Word, Word)]
+bmIndices bm = [ (i, j) | i <- [ 0 .. numRows bm - 1 ], j <- [ 0 .. numCols bm - 1 ] ]

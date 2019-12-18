@@ -24,6 +24,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
   ) where
 
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
+import Bio.Metadata.Dynamic                                            (overlap2)
 import Data.Matrix.NotStupid                                           (matrix)
 import Data.MonoTraversable
 
@@ -49,7 +50,7 @@ naiveDO :: DOCharConstraint s
                                    --
                                    --   The gapped alignment of the /second/ input character when aligned with the first character
 
-naiveDO char1 char2 costStruct = directOptimization char1 char2 (overlap costStruct) createNeedlemanWunchMatrix
+naiveDO char1 char2 costStruct = directOptimization char1 char2 (overlap2 costStruct) createNeedlemanWunchMatrix
 
 
 -- |

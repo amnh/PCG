@@ -1,20 +1,17 @@
-{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module Main where
 
-import Data.Graph.Test
-import Test.Tasty
-import Test.Tasty.Ingredients.Rerun (rerunningTests)
-import Data.Vector
-import Data.Pair.Strict
 import Data.Functor.Const
-
-
-import Data.Graph.Type
-import Data.Graph.Intermediate
 import Data.Graph.Indices
-import Data.Graph.NodeContext
+import Data.Graph.Intermediate
 import Data.Graph.Internal
+import Data.Graph.NodeContext
+--import Data.Graph.Test
+import Data.Graph.Type
+import Data.Pair.Strict
+import Data.Vector
+--import Test.Tasty.Ingredients.Rerun (rerunningTests)
 
 
 main :: IO ()
@@ -61,7 +58,7 @@ exampleGraph1 =
       = fromList
           [ rootIndexData
               (Id "root")
-              (Right $ (childInfo TreeTag 0 ()) :!: (childInfo TreeTag 1 ()))
+              (Right $ childInfo TreeTag 0 () :!: childInfo TreeTag 1 ())
           ]
   , cachedData = ()
   }
@@ -104,7 +101,7 @@ exampleGraph2 =
       = fromList
           [ rootIndexData
               (Id "root")
-              (Right $ (childInfo TreeTag 0 ()) :!: (childInfo TreeTag 1 ()))
+              (Right $ childInfo TreeTag 0 () :!: childInfo TreeTag 1 ())
           ]
   , cachedData = ()
   }
@@ -114,11 +111,11 @@ exampleGraph3 =
   Graph
   { leafReferences
       = fromList
-          [ leafIndexData "leaf1" (tagValue TreeTag 0)
-          , leafIndexData "leaf2" (tagValue TreeTag 0)
-          , leafIndexData "leaf3" (tagValue TreeTag 1)
-          , leafIndexData "leaf4/5" (tagValue TreeTag 1)
-          , leafIndexData "leaf6" (tagValue TreeTag 1)
+          [ leafIndexData "leaf1"   $ tagValue TreeTag 0
+          , leafIndexData "leaf2"   $ tagValue TreeTag 0
+          , leafIndexData "leaf3"   $ tagValue TreeTag 1
+          , leafIndexData "leaf4/5" $ tagValue TreeTag 1
+          , leafIndexData "leaf6"   $ tagValue TreeTag 1
           ]
   , treeReferences
       = fromList
@@ -151,7 +148,7 @@ exampleGraph3 =
       = fromList
           [ rootIndexData
               (Id "root")
-              (Right $ (childInfo TreeTag 0 ()) :!: (childInfo TreeTag 1 ()))
+              (Right $ childInfo TreeTag 0 () :!: childInfo TreeTag 1 ())
           ]
   , cachedData = ()
   }
@@ -187,12 +184,12 @@ intBinTree = Graph
   , cachedData = ()
   }
 
-intBinTree2 :: Graph ([]) () () Int Int
+intBinTree2 :: Graph [] () () Int Int
 intBinTree2 = postorder id f intBinTree
   where
     f :: [Int] -> [Int] -> [Int]
     f [a] [b] = [a,b, a + b]
-    f xs ys = (+) <$> xs <*> ys
+    f xs ys   = (+) <$> xs <*> ys
 
 
 

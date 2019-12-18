@@ -10,8 +10,10 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE Safe               #-}
 
 module Numeric.NonNegativeAverage
@@ -41,7 +43,8 @@ import Test.QuickCheck
 --
 -- All instance operations are /O(1)/.
 data NonNegativeAverage = Avg !Word !Word
-  deriving (Data, Eq, Generic, Ord)
+  deriving stock    (Data, Eq, Generic, Ord)
+  deriving anyclass (NFData)
 
 
 instance Arbitrary NonNegativeAverage where
@@ -62,9 +65,6 @@ instance Bounded NonNegativeAverage where
 instance Hashable NonNegativeAverage where
 
     hashWithSalt salt (Avg d n) = hashWithSalt salt (d, n)
-
-
-instance NFData NonNegativeAverage
 
 
 instance Semigroup NonNegativeAverage where

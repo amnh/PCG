@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -38,24 +39,26 @@ import TextShow                                (TextShow (showb), unlinesB)
 
 -- |
 -- Represents the finalized character decoration after a pre-order traversal.
-data AdditiveOptimizationDecoration a
-   = AdditiveOptimizationDecoration
-   { additiveFinalInterval :: {-# UNPACK #-} !(Range (Bound a))
-   , postorderDecoration   :: {-# UNPACK #-} !(AdditivePostorderDecoration a)
-   } deriving (Generic)
+data  AdditiveOptimizationDecoration a
+    = AdditiveOptimizationDecoration
+    { additiveFinalInterval :: {-# UNPACK #-} !(Range (Bound a))
+    , postorderDecoration   :: {-# UNPACK #-} !(AdditivePostorderDecoration a)
+    }
+    deriving stock (Generic)
 
 
 -- |
 -- An abstract initial dynamic character decoration with a polymorphic character
 -- type.
-data AdditivePostorderDecoration a
-   = AdditivePostorderDecoration
-   { additiveCost                 :: !(Finite (Bound a))
-   , additivePreliminaryInterval  :: {-# UNPACK #-} !(Range (Bound a))
-   , additiveChildPrelimIntervals :: {-# UNPACK #-} !(Range (Bound a), Range (Bound a))
-   , additiveIsLeaf               :: !Bool
-   , additiveCharacterField       :: !a
-   } deriving (Generic)
+data  AdditivePostorderDecoration a
+    = AdditivePostorderDecoration
+    { additiveCost                 :: !(Finite (Bound a))
+    , additivePreliminaryInterval  :: {-# UNPACK #-} !(Range (Bound a))
+    , additiveChildPrelimIntervals :: {-# UNPACK #-} !(Range (Bound a), Range (Bound a))
+    , additiveIsLeaf               :: !Bool
+    , additiveCharacterField       :: !a
+    }
+    deriving stock (Generic)
 
 
 -- | (✔)

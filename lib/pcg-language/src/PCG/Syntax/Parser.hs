@@ -41,7 +41,7 @@ data  Command
     | READ    {-# UNPACK #-} !ReadCommand
     | REPORT  {-# UNPACK #-} !ReportCommand
     | SAVE                   !SaveCommand
-    deriving (Show)
+    deriving stock (Show)
 
 
 -- |

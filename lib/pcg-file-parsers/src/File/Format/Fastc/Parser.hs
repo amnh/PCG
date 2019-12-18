@@ -38,13 +38,11 @@ import           Control.Monad.Combinators.NonEmpty
 import           Data.Char                          (isSpace)
 import           Data.Data
 import           Data.List.NonEmpty                 (NonEmpty (..))
-import           Data.Maybe
 import           Data.Semigroup.Foldable
 import           Data.String
 import qualified Data.Text                          as T
 import qualified Data.Text.Lazy                     as LT
 import           Data.Text.Short                    (ShortText, toString)
-import qualified Data.Text.Short                    as ST
 import           Data.Vector.NonEmpty               (Vector)
 import qualified Data.Vector.NonEmpty               as V
 import           Data.Void
@@ -147,17 +145,8 @@ ambiguityGroup = start *> group <* close
 {-# SPECIALISE validSymbol :: Parsec Void LT.Text ShortText #-}
 {-# SPECIALISE validSymbol :: Parsec Void  String ShortText #-}
 validSymbol :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ShortText
-validSymbol = do
-    syn <- syntenyDefinition <* notFollowedBy space1
-    res <- validSymbolChars  <* inlinedSpace
-    pure . force $ handleSynteny syn res
+validSymbol = validSymbolChars <* inlinedSpace
   where
-    syntenyDefinition = optional (char '~') <?> "synteny specification prefix: '~'"
-
-    handleSynteny x
-      | isJust x  = ST.reverse
-      | otherwise = id
-
     validSymbolChars = fromString . chunkToTokens (Proxy :: Proxy s) <$> symbolStr
       where
         symbolStr = takeWhile1P Nothing validSymbolChar <?>

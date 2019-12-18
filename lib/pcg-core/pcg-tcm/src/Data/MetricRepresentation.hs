@@ -10,15 +10,16 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveAnyClass   #-}
-{-# LANGUAGE DeriveFoldable   #-}
-{-# LANGUAGE DeriveFunctor    #-}
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE ExplicitForAll   #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE StrictData       #-}
-{-# LANGUAGE TypeFamilies     #-}
-{-# LANGUAGE UnboxedSums      #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveFoldable     #-}
+{-# LANGUAGE DeriveFunctor      #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE ExplicitForAll     #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE StrictData         #-}
+{-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 
 module Data.MetricRepresentation
@@ -36,7 +37,7 @@ import Data.Foldable
 import Data.Ord        (comparing)
 import Data.Range
 import Data.TCM        as TCM
-import GHC.Generics    hiding (to)
+import GHC.Generics
 
 
 -- |
@@ -55,7 +56,8 @@ data  MetricRepresentation a
     = ExplicitLayout {-# UNPACK #-} !TCM !a
     | DiscreteMetric
     | LinearNorm
-    deriving (Eq, Foldable, Functor, Generic, NFData)
+    deriving stock    (Eq, Foldable, Functor, Generic)
+    deriving anyclass (NFData)
 
 
 retreiveSCM :: MetricRepresentation a -> Word -> Word -> Word

@@ -32,7 +32,7 @@ import qualified Data.Bimap                 as BM
 import           Data.Data
 import           Data.List                  (intercalate)
 import           Data.List.NonEmpty         (NonEmpty (..))
-import           Data.Map                   hiding (filter, foldr, null, partition, (!))
+import           Data.Map                   hiding (filter, foldr, (!))
 import           Data.String
 import qualified Data.Text                  as T
 import qualified Data.Text.Lazy             as LT

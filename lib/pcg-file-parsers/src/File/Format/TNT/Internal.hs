@@ -104,24 +104,25 @@ import           Text.Megaparsec.Custom
 -- A file can contain either only tree data with labeled leaf nodes or
 -- a collection of taxa sequences with coresponsing metadata and possibly
 -- corresponding tree data.
-type TntResult = Either TreeOnly WithTaxa
+type  TntResult = Either TreeOnly WithTaxa
 
 
 -- |
 -- The possible parse result when the file contains only tree data.
-type TreeOnly  = TRead
+type  TreeOnly = TRead
 
 
 -- |
 -- The possible parse result when the file contains taxa sequences.
 -- 'trees' represents a (possibly empty) forest where each tree in
 -- the forest must have the complete taxa set as it's leaf node set.
-data WithTaxa
-   = WithTaxa
-   { sequences    :: Vector TaxonInfo
-   , charMetaData :: Vector CharacterMetadata
-   , trees        :: [LeafyTree TaxonInfo]
-   } deriving (Show)
+data  WithTaxa
+    = WithTaxa
+    { sequences    :: Vector TaxonInfo
+    , charMetaData :: Vector CharacterMetadata
+    , trees        :: [LeafyTree TaxonInfo]
+    }
+    deriving stock (Show)
 
 
 -- CCode types
@@ -131,41 +132,42 @@ data WithTaxa
 -- |
 -- Parse result from a CCODE command that reprsents a list of augmentations to
 -- the default metatdata state for some characters.
-type CCode = NonEmpty CCodeAugment
+type  CCode = NonEmpty CCodeAugment
 
 
 -- |
 -- The specifcation of which chracters need which metadata mutations.
-data CCodeAugment
-   = CCodeAugment
-   { charState :: NonEmpty CharacterState
-   , charSet   :: NonEmpty CharacterSet
-   } deriving (Show)
+data  CCodeAugment
+    = CCodeAugment
+    { charState :: NonEmpty CharacterState
+    , charSet   :: NonEmpty CharacterSet
+    }
+    deriving stock (Show)
 
 
 -- |
 -- The possible chracter metatadata values that can be mutated.
 data CharacterState
-   = Additive
-   | NonAdditive
-   | Active
-   | NonActive
-   | Sankoff
-   | NonSankoff
-   | Weight Int
-   | Steps  Int
-   deriving (Eq, Show)
+    = Additive
+    | NonAdditive
+    | Active
+    | NonActive
+    | Sankoff
+    | NonSankoff
+    | Weight Int
+    | Steps  Int
+    deriving stock (Eq, Show)
 
 
 -- |
 -- A nonempty contiguous character range.
-data CharacterSet
-   = Single    Int
-   | Range     Int Int
-   | FromStart Int
-   | ToEnd     Int
-   | Whole
-   deriving (Eq, Show)
+data  CharacterSet
+    = Single    Int
+    | Range     Int Int
+    | FromStart Int
+    | ToEnd     Int
+    | Whole
+    deriving stock (Eq, Show)
 
 
 -- CNames types
@@ -174,17 +176,18 @@ data CharacterSet
 
 -- |
 -- A list of names for the states of characters in the taxa sequences.
-type CNames = NonEmpty CharacterName
+type  CNames = NonEmpty CharacterName
 
 
 -- |
 -- A specifcation for the state names of a given character in the taxon's sequence.
-data CharacterName
-   = CharacterName
-   { sequenceIndex       :: Int
-   , characterId         :: String
-   , characterStateNames :: [String]
-   } deriving (Show)
+data  CharacterName
+    = CharacterName
+    { sequenceIndex       :: Int
+    , characterId         :: String
+    , characterStateNames :: [String]
+    }
+    deriving stock (Show)
 
 
 -- Cost types
@@ -193,11 +196,12 @@ data CharacterName
 
 -- |
 -- A custom TCM derivation for a list of characters in the taxa sequences.
-data Cost
-   = Cost
-   { costIndicies :: CharacterSet
-   , costMatrix   :: Matrix Double
-   } deriving (Eq, Show)
+data  Cost
+    = Cost
+    { costIndicies :: CharacterSet
+    , costMatrix   :: Matrix Double
+    }
+    deriving stock (Eq, Show)
 
 
 
@@ -205,15 +209,14 @@ data Cost
 --------------------------------------------------------------------------------
 
 
-
 -- |
 -- Specifies how to interpret the various character types in the taxa sequences.
-data NStates
-   = DnaStates     Bool
-   | NumericStates Int
-   | ProteinStates
-   | ContinuousStates
-   deriving (Show)
+data  NStates
+    = DnaStates     Bool
+    | NumericStates Int
+    | ProteinStates
+    | ContinuousStates
+    deriving stock (Show)
 
 
 -- TRead types
@@ -224,13 +227,13 @@ data NStates
 -- Parse result of an internal TREAD command.
 -- Specifies a nonempty forest of trees, where the leaf node set must be validated
 -- againtst the taxa set from a XREAD command.
-type TRead     = NonEmpty  TReadTree
+type  TRead = NonEmpty TReadTree
 
 
 -- |
 -- A tree with data only at the leaf nodes. Leaf nodes contain different criteria
 -- for matching the node against a given taxa from the taxa set.
-type TReadTree = LeafyTree NodeType
+type  TReadTree = LeafyTree NodeType
 
 
 {-
@@ -242,19 +245,19 @@ type TNTTree   = LeafyTree TaxonInfo
 
 -- |
 -- A rose tree which only contains data at the leaf nodes.
-data LeafyTree a
-   = Leaf a
-   | Branch [LeafyTree a]
-   deriving (Eq, Foldable, Functor, Show, Traversable)
+data  LeafyTree a
+    = Leaf a
+    | Branch [LeafyTree a]
+    deriving stock (Eq, Foldable, Functor, Show, Traversable)
 
 
 -- |
 -- Multiple possible criteria for matching leaf nodes to taxa from the taxa set.
-data NodeType
-   = Index  Int
-   | Name   String
-   | Prefix String
-   deriving (Eq, Show)
+data  NodeType
+    = Index  Int
+    | Name   String
+    | Prefix String
+    deriving stock (Eq, Show)
 
 
 -- XRead types
@@ -263,47 +266,48 @@ data NodeType
 
 -- |
 -- Parse result of an XREAD command.
-data XRead
-   = XRead
-   { charCountx :: Int
-   , taxaCountx :: Int
-   , sequencesx :: NonEmpty TaxonInfo
-   } deriving (Show)
+data  XRead
+    = XRead
+    { charCountx :: Int
+    , taxaCountx :: Int
+    , sequencesx :: NonEmpty TaxonInfo
+    }
+    deriving stock (Show)
 
 
 -- |
 -- The sequence information for a taxon within the TNT file's XREAD command.
 -- Contains the 'TaxonName' and the naive 'TaxonSequence'
-type TaxonInfo     = (TaxonName, TaxonSequence)
+type  TaxonInfo = (TaxonName, TaxonSequence)
 
 
 -- |
 -- The name of a taxon in a TNT file's XREAD command.
-type TaxonName     = String
+type  TaxonName = String
 
 
 -- |
 -- The naive sequence of a taxon in a TNT files' XREAD command.
-type TaxonSequence = [TntCharacter]
+type  TaxonSequence = [TntCharacter]
 
 
 -- |
 -- Different character types are deserialized from sequences segments.
 -- After all segments are collected they are de-interleaved into a single
 -- 'TaxonSequence'.
-data TntCharacter
-   = Continuous TntContinuousCharacter
-   | Discrete   TntDiscreteCharacter
-   | Dna        TntDnaCharacter
-   | Protein    TntProteinCharacter
-   deriving (Eq)
+data  TntCharacter
+    = Continuous TntContinuousCharacter
+    | Discrete   TntDiscreteCharacter
+    | Dna        TntDnaCharacter
+    | Protein    TntProteinCharacter
+    deriving stock (Eq)
 
 
 -- |
 -- A 'TntContinuousCharacter' is an real valued character. Continuous
 -- characters can have negative values. Continuous values are serialized
 -- textually as decimal values or integral values, scientific notation supported.
-type TntContinuousCharacter = Maybe Double
+type  TntContinuousCharacter = Maybe Double
 
 
 -- |
@@ -313,8 +317,8 @@ type TntContinuousCharacter = Maybe Double
 -- Missing \'?\' represents the empty ambiguity group.
 -- Each value coresponds to it's respective bit in the 'Word64'. Ambiguity groups
 -- are represented by 'Word64' values with multiple set bits.
-newtype TntDiscreteCharacter   = TntDis Word64
-  deriving newtype (Bits, Eq, Ord, FiniteBits)
+newtype TntDiscreteCharacter = TntDis Word64
+    deriving newtype (Bits, Eq, Ord, FiniteBits)
 
 
 -- |
@@ -325,8 +329,8 @@ newtype TntDiscreteCharacter   = TntDis Word64
 -- along with \'-\' & \'?\' characters representing gap or missing data respecitively.
 -- Gap represents an ambiguity group of all possible proteins unless gaps are
 -- treated as a fifth state. Missing represents the empty ambiguity group.
-newtype TntDnaCharacter        = TntDna Word8
-  deriving newtype (Bits, Eq, FiniteBits, Ord)
+newtype TntDnaCharacter = TntDna Word8
+    deriving newtype (Bits, Eq, FiniteBits, Ord)
 
 
 -- |
@@ -334,8 +338,8 @@ newtype TntDnaCharacter        = TntDna Word8
 -- Discrete values are serialized textualy as the protein IUPAC codes case-insensitively,
 -- along with \'-\' & \'?\' characters representing gap or missing data respecitively.
 -- Missing represents the empty ambiguity group.
-newtype TntProteinCharacter    = TntPro Word32
-  deriving newtype (Bits, Eq, FiniteBits, Ord)
+newtype TntProteinCharacter = TntPro Word32
+    deriving newtype (Bits, Eq, FiniteBits, Ord)
 
 
 -- | (✔)
@@ -393,17 +397,18 @@ instance Show TntProteinCharacter where
 --   , steps           = 1
 --   , costTCM         = Nothing
 --   }
-data CharacterMetadata
-   = CharMeta
-   { characterName   :: String
-   , characterStates :: Vector String
-   , additive        :: Bool --- Mutually exclusive sankoff!
-   , active          :: Bool
-   , sankoff         :: Bool
-   , weight          :: Int
-   , steps           :: Int
-   , costTCM         :: Maybe (Matrix Double)
-   } deriving (Show)
+data  CharacterMetadata
+    = CharMeta
+    { characterName   :: String
+    , characterStates :: Vector String
+    , additive        :: Bool --- Mutually exclusive sankoff!
+    , active          :: Bool
+    , sankoff         :: Bool
+    , weight          :: Int
+    , steps           :: Int
+    , costTCM         :: Maybe (Matrix Double)
+    }
+    deriving stock (Show)
 
 
 -- |

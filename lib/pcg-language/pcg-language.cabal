@@ -44,6 +44,7 @@ common ghc-flags
     -Wincomplete-patterns
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
+    -Wmissing-deriving-strategies          
     -Wmissing-fields
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
@@ -91,7 +92,7 @@ library
     containers               >= 0.5.8     && < 1.0,
     free                     >= 5.0       && < 6.0,
     keys                     >= 3.0       && < 4.0,
-    megaparsec               >= 7.0       && < 7.1,
+    megaparsec               >= 8.0       && < 9.0,
     parser-combinators       >= 1.0       && < 2.0,
     scientific               >= 0.3.6     && < 0.4,
     semigroups               >= 0.18      && < 1.0,

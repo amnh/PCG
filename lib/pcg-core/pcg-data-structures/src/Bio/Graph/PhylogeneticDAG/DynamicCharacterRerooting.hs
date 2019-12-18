@@ -33,6 +33,7 @@ import           Control.Lens
 import           Control.Monad.State.Lazy
 import           Data.Foldable
 import           Data.Foldable.Custom               (sum')
+import           Data.GraphViz.Printing
 import           Data.HashMap.Lazy                  (HashMap)
 import qualified Data.HashMap.Lazy                  as HM
 import qualified Data.IntMap                        as IM
@@ -43,6 +44,7 @@ import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.Text.Lazy                     (unpack)
 import           Data.Tuple                         (swap)
 import           Data.Vector                        (Vector)
 import qualified Data.Vector                        as V
@@ -190,6 +192,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
             rhsContext = (j `lookup` contextNodeDatum) >>= ((i,j) `lookup`)
             errorContext = unlines
                 [ "Could not find one or more of the contexts:"
+                , unpack . renderDot $ toDot inputDag
+                , ""
                 , show inputDag
                 , "Rooting Edge " <> show e
                 , show $ HM.keys <$> contextNodeDatum

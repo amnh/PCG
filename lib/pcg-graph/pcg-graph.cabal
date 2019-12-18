@@ -43,11 +43,11 @@ common ghc-flags
     -Wincomplete-patterns
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
+    -Wmissing-deriving-strategies
     -Wmissing-fields
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
     -Wmissing-signatures
-    -Wnoncanonical-monadfail-instances
     -Wnoncanonical-monad-instances
     -Wnoncanonical-monoid-instances
     -Woverflowed-literals
@@ -93,8 +93,10 @@ library
     hashable                 >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.17      && < 5.0,
+    monad-par                >= 0.3.5     && < 4.0,
     mtl                      ^>= 2.2.2            ,
-    parallel                 >= 3.2       && < 4.0,    
+    parallel                 >= 3.2       && < 4.0,
+    primitive                >= 0.7       && < 1.0,
     QuickCheck               >= 2.12      && < 3.0,
     text                     >= 1.2       && < 2.0,
     semigroupoids            >= 5.2.1     && < 5.4,
@@ -110,6 +112,7 @@ library
 
   exposed-modules:
     Data.Graph
+    Data.Graph.Convert
     Data.Graph.Type
     Data.Graph.Memo
     Data.Graph.Internal
@@ -149,7 +152,7 @@ test-suite pcg-graph-test
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
-                    
+
   other-modules:
     Data.Graph.Test
 
@@ -158,15 +161,15 @@ benchmark benchmark-suite
 
   import:
     ghc-flags,
-    language-spec     
+    language-spec
 
-  main-is:          
+  main-is:
     Benchmarks.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
-  hs-source-dirs: 
+  hs-source-dirs:
     bench
 
   build-depends:
@@ -179,7 +182,6 @@ benchmark benchmark-suite
     -fmax-simplifier-iterations=10
     -fspec-constr-count=6
     -threaded
-                    
+
   other-modules:
     Data.Graph.Bench
-

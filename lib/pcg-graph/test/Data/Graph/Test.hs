@@ -2,15 +2,16 @@ module Data.Graph.Test
   ( testSuite
   ) where
 
+-- import Data.Foldable
+-- import Data.Functor.Identity
 import Data.Graph
 import Test.Tasty
-import Test.Tasty.HUnit      as HU
-import Test.Tasty.QuickCheck as QC
-import Data.Functor.Identity
-import Data.Foldable
+-- import Test.Tasty.HUnit      as HU
+-- import Test.Tasty.QuickCheck as QC
 
 
-type TestGraph = Graph Identity () () Int Int
+-- type TestGraph = Graph Identity () () Int Int
+
 
 testSuite :: TestTree
 testSuite = testGroup "Graph Tests"
@@ -21,16 +22,17 @@ testSuite = testGroup "Graph Tests"
 
 testPropertyCases :: TestTree
 testPropertyCases = testGroup "Invariant properties"
-    [ 
+    [
     ]
 
 
 testExampleCases :: TestTree
 testExampleCases = testGroup "Example cases for Data.Graph"
-    [ 
+    [
     ]
 
 
+{-
 toDoProperties :: TestTree
 toDoProperties = testGroup "Properties of TODO"
     [ QC.testProperty "This property holds"
@@ -39,16 +41,19 @@ toDoProperties = testGroup "Properties of TODO"
   where
     property :: TestGraph  -> Bool
     property = const True
+-}
 
 
 
 -- Cases for unit tests
 
+{-
 exampleBalancedbinaryTree :: TestGraph
 exampleBalancedbinaryTree = undefined
+-}
 
 
-
+{-
 balancedBinaryTreeCases :: TestTree
 balancedBinaryTreeCases =
   testGroup
@@ -62,4 +67,5 @@ balancedBinaryTreeCases =
   where
     assertion :: Assertion
     assertion = True @?= True
+-}
 

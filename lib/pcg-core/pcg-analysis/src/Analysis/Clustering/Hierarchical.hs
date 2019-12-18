@@ -22,18 +22,21 @@ import           AI.Clustering.Hierarchical
 import           Analysis.Clustering.Metric
 import           Bio.Graph.Constructions
 import           Bio.Graph.LeafSet
-import           Bio.Graph.Node             (HasSequenceDecoration (..))
+import           Bio.Graph.Node
 import           Bio.Sequence
 import           Control.Lens
 import           Data.Coerce
 import           Data.DList                 (DList)
 import           Data.Monoid                (Sum (..))
-import           Data.Vector                hiding (length, toList)
+import           Data.NodeLabel
+import           Data.Vector
 import qualified Data.Vector.NonEmpty       as NE
-import           Prelude                    hiding (length)
 import           VectorBuilder.Builder      (Builder)
 import qualified VectorBuilder.Builder      as VB
 import           VectorBuilder.Vector       (build)
+
+import           Debug.Trace
+
 
 clusterLeaves
   :: forall f m . (Applicative f, Foldable f)
@@ -57,6 +60,10 @@ clusterLeaves meta leaves opt = dendro
 
     dendro :: Dendrogram (DecoratedCharacterNode f)
     dendro =
+      (\x -> trace
+               (drawDendrogram
+                  $ fmap (nodeLabelToString . view _nodeDecorationDatum) x)
+               x) $
       hclust opt leafSetVector distance
 
 
@@ -78,6 +85,18 @@ clusterIntoGroups
   -> NE.Vector (NE.Vector (DecoratedCharacterNode f))
 clusterIntoGroups meta leaves link =
     dendroToVectorClusters dendro
+  where
+    dendro = clusterLeaves meta leaves link
+
+clusterIntoCuts
+  :: (Applicative f, Foldable f)
+  => MetadataSequence m
+  -> LeafSet (DecoratedCharacterNode f)
+  -> Linkage
+  -> Double
+  -> NE.Vector (NE.Vector (DecoratedCharacterNode f))
+clusterIntoCuts meta leaves link =
+    cutCluster dendro
   where
     dendro = clusterLeaves meta leaves link
 
@@ -151,3 +170,20 @@ dendroToVectorClusters numberOfClusters i =
               then largerClusters
               else largerClusters <> smallerClusters
 
+
+
+cutCluster
+  :: forall a
+  . Dendrogram a
+  -> Double
+  -> NE.Vector (NE.Vector a)
+cutCluster d f = case d of
+  Leaf a  -> pure . pure $ a
+  Branch _ dist _ _ ->
+    let
+      clusters :: [Dendrogram a]
+      clusters = d `cutAt` (f * dist)
+      clustersV :: [NE.Vector a]
+      clustersV = fmap dendroToNonEmptyVector clusters
+    in
+      NE.unsafeFromVector . fromList $ clustersV

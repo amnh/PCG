@@ -12,10 +12,11 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE LambdaCase        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE LambdaCase         #-}
+{-# LANGUAGE OverloadedStrings  #-}
+{-# LANGUAGE RecordWildCards    #-}
 
 module PCG.Command.Report.Metadata
   ( outputMetadata
@@ -30,7 +31,7 @@ import Control.Lens.Operators     ((^.))
 import Data.FileSource
 import Data.Text.Lazy             (Text)
 import Data.Text.Short
-import Prelude             hiding (filter)
+import Prelude                    hiding (filter)
 import TextShow
 import TextShow.Custom
 
@@ -53,7 +54,7 @@ data  CharacterType
     | Metric
     | NonMetric
     | Dynamic
-    deriving Show
+    deriving stock (Show)
 
 
 -- |
@@ -67,7 +68,7 @@ outputMetadata = toLazyText . unlinesB . fmap (intercalateB ",") . (headerRow:) 
         , renderCharacterType . characterTypeRM
         , showb . stripCommas . tcmSourceFile
         ] <*> [x]
-      
+
     headerRow =
         [ "Character Name"
         , "Character Source File"

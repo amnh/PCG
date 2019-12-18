@@ -33,7 +33,7 @@ import Data.Data
 import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty     (NonEmpty)
-import Data.Text.Short        hiding (toString)
+import Data.Text.Short
 import Data.Text.Short.Custom ()
 import GHC.Generics           (Generic)
 import TextShow

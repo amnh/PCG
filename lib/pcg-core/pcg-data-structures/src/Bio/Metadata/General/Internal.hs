@@ -10,7 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -34,11 +36,13 @@ import Text.XML.Class
 -- |
 -- Represents a concrete type containing metadata fields shared across different
 -- bins.
-data GeneralCharacterMetadataDec
-   = GeneralCharacterMetadataDec
-   { name   :: !CharacterName
-   , weight :: {-# UNPACK #-} !Double
-   } deriving (Eq, Generic, Show)
+data  GeneralCharacterMetadataDec
+    = GeneralCharacterMetadataDec
+    { name   :: !CharacterName
+    , weight :: {-# UNPACK #-} !Double
+    }
+    deriving stock    (Eq, Generic, Show)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -67,9 +71,6 @@ instance HasCharacterName GeneralCharacterMetadataDec CharacterName where
 instance HasCharacterWeight GeneralCharacterMetadataDec Double where
 
     characterWeight = lens weight $ \e x -> e { weight = x }
-
-
-instance NFData GeneralCharacterMetadataDec
 
 
 instance ToXML GeneralCharacterMetadataDec where

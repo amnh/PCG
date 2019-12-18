@@ -12,6 +12,7 @@
 
 {-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -72,7 +73,8 @@ data MetadataBlock m = MB
           (DynamicCharacterMetadataDec DynamicCharacterElement)
       )
     }
-    deriving (NFData, Generic)
+    deriving stock   (Generic, Show)
+    deriving anyclass(NFData)
 
 
 instance Functor MetadataBlock where
@@ -80,7 +82,6 @@ instance Functor MetadataBlock where
     fmap f (MB m b) = MB (f m) b
 
     (<$) v (MB _ b) = MB    v  b
-
 
 
 instance HasBlockMetadata (MetadataBlock m) m where

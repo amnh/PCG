@@ -13,8 +13,9 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric    #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
 
 module Data.MutualExclusionSet.Internal
   ( MutualExclusionSet (includedElemMap, excludedElemMap, includedFullMap, excludedFullMap)
@@ -68,7 +69,8 @@ data  MutualExclusionSet a
     , excludedElemMap :: !(Map a (Set a))
     , includedFullMap :: !(Map a (Set a))
     , excludedFullMap :: !(Map a (Set a))
-    } deriving (Generic)
+    }
+    deriving stock (Generic)
 
 
 -- | (✔)

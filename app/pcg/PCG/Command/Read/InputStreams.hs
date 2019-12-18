@@ -1,3 +1,4 @@
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE LambdaCase          #-}
@@ -36,7 +37,7 @@ data  DataContent
     = DataContent
     { dataFile :: !FileResult
     , tcmFile  :: !(Maybe FileResult)
-    } deriving (Eq)
+    } deriving stock (Eq)
 
 
 -- |

@@ -34,7 +34,6 @@ import           Data.Alphabet
 import           Data.Data
 import           Data.Foldable
 import           Data.List.Utility            (transpose)
-import           Data.Monoid
 import           Data.Normalization.Character
 import           Data.Semigroup.Foldable      (Foldable1 (..))
 import           Data.TCM                     (TCM, TCMStructure (..))
@@ -42,7 +41,6 @@ import           Data.Text.Short              (ShortText)
 import           Data.Vector.NonEmpty         (Vector)
 import qualified Data.Vector.NonEmpty         as VNE
 import           GHC.Generics
-import           Prelude                      hiding (zip, zipWith)
 
 
 -- |

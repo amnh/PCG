@@ -77,7 +77,7 @@ import qualified Data.Text.Short                     as TS
 import           Data.Unification.Error
 import           Data.Unification.InputData
 import           Data.Validation
-import           Prelude                             hiding (lookup, zipWith)
+import           Prelude                             hiding (lookup)
 
 
 --type FileSource = ShortText

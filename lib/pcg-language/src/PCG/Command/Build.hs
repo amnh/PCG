@@ -13,16 +13,17 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE UnboxedSums #-}
-
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE UnboxedSums        #-}
 
 module PCG.Command.Build
   ( BuildCommand(..)
   , ConstructionType(..)
   , ClusterLabel(..)
   , ClusterOption(..)
+  , ClusterSplit(..)
   , buildCommandSpecification
-  , numberOfClusters
+  , clusterSplit
   ) where
 
 
@@ -36,7 +37,7 @@ import PCG.Syntax.Combinators
 -- output should be directed.
 data  BuildCommand
     = BuildCommand {-# UNPACK #-} !Int !ConstructionType !ClusterOption
-    deriving (Show)
+    deriving stock (Show)
 
 -- |
 -- Different possible types of component graph construction.
@@ -44,7 +45,7 @@ data  ConstructionType
     = WagnerTree
     | WheelerNetwork
     | WheelerForest
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
 
 
 -- |
@@ -57,19 +58,27 @@ data  ClusterLabel
     | WeightedLinkage
     | WardLinkage
     | KMedians
-    deriving (Eq, Show)
+    deriving stock (Eq, Show)
+
+
+-- |
+-- Options on how to divide a clustering
+data  ClusterSplit
+    = ClusterGroup Int
+    | ClusterCut   Double
+    deriving stock (Eq, Show)
 
 
 -- |
 -- A clustering specification with type and grouping.
-data ClusterOption = ClusterOption !ClusterLabel !Int
-    deriving (Eq, Show)
+data ClusterOption = ClusterOption !ClusterLabel !ClusterSplit
+    deriving stock (Eq, Show)
 
 
 -- |
 -- Get the number of clusters from a 'ClusterOption'.
-numberOfClusters :: ClusterOption -> Int
-numberOfClusters (ClusterOption _ n) = n
+clusterSplit :: ClusterOption -> ClusterSplit
+clusterSplit (ClusterOption _ s) = s
 
 -- |
 -- Defines the semantics of interpreting a valid \"BUILD\" command from the PCG
@@ -93,8 +102,8 @@ constructionType = choiceFrom [ buildTree, buildNetwork, buildForest ] `withDefa
 
 clusterOptionType :: Ap SyntacticArgument ClusterOption
 clusterOptionType =
-  (argId "cluster" . argList $ ClusterOption <$> clusterLabelType <*> int)
-  `withDefault` ClusterOption NoCluster 1
+  (argId "cluster" . argList $ ClusterOption <$> clusterLabelType <*> clusterSplitType)
+  `withDefault` ClusterOption NoCluster (ClusterGroup 1)
 
 clusterLabelType :: Ap SyntacticArgument ClusterLabel
 clusterLabelType =
@@ -116,3 +125,17 @@ clusterLabelType =
     weightedLinkage = value "weighted"   $> WeightedLinkage
     wardLinkage     = value "ward"       $> WardLinkage
     kMedians        = value "k-medians"  $> KMedians
+
+
+clusterSplitType :: Ap SyntacticArgument ClusterSplit
+clusterSplitType =
+    choiceFrom
+      [ groupCluster
+      , cutCluster
+      ]
+      `withDefault`
+        ClusterCut 0.7
+  where
+    groupCluster = argId "group" $ ClusterGroup <$> int
+    cutCluster   = argId "cut"   $ ClusterCut   <$> real `withDefault` 0.7
+

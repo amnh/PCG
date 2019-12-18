@@ -18,6 +18,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveFunctor         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -70,7 +71,7 @@ data  PrimitiveParseResult
     | ResultText                 !ShortText
     | ResultTime                 !DiffTime
     | ResultValue                !String
-    deriving (Show)
+    deriving stock (Show)
 
 
 data  PrimitiveType
@@ -80,7 +81,7 @@ data  PrimitiveType
     | TypeOfText
     | TypeOfTime
     | TypeOfValue String
-    deriving (Eq)
+    deriving stock (Eq)
 
 
 -- |
@@ -92,7 +93,7 @@ data PrimitiveValue a
    | PText           (ShortText -> a)
    | PTime           (DiffTime  -> a)
    | PValue !String  (()        -> a)
-   deriving (Functor)
+   deriving stock (Functor)
 
 
 class HasPrimitiveType a where

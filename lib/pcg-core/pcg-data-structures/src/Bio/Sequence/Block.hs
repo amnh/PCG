@@ -168,16 +168,16 @@ staticCost mBlock cBlock = nestedSum $
         weight = m ^. characterWeight
 
 hexFold :: Monoid m => CharacterBlock m m m m m m -> m
+{-# INLINE hexFold #-}
 hexFold cBlock =
   fold
-    (
-    [ fold $ (^.  continuousBin) cBlock
-    , fold $ (^. nonAdditiveBin) cBlock
-    , fold $ (^.    additiveBin) cBlock
-    , fold $ (^.      metricBin) cBlock
-    , fold $ (^.   nonMetricBin) cBlock
-    ] `using` evalList rpar
-    )
+    ([ fold $ (^.  continuousBin) cBlock
+     , fold $ (^. nonAdditiveBin) cBlock
+     , fold $ (^.    additiveBin) cBlock
+     , fold $ (^.      metricBin) cBlock
+     , fold $ (^.   nonMetricBin) cBlock
+     , fold $ (^.     dynamicBin) cBlock
+     ] `using` evalList rpar)
 
 
 -- |

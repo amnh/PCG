@@ -12,14 +12,18 @@
 -- chasracter indicies.
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE DeriveAnyClass     #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE TypeFamilies       #-}
 
 module File.Format.TNT.Command.Cost
   ( TransitionCost()
   , costCommand
   ) where
 
+import Control.DeepSeq
 import Data.CaseInsensitive     (FoldCase)
 import Data.Foldable
 import Data.Functor             (($>))
@@ -28,6 +32,7 @@ import Data.Matrix.NotStupid    (Matrix, matrix)
 import Data.Maybe               (fromJust, fromMaybe)
 import Data.Vector              ((!))
 import File.Format.TNT.Internal
+import GHC.Generics
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Custom   (double)
@@ -36,13 +41,15 @@ import Text.Megaparsec.Custom   (double)
 -- |
 -- The attributes necessary for constructing a custom TCM.
 -- Many 'TransitionCost' are expected to be folded together to form a TCm.
-data TransitionCost
-   = TransitionCost
-   { origins   :: NonEmpty Char
-   , symetric  :: Bool
-   , terminals :: NonEmpty Char
-   , costValue :: Double
-   } deriving (Eq,Show)
+data  TransitionCost
+    = TransitionCost
+    { origins   :: NonEmpty Char
+    , symetric  :: Bool
+    , terminals :: NonEmpty Char
+    , costValue :: Double
+    }
+    deriving stock    (Eq, Generic, Show)
+    deriving anyclass (NFData)
 
 
 -- |

@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -33,15 +34,16 @@ import Data.Vector.Instances ()
 -- definitions.
 --
 -- Use '(<>)' to construct larger blocks.
-data PartialCharacterBlock u v w x y z
-   = PartialCharacterBlock
-   { partialContinuousCharacterBins  :: DList u
-   , partialNonAdditiveCharacterBins :: DList v
-   , partialAdditiveCharacterBins    :: DList w
-   , partialMetricCharacterBins      :: DList x
-   , partialNonMetricCharacterBins   :: DList y
-   , partialDynamicCharacters        :: DList z
-   } deriving (Eq)
+data  PartialCharacterBlock u v w x y z
+    = PartialCharacterBlock
+    { partialContinuousCharacterBins  :: DList u
+    , partialNonAdditiveCharacterBins :: DList v
+    , partialAdditiveCharacterBins    :: DList w
+    , partialMetricCharacterBins      :: DList x
+    , partialNonMetricCharacterBins   :: DList y
+    , partialDynamicCharacters        :: DList z
+    }
+    deriving stock    (Eq)
 
 
 instance Semigroup (PartialCharacterBlock u v w x y z) where

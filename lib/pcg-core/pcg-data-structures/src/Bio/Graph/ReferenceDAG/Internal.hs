@@ -13,6 +13,7 @@
 {-# OPTIONS_GHC -Wno-unused-matches #-}
 {-# OPTIONS_GHC -Wno-name-shadowing #-}
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
@@ -92,7 +93,9 @@ data  ReferenceDAG d e n
     { references :: {-# UNPACK #-} !(Vector (IndexData e n))
     , rootRefs   :: !(NonEmpty Int)
     , graphData  :: !(GraphData d)
-    } deriving (Generic)
+    }
+    deriving stock    (Generic)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -107,7 +110,9 @@ data  IndexData e n
     { nodeDecoration :: !n
     , parentRefs     :: !IntSet
     , childRefs      :: !(IntMap e)
-    } deriving (Generic, Show)
+    }
+    deriving stock    (Generic, Show)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -122,7 +127,9 @@ data  GraphData d
     , rootingCost     :: {-# UNPACK #-} !Double
     , totalBlockCost  :: {-# UNPACK #-} !Double
     , graphMetadata   :: d
-    } deriving (Functor, Generic)
+    }
+    deriving stock    (Functor, Generic)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -133,7 +140,8 @@ data NodeClassification
     | NetworkNode
     | RootNode
     | TreeNode
-   deriving (Eq, Show)
+    deriving stock    (Eq, Generic, Show)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -379,18 +387,6 @@ instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
 
             f e | null (childRefs e) = pure $ nodeDecoration e
                 | otherwise          = mempty
-
-
--- | (✔)
-instance (NFData d, NFData e, NFData n) => NFData (ReferenceDAG d e n)
-
-
--- | (✔)
-instance (NFData e, NFData n) => NFData (IndexData e n)
-
-
--- | (✔)
-instance (NFData d) => NFData (GraphData d)
 
 
 -- | (✔)

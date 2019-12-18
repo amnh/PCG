@@ -51,11 +51,13 @@ dnaAlphabet = fromBimap iupacToDna
 rnaAlphabet :: (IsString s, Ord s) => Alphabet s
 rnaAlphabet = fromBimap iupacToRna
 
+
 -- |
 -- Alphabet of "discrete" values.
 --
 -- The discrete alphabet includes the following 63 values:
--- > ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-"
+--
+-- @ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" @
 discreteAlphabet :: (IsString s, Ord s) => Alphabet s
 discreteAlphabet = fromSymbols $ fromString . pure <$> fold [['0'..'9'], ['A'..'Z'], ['a'..'z'], "-"]
 

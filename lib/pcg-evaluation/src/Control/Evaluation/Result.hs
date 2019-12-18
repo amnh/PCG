@@ -71,7 +71,7 @@ data  ErrorPhase
     | Unifying
     | Computing
     | Outputing
-    deriving (Data, Eq, Generic, Ord, Read, Show)
+    deriving stock (Data, Eq, Generic, Ord, Read, Show)
 
 
 instance Alt EvaluationResult where

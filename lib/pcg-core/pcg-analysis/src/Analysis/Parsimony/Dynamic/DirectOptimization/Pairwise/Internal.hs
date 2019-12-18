@@ -14,10 +14,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns     #-}
-{-# LANGUAGE ConstraintKinds  #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE BangPatterns          #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DerivingStrategies    #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   ( Cost
@@ -44,22 +46,28 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   ) where
 
 import           Bio.Character.Encodable
-import           Control.Foldl              (Fold (..))
-import qualified Control.Foldl              as F
+import           Control.Foldl               (Fold (..))
+import qualified Control.Foldl               as F
 import           Control.Monad.State.Strict
 import           Data.Bits
-import           Data.DList                 (snoc)
+import           Data.DList                  (snoc)
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty         (NonEmpty (..))
-import qualified Data.List.NonEmpty         as NE
-import           Data.Matrix.NotStupid      (Matrix)
-import           Data.Maybe                 (fromMaybe)
+import           Data.List.NonEmpty          (NonEmpty (..))
+import qualified Data.List.NonEmpty          as NE
+import           Data.Matrix.NotStupid       (Matrix)
+import           Data.Maybe                  (fromMaybe)
 import           Data.MonoTraversable
 import           Data.Ord
 import           Data.Semigroup.Foldable
 import           Numeric.Extended.Natural
-import           Prelude                    hiding (lookup)
+import           Prelude                     hiding (lookup)
+
+import qualified Data.Vector.Generic         as G
+import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.Vector.Primitive       as P
+import qualified Data.Vector.Unboxed         as U
+import           Data.Word                   (Word8)
 
 
 -- |
@@ -83,7 +91,7 @@ import           Prelude                    hiding (lookup)
 -- deterministic way. Without loss of generality in determining the ordering,
 -- we choose the same biasing as the C code called from the FFI for consistency.
 data Direction = DiagArrow | LeftArrow | UpArrow
-  deriving (Eq, Ord)
+  deriving stock (Eq, Ord)
 
 
 -- | (✔)
@@ -92,6 +100,65 @@ instance Show Direction where
     show DiagArrow = "↖"
     show LeftArrow = "←"
     show UpArrow   = "↑"
+
+fromDirection :: Direction -> Word8
+{-# INLINE fromDirection #-}
+fromDirection DiagArrow = 0
+fromDirection LeftArrow = 1
+fromDirection UpArrow   = 2
+
+toDirection :: Word8 -> Direction
+{-# INLINE toDirection #-}
+toDirection 0 = DiagArrow
+toDirection 1 = LeftArrow
+toDirection _ = UpArrow
+
+data instance U.MVector s Direction = MV_Direction (P.MVector s Word8)
+data instance U.Vector Direction    = V_Direction  (P.Vector    Word8)
+
+instance U.Unbox Direction
+
+instance M.MVector U.MVector Direction where
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicOverlaps #-}
+  {-# INLINE basicUnsafeNew #-}
+  {-# INLINE basicInitialize #-}
+  {-# INLINE basicUnsafeReplicate #-}
+  {-# INLINE basicUnsafeRead #-}
+  {-# INLINE basicUnsafeWrite #-}
+  {-# INLINE basicClear #-}
+  {-# INLINE basicSet #-}
+  {-# INLINE basicUnsafeCopy #-}
+  {-# INLINE basicUnsafeGrow #-}
+  basicLength (MV_Direction v) = M.basicLength v
+  basicUnsafeSlice i n (MV_Direction v) = MV_Direction $ M.basicUnsafeSlice i n v
+  basicOverlaps (MV_Direction v1) (MV_Direction v2) = M.basicOverlaps v1 v2
+  basicUnsafeNew n = MV_Direction `liftM` M.basicUnsafeNew n
+  basicInitialize (MV_Direction v) = M.basicInitialize v
+  basicUnsafeReplicate n x = MV_Direction `liftM` M.basicUnsafeReplicate n (fromDirection x)
+  basicUnsafeRead (MV_Direction v) i = toDirection `liftM` M.basicUnsafeRead v i
+  basicUnsafeWrite (MV_Direction v) i x = M.basicUnsafeWrite v i (fromDirection x)
+  basicClear (MV_Direction v) = M.basicClear v
+  basicSet (MV_Direction v) x = M.basicSet v (fromDirection x)
+  basicUnsafeCopy (MV_Direction v1) (MV_Direction v2) = M.basicUnsafeCopy v1 v2
+  basicUnsafeMove (MV_Direction v1) (MV_Direction v2) = M.basicUnsafeMove v1 v2
+  basicUnsafeGrow (MV_Direction v) n = MV_Direction `liftM` M.basicUnsafeGrow v n
+
+instance G.Vector U.Vector Direction where
+  {-# INLINE basicUnsafeFreeze #-}
+  {-# INLINE basicUnsafeThaw #-}
+  {-# INLINE basicLength #-}
+  {-# INLINE basicUnsafeSlice #-}
+  {-# INLINE basicUnsafeIndexM #-}
+  {-# INLINE elemseq #-}
+  basicUnsafeFreeze (MV_Direction v) = V_Direction `liftM` G.basicUnsafeFreeze v
+  basicUnsafeThaw (V_Direction v) = MV_Direction `liftM` G.basicUnsafeThaw v
+  basicLength (V_Direction v) = G.basicLength v
+  basicUnsafeSlice i n (V_Direction v) = V_Direction $ G.basicUnsafeSlice i n v
+  basicUnsafeIndexM (V_Direction v) i = toDirection `liftM` G.basicUnsafeIndexM v i
+  basicUnsafeCopy (MV_Direction mv) (V_Direction v) = G.basicUnsafeCopy mv v
+  elemseq _ = seq
 
 
 -- |
@@ -382,41 +449,43 @@ traceback :: ( DOCharConstraint s
           -> s
           -> s
           -> (Word, s, s, s, s)
-traceback alignMatrix longerChar lesserChar =
-    ( unsafeToFinite cost
-    , constructDynamic . NE.fromList $ toList ungappedMedianStates
-    , constructDynamic . NE.fromList $ toList medianStates
-    , constructDynamic . NE.fromList $ toList alignedLongerChar
-    , constructDynamic . NE.fromList $ toList alignedLesserChar
-    )
+traceback alignMatrix longerChar lesserChar = (finalCost, ungapped, medians, longer, lesser)
   where
-      (ungappedMedianStates, medianStates, alignedLongerChar, alignedLesserChar) = go lastCell
-      lastCell     = (row, col)
-      (cost, _, _) = alignMatrix ! lastCell
+    finalCost = unsafeToFinite cost
+    ungapped  = dlistToDynamic ungappedMedianStates
+    medians   = dlistToDynamic medianStates
+    longer    = dlistToDynamic alignedLongerChar
+    lesser    = dlistToDynamic alignedLesserChar
 
-      col = olength longerChar
-      row = olength lesserChar
-      gap = gapOfStream longerChar
+    (ungappedMedianStates, medianStates, alignedLongerChar, alignedLesserChar) = go lastCell
+    lastCell     = (row, col)
+    (cost, _, _) = alignMatrix ! lastCell
 
-      go p@(i, j)
-        | p == (0,0) = (mempty, mempty, mempty, mempty)
-        | otherwise  = ( if   medianElement == gap
-                         then previousUngapped
-                         else previousUngapped      `snoc` medianElement
-                       , previousMedianCharElements `snoc` medianElement
-                       , previousLongerCharElements `snoc` longerElement
-                       , previousLesserCharElements `snoc` lesserElement
-                       )
-        where
-          (previousUngapped, previousMedianCharElements, previousLongerCharElements, previousLesserCharElements) = go (row', col')
+    dlistToDynamic = constructDynamic . NE.fromList . toList
 
-          (_, directionArrow, medianElement) = alignMatrix ! p
+    col = olength longerChar
+    row = olength lesserChar
+    gap = gapOfStream longerChar
 
-          (row', col', longerElement, lesserElement) =
-              case directionArrow of
-                LeftArrow -> (i    , j - 1, longerChar `indexStream` (j - 1),                             gap )
-                UpArrow   -> (i - 1, j    ,                             gap , lesserChar `indexStream` (i - 1))
-                DiagArrow -> (i - 1, j - 1, longerChar `indexStream` (j - 1), lesserChar `indexStream` (i - 1))
+    go p@(i, j)
+      | p == (0,0) = (mempty, mempty, mempty, mempty)
+      | otherwise  = ( if   medianElement == gap
+                       then previousUngapped
+                       else previousUngapped `snoc` medianElement
+                     ,      previousMedians  `snoc` medianElement
+                     ,      previousLongers  `snoc` longerElement
+                     ,      previousLessers  `snoc` lesserElement
+                     )
+      where
+        (previousUngapped, previousMedians, previousLongers, previousLessers) = go (row', col')
+
+        (_, directionArrow, medianElement) = alignMatrix ! p
+
+        (row', col', longerElement, lesserElement) =
+            case directionArrow of
+              LeftArrow -> (i    , j - 1, longerChar `indexStream` (j - 1),                             gap )
+              UpArrow   -> (i - 1, j    ,                             gap , lesserChar `indexStream` (i - 1))
+              DiagArrow -> (i - 1, j - 1, longerChar `indexStream` (j - 1), lesserChar `indexStream` (i - 1))
 
 
 {--

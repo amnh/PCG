@@ -76,7 +76,9 @@ type  EdgeLength    = Maybe Double
 
 -- |
 -- The two types of sets of nodes present in a VER file
-data  VertexSetType = Vertices | Roots deriving (Eq, Generic, NFData, Show)
+data  VertexSetType = Vertices | Roots
+    deriving stock    (Eq, Generic, Show)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -89,8 +91,8 @@ data  EdgeInfo
     , edgeTarget :: VertexLabel -- ^ Extract the destination of the directed edge
     , edgeLength :: EdgeLength  -- ^ Extract the /possibly/ present edge length
     }
-    deriving stock (Data, Eq, Generic, Ord, Typeable)
     deriving anyclass (NFData)
+    deriving stock    (Data, Eq, Generic, Ord, Typeable)
 
 
 -- |

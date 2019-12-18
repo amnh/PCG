@@ -2,6 +2,7 @@
 {-# LANGUAGE DeriveFoldable      #-}
 {-# LANGUAGE DeriveFunctor       #-}
 {-# LANGUAGE DeriveTraversable   #-}
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE OverloadedStrings   #-}
@@ -54,7 +55,8 @@ data  Specification
     , specifiedRootLength   :: Word
     , specifiedAlignedData  :: Bool
     , specifiedRenderVER    :: Bool
-    } deriving (Eq, Show)
+    }
+    deriving stock (Eq, Show)
 
 
 data  UserInput
@@ -69,13 +71,14 @@ data  UserInput
     , inputRootLength   :: Word
     , inputAlignedData  :: Bool
     , inputRenderVER    :: Bool
-    } deriving (Eq, Show)
+    }
+    deriving stock (Eq, Show)
 
 
 data  BinaryTree b a
     = Branch !(BinaryTree b a) !(BinaryTree b a)
     | Terminal !b !a
-    deriving (Eq, Functor, Foldable, Ord, Show, Traversable)
+    deriving stock (Eq, Functor, Foldable, Ord, Show, Traversable)
 
 
 main :: IO ()

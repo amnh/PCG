@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -74,7 +75,9 @@ data  PhylogeneticFreeNode n s
     = PNode
     { nodeDecorationDatum :: !n
     , sequenceDecoration  :: !s
-    } deriving (Eq, Functor, Generic, Show)
+    }
+    deriving stock    (Eq, Functor, Generic, Show)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -84,7 +87,9 @@ data  PhylogeneticNode s n
     = PNode2
     { resolutions          :: !(ResolutionCache s)
     , nodeDecorationDatum2 :: !n
-    } deriving (Eq, Functor, Generic)
+    }
+    deriving stock    (Eq, Functor, Generic)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -143,12 +148,14 @@ data  ResolutionInformation s
     = ResInfo
     { resolutionMetadata :: ResolutionMetadata
     , characterSequence  :: !s
-    } deriving (Functor, Foldable, Traversable, Generic)
+    }
+    deriving stock    (Functor, Foldable, Traversable, Generic)
+    deriving anyclass (NFData)
 
 
 -- |
 -- The metadata of a subtree resolution.
-data ResolutionMetadata
+data  ResolutionMetadata
     = ResolutionMetadata
     { totalSubtreeCost       :: {-# UNPACK #-} !Double
     , localSequenceCost      :: {-# UNPACK #-} !Double
@@ -156,7 +163,9 @@ data ResolutionMetadata
     , subtreeRepresentation  ::                !NewickSerialization
     , subtreeEdgeSet         ::                !(EdgeSet (Int, Int))
     , topologyRepresentation :: {-# UNPACK #-} !(TopologyRepresentation (Int, Int))
-    } deriving (Eq, Ord, Generic)
+    }
+    deriving stock    (Eq, Ord, Generic)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -169,9 +178,9 @@ type ResolutionCache s = NonEmpty (ResolutionInformation s)
 -- A newick representation of a subtree. 'Semigroup' instance used for subtree
 -- joining.
 newtype NewickSerialization = NS Text
-  deriving newtype (Eq, Ord, Show, TextShow)
-  deriving stock   (Generic)
-
+    deriving newtype  (Eq, Ord, Show, TextShow)
+    deriving stock    (Generic)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -361,21 +370,6 @@ instance Eq  (ResolutionInformation s) where
     lhs == rhs =
                   lhs ^. _leafSetRepresentation == rhs ^. _leafSetRepresentation
                && lhs ^. _subtreeRepresentation == rhs ^. _subtreeRepresentation
-
-
-instance (NFData n, NFData s) => NFData (PhylogeneticFreeNode n s)
-
-
-instance (NFData s, NFData n) => NFData (PhylogeneticNode s n)
-
-
-instance NFData NewickSerialization
-
-
-instance NFData s => NFData (ResolutionInformation s)
-
-
-instance NFData ResolutionMetadata
 
 
 instance Ord (ResolutionInformation s) where

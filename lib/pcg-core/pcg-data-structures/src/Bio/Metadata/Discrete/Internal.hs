@@ -10,7 +10,9 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -41,15 +43,18 @@ import Data.MetricRepresentation
 import GHC.Generics                hiding (to)
 import Text.XML
 
+
 -- |
 -- Represents a concrete type containing metadata fields shared across all
 -- discrete different bins. Continous bins do not have Alphabets.
-data DiscreteCharacterMetadataDec
-   = DiscreteCharacterMetadataDec
-   { alphabet      :: {-# UNPACK #-} !(Alphabet String)
-   , generalData   :: {-# UNPACK #-} !GeneralCharacterMetadataDec
-   , tcmSourceFile :: {-# UNPACK #-} !FileSource
-   } deriving (Generic)
+data  DiscreteCharacterMetadataDec
+    = DiscreteCharacterMetadataDec
+    { alphabet      :: {-# UNPACK #-} !(Alphabet String)
+    , generalData   :: {-# UNPACK #-} !GeneralCharacterMetadataDec
+    , tcmSourceFile :: {-# UNPACK #-} !FileSource
+    }
+    deriving stock    (Generic)
+    deriving anyclass (NFData)
 
 
 -- |
@@ -66,9 +71,6 @@ instance Eq DiscreteCharacterMetadataDec where
 
     lhs == rhs = alphabet    lhs == alphabet       rhs
               && generalData lhs == generalData    rhs
-
-
-instance NFData DiscreteCharacterMetadataDec
 
 
 instance Show DiscreteCharacterMetadataDec where
