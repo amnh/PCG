@@ -1,0 +1,143 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Graph.TopologyRepresentation
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Set-like structures for collection of edges.
+--
+-----------------------------------------------------------------------------
+
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+
+
+module Data.Graph.TopologyRepresentation
+  ( TopologyRepresentation
+  -- * Construction
+  , isolatedNetworkEdgeContext
+  -- * Deconstruct
+  , excludedNetworkEdges
+  , includedNetworkEdges
+  , mutuallyExclusivePairs
+  -- * Comparison
+  , isCompatableWithTopology
+  , isEdgePermissibleWith
+  ) where
+
+
+import           Control.DeepSeq
+import           Data.Foldable
+import           Data.Functor.Classes
+import           Data.Hashable
+import           Data.MutualExclusionSet (MutualExclusionSet)
+import qualified Data.MutualExclusionSet as MES
+import           Data.Set                (Set)
+import           GHC.Generics
+import           TextShow                (TextShow (showb), unwordsB)
+
+
+-- |
+-- Represents a collection of network edges and their mutually-exclusive edges.
+--
+-- Often used to represent a unique spanning tree in a phylogenetic DAG.
+newtype TopologyRepresentation a = TR { unwrap :: MutualExclusionSet a }
+  deriving stock   (Eq, Generic, Ord)
+  deriving newtype (Eq1, Hashable, Monoid, NFData, Ord1, Semigroup)
+
+
+instance (Ord a, Show a) => Show (TopologyRepresentation a) where
+
+    show x = unwords
+        [ "Network Edges of Topology:"
+        , showIncluded x
+        , "|"
+        , showExcluded x
+        ]
+      where
+        showIncluded = show . toList . includedNetworkEdges
+        showExcluded = show . toList . excludedNetworkEdges
+
+
+instance (Ord a, TextShow a) => TextShow (TopologyRepresentation a) where
+
+    showb x = unwordsB
+        [ "Network Edges of Topology:"
+        , showIncluded x
+        , "|"
+        , showExcluded x
+        ]
+      where
+        showIncluded = showb . toList . includedNetworkEdges
+        showExcluded = showb . toList . excludedNetworkEdges
+
+
+-- |
+-- \( \mathcal{O} \left( 1 \right) \)
+--
+-- Construct a singleton 'TopologyRepresentation' value by supplying two network edge identifiers: one
+-- that represents an edge contained in the topology and a
+-- corresponding one that represents the mutually-exclusive
+-- incident edge.
+--
+-- Use the semigroup operator '(<>)' to merge isolated network edge contexts into
+-- a larger 'TopologyRepresentation'.
+{-# INLINE isolatedNetworkEdgeContext #-}
+isolatedNetworkEdgeContext
+  :: Eq a
+  => a -- ^ Included network edge
+  -> a -- ^ Excluded incident network edge
+  -> TopologyRepresentation a
+isolatedNetworkEdgeContext x y = TR $ MES.singleton x y
+
+
+-- |
+-- \( \mathcal{O} \left( n \right) \)
+--
+-- Retrieve the list of network edge identifiers present in the topology.
+{-# INLINE includedNetworkEdges #-}
+includedNetworkEdges :: TopologyRepresentation a -> Set a
+includedNetworkEdges = MES.includedSet . unwrap
+
+
+-- |
+-- \( \mathcal{O} \left( n \right) \)
+--
+-- Retrieve the list of network edge identifiers excluded from the topology.
+{-# INLINE excludedNetworkEdges #-}
+excludedNetworkEdges :: TopologyRepresentation a -> Set a
+excludedNetworkEdges = MES.excludedSet . unwrap
+
+
+-- |
+-- \( \mathcal{O} \left( n \right) \)
+--
+-- Retrieve the list of network edge identifiers stored in the topology
+-- representation.
+{-# INLINE mutuallyExclusivePairs #-}
+mutuallyExclusivePairs :: TopologyRepresentation a -> Set (a,a)
+mutuallyExclusivePairs = MES.mutuallyExclusivePairs . unwrap
+
+
+-- |
+-- \( \mathcal{O} \left( m * \log_2 ( \frac {n}{m + 1} ) \right), m \leq n \)
+--
+-- Perform a subsetting operation to determine is a sub-topology is compatible
+-- with another topology.
+{-# INLINE isCompatableWithTopology #-}
+isCompatableWithTopology :: Ord a => TopologyRepresentation a -> TopologyRepresentation a -> Bool
+isCompatableWithTopology ts = MES.isPermissible (unwrap ts) . unwrap
+
+
+-- |
+-- \( \mathcal{O} \left( \log_2 ( n ) \right) \)
+--
+-- Determine if an edge is compatible with a topology.
+isEdgePermissibleWith :: Ord a => a -> TopologyRepresentation a -> Bool
+isEdgePermissibleWith e = not . (e `MES.isExcluded`) . unwrap
