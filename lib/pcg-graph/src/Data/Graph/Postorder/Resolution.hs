@@ -1,40 +1,37 @@
-{-# LANGUAGE DeriveFunctor      #-}
-{-# LANGUAGE RecordWildCards    #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE KindSignatures    #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveAnyClass             #-}
+{-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeOperators              #-}
+
 module Data.Graph.Postorder.Resolution where
 
-import Data.UnionSet
-import Data.Functor.Apply
-import Control.Applicative
-import Data.Traversable
-import Data.List.NonEmpty (NonEmpty)
-import qualified Data.List.NonEmpty as NonEmpty
-import Data.Functor.Identity
-import Control.Lens (Lens, Lens', lens, view)
-import Control.DeepSeq
-import GHC.Generics
-import Data.Pair.Strict
-import Data.Kind (Type)
-import Data.Bits
-import Control.Monad (guard)
-import GHC.TypeLits
-import Data.Proxy (Proxy(..))
+import           Control.DeepSeq
+import           Control.Lens                      (Lens, Lens', lens, view)
+import           Control.Monad                     (guard)
+import           Data.Bits
+import           Data.Functor.Apply
+import           Data.Functor.Identity
+import           Data.List.NonEmpty                (NonEmpty)
+import qualified Data.List.NonEmpty                as NonEmpty
+import           Data.Pair.Strict
+import           Data.Proxy                        (Proxy (..))
+import           Data.UnionSet
+import           GHC.Generics
+import           GHC.TypeLits
 
-import Data.Graph.TopologyRepresentation
+import           Data.Graph.TopologyRepresentation
 
 -- |
 -- The metadata of a subtree resolution.
@@ -267,34 +264,3 @@ instance HasResolutionMetadata (Resolution s) ResolutionMetadata where
 
     {-# INLINE _resolutionMetadata #-}
     _resolutionMetadata = lens resolutionMetadata (\r m -> r {resolutionMetadata = m})
-{-
-
-
-instance (Functor f, Functor nonEmpty) => Functor (LeafSetT nonEmpty f) where
-  fmap f leafSetT@(ResolutionCache{..})=
-    ResolutionCache leafSet (fmap (fmap f) ResolutionCache)
-
-
-instance (Apply f, Alternative nonEmpty, Traversable nonEmpty)
-  => Applicative (LeafSetT nonEmpty f) where
-  liftF2 op resolutionCache1 resolutionCache2 =
-    let
-      leafSet1 = leafSet resolutionCache1
-      leafSet2 = leafSet resolutionCache2
-      resolutionCache3 :: nonEmpty (f 
-      resolutionCache3 =
-        fromList
-          [op <$> l <.> r
-          | l <- toList ls
-          , r <- toList rs
-          , resolutionsDoNotOverlap l r
-        
-    in
-      
-  -}    
-      
-      
-      
-      
-      
-    
