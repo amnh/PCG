@@ -20,6 +20,8 @@
 {-# LANGUAGE PatternSynonyms        #-}
 {-# LANGUAGE RankNTypes             #-}
 {-# LANGUAGE TypeOperators          #-}
+{-# LANGUAGE DeriveGeneric          #-}
+{-# LANGUAGE DeriveAnyClass         #-}
 
 
 module Data.Pair.Strict
@@ -33,10 +35,13 @@ module Data.Pair.Strict
   ) where
 
 import Control.Lens hiding (both)
+import Control.DeepSeq
+import GHC.Generics
 
 data Pair a b = !a :!: !b
-  deriving stock (Eq, Ord, Show, Read, Bounded)
-  deriving stock Functor
+  deriving stock    (Eq, Ord, Functor, Show, Read, Bounded, Generic)
+  deriving anyclass (NFData)
+
 
 type (:!:) = Pair
 
