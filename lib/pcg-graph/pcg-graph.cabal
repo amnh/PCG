@@ -123,6 +123,8 @@ library
     Data.Graph.Intermediate
     Data.Graph.Build
     Data.Graph.Sequence.Class
+    Data.Graph.Postorder.Resolution
+    Data.Graph.TopologyRepresentation
 
   other-modules:
 
