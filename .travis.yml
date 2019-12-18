@@ -63,8 +63,9 @@ install:
   - |
     if [ -z "$STACK_YAML" ]; then
       cabal --version
-      cabal new-update
-      cabal new-build --allow-newer --enable-benchmarks --enable-documentation --enable-tests --haddock-all --haddock-hyperlink-source --haddock-internal
+      cabal update
+      cabal configure
+      cabal build --enable-benchmarks --enable-documentation --enable-tests --haddock-all --haddock-hyperlink-source --haddock-internal
     else
       # install stack
       curl -sSL https://get.haskellstack.org/ | sh

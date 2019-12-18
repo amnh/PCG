@@ -25,7 +25,6 @@ import           Data.Alphabet
 import           Data.Bifunctor                    (first)
 import           Data.FileSource
 import           Data.Foldable
-import           Data.Functor
 import           Data.Key
 import           Data.List                         (sortOn)
 import           Data.List.NonEmpty                (NonEmpty (..))
@@ -39,7 +38,6 @@ import           Data.Normalization.Character
 import           Data.Normalization.Metadata
 import           Data.Normalization.Topology
 import           Data.Ord                          (comparing)
-import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.TCM                          (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                          as TCM
@@ -59,7 +57,6 @@ import           File.Format.VertexEdgeRoot
 import           PCG.Command.Read
 import           PCG.Command.Read.InputStreams
 import           PCG.Command.Read.ReadCommandError
-import           Prelude                           hiding (readFile)
 import           System.FilePath                   (takeFileName)
 import           Text.Megaparsec
 

@@ -100,7 +100,7 @@ stack-build-quick: phylogenetic-component-graph.cabal stack.yaml
 # built dependencies.
 stack-build-profiling: phylogenetic-component-graph.cabal stack.yaml
 #	stack install $(profiling) --flag phylogenetic-component-graph:build-cpp-files
-	stack install $(profiling) --work-dir=".stack-work-proifle" --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
+	stack install $(profiling) --work-dir=".stack-work-profile" --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
 
 
 # Builds outputting simplified core files (without newtype coercions)
