@@ -34,8 +34,8 @@ matrix:
 #          - cabal-install-3.0
 
     # Stack
-    - ghc: 8.8.1
-      env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
+#    - ghc: 8.8.1
+#      env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
 
 
 before_install:
