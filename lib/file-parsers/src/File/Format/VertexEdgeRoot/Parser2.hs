@@ -86,8 +86,8 @@ verStreamParser = validateForest =<< verDefinition
 -- the order of the set definitions, and yet we must enforce that there is
 -- only one edge set and two vertex sets. One vertex set is the set of all
 -- verticies and the other is a subset consisting of the root nodes. To
--- enforce this for propper parsing, and provide robust error messages we
--- read zero or more set definitions and seperate each set as either a vertex
+-- enforce this for proper parsing, and provide robust error messages we
+-- read zero or more set definitions and separate each set as either a vertex
 -- set or an edge set by checking the type constructor for a Left or Right
 -- value. We then assert that we have received exactly one edge set and
 -- exactly two vertex sets. If not we generate meaningful error messages based

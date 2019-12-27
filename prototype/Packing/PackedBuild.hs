@@ -155,9 +155,9 @@ genSeenAlphabets terminals numChars
         let
             heads = map (\(_, chars) -> head chars) terminals
             rest = map (\(n, chars) -> (n, tail chars)) terminals
-            allTogether = nub (map head heads)
+            altogether = nub (map head heads)
             toSee = genSeenAlphabets rest numChars 
-        in allTogether : toSee
+        in altogether : toSee
 
 -- | Function to correctly map the question mark to all characters
 -- uses the charInfo as meaningful, but has a fall through in case

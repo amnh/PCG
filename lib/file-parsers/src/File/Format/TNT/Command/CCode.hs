@@ -32,7 +32,7 @@ import Text.Megaparsec.Char
 --
 --  * One ore more specifications of the character state change
 --
---  * One or more character indicies or index ranges of affected characters
+--  * One or more character indices or index ranges of affected characters
 ccodeCommand :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m CCode
 ccodeCommand = ccodeHeader *> some1 ccodeAugment <* symbol (char ';')
 

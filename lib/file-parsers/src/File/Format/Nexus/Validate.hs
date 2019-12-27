@@ -46,7 +46,7 @@ import           Text.Megaparsec.Custom
 
 
 -- Because some errors are dependent on passing some other validation, they've been split into
--- dependant and independant errors. Errors are enumerated below, along with their dependancies.
+-- dependant and independent errors. Errors are enumerated below, along with their dependancies.
 -- Comments are included in the code that explain which of the below errors are caught at various points.
 -- Note that nos. 4--6, below, are only dependent on 3, so are simply done as nested ifs. This may
 -- or may not be best practice.                                                             coded as
@@ -289,7 +289,7 @@ foldSeqs ((taxSeqMap,charMDataVec):xs)   = ((newSeqMap, newMetadata), totLength)
 -- Given the supplied /ordered/ collection of taxa and the collection of
 -- 'TreeBlock's we apply any necessary translations and return Either a list of
 -- errors encountered when translating the 'TreeBlock's or a coalesced & translated
--- forest in which all leaf nodes have a coresponding taxon label.
+-- forest in which all leaf nodes have a corresponding taxon label.
 translateTrees :: Vector String -> [TreeBlock] -> Either (NonEmpty String) [NewickForest]
 translateTrees taxaList treeSet =
     case partitionEithers $ handleTreeBlock <$> treeSet of
@@ -364,11 +364,11 @@ translateTrees taxaList treeSet =
             presentTranslationMap :: [String] -> Either String (Map String String)
             presentTranslationMap transSpec =
                 case partitionEithers $ tupleEither <$> transSpec of
-                  -- Alledgedly permuted taxaList
+                  -- Allegedly permuted taxaList
                   (xs, [])
                     | Set.fromList xs `Set.isSubsetOf` taxaSet -> Right . M.fromList $ zip (show <$> [(1::Int)..]) xs
                     | otherwise -> Left $ "Translation specifcation: " <> show xs <> " is not a subset of: " <> show (toList taxaList)
-                  -- Alledged /total/ symbol to taxa mapping
+                  -- Alleged /total/ symbol to taxa mapping
                   ([], xs)
                     | not $ Set.fromList (snd <$> xs) `Set.isSubsetOf` taxaSet -> Left $ "There was an element in the co-domain of the Translation specifaction " <>
                                                                                          "that is not an element of the taxa set."
@@ -793,7 +793,7 @@ getTaxonAndSeqFromMatrixRow inStr = (seqName, phyloSeq)
 -- while there's something left:
     -- line = words input
     -- if curLen < seqLen:
-        -- if tkns or cont or custom alphabet:
+        -- if tkns or count or custom alphabet:
             -- newLine = line
         -- else:
             -- newLine = concat line
@@ -801,7 +801,7 @@ getTaxonAndSeqFromMatrixRow inStr = (seqName, phyloSeq)
         -- curLen += length newLine
     -- else:
         -- taxon = head line
-        -- if tkns or cont or custom alphabet:
+        -- if tkns or count or custom alphabet:
             -- newLine = tail line
         -- else:
             -- newLine = concat $ tail line

@@ -228,7 +228,7 @@ type PostorderDecorationDAG m =
          (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
 
 -- |
--- A "heterogenous" character block after being read in from a READ command.
+-- A "heterogeneous" character block after being read in from a READ command.
 type  UnifiedBlock =
     ( UnifiedMetadataBlock
     , UnifiedCharacterBlock
@@ -253,7 +253,7 @@ type  UnifiedMetadataBlock = MetadataBlock ()
 
 
 -- |
--- A "heterogenous" character sequence after being read in from a READ command.
+-- A "heterogeneous" character sequence after being read in from a READ command.
 type  UnifiedSequences =
     ( UnifiedMetadataSequence
     , CharacterSequence

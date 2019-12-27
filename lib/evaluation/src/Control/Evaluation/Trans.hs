@@ -70,7 +70,7 @@ import           TextShow                        (TextShow)
 --
 -- A computational evaluation short-circuits at the first failure encountered.
 -- The semigroup operator '(<>)' reflects this.
--- The alternative operator '(<!>)' inverts this logic, short-circuiting at the first sucess.
+-- The alternative operator '(<!>)' inverts this logic, short-circuiting at the first success.
 -- The following should hold:
 --
 -- > foldr1 (<>)  [fail x, fail y, pure z] === fail x
@@ -123,7 +123,7 @@ instance Monad m => Applicative (EvaluationT r m) where
 
     (<*>) = apply
 
-    (*>)  = propogate
+    (*>)  = propagate
 
 
 instance Monad m => Apply (EvaluationT r m) where
@@ -133,7 +133,7 @@ instance Monad m => Apply (EvaluationT r m) where
 
     (<.>) = apply
 
-    (.>)  = propogate
+    (.>)  = propagate
 
 
 instance (Arbitrary a, Arbitrary1 m) => Arbitrary (EvalHelper m a) where
@@ -278,7 +278,7 @@ runEvaluationT r = fmap swap . (\e -> evalRWST e r ()) . unwrapEvaluationT
 
 
 -- |
--- Fail and indicate the phase in which the failure occured.
+-- Fail and indicate the phase in which the failure occurred.
 failWithPhase :: (Monad m, TextShow s) => ErrorPhase -> s -> EvaluationT r m a
 failWithPhase p = EvaluationT . pure . evalUnitWithPhase p
 
@@ -318,8 +318,8 @@ apply lhs rhs = EvaluationT $ do
                         Right v -> Right $ f v
 
 
-propogate :: Monad m => EvaluationT r m a -> EvaluationT r m b -> EvaluationT r m b
-propogate lhs rhs = EvaluationT $ do
+propagate :: Monad m => EvaluationT r m a -> EvaluationT r m b -> EvaluationT r m b
+propagate lhs rhs = EvaluationT $ do
     x <- unwrapEvaluationT lhs
     case runEvaluationResult x of
       Left  s -> pure . EU $ Left s

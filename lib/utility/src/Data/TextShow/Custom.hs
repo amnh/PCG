@@ -25,7 +25,7 @@ import TextShow      (Builder)
 -- Insert the given element in between each element the list and concatenates
 -- the result.
 --
--- TextShow builder equivelent of 'Data.List.intercalate'.
+-- TextShow builder equivalent of 'Data.List.intercalate'.
 intercalateB :: Foldable f => Builder -> f Builder -> Builder
 intercalateB sep = go sep mempty . toList
     where

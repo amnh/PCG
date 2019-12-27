@@ -42,7 +42,7 @@ import qualified Test.Tasty.SmallCheck                                  as SC
 
 
 testSuite :: TestTree
-testSuite = testGroup "Pariwise alignment tests"
+testSuite = testGroup "Pairwise alignment tests"
     [ testSuiteNaiveDO
     , testSuiteMemoizedDO
     , testSuiteUkkonnenDO
@@ -421,7 +421,7 @@ getSubCharsTest  = testGroup "getSubChars tests"
         f :: DynamicCharacterElement -> Bool
         f inChar = all (\(_,e) -> popCount e == 1) $ getSubChars inChar
 
-    posIsCorrect = testProperty "Position matches index of set bit in each returnd char" f
+    posIsCorrect = testProperty "Position matches index of set bit in each returned char" f
       where
         f :: DynamicCharacterElement -> Bool
         f inChar = all (\(i, e) -> e `testBit` i) $ getSubChars inChar
@@ -434,7 +434,7 @@ getCostTest = testGroup "Properties of getCosts"
     ]
   where
         {- assuming TCM is properly tested, and since getSubChars is right, we don't need to test with tcms
-           Think about this with an assymetric TCM use case.
+           Think about this with an asymmetric TCM use case.
         tcmTest :: Bool
         tcmTest = allPassed
             where

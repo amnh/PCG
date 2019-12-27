@@ -8,7 +8,7 @@ import System.Directory
 
 
 -- |
--- Gets all the given files and thier contents in the specified directory
+-- Gets all the given files and their contents in the specified directory
 getFileContentsInDirectory :: FilePath -> IO (Map FilePath String)
 getFileContentsInDirectory path = do
     exists <- doesDirectoryExist path

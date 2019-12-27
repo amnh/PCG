@@ -127,7 +127,7 @@ class Cursor f where
         e = f $ getCursor c
 
     -- |
-    -- Retreive the value at the zipper's current cursor position.
+    -- Retrieve the value at the zipper's current cursor position.
     getCursor    ::  f a -> a
 
     -- |

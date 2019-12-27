@@ -34,7 +34,7 @@ module PCG.Syntax.Combinators
   ( CommandSpecification()
   , SyntacticArgument()
   , ArgumentIdentifier(..)
-  -- ** Primitive Free Applicaitve constructors
+  -- ** Primitive Free Applicative constructors
   , bool
   , int
   , real
@@ -224,7 +224,7 @@ withDefault arg def = liftAp $ DefaultValue arg def
 -- |
 -- Parse a command specification.
 parseCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => CommandSpecification a -> m a
-parseCommand (CommandSpec commandName defintion) = string'' commandName *> runSyntax defintion
+parseCommand (CommandSpec commandName definition) = string'' commandName *> runSyntax definition
 
 
 -- |
@@ -295,9 +295,9 @@ parseArgumentList argListVal = toPermutation $ begin *> datum <* close
 --
 -- Consumes a comma character with leading and training whitespace.
 comma :: (MonadParsec e s m,  Token s ~ Char) => m ()
-comma = try (whitespace *> seperator *> whitespace)
+comma = try (whitespace *> separator *> whitespace)
   where
-    seperator = char ',' <?> "',' seperating arguments"
+    separator = char ',' <?> "',' separating arguments"
 
 
 -- |

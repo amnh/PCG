@@ -60,7 +60,7 @@ import           TextShow.Custom
 -- coalesced into a single 'ParseStreamError' value.
 --
 -- The 'TextShow' instance should be used to render the 'ParseStreamError' as a
--- human legible collection of "parse" errors that occured while
+-- human legible collection of "parse" errors that occurred while
 -- attempting to interpretation data read into PCG.
 --
 -- The 'Show' instance should only be used for debugging purposes.
@@ -138,7 +138,7 @@ instance TextShow ParseStreamError where
 
 
 -- |
--- Remark that a parsing error occured when reading the file. Note that the 'ParseError' should contain the 'FileSource' information.
+-- Remark that a parsing error occurred when reading the file. Note that the 'ParseError' should contain the 'FileSource' information.
 makeUnparsableFile
   :: ( ShowErrorComponent e
      , Stream s

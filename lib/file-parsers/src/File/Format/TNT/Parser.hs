@@ -82,7 +82,7 @@ tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gathe
 
 
 -- |
--- Performs an inital structural collapse to the various type lists to make
+-- Performs an initial structural collapse to the various type lists to make
 -- subsequent folding easier.
 collapseStructures :: (MonadParsec e s m {- , Token s ~ Char -}) => Commands -> m ([CCode],[CharacterName],[Cost],[NStates],[TReadTree],[XRead])
 collapseStructures (ccodes, cnames, costs, nstates, treads, xreads)
@@ -130,7 +130,7 @@ applyCosts charCosts metaData = metaData // toAscList matricies
 
 
 -- |
--- Coalesces many CCODE commands respecting thier structural order
+-- Coalesces many CCODE commands respecting their structural order
 -- into a single index ordered mapping.
 ccodeCoalesce :: Foldable t => Int -> t CCode -> Vector CharacterMetadata
 ccodeCoalesce charCount ccodeCommands = generate charCount f
@@ -142,7 +142,7 @@ ccodeCoalesce charCount ccodeCommands = generate charCount f
     stateMapping = foldl' (foldl' addChangeSet) mempty ccodeCommands
 
     addChangeSet :: IntMap CharacterMetadata -> CCodeAugment -> IntMap CharacterMetadata
-    addChangeSet mapping (CCodeAugment states indicies) = foldl' applyChanges mapping indicies
+    addChangeSet mapping (CCodeAugment states indices) = foldl' applyChanges mapping indices
       where
         applyChanges :: IntMap CharacterMetadata -> CharacterSet -> IntMap CharacterMetadata
         applyChanges mapping' changeSet = foldl' (insertStates states) mapping' (range charCount changeSet)
@@ -157,7 +157,7 @@ ccodeCoalesce charCount ccodeCommands = generate charCount f
 
 
 -- |
--- Derive an ascending sequence of indicies from a specified index range.
+-- Derive an ascending sequence of indices from a specified index range.
 range :: Int -> CharacterSet -> [Int]
 range _ (Single    i  ) = [i..i]
 range _ (Range     i j) = [i..j]

@@ -29,7 +29,7 @@ import           Data.Key
 import           Data.List                         (sortOn)
 import           Data.List.NonEmpty                (NonEmpty (..))
 import qualified Data.List.NonEmpty                as NE
-import           Data.List.Utility                 (occurances)
+import           Data.List.Utility                 (occurrences)
 import           Data.Map                          (Map, updateLookupWithKey)
 import qualified Data.Map                          as M
 import           Data.Maybe                        (mapMaybe)
@@ -351,7 +351,7 @@ expandDynamicCharactersMarkedAsAligned pid =
     -- Get the lengths of all the dynamic characters in the map.
     -- They should all be the same length, returning a singleton list.
     getDynamicCharacterLengths :: Foldable f => f NormalizedCharacter -> [Int]
-    getDynamicCharacterLengths = fmap fst . sortOn snd . occurances . mapMaybe dynCharLen . toList
+    getDynamicCharacterLengths = fmap fst . sortOn snd . occurrences . mapMaybe dynCharLen . toList
 
     dynCharLen (NormalizedDynamicCharacter x) = length <$> x
     dynCharLen _                              = Nothing

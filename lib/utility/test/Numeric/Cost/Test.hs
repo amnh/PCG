@@ -49,7 +49,7 @@ infinityCases = testGroup "'infinity' specific cases"
 equalityProperties :: TestTree
 equalityProperties = testGroup "Equality Laws"
     [ testLaw negation     "Negation"     "x /= y ==> not (x == y)"
-    , testLaw symetry      "Symetry"      "x /= y ==> y /= x"
+    , testLaw symmetry      "Symmetry"      "x /= y ==> y /= x"
     , testLaw transitivity "Transitivity" "x == y && y == z ==> x == z"
     , testLaw refexivity   "Reflexivity"  "x == x"
     ]
@@ -58,8 +58,8 @@ equalityProperties = testGroup "Equality Laws"
     negation x y =
         x /= y ==> not (x == y)
 
-    symetry :: Cost -> Cost -> Property
-    symetry x y =
+    symmetry :: Cost -> Cost -> Property
+    symmetry x y =
         x /= y ==> y =/= x
 
     transitivity :: Cost -> Cost -> Cost -> Property
@@ -83,14 +83,14 @@ normalFormDataProperties = testGroup "NFData Laws"
 
 orderingProperties :: TestTree
 orderingProperties = testGroup "Ordering Laws"
-    [ testLaw symetry       "Symetry"       "x >= y ==> y <= x"
+    [ testLaw symmetry       "Symmetry"       "x >= y ==> y <= x"
     , testLaw transitivity1 "Transitive I"  "x < y && y < z ==> x < z"
     , testLaw transitivity2 "Transitive II" "x > y && y > z ==> x > z"
     , testProperty "The 'infinity' > all finite values" infinityOrdering
     ]
   where
-    symetry :: Cost -> Cost -> Bool
-    symetry lhs rhs =
+    symmetry :: Cost -> Cost -> Bool
+    symmetry lhs rhs =
         case (lhs `compare` rhs, rhs `compare` lhs) of
           (EQ, EQ) -> True
           (GT, LT) -> True

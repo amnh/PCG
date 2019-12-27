@@ -44,7 +44,7 @@ cnamesCommand = cnamesValidation =<< cnamesDefinition
                     *> symbol cnamesBody
                     <* symbol (char ';')
 
-    -- Make sure indicies are unique
+    -- Make sure indices are unique
     cnamesValidation :: MonadParsec e s m => CNames -> m CNames
     cnamesValidation cnames
       | not (null duplicateIndexErrors) = fails duplicateIndexErrors
@@ -78,7 +78,7 @@ duplicateIndexMessages cnames = duplicateIndexErrors
 
 -- |
 -- Consumes the CNAMES string identifier and zero or more comments
--- preceeding the taxa count and character cound parameters
+-- preceding the taxa count and character cound parameters
 cnamesHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 cnamesHeader = symbol (keyword "cnames" 2)
             *> many (symbol simpleComment)

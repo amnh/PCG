@@ -99,7 +99,7 @@ fastcTaxonSequenceDefinition = do
 
 -- |
 -- Parses a sequence of 'Symbol's represneted by a 'CharacterSequence'.
--- Symbols can be multi-character and are assumed to be seperated by whitespace.
+-- Symbols can be multi-character and are assumed to be separated by whitespace.
 {-# INLINEABLE fastcSymbolSequence #-}
 {-# SPECIALISE fastcSymbolSequence :: Parsec Void  T.Text [Vector ShortText] #-}
 {-# SPECIALISE fastcSymbolSequence :: Parsec Void LT.Text [Vector ShortText] #-}

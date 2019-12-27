@@ -170,8 +170,8 @@ instance Bits BitPackedNode where
     bitSizeMaybe (S64 bits64) = Just $ (V.length bits64) * 64
     bitSizeMaybe (SInf biti) = Just $ BV.size biti
 
-    -- | all my types are unsigned so isSigned is always False
-    isSigned _ = False 
+    -- | all my types are unsigned so assigned is always False
+    assigned _ = False 
 
     -- | testBit function to return true if the ith bit is on
     -- for multiple word structures it determines which word and then which bit based on value
@@ -439,7 +439,7 @@ genMasks blockLens numCharVec alphLen numChars mode =
         sMask = standardMask blockLens occMask alphLen mode
     in (occMask, sMask)
 
--- | Display function that prints a node's meaning given the packed verison and info
+-- | Display function that prints a node's meaning given the packed version and info
 displayNode :: BitPackedNode -> V.Vector (V.Vector [Char]) -> [Char] -> V.Vector Int -> V.Vector [Int] -> String
 displayNode EmptyPackNode _ _ _ _ = ""
 displayNode (A16 node) bitAlphs _ blockLens shuffles = 

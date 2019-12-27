@@ -385,7 +385,7 @@ newGapLocations unaligned aligned
           -- If a deletion event *DID NOT* occur, we just advance the "cursor"
           -- in our accumulator.
           unalignedElement:tailUnalignedElements ->
-              if   unalignedElement /= gap && alignedElement == gap -- Deletion Event Occured!
+              if   unalignedElement /= gap && alignedElement == gap -- Deletion Event Occurred!
               then (remainingUnalignedElements, unalignedIndex    , incrementedGapIndices)
               else (     tailUnalignedElements, unalignedIndex + 1,         newGapIndices)
       where

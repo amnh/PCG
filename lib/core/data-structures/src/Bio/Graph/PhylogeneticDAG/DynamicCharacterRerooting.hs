@@ -327,7 +327,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                           if   not $ isNetworkEdge (i,n)
                           then localResolutionApplication extensionTransformation meta lhsMemo rhsMemo
                           else case (lhsContext, rhsContext) of
-                                 (  [],   []) -> error "Well, that's ALSO embarassing..."
+                                 (  [],   []) -> error "Well, that's ALSO embarrassing..."
                                  (x:xs,   []) -> x:|xs
                                  (  [], y:ys) -> y:|ys
                                  (x:xs, y:ys) -> localResolutionApplication extensionTransformation meta (x:|xs) (y:|ys)
@@ -346,7 +346,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
                       (True , True ) ->
                           case (lhsContext, rhsContext) of
-                             (  [],   []) -> error $ "Well, that's embarassing...\nContext: " <> unwords ["Focus edge", show (i,n), "LHS edge", show (n,j), "RHS edge", show (n,k) ]
+                             (  [],   []) -> error $ "Well, that's embarrassing...\nContext: " <> unwords ["Focus edge", show (i,n), "LHS edge", show (n,j), "RHS edge", show (n,k) ]
                              (x:xs,   []) -> x:|xs
                              (  [], y:ys) -> y:|ys
                              (x:xs, y:ys) -> fold1 $ (x:|xs) :| [y:|ys]
@@ -400,7 +400,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         --
         -- It is important to remember that since this minimization is performed
         -- independently on each display tree, the rooting edges on the display
-        -- tree can all be chosen independantly also.
+        -- tree can all be chosen independently also.
         deriveMinimalSequenceForDisplayTree
           :: HasBlockCost u v w x y z
           => NonEmpty (TraversalFocusEdge, CharacterSequence u v w x y z)
@@ -465,7 +465,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         -- First we select an arbitrary character sequence from the DAG.
         -- We do this to produce a result that matches the structure of the
         -- character sequence in our DAG. Since all character sequences in the
-        -- DAG have the same number of chracter blocks, and each character block
+        -- DAG have the same number of character blocks, and each character block
         -- has the same number of characters, we can select any character
         -- sequence without loss of generality.
         --
@@ -492,8 +492,8 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         displayTreeSet :: NonEmpty TraversalTopology
         displayTreeSet = NE.fromList . toList $ foldMap (S.fromList . toList . fmap fst) rootEdgeInDAGToCostMapping
 
-        -- A map from root edges in the DAG to the display trees and thier cost.
-        -- This is used to comput the minimal display tree of a block in the
+        -- A map from root edges in the DAG to the display trees and their cost.
+        -- This is used to compute the minimal display tree of a block in the
         -- degenerative case where there are no dynamic characters in a block.
         --
         -- Also used to defined the display tree set which is in turn used for
@@ -588,10 +588,10 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                 -- 'MinimalDynamicCharacterRootContext' values in the 'fold1'
                 -- call below.
                 --
-                -- We explicitly hande the "impossible" case that there was no
+                -- We explicitly handle the "impossible" case that there was no
                 -- rooting edge for a character in the spanning tree. How this
                 -- could occur is currently beyond my comprehension, but it's
-                -- good to give an explict error message just in case.
+                -- good to give an explicit error message just in case.
                 getMinimalCharacterRootInSpanningTree characterIndex characterDecoration =
                     case foldMapWithKey getEdgeCostInSpanningTree edgeCostMapping of
                       x:xs -> let r@(charCost, _) = fromMinimalDynamicCharacterRootContext . fold1 $ x:|xs
@@ -678,7 +678,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                       & characterCost .~ costVal
 
 
-    -- Step 5: Update the metdata sequence with the TraversalFoci for each dynamic character
+    -- Step 5: Update the metadata sequence with the TraversalFoci for each dynamic character
     modifiedMetadataSequence = over blockSequence (zipWith M.setFoci fociSequence) meta
       where
         rootTopologies :: NonEmpty TraversalTopology

@@ -364,7 +364,7 @@ finalizeCharacterBlock =
 
 
 -- |
--- Creates a representation for a non-existant character block.
+-- Creates a representation for a non-existent character block.
 --
 -- This is used when a character block does not exist on a node for a given
 -- network content.
@@ -593,7 +593,7 @@ hexZip2WithMeta f1 f2 f3 f4 f5 f6 meta charBlock1 charBlock2 = CB
 
 
 -- |
--- Convert all characters contained in the block to thier missing value.
+-- Convert all characters contained in the block to their missing value.
 toMissingCharacters
   :: ( PossiblyMissingCharacter u
      , PossiblyMissingCharacter v

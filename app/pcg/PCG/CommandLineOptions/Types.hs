@@ -47,7 +47,7 @@ instance NFData Verbosity
 -- Interpret an 'Integer' as a 'Verbosity' value.
 --
 -- 'Integer' values in the range @[0 .. 4]@ are valid.
--- Values oput side the range defualt to @3@.
+-- Values oput side the range default to @3@.
 validateVerbosity :: Integer -> Verbosity
 validateVerbosity 0 = None
 validateVerbosity 1 = Errors

@@ -43,15 +43,15 @@ import GHC.Generics
 -- |
 -- Represents the metric for some discrete characters or dynamic characters.
 -- The representation notes if the discrete metric or the L1 norm are the
--- specified metric for the character. If either of these metrics are specifed,
+-- specified metric for the character. If either of these metrics are specified,
 -- specialized functions which are more efficient will be returned when
--- retreiving the pairwise of threeway transition cost matrix.
+-- retrieving the pairwise of threeway transition cost matrix.
 --
 -- It is important to use this type in the metadata decorations rather than store
 -- a function because a function cannot be contained in a compact region.
 --
 -- Use the elimination functions 'retreiveSCM', 'retreivePairwiseTCM', and 'retreiveThreewayTCM'
--- to the retreive the desired functions.
+-- to the retrieve the desired functions.
 data  MetricRepresentation a
     = ExplicitLayout {-# UNPACK #-} !TCM !a
     | DiscreteMetric

@@ -36,7 +36,7 @@ allOptimization input pInfo pMode weight =
         upPass = optimizationUpPass downPass pInfo pMode
     in upPass
 
--- | Optimization down pass warpper for recursion from root
+-- | Optimization down pass wrapper for recursion from root
 optimizationDownPass :: TreeInfo -> PackedInfo -> BN.PackMode -> Float -> ExpandTree
 optimizationDownPass (tree, mat) pInfo pMode weight
     | (length $ children root) > 2 = error "Fitch algorithm only applies to binary trees" -- more than two children means fitch won't work
@@ -123,7 +123,7 @@ internalDownPass (tree, mat) pInfo myCode pMode weight
 
         where node = tree V.! myCode
 
--- | Bit operations for the down pass: basically creats a mask for union and intersection areas and then takes them
+-- | Bit operations for the down pass: basically creates a mask for union and intersection areas and then takes them
 -- returns the new assignment, the union/intersect mask, and the new total cost
 downBitOps :: (NodeCost, BN.BitPackedNode) -> (NodeCost, BN.BitPackedNode) -> PackedInfo -> BN.PackMode -> Float -> (BN.BitPackedNode, BN.BitPackedNode, NodeCost)
 --downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight | trace ("down bit ops with bit " ++ show (BN.bitSize lbit) ++ " and bit " ++ show (BN.bitSize rbit)) False = undefined

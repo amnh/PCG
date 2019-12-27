@@ -457,7 +457,7 @@ instance Show (GraphData m) where
     show x = unlines
         [ "DAG total cost:           " <> show (dagCost x)
         , "DAG network edge cost:    " <> show (networkEdgeCost x)
-        , "DAG mutli-rooting cost:   " <> show (rootingCost     x)
+        , "DAG multi-rooting cost:   " <> show (rootingCost     x)
         , "DAG character block cost: " <> show (totalBlockCost  x)
         ]
 
@@ -474,7 +474,7 @@ instance TextShow d => TextShow (GraphData d) where
     showb x = unlinesB
         [ "DAG total cost:           " <> showb (dagCost x)
         , "DAG network edge cost:    " <> showb (networkEdgeCost x)
-        , "DAG mutli-rooting cost:   " <> showb (rootingCost     x)
+        , "DAG multi-rooting cost:   " <> showb (rootingCost     x)
         , "DAG character block cost: " <> showb (totalBlockCost  x)
         ]
 
@@ -576,7 +576,7 @@ instance (TextShow n, ToXML n) => ToXML (ReferenceDAG d e n) where
 
 -- |
 -- Produces a set of directed references representing all edges in the DAG.
--- Equivelant to:
+-- Equivalent to:
 --
 -- > referenceTreeEdgeSet dag `union` referenceNetworkEdgeSet dag
 referenceEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
@@ -589,7 +589,7 @@ referenceEdgeSet = foldMapWithKey f . references
 -- Produces a set of directed references representing all /tree/ edges in the DAG.
 -- Omits /network/ edges in the DAG. The resulting 'EdgeSet' may not be connected.
 --
--- Equivelant to:
+-- Equivalent to:
 --
 -- > referenceEdgeSet dag `difference` referenceNetworkEdgeSet dag
 --
@@ -608,7 +608,7 @@ referenceTreeEdgeSet dag = foldMapWithKey f refs
 -- Produces a set of directed references representing all /Network/ edges in the DAG.
 -- Omits /tree/ edges in the DAG. The resulting 'EdgeSet' *will not* be connected.
 --
--- Equivelant to:
+-- Equivalent to:
 --
 -- > referenceEdgeSet dag `difference` referenceTreeEdgeSet dag
 --
@@ -748,8 +748,8 @@ invadeEdge dag transformation node (oRef, iRef) = newDag
 
 
 -- |
--- /O(n*i)/ where /i/ is the number of missing indicies.
--- Assuming all indicies in the input /x/ are positive, /i/ = 'findMax x - length x'.
+-- /O(n*i)/ where /i/ is the number of missing indices.
+-- Assuming all indices in the input /x/ are positive, /i/ = 'findMax x - length x'.
 --
 -- Takes an 'IntMap' that might not have a contiguous index range and makes the
 -- range contiguous [0, length n - 1].
@@ -1338,7 +1338,7 @@ getDotContext uniqueIdentifierBase mostSignificantDigit dag =
 
 
 -- |
--- Contruct the intermediate 'BinaryRenderingTree' data type for a given 'ReferenceDAG'.
+-- Construct the intermediate 'BinaryRenderingTree' data type for a given 'ReferenceDAG'.
 --
 -- The first parameter is a rendering function for the leaves.
 toBinaryRenderingTree :: (n -> String) -> ReferenceDAG d e n -> NonEmpty BinaryRenderingTree
@@ -1350,7 +1350,7 @@ toBinaryRenderingTree nodeRenderer dag = (`evalState` initialState) . traverse s
     -- Holds a counter for the next symbolic reference in the first position of
     -- the tuple.
     --
-    -- Holds a map from indicies in the reference vector to symbolic references.
+    -- Holds a map from indices in the reference vector to symbolic references.
     --
     -- Symbolic references are used only on in-degree 2 edges.
     initialState :: (Int, IntMap Int)

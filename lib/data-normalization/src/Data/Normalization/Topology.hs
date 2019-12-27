@@ -223,7 +223,7 @@ instance HasNormalizedTopology TntResult where
                                               $ forest)
       where
 
-        -- | Propper fmapping over 'Maybe's and 'NonEmpty's
+        -- | Proper fmapping over 'Maybe's and 'NonEmpty's
         toPhylogeneticForest f = PhylogeneticForest . fmap (coerceTree . enumerate f)
 
         -- | Apply the generating function referencing the relational mapping.

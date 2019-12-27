@@ -151,7 +151,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (da
     -- We also accumulate the cost of all the character blocks accros the display forests.
     cumulativeCharacterCost = sum' $ (\(_,_,c) -> c) <$> minimalDisplayForestPerBlock
 
-    -- And accumulate the root cost of all the blocks accross the display forests.
+    -- And accumulate the root cost of all the blocks across the display forests.
     cumulativeRootCost      = sum' $ (\(_,c,_) -> c) <$> minimalDisplayForestPerBlock
 
     -- And lastly the total DAG cost

@@ -42,7 +42,7 @@ import TextShow
 
 
 -- |
--- Define which phase of a computation the error occured in.
+-- Define which phase of a computation the error occurred in.
 --
 -- Combining this with another "error" monand allows the use of custom exit codes.
 data  ErrorPhase
@@ -50,7 +50,7 @@ data  ErrorPhase
     | Parsing
     | Unifying
     | Computing
-    | Outputing
+    | Outputting
     deriving stock (Data, Eq, Generic, Ord, Read, Show)
 
 
@@ -58,7 +58,7 @@ instance Arbitrary ErrorPhase where
 
     {-# INLINE arbitrary #-}
 
-    arbitrary = elements [ Inputing, Parsing, Unifying, Computing, Outputing ]
+    arbitrary = elements [ Inputing, Parsing, Unifying, Computing, Outputting ]
 
 
 instance CoArbitrary ErrorPhase where
@@ -81,7 +81,7 @@ instance TextShow ErrorPhase where
            Parsing   -> "Parsing"
            Unifying  -> "Unifying"
            Computing -> "Computing"
-           Outputing -> "Outputing"
+           Outputting -> "Outputting"
 
 
 -- |
@@ -121,7 +121,7 @@ errorPhaseToExitCode = fromAscPairList . force $ second buildExitCode <$>
     , (  Parsing, [3]  )
     , ( Unifying, [2,3])
     , (Computing, [4]  )
-    , (Outputing, [5]  )
+    , (Outputting, [5]  )
     ]
   where
     buildExitCode = ExitFailure . foldr ((.|.) . bit) zeroBits
@@ -130,7 +130,7 @@ errorPhaseToExitCode = fromAscPairList . force $ second buildExitCode <$>
 -- |
 -- Extract the 'Int' value from an 'ExitCode'.
 --
--- Assumes that the value 'ExitSuccess' has an equivelent numeric value of @0@.
+-- Assumes that the value 'ExitSuccess' has an equivalent numeric value of @0@.
 exitCodeToInt :: ExitCode -> Int
 exitCodeToInt  ExitSuccess    = 0
 exitCodeToInt (ExitFailure i) = i

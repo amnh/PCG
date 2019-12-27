@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Parser for the XREAD command sepecifying the collection of the taxa set
--- and thier corresponding sequences. Sequences are well typed and may be
+-- and their corresponding sequences. Sequences are well typed and may be
 -- specified as contiguous segments of character types.
 -----------------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ xreadPreamble = xreadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
 -- |
 -- The superflous information of an XREAD command.
 -- Consumes the XREAD string identifier and zero or more comments
--- preceeding the taxa count and character cound parameters
+-- preceding the taxa count and character cound parameters
 xreadHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 xreadHeader =  symbol (keyword "xread" 2)
             *> many simpleComment
@@ -201,7 +201,7 @@ continuousSequence = many (missingValue <|> presentValue)
 
 -- |
 -- Parses a collection of discrete characters.
--- Intended to be reused as a primative for other XREAD combinators.
+-- Intended to be reused as a primitive for other XREAD combinators.
 coreDiscreteSequenceThatGetsReused :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
 coreDiscreteSequenceThatGetsReused = many discreteCharacter
   where
@@ -230,7 +230,7 @@ coreDiscreteSequenceThatGetsReused = many discreteCharacter
 -- are bitpacked into a 64 bit structure with the ordering specified by
 -- 'TntDiscreteCharacter'.
 --
--- Remeber that you can never have the character literal \'-\' mean gap. It means
+-- Remember that you can never have the character literal \'-\' mean gap. It means
 -- missing. Why not use \'?\' and just say what you mean? We'll never know.
 -- So we substitute gaps for missing in discrete charcters.
 discreteSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
@@ -311,7 +311,7 @@ segmentTerminal = whitespaceInline *> endOfLine <* whitespace
 -- the ordered alphabet and a 'Traversable' structure of 'Char's to be bit
 -- encoded. Constructs a bit value with a bit set for each 'Char' in the
 -- 'Traversable' structure where the index of the set bit in the bit value is
--- equal to the index of where the 'Char' first occured in the ordered alphabet
+-- equal to the index of where the 'Char' first occurred in the ordered alphabet
 -- 'Foldable' structure.
 --
 -- ==== __Examples__
@@ -447,7 +447,7 @@ proteinSegments    = segmentsOf (fmap Protein    <$> proteinSequence)
 
 -- |
 -- Parses one or more of the parameter sequence segment combinator.
--- Combinators are seperated by "segmentTerminal."
+-- Combinators are separated by "segmentTerminal."
 segmentsOf :: (MonadParsec e s m, Token s ~ Char) => m [TntCharacter] -> m (DList TaxonInfo)
 segmentsOf seqDef = DL.fromList <$> symbol (segment `sepEndBy1` segmentTerminal)
   where

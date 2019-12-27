@@ -101,7 +101,7 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
     -- Here we generate a memoized vector of the updated node decorations from
     -- the pre-order traversal. This memoization technique relies on lazy
     -- evaluation to compute the data for each vector index in the correct order
-    -- of dependancy with the root node(s) as the base case(es).
+    -- of dependency with the root node(s) as the base case(es).
     memo :: Vector (PhylogeneticNode (CharacterSequence u' v' w' x' y' z') n)
     memo = V.generate dagSize g
       where
@@ -120,7 +120,7 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
             newResolution    = mockResInfo datumResolutions newSequence
 
             -- The character sequence for the current index with the node decorations
-            -- updated to thier pre-order values with their final states assigned.
+            -- updated to their pre-order values with their final states assigned.
 
             newSequence      =
               computeOnApplicableResolution f1 f2 f3 f4 f5 f6 meta parentalContext
@@ -133,7 +133,7 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
             --
             -- In the tree node case where there is only one parent, we grab the
             -- parent context via memoization and match each parent block with
-            -- it's coresponding topology reprsentation.
+            -- it's corresponding topology reprsentation.
             --
             -- In the network node case where there are two parents, we grab both
             -- of the parent contexts via memoization and then select the block
@@ -518,7 +518,7 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
     -- Here we generate a memoized vector of the updated node decorations from
     -- the pre-order traversal. This memoization technique relies on lazy
     -- evaluation to compute the data for each vector index in the correct order
-    -- of dependancy with the root node(s) as the base case(es).
+    -- of dependency with the root node(s) as the base case(es).
     --
     -- Unlike 'preorderSequence' this memoized vector only updates the dynamic
     -- characters.

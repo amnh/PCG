@@ -108,7 +108,7 @@ internalCombinators = testGroup "General combinators used amongst TNT commands" 
 testCommandCCode :: TestTree
 testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',ccodeAdditive',ccodeNonAdditive',ccodeActive',ccodeNonActive',ccodeSankoff',ccodeNonSankoff',ccodeWeight',ccodeStep',ccodeExamples]
   where
-    indicies = [ "42", "3.", ".3", "2.5", "." ]
+    indices = [ "42", "3.", ".3", "2.5", "." ]
     ccodeHeader' = testGroup "CCODE command header options" headers
       where
         headers = header <$> drop 2 (inits "ccode")
@@ -116,7 +116,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
 
     ccodeIndicies' = testGroup "CCODE indexing format" indexFormats
       where
-        indexFormats = zipWith makeFormat descriptions indicies
+        indexFormats = zipWith makeFormat descriptions indices
         makeFormat str idx = testCase ("Parse " <> str <> " format: \"" <> idx <> "\"") $ parseSuccess characterIndicies idx
         descriptions =
             [ "single index"
@@ -132,7 +132,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
         makeAdditive str = testCase ("Additive example: \"" <> str <> "\"") $ parseSuccess ccodeCharacterState str
         targets =
             [ "+" <> pad <> unwords idxs
-            | idxs <- tail (powerSet indicies)
+            | idxs <- tail (powerSet indices)
             , pad  <- [""," "]
             ]
 
@@ -142,7 +142,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
         makeNonAdditive str = testCase ("Non-additive example: \"" <> str <> "\"") $ parseSuccess ccodeCharacterState str
         targets =
             [ "-" <> pad <> unwords idxs
-            | idxs <- tail (powerSet indicies)
+            | idxs <- tail (powerSet indices)
             , pad  <- [""," "]
             ]
 
@@ -153,7 +153,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
         targets =
             [ prefix <> suffix
             | prefix <- [ "[" <> pad <> unwords idxs
-                        | idxs <- tail (powerSet indicies)
+                        | idxs <- tail (powerSet indices)
                         , pad  <- [""," "]
                         ]
             , suffix <- ["","]"," ]"]
@@ -165,7 +165,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
         makeNonActive str = testCase ("Non-active example: \"" <> str <> "\"") $ parseSuccess ccodeCharacterState str
         targets =
             [ "]" <> pad <> unwords idxs
-            | idxs <- tail (powerSet indicies)
+            | idxs <- tail (powerSet indices)
             , pad  <- [""," "]
             ]
 
@@ -176,7 +176,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
         targets =
             [ prefix <> suffix
             | prefix <- [ "(" <> pad <> unwords idxs
-                        | idxs <- tail (powerSet indicies)
+                        | idxs <- tail (powerSet indices)
                         , pad  <- [""," "]
                         ]
             , suffix <- ["",")"," )"]
@@ -187,7 +187,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
         makeNonSankoff str = testCase ("Non-sankoff example: \"" <> str <> "\"") $ parseSuccess ccodeCharacterState str
         targets =
             [ ")" <> pad <> unwords idxs
-            | idxs <- tail (powerSet indicies)
+            | idxs <- tail (powerSet indices)
             , pad  <- [""," "]
             ]
 
@@ -197,7 +197,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
         makeWeight str = testCase ("Weight example: \"" <> str <> "\"") $ parseSuccess ccodeCharacterState str
         targets =
             [ "/" <> pad <> "1 " <> unwords idxs
-            | idxs <- tail (powerSet indicies)
+            | idxs <- tail (powerSet indices)
             , pad  <- [""," "]
             ]
 
@@ -207,7 +207,7 @@ testCommandCCode = testGroup "CCODE command tests" [ccodeHeader',ccodeIndicies',
         makeStep str = testCase ("Step example: \"" <> str <> "\"") $ parseSuccess ccodeCharacterState str
         targets =
             [ "=" <> pad <> "1 " <> unwords idxs
-            | idxs <- tail (powerSet indicies)
+            | idxs <- tail (powerSet indices)
             , pad  <- [""," "]
             ]
 

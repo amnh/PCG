@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Parser for the COST command specifying custom TCM constructions for certain
--- chasracter indicies.
+-- chasracter indices.
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE DeriveAnyClass     #-}
@@ -44,7 +44,7 @@ import Text.Megaparsec.Custom   (double)
 data  TransitionCost
     = TransitionCost
     { origins   :: NonEmpty Char
-    , symetric  :: Bool
+    , symmetric  :: Bool
     , terminals :: NonEmpty Char
     , costValue :: Double
     }
@@ -57,7 +57,7 @@ data  TransitionCost
 --
 --  * A single specification of the character state change
 --
---  * One or more character indicies or index ranges of affected characters
+--  * One or more character indices or index ranges of affected characters
 costCommand :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m Cost
 costCommand = costHeader *> costBody <* symbol (char ';')
 
@@ -69,7 +69,7 @@ costHeader = symbol $ keyword "costs" 2
 
 
 -- |
--- The nonempty body of a COST command which represents the indicies to apply
+-- The nonempty body of a COST command which represents the indices to apply
 -- a custom TCM to.
 costBody :: (MonadParsec e s m, Token s ~ Char) => m Cost
 costBody = do
@@ -95,7 +95,7 @@ condenseToMatrix costs = matrix dimensions dimensions value
         i' = discreteStateValues ! i
         j' = discreteStateValues ! j
         f m x
-          | inject || (symetric x && surject) = Just $ costValue x
+          | inject || (symmetric x && surject) = Just $ costValue x
           | otherwise                         = m
           where
             inject  = i' `elem` origins x && j' `elem` terminals x
@@ -114,7 +114,7 @@ condenseToMatrix costs = matrix dimensions dimensions value
 -- Parses a 'TransitionCost' from within the body of a COST command.
 -- Must contain a nonempty list of character state values and a transition
 -- cost value. The transitional cost is interpreted as directed by default but
--- may optionally be specified as a symetric relation.
+-- may optionally be specified as a symmetric relation.
 costDefinition :: (MonadParsec e s m, Token s ~ Char) => m TransitionCost
 costDefinition = TransitionCost
              <$> symbol costStates

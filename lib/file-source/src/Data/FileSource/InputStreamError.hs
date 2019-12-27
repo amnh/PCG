@@ -49,7 +49,7 @@ import TextShow
 -- 'InputStreamError' value.
 --
 -- The 'TextShow' instance should be used to render the 'InputStreamError' as a human legible
--- collection of input errors that occured while attempting to input data into PCG.
+-- collection of input errors that occurred while attempting to input data into PCG.
 --
 -- The 'Show' instance should only be used for debugging purposes.
 newtype InputStreamError = InputStreamError (NonEmpty InputStreamErrorMessage)

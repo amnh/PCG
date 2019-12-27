@@ -294,7 +294,7 @@ textValue = fmap pack $ openQuote *> many (escaped <|> nonEscaped) <* closeQuote
         c <- region characterEscaping $ oneOf escapeChars
         pure $ mapping ! c
       where
-        -- all the characters which can be escaped after '\' and thier unescaped
+        -- all the characters which can be escaped after '\' and their unescaped
         -- literal character value
         escapeChars = M.keysSet mapping
         mapping = lexMap <> escMap

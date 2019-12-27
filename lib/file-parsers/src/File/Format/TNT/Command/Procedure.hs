@@ -72,7 +72,7 @@ procFastaFile = symbol (char '&') *> procCommandFile
 
 -- |
 -- A close file directive. Closes all open files. Found at the end of all
--- properly formated TNT input files.
+-- properly formatted TNT input files.
 -- This software does not open files for interpretation from a TNT file,
 -- so this command will have no effect and be ignored.
 procCloseFile :: (MonadParsec e s m, Token s ~ Char) => m ()
