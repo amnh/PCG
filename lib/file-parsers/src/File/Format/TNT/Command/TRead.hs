@@ -48,7 +48,7 @@ treadCommand = treadValidation =<< treadDefinition
 
 -- |
 -- The superflous information of an XREAD command. Consumes the XREAD string
--- identifier and zero or more comments preceeding the taxa count and character
+-- identifier and zero or more comments preceding the taxa count and character
 -- cound parameters
 treadHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 treadHeader =  symbol (keyword "tread" 2)
@@ -61,7 +61,7 @@ treadHeader =  symbol (keyword "tread" 2)
 
 
 -- |
--- One or more '*' seperated trees in parenthetical notationy
+-- One or more '*' separated trees in parenthetical notationy
 treadForest :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m TRead
 treadForest = fmap NE.fromList $ symbol treadTree `sepBy1` symbol (char '*')
 

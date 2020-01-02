@@ -140,7 +140,7 @@ dVectorPreorder indexFn dag = Memo.DVector f
 dVectorPreorderWithContext
   :: forall a d e n
    . (  ParentContext (a, Int, IndexData e n)  -- Parent data with their index information
-     -> ChildContext Int                       -- Child indicies
+     -> ChildContext Int                       -- Child indices
      -> (Int, IndexData e n)                   -- Current index information
      -> a                                      -- Index data
      )

@@ -57,7 +57,7 @@ import           Text.XML
 -- A multi-level partitioned, non-empty sequence of column metadata.
 --
 -- A sequence is partitioned into blocks, each block contains block-level metadata
--- and also seperate metadata for each column in the block.
+-- and also separate metadata for each column in the block.
 --
 -- Blocks are optimized atomically with resepect to network resolutions.
 newtype MetadataSequence m

@@ -103,7 +103,7 @@ type PairwiseTransitionCostMatrix e = e -> e -> (e, Word)
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
--- discrete different bins. Continous bins do not have Alphabets.
+-- discrete different bins. Continuous bins do not have Alphabets.
 data  DynamicCharacterMetadataDec c
     = DynamicCharacterMetadataDec
     { optimalTraversalFoci        :: !(Maybe TraversalFoci)

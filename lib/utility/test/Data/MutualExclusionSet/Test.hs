@@ -90,15 +90,15 @@ constructionCases = testGroup "construction specific cases"
 orderingProperties :: TestTree
 orderingProperties = testGroup "Properties of ordering"
     [ testProperty "order preserving projection" orderPreserving
-    , testProperty "ordering preserves symetry"  symetry
+    , testProperty "ordering preserves symmetry"  symmetry
     ]
   where
     orderPreserving :: ((Word8, Word8), (Word8, Word8)) -> Property
     orderPreserving (lhs@(a, b), rhs@(c, d)) =
       lhs `compare` rhs === singleton a b `compare` singleton c d
 
-    symetry :: (MutualExclusionSet Word8, MutualExclusionSet Word8) -> Bool
-    symetry (lhs, rhs) =
+    symmetry :: (MutualExclusionSet Word8, MutualExclusionSet Word8) -> Bool
+    symmetry (lhs, rhs) =
       case (lhs `compare` rhs, rhs `compare` lhs) of
         (EQ, EQ) -> True
         (GT, LT) -> True

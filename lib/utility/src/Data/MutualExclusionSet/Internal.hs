@@ -269,7 +269,7 @@ invert (MES a b x y) = MES b a y x
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
--- Retreive the list of included elements in the 'MutualExclusionSet'.
+-- Retrieve the list of included elements in the 'MutualExclusionSet'.
 includedSet :: MutualExclusionSet a -> Set a
 includedSet = M.keysSet . includedElemMap
 
@@ -277,7 +277,7 @@ includedSet = M.keysSet . includedElemMap
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
--- Retreive the list of excluded elements in the 'MutualExclusionSet'.
+-- Retrieve the list of excluded elements in the 'MutualExclusionSet'.
 excludedSet :: MutualExclusionSet a -> Set a
 excludedSet = M.keysSet . excludedElemMap
 
@@ -327,7 +327,7 @@ isExcluded k = M.member k . excludedElemMap
 -- |
 -- \( \mathcal{O} \left( n \right) \)
 --
--- Retreive the list of mutually exclusive elements stored in the
+-- Retrieve the list of mutually exclusive elements stored in the
 -- 'MutualExclusionSet'.
 --
 -- The first element of the pair is the included element and the second element
@@ -438,7 +438,7 @@ valueLookup key space = key `M.lookup` space >>= S.lookupMax
 --
 -- Merge two mutual exclusion sets.
 --
--- Perfoms an "union-like" operation.
+-- Performs an "union-like" operation.
 merge :: Ord a => MutualExclusionSet a -> MutualExclusionSet a -> MutualExclusionSet a
 merge (MES _ _ lhsIFM lhsEFM) (MES _ _ rhsIFM rhsEFM) = mergePostProcess (inc, exc)
   where

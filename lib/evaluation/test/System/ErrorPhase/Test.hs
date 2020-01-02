@@ -33,7 +33,7 @@ equalityLaws
   => TestTree
 equalityLaws = testGroup "Equality Laws"
     [ testLaw negation     "Negation"     "x /= y ==> not (x == y)"
-    , testLaw symetry      "Symetry"      "x /= y ==> y /= x"
+    , testLaw symmetry      "Symmetry"      "x /= y ==> y /= x"
     , testLaw transitivity "Transitivity" "x == y && y == z ==> x == z"
     , testLaw refexivity   "Reflexivity"  "x == x"
     ]
@@ -42,8 +42,8 @@ equalityLaws = testGroup "Equality Laws"
     negation x y =
         x /= y ==> not (x == y)
 
-    symetry :: a -> a -> Property
-    symetry x y =
+    symmetry :: a -> a -> Property
+    symmetry x y =
         x /= y ==> y =/= x
 
     transitivity :: a -> a -> a -> Property
@@ -79,13 +79,13 @@ orderingLaws
      )
   => TestTree
 orderingLaws = testGroup "Ordering Laws"
-    [ testLaw symetry       "Symetry"       "x >= y ==> y <= x"
+    [ testLaw symmetry       "Symmetry"       "x >= y ==> y <= x"
     , testLaw transitivity1 "Transitive I"  "x < y && y < z ==> x < z"
     , testLaw transitivity2 "Transitive II" "x > y && y > z ==> x > z"
     ]
   where
-    symetry :: a -> a -> Bool
-    symetry lhs rhs =
+    symmetry :: a -> a -> Bool
+    symmetry lhs rhs =
         case (lhs `compare` rhs, rhs `compare` lhs) of
           (EQ, EQ) -> True
           (GT, LT) -> True

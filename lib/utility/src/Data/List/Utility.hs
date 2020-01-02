@@ -12,7 +12,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Functions for finding occurances of elements in a list.
+-- Functions for finding occurrences of elements in a list.
 --
 -----------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ import           Prelude                 hiding (zipWith)
 -- |
 -- \( \mathcal{O} \left( n * k \right) \)
 --
--- Takes two nested, linear-dimentional structures and transposes thier dimensions.
+-- Takes two nested, linear-dimensional structures and transposes their dimensions.
 -- It's like performing a matrix transpose operation, but more general.
 --
 -- ==Example==
@@ -177,7 +177,7 @@ duplicates = duplicates' . sort . toList
 mostCommon :: (Foldable t, Ord a) => t a -> Maybe a
 mostCommon xs
   | null xs   = Nothing
-  | otherwise = case occurances xs of
+  | otherwise = case occurrences xs of
                   []      -> Nothing
                   (x,_):_ -> Just x
 
@@ -188,21 +188,21 @@ mostCommon xs
 -- Returns a mapping of each unique element in the list paired with how often
 -- the element occurs in the list.
 --
--- The elements are in descending order of occurance.
+-- The elements are in descending order of occurrence.
 --
 -- ==_Example==
 --
--- >>> occurances "GATACACATCAGATT"
+-- >>> occurrences "GATACACATCAGATT"
 -- [('A',6),('T',4),('C',3),('G',2)]
 --
--- >>> occurances "AABCDDDEFGGT"
+-- >>> occurrences "AABCDDDEFGGT"
 -- [('D',3),('A',2),('G',2),('B',1),('C',1),('E',1),('F',1),('T',1)]
-occurances :: (Foldable t, Ord a) => t a -> [(a, Word)]
-occurances = collateOccuranceMap . buildOccuranceMap
+occurrences :: (Foldable t, Ord a) => t a -> [(a, Word)]
+occurrences = collateOccuranceMap . buildOccuranceMap
   where
-    buildOccuranceMap = foldr occurance empty
+    buildOccuranceMap = foldr occurrence empty
       where
-        occurance e = insertWith (const succ) e 1
+        occurrence e = insertWith (const succ) e 1
     collateOccuranceMap = sortBy comparator . assocs
       where
         comparator x y = descending $ comparing snd x y
@@ -282,7 +282,7 @@ equalityOf f xs =
 -- If /every/ application of the transformation yields the same result value
 -- for each element of the structure then this function will return @Just v@
 -- where @v@ is the invariant value across the transformation.
--- If the transformation does not produce an invariant value accross the
+-- If the transformation does not produce an invariant value across the
 -- structure, or the structure is empty, this function returns @Nothing@.
 --
 -- See 'equalityOf' if you want to discard the @Just@ value.

@@ -91,13 +91,13 @@ getPrelim lState rState charInfo = getPrelimTriple (lState, rState, charInfo)
 --short (Ukkonnen Y) given Y, Y length and row number
 --remove error when working--overhead
 transformFullYShortY :: Int -> Int -> Int -> Int
-transformFullYShortY currentY rowNumber maxGap 
-    | transformY < 0 = error (show currentY ++ " " ++ show rowNumber ++ " " ++ show maxGap ++ " Impossible negative value for transfomred Y")
+transformFullYShortY currently rowNumber maxGap 
+    | transformY < 0 = error (show currently ++ " " ++ show rowNumber ++ " " ++ show maxGap ++ " Impossible negative value for transfomred Y")
     | otherwise = transformY
-        where transformY = currentY - max 0 (rowNumber - maxGap - 1)
+        where transformY = currently - max 0 (rowNumber - maxGap - 1)
 
 -- | maxShortY is the maximum value for short Y in Ukkonen usually 2*maxGap
---untill near bottom of matrix when running up against the full Y length
+--until near bottom of matrix when running up against the full Y length
 --assumes length X /> length Y.
 maxShortY :: Int -> Int -> Int -> Int
 maxShortY maxFullY rowNumber maxGap =
@@ -161,7 +161,7 @@ ukkonenDO inlSeq inrSeq charInfo
 
 -- |
 -- tracebackUkkonen creates REVERSE mediian from nwMatrix, reverse to make tail
--- recusive, for Ukkonen space/time saving offsets
+-- recursive, for Ukkonen space/time saving offsets
 -- need to count gaps in traceback for threshold/barrier stuff
 -- CHANGE TO MAYBE (V.Vector Int64) FOR BARRIER CHECK
 tracebackUkkonen :: V.Vector (V.Vector (Int, Int64, Direction)) -> BaseChar -> BaseChar -> Int -> Int -> Int -> Int -> Int -> V.Vector (Int64, Int64, Int64)
@@ -285,7 +285,7 @@ naiveDO inlSeq inrSeq charInfo
             median = V.filter (/= inDelBit) medianGap
 
 -- | traceback creates REVERSE mediian from nwMatrix, reverse to make tail
---recusive
+--recursive
 traceback :: V.Vector (V.Vector (Int, Int64, Direction)) -> BaseChar -> BaseChar -> Int -> Int -> V.Vector (Int64, Int64, Int64)
 traceback nwMatrix inlSeq inrSeq posL posR
     | posL == 0 && posR == 0 = V.empty  
@@ -343,7 +343,7 @@ getMinCostDir leftCost downCost diagCost diagState leftState downState
     | otherwise = (leftCost, leftState, LeftDir)
         where minValue = minimum [leftCost, downCost, diagCost]
 
--- | getOverlapCost cheks for ovelap in gap so if indel, but opossite a gap
+-- | getOverlapCost checks for ovelap in gap so if indel, but opossite a gap
 --ambiguity--there is no cost
 getOverlapCost :: Int -> Int -> Int64 -> Int
 getOverlapCost preCost indelCost oppositeState

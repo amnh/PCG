@@ -162,7 +162,7 @@ fromSymbols inputSymbols = Alphabet symbols []
 -- \( \mathcal{O} \left( n * \log_2 n \right) \)
 --
 -- Constructs an 'Alphabet' from a 'Foldable' structure of symbols and
--- coresponding state names, both of which are 'IsString' values.
+-- corresponding state names, both of which are 'IsString' values.
 --
 -- The input ordering is preserved.
 fromSymbolsWithStateNames :: (Ord a, IsString a, Foldable t) => t (a,a) -> Alphabet a
@@ -373,7 +373,7 @@ instance (Show a) => ToXML (Alphabet a) where
 --   columns as the 'Alphabet' is reordered. Deletes TCM rows and columns where
 --   'Alphabet' symbols are eliminated.
 --
---   If the alphabet has been permuted the coresponding TCM needs to be permuted in the same mannor.
+--   If the alphabet has been permuted the corresponding TCM needs to be permuted in the same mannor.
 --
 --   /O(n*log(n) + n^2)/
 constructAlphabetWithTCM :: (Ord a, IsString a, Foldable t) => t a -> Matrix b -> (Alphabet a, Matrix b)

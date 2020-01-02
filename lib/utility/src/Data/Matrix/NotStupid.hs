@@ -10,7 +10,7 @@
 --
 -- Matrix datatype and operations.
 --
--- Everything is /zero/ indexed to provide a consistant indexing API with 'Vector'.
+-- Everything is /zero/ indexed to provide a consistent indexing API with 'Vector'.
 -- Hence /not stupid/.
 -----------------------------------------------------------------------------
 

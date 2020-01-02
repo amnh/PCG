@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- A monadic extension classs that enables the support of logging.
+-- A monadic extension classes that enables the support of logging.
 --
 -----------------------------------------------------------------------------
 

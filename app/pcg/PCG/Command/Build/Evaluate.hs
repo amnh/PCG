@@ -349,10 +349,12 @@ printNetworkEdgeCounter :: NFData a => a -> a
 printNetworkEdgeCounter = printCounter netEdgeCounter
 
 
+{-
 costCounter :: IORef Int
 {-# NOINLINE costCounter #-}
 costCounter =
   unsafePerformIO (newIORef 0)
+-}
 
 
 naiveNetworkBuild
@@ -478,6 +480,7 @@ subTreeMethod buildMethod meta subTrees =
         giveTemporaryName node label = node & _nodeDecorationDatum .~ label
 
 
+
 iterativeBuild
   :: FinalDecorationDAG
   -> FinalCharacterNode
@@ -526,6 +529,7 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = printTaxaCounter nextTre
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
 
+{-
 iterativeNetworkBuild
   :: FinalDecorationDAG
   -> FinalDecorationDAG
@@ -572,7 +576,7 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
     tryNetworkEdge e =
         do
           networkEdges <- readIORef costCounter
-          modifyIORef costCounter $ succ
+          modifyIORef costCounter succ
           putStrLn $ "  - " <> show networkEdges <> " network edges tried."
           pure . performDecoration . (`PDAG2` metaSeq) . connectEdge' $ e
 
@@ -593,7 +597,7 @@ iterativeNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
 
     deriveTargetEdgeNode parentDatum oldChildDatum =
         PNode2 (resolutions oldChildDatum) (nodeDecorationDatum2 parentDatum)
-
+-}
 
 
 iterativeGreedyNetworkBuild

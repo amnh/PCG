@@ -53,7 +53,7 @@ import Text.XML
 
 -- |
 -- Represents a concrete type containing metadata fields shared across all
--- discrete different bins. Continous bins do not have Alphabets.
+-- discrete different bins. Continuous bins do not have Alphabets.
 data  DiscreteWithTCMCharacterMetadataDec c
     = DiscreteWithTCMCharacterMetadataDec
     { metricRepresentation :: !(MetricRepresentation MemoizedCostMatrix)

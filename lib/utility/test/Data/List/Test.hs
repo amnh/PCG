@@ -90,7 +90,7 @@ mostCommonProperties = testGroup "Properties of mostCommon"
       === mostCommon (xs <> xs)
 
 occurancesProperties :: TestTree
-occurancesProperties = testGroup "Properties of occurances"
+occurancesProperties = testGroup "Properties of occurrences"
   [
   ]
 
@@ -187,11 +187,11 @@ mostCommonCases = testGroup "Cases of mostCommon"
     ex2 = mostCommon "AABCDDDEFGGT"    @?= Just 'D'
 
 occurancesCases :: TestTree
-occurancesCases = testGroup "Cases of occurances"
-  [ testCase "occurances \"GATACACATCAGATT\" == [('A',6),('T',4),('C',3),('G',2)]" ex1
+occurancesCases = testGroup "Cases of occurrences"
+  [ testCase "occurrences \"GATACACATCAGATT\" == [('A',6),('T',4),('C',3),('G',2)]" ex1
   , testCase
       ( unlines
-      [ "occurances \"AABCDDDEFGGT\""
+      [ "occurrences \"AABCDDDEFGGT\""
       , "== [('D',3),('A',2),('G',2),('B',1),('C',1),('E',1),('F',1),('T',1)"
       ]
       )
@@ -200,9 +200,9 @@ occurancesCases = testGroup "Cases of occurances"
 
   where
     ex1, ex2 :: Assertion
-    ex1 = occurances "GATACACATCAGATT"
+    ex1 = occurrences "GATACACATCAGATT"
       @?= [('A',6),('T',4),('C',3),('G',2)]
-    ex2 = occurances "AABCDDDEFGGT"
+    ex2 = occurrences "AABCDDDEFGGT"
       @?= [('D',3),('A',2),('G',2),('B',1),('C',1),('E',1),('F',1),('T',1)]
 
 chunksOfCases :: TestTree

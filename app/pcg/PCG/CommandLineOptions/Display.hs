@@ -129,16 +129,16 @@ printExitCodeDocumentation = putStrLn . intercalate "\n" . (preamble:) . foldMap
       where
         len = olength txt
 
-    g  Inputing = "PCG attempted to retrieve input streams"
-    g   Parsing = "interpreting input streams that were successfully retrieved"
-    g  Unifying = "combining multiple data sets into a coherent composite"
-    g Computing = "running PCG, please report at https://github.com/amnh/PCG/issues"
-    g Outputing = "outputing data streams from PCG"
+    g  Inputing  = "PCG attempted to retrieve input streams"
+    g   Parsing  = "interpreting input streams that were successfully retrieved"
+    g  Unifying  = "combining multiple data sets into a coherent composite"
+    g Computing  = "running PCG, please report at https://github.com/amnh/PCG/issues"
+    g Outputting = "outputting data streams from PCG"
 
     preamble = intercalate "\n" $ ("  "<>) <$>
         [ ""
         , "PCG emits specific exit codes to indicate in which \"phase\" of the runtime the"
-        , "error(s) occured. These specific exit codes are listed below. If a different"
+        , "error(s) occurred. These specific exit codes are listed below. If a different"
         , "exit code is emitted, an error that could not be recovered from occurred."
         , ""
         , "Error(s) occurred while…"

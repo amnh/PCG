@@ -167,7 +167,7 @@ appendFile filePath str = ValidationT $ catch
 
 
 -- |
--- Write textual stream to the to the file, overwriting any exisiting file contents.
+-- Write textual stream to the to the file, overwriting any existing file contents.
 writeFile :: FileSource -> FileStream -> ValidationT OutputStreamError IO ()
 writeFile filePath str = ValidationT $ catch
       (Success <$> streamToFile WriteMode filePath str)
@@ -178,9 +178,9 @@ writeFile filePath str = ValidationT $ catch
 -- Write textual stream to the to the file.
 --
 -- If the specified file already exisits, rename the existing file, so that the
--- specified file can be written to without overwriting exisiting data.
+-- specified file can be written to without overwriting existing data.
 --
--- The exisiting file is renamed, adding a numeric suffix to the end. The
+-- The existing file is renamed, adding a numeric suffix to the end. The
 -- function will try to rename the existing file path by adding the suffix ".0",
 -- however if that filepath also exists, it will add ".1", ".2", ".3", ",.4", etc.
 -- The suffix added will be one greater than the highest existing numeric suffix.
@@ -330,7 +330,7 @@ inputErrorHandling filePath e
 
 
 -- |
--- Smartly handle certain I/O errors that can occur while outputing a data stream.
+-- Smartly handle certain I/O errors that can occur while outputting a data stream.
 --
 -- Re-throws errors not specially handled and reported by 'OutputStreamError'.
 outputErrorHandling :: FileSource -> IOError -> ValidationT OutputStreamError IO a
@@ -349,7 +349,7 @@ outputErrorHandling filePath e
 -- If it does, it moves the existing file path, so that the supplied file path
 -- can be written to without overwriting data.
 --
--- The exisiting file path is renamed, adding a numeric suffix to the end. The
+-- The existing file path is renamed, adding a numeric suffix to the end. The
 -- function will try to rename the existing file path by adding the suffix ".0",
 -- however if that filepath also exists, it will add ".1", ".2", ".3", ",.4", etc.
 -- The suffix added will be one greater than the highest existing numeric suffix.

@@ -12,6 +12,9 @@ extra-deps:
   - clustering-0.4.1
   - compact-0.1.0.1
   - graphviz-2999.20.0.3
+  - lens-4.18.1
+  - microlens-0.4.11.2
+  - perfect-vector-shuffle-0.1.1
   - mmark-0.0.7.2
   - megaparsec-8.0.0
   - pretty-tree-0.1.0.0
@@ -30,4 +33,4 @@ packages:
 
 require-stack-version: ">=2.1.3"
 
-resolver: nightly-2019-11-25
+resolver: nightly-2019-12-17

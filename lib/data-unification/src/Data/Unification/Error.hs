@@ -41,7 +41,7 @@ import TextShow.Custom
 
 
 -- |
--- A collection of errors that occured during unification.
+-- A collection of errors that occurred during unification.
 --
 -- Has nice 'Show'/'TextShow' instances for rendering.
 newtype UnificationError = UnificationError (NonEmpty UnificationErrorMessage)

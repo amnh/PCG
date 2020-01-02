@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Direct optimization pairwise alignment using the Needleman-Wunsch algorithm.
--- These funtions will allocate an M * N matrix.
+-- These functions will allocate an M * N matrix.
 --
 -----------------------------------------------------------------------------
 

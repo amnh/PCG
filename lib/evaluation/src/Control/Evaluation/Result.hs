@@ -43,10 +43,10 @@ import TextShow
 
 -- |
 -- The internal state of the computation. A short-circuiting evaluation unit
--- which returns either an error that occured preventing the evaluation for being
+-- which returns either an error that occurred preventing the evaluation for being
 -- completed or a value of the evaluation or
 --
--- In the case that an error occured, an 'ErrorPhase' is stored along with a
+-- In the case that an error occurred, an 'ErrorPhase' is stored along with a
 -- 'Text' value describing the error.
 --
 -- Note that multiple errors can be aggregated before calling 'fail' or
@@ -62,7 +62,7 @@ newtype EvaluationResult a = EU { runEvaluationResult :: Either (ErrorPhase, Tex
    deriving newtype  (Applicative, Apply, Eq1, Functor, MonadFix, Show1)
 
 -- |
--- Keep track of which phase of the evaluation th error occured in.
+-- Keep track of which phase of the evaluation th error occurred in.
 --
 -- This allows use to use custom exit codes.
 data  ErrorPhase
@@ -70,7 +70,7 @@ data  ErrorPhase
     | Parsing
     | Unifying
     | Computing
-    | Outputing
+    | Outputting
     deriving stock (Data, Eq, Generic, Ord, Read, Show)
 
 
@@ -88,7 +88,7 @@ instance Arbitrary ErrorPhase where
 
     {-# INLINE arbitrary #-}
 
-    arbitrary = elements [ Inputing, Parsing, Unifying, Computing, Outputing ]
+    arbitrary = elements [ Inputing, Parsing, Unifying, Computing, Outputting ]
 
 
 instance Arbitrary a => Arbitrary (EvaluationResult a) where

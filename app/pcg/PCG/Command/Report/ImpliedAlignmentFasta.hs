@@ -45,14 +45,14 @@ iaOutput :: StandardSolution -> [(FilePath, String)]
 iaOutput solution = {- (\x -> trace (intercalate "\n\n"
                                          [ integrityCheckSolution solution
                                          , renderAlignments align
-                                         , "DynamicCharacter indicies: "     <> show (keys dynamicCharacterIndicesAndAlphabets)
+                                         , "DynamicCharacter indices: "     <> show (keys dynamicCharacterIndicesAndAlphabets)
                                          , "Metadata character types: " <> show (getType <$> getMetadata solution)
                                          ]
                                        ) x) $
                       -}
                          foldMapWithKey characterToFastaFile dynamicCharacterIndicesAndAlphabets
   where
-    -- Here we use the metadata to filter for dynamic character indicies and
+    -- Here we use the metadata to filter for dynamic character indices and
     -- their corresponding alphabets.
     dynamicCharacterIndicesAndAlphabets :: IntMap (Alphabet String)
     dynamicCharacterIndicesAndAlphabets = foldlWithKey dynamicCharFilter mempty (getMetadata solution)

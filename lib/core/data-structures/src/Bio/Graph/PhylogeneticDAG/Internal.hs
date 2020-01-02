@@ -510,7 +510,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta resolutionContext =
 
         PostNetworkContext netChildCharSequence ->
           resolutionContext & _characterSequence .~ netChildCharSequence
-          -- Want to propogate what is stored in the network child resolution
+          -- Want to propagate what is stored in the network child resolution
           -- to the parent.
 
         PostBinaryContext
@@ -733,8 +733,8 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
     renderedPrefix = "Block " <> showb key <> "\n\n"
 
     renderBlockMeta (mValue, bValue) = unlinesB
-        [ "  Rooting Cost: " <> maybe "<Unavailible>" showb costOfRooting
-        , "  Network Cost: " <> maybe "<Unavailible>" showb costOfNetworking
+        [ "  Rooting Cost: " <> maybe "<Unavailable>" showb costOfRooting
+        , "  Network Cost: " <> maybe "<Unavailable>" showb costOfNetworking
         , "  Block   Cost: " <> showb bCost
         , "  Total   Cost: " <> showb totalCost
         , "  Display Tree: " <> inferDisplayForest
@@ -765,13 +765,13 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
         [ "    Name:   " <> showb (m ^. characterName)
         , "    Weight: " <> showb (m ^. characterWeight)
         , "    Cost:   " <> showb (c ^. characterCost)
-        , "    Foci:   " <> maybe "<Unavailible>" renderFoci (m ^. traversalFoci)
+        , "    Foci:   " <> maybe "<Unavailable>" renderFoci (m ^. traversalFoci)
         ]
       where
         renderFoci (x:|[]) = showb $ fst x
         renderFoci xs      = showb . fmap fst $ toList xs
 
-    inferDisplayForest = maybe "<Unavailible>" renderFunction displayMay
+    inferDisplayForest = maybe "<Unavailable>" renderFunction displayMay
 
     renderFunction = renderDisplayForestNewick (nodeDecorationDatum2 <$> dag)
 

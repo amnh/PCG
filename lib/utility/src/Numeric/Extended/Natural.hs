@@ -160,7 +160,7 @@ instance Num ExtendedNatural where
 
                 -- If the minimum possible number of bits to
                 -- represent the product is exceeds the Word width,
-                -- then an overflow definately occured and
+                -- then an overflow definitely occurred and
                 -- the product is the upper finite bound.
                 GT -> maxBound
 
@@ -169,7 +169,7 @@ instance Num ExtendedNatural where
                 -- then great care must be taken!
                 -- First we compute the product directly.
                 -- Then we perform an expensive division operation
-                -- to determine if overflow occured.
+                -- to determine if overflow occurred.
                 EQ -> let result = x * y
                       in  if   result `quotRem` x /= (y,0)
                           then maxBound
@@ -282,7 +282,7 @@ wordWidth = finiteBitSize (minBound :: Word)
 
 -- |
 -- Calculate the integer logarithm of a 'Word' to base 2 using efficient compiler
--- builtins. This should translate into an assembly primative on CISC chipsets.
+-- builtins. This should translate into an assembly primitive on CISC chipsets.
 -- Might be slightly more expensive on RISC chipsets.
 {-# INLINE bitsUsed  #-}
 bitsUsed :: Word -> Int

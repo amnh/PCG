@@ -330,7 +330,7 @@ scriptOutputError_FileAlreadyInUse = withResource
 
 
 -- |
--- Most general and primative script test-case builder.
+-- Most general and primitive script test-case builder.
 --
 -- Runs PCG with the specified script file. After execution completes, collects
 -- the contents of the specified output files.
@@ -463,7 +463,7 @@ scriptUnifyError = scriptWithExitCode Unifying "a unification error"
 -- |
 -- Expects the PCG script to return a unifcation error exitcode.
 scriptOutputError :: String -> TestTree
-scriptOutputError = scriptWithExitCode Outputing "an output error"
+scriptOutputError = scriptWithExitCode Outputting "an output error"
 
 
 -- |
@@ -499,7 +499,7 @@ scriptsAllSucceed xs =
 
 
 -- |
--- Takes multiple file pathes and combines thier base names tinto a shorter title.
+-- Takes multiple file pathes and combines their base names tinto a shorter title.
 makeTitle :: NonEmpty FilePath -> String
 makeTitle (x:|xs) = (prefix <>) . intercalate "," . (name:) $ takeFileName <$> xs
    where

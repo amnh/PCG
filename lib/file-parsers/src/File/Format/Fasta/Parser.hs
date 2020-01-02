@@ -128,7 +128,7 @@ fastaSequence = space *> fullSequence
     --
     --   * A newline, signifying the end of the line
     --
-    --   * One or more sequence data symbools, possibly seperated by spaces,
+    --   * One or more sequence data symbools, possibly separated by spaces,
     --       followed by a newline or the end of the file.
     taxonContentLine = inlinedSpace *> (sequenceLine <|> (endOfLine $> mempty))
 

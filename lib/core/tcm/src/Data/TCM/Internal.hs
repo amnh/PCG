@@ -39,7 +39,7 @@ import           Data.Data
 import           Data.Foldable
 import           Data.IntSet          (IntSet)
 import           Data.List            (transpose)
-import           Data.List.Utility    (equalityOf, occurances)
+import           Data.List.Utility    (equalityOf, occurrences)
 import           Data.Map             (delete, findMax, keys)
 import qualified Data.Map             as Map (fromList)
 import           Data.MonoTraversable
@@ -468,7 +468,7 @@ fromRows xs
 modeAndOutlierLengths :: (Foldable t, Foldable t') => t (t' a) -> (Int, [Int])
 modeAndOutlierLengths xs = (mode, otherLengths)
   where
-    occuranceMap = Map.fromList . occurances $ length <$> toList xs
+    occuranceMap = Map.fromList . occurrences $ length <$> toList xs
     (mode,_)     = findMax occuranceMap
     otherLengths = keys  $ mode `delete` occuranceMap
 

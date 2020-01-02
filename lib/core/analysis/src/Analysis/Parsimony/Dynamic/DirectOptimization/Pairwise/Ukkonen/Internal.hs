@@ -94,7 +94,7 @@ ukkonenDO char1 char2 overlapFunction
     -- initial barrier will be set adjacent to or beyond the lower left and
     -- upper right corners.
     --
-    -- Lastly, a threshhold coeffcient is computed as the minimal indel cost from
+    -- Lastly, a threshold coeffcient is computed as the minimal indel cost from
     -- any symbol in the alphabet to gap. However, if the indel cost for any
     -- symbol is zero, the algorithm will hang, and a naive approach must be taken.
     --
@@ -138,7 +138,7 @@ ukkonenDO char1 char2 overlapFunction
 -- Generates an /optimal/, partially-filled-in matrix using Ukkonen's string
 -- edit distance algorithm.
 --
--- Note that the threshhold value is lowered more than described in Ukkonen's
+-- Note that the threshold value is lowered more than described in Ukkonen's
 -- paper. This is to handle input elements that contain a gap. In Ukkonen's
 -- original description of the algorithm, there was a subtle assumption that
 -- input did not contain any gap symbols.
@@ -172,7 +172,7 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
     -- /O(n + m)/
     --
     -- If one or more of the aligned character elements contained a gap, diagonal directions in the matrix
-    -- have an "indel" cost. 'gapsPresentInInputs' is necessary in order to decrement the threshhold value
+    -- have an "indel" cost. 'gapsPresentInInputs' is necessary in order to decrement the threshold value
     -- to account for this. This was not
     -- described in Ukkonen's original paper, as the inputs were assumed not to
     -- contain any gaps.
@@ -184,7 +184,7 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
         gap        = gapOfStream longerTop
 
     ukkonenUntilOptimal offset
-      | threshhold <= alignmentCost = ukkonenUntilOptimal $ 2 * offset
+      | threshold <= alignmentCost = ukkonenUntilOptimal $ 2 * offset
       | otherwise                   = ukkonenMatrix
 --      | otherwise                   = trace (renderedBounds <> renderedMatrix) ukkonenMatrix
       where
@@ -193,7 +193,7 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
         (cost, _, _)       = ukkonenMatrix ! (lesserLen, longerLen)
         alignmentCost      = unsafeToFinite cost
         computedValue      = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
-        threshhold         = toEnum $ max 0 computedValue -- The threshhold value must be non-negative
+        threshold         = toEnum $ max 0 computedValue -- The threshold value must be non-negative
 {--
         renderedMatrix = renderCostMatrix longerTop lesserLeft ukkonenMatrix
 
@@ -202,7 +202,7 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
             , "Input Gaps : " <> show gapsPresentInInputs
             , "Offset     : " <> show offset
             , "Coefficient: " <> show coefficient
-            , "Threshhold : " <> show threshhold
+            , "Threshold : " <> show threshold
             , "Total Cost : " <> show alignmentCost
             ]
 --}

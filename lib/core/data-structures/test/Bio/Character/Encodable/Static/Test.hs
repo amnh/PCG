@@ -191,7 +191,7 @@ monoFoldableProperties = testGroup "Properties of MonoFoldable"
 
 
 monoFunctorProperties :: TestTree
-monoFunctorProperties = testGroup "Properites of a MonoFunctor"
+monoFunctorProperties = testGroup "Properties of a MonoFunctor"
     [ testProperty "omap id === id" omapId
     , testProperty "omap (f . g)  === omap f . omap g" omapComposition
     ]
@@ -230,12 +230,12 @@ monoTraversableProperties = testGroup "Properties of MonoTraversable"
 
 orderingProperties :: TestTree
 orderingProperties = testGroup "Properties of an Ordering"
-    [ testProperty "ordering preserves symetry"  symetry
+    [ testProperty "ordering preserves symmetry"  symmetry
     , testProperty "ordering is transitive (total)" transitivity
     ]
   where
-    symetry :: StaticCharacter -> StaticCharacter -> Bool
-    symetry lhs rhs =
+    symmetry :: StaticCharacter -> StaticCharacter -> Bool
+    symmetry lhs rhs =
         case (lhs `compare` rhs, rhs `compare` lhs) of
           (EQ, EQ) -> True
           (GT, LT) -> True

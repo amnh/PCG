@@ -229,7 +229,7 @@ bitSizeMaybe (A64 b) = Just $ (V.length b) * 64
 bitSizeMaybe (S64 b) = Just $ (V.length b) * 64
 bitSizeMaybe (SInf b) = Just $ BV.size b
 
--- | all my types are unsigned so isSigned is always False
+-- | all my types are unsigned so assigned is always False
 isSigned _ = False 
 
 -- | testBit function to return true if the ith bit is on
@@ -423,7 +423,7 @@ genMasks blockLens numCharVec alphLen numChars mode =
         sMask = standardMask blockLens occMask alphLen mode
     in (occMask, sMask)
 
--- | Display function that prints a node's meaning given the packed verison and info
+-- | Display function that prints a node's meaning given the packed version and info
 displayNode :: BitPackedNode -> V.Vector (V.Vector [Char]) -> [Char] -> V.Vector Int -> V.Vector [Int] -> String
 displayNode EmptyPackNode _ _ _ _ = ""
 displayNode (A16 node) bitAlphs _ blockLens shuffles = 

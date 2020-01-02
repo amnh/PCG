@@ -58,7 +58,7 @@ validateReportArg x = Left $ "Unrecognized report command(s): " <> show x
 
 primativeString :: Argument -> Either String FilePath
 primativeString (PrimativeArg   (TextValue str)) = Right str
-primativeString (PrimativeArg   _              ) = Left $ "A primative value that is not a file path " <> primativeStringErrorSuffix
+primativeString (PrimativeArg   _              ) = Left $ "A primitive value that is not a file path " <> primativeStringErrorSuffix
 primativeString (LidentArg      (Lident i)     ) = Left $ "Identifier '"       <> i <> "' " <> primativeStringErrorSuffix
 primativeString (LidentNamedArg (Lident i) _   ) = Left $ "Labeled argument '" <> i <> "' " <> primativeStringErrorSuffix
 primativeString (CommandArg     _              ) = Left $ "Command argument "  <>              primativeStringErrorSuffix

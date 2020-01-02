@@ -43,7 +43,7 @@ foldl'' f z0 xs = foldr f' id xs z0
 
 
 -- |
--- Peforms a foldMap that is strict in the accumulator.
+-- Performs a foldMap that is strict in the accumulator.
 {-# INLINE foldMap' #-}
 foldMap' :: (Monoid m, Foldable f) => (a -> m) -> f a -> m
 foldMap' f = foldl' (\ acc a -> acc <> f a) mempty

@@ -32,7 +32,7 @@ testingParse = parse
 
 
 -- |
--- Coalese the many TestTrees to a single TestTree
+-- Coalesce the many TestTrees to a single TestTree
 testSuite :: TestTree
 testSuite = testGroup "Custom Parsec Combinator Tests" tests
 

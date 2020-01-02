@@ -292,7 +292,7 @@ candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
                 (False, False) -> Alt.empty
 
       where
-     -- Checks ancestral compatability i.e. we do not form a network event
+     -- Checks ancestral compatibility i.e. we do not form a network event
      -- with nodes ancestral to one another.
         ancestralTest :: (Int, Int) -> (Int, Int) -> Bool
         ancestralTest (src1,tgt1) (src2, tgt2) =

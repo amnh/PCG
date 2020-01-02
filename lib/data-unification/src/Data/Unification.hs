@@ -187,9 +187,9 @@ matchToChars meta charMapping = fmap (PDAG meta . fmap f)
 
 -- |
 -- Joins the sequences of a fractured parse result. This requires several
--- sequential steps. Each fractured parse result will be placed into a seperate
--- character block by default. We collapse and merge these seperate parse results
--- in the last step to ensure that the input data is placed into it's propper
+-- sequential steps. Each fractured parse result will be placed into a separate
+-- character block by default. We collapse and merge these separate parse results
+-- in the last step to ensure that the input data is placed into it's proper
 -- character block.
 --
 -- * First we collect all character and file names, and atomically generate

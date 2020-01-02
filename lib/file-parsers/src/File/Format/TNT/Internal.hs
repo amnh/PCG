@@ -130,7 +130,7 @@ data  WithTaxa
 
 
 -- |
--- Parse result from a CCODE command that reprsents a list of augmentations to
+-- Parse result from a CCODE command that represents a list of augmentations to
 -- the default metatdata state for some characters.
 type  CCode = NonEmpty CCodeAugment
 
@@ -146,7 +146,7 @@ data  CCodeAugment
 
 
 -- |
--- The possible chracter metatadata values that can be mutated.
+-- The possible character metatadata values that can be mutated.
 data CharacterState
     = Additive
     | NonAdditive
@@ -552,7 +552,7 @@ keyword :: forall e s m. (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, T
 keyword x y = abreviatable x y $> ()
   where
     abreviatable fullName minimumChars
-      | minimumChars < 1             = fail $ "Nonpositive abreviation prefix (" <> show minimumChars <> ") supplied to abreviatable combinator"
+      | minimumChars < 1             = fail $ "Nonpositive abbreviation prefix (" <> show minimumChars <> ") supplied to abreviatable combinator"
       | any (not . isAlpha) fullName = fail $ "A keywork containing a non alphabetic character: '" <> show fullName <> "' supplied to abreviateable combinator"
       | otherwise                    = combinator <?> "keyword '" <> fullName <> "'"
       where

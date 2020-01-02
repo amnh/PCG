@@ -286,7 +286,7 @@ joinNonUniqueLabeledNodes root = joinNonUniqueLabeledNodes' [] root
   where
 
     -- We first fold over the Newick Tree to collect all labeled nodes and
-    -- combine thier descendant lists. We use this Map of Newick labels to
+    -- combine their descendant lists. We use this Map of Newick labels to
     -- combined descendant lists for substituting labeled node descendants
     -- in a second pass over the Newick Tree.
     joinedNodes :: Map ShortText [NewickNode]

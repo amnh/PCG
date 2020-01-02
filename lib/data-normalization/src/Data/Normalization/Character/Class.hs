@@ -59,8 +59,8 @@ import           Prelude                               hiding (zipWith)
 -- Instances provide a method to extract 'Character' sequences from raw parsed results.
 -- "Tree-only" return values from files will return an empty result.
 --
--- Characters of types DNA, RNA, protein, and amino acid will *not* have thier IUPAC
--- codes translated to the apropriate groups. This abiguity group translation will
+-- Characters of types DNA, RNA, protein, and amino acid will *not* have their IUPAC
+-- codes translated to the appropriate groups. This abiguity group translation will
 -- occur later, during the rectification process with the character metadata. Parsers
 -- which produce expanded ambiguity groups for these character types will be collapsed
 -- back to the IUPAC code for the ambiguity group during the type class's extraction

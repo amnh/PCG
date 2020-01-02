@@ -32,9 +32,9 @@ instance Bits b => Bits (GPUCharacters b) where
     bitSizeMaybe bits 
         | A.null bits = Just 0
         | otherwise = (A.length bits *) <$> bitSizeMaybe (bits A.! 0)
-    isSigned bits 
+    assigned bits 
         | A.null bits = True
-        | otherwise = isSigned $ bits A.! 0
+        | otherwise = assigned $ bits A.! 0
     popCount = A.fold (\b acc -> acc + popCount b) 0
     testBit bits index
         | A.null bits = False

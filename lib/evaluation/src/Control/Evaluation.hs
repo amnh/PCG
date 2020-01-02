@@ -46,7 +46,7 @@ evaluateEither (Right x) = pure x
 -- |
 -- Elimination function for the 'Evaluation' type.
 evaluateResult
-  :: (ErrorPhase -> Text -> b) -- ^ How to consume the error message when an error has occured
+  :: (ErrorPhase -> Text -> b) -- ^ How to consume the error message when an error has occurred
   -> (a -> b)                  -- ^ How to transform the stored value
   -> EvaluationResult a
   -> b

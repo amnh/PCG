@@ -56,7 +56,7 @@ dynamicCharacterElementTests = testGroup "Dynamic Character Element tests"
 
 
 monoFunctorProperties :: TestTree
-monoFunctorProperties = testGroup "Properites of a MonoFunctor"
+monoFunctorProperties = testGroup "Properties of a MonoFunctor"
     [ testProperty "omap id === id" omapId
     , testProperty "omap (f . g)  === omap f . omap g" omapComposition
     ]
@@ -75,12 +75,12 @@ monoFunctorProperties = testGroup "Properites of a MonoFunctor"
 
 orderingProperties :: TestTree
 orderingProperties = testGroup "Properties of an Ordering"
-    [ testProperty "ordering preserves symetry"  symetry
+    [ testProperty "ordering preserves symmetry"  symmetry
     , testProperty "ordering is transitive (total)" transitivity
     ]
   where
-    symetry :: (DynamicCharacter, DynamicCharacter) -> Bool
-    symetry (lhs, rhs) =
+    symmetry :: (DynamicCharacter, DynamicCharacter) -> Bool
+    symmetry (lhs, rhs) =
         case (lhs `compare` rhs, rhs `compare` lhs) of
           (EQ, EQ) -> True
           (GT, LT) -> True
@@ -179,7 +179,7 @@ elementFiniteBitsTests = testGroup "FiniteBits instance consistency"
 
 
 elementMonoFunctorProperties :: TestTree
-elementMonoFunctorProperties = testGroup "Properites of a MonoFunctor"
+elementMonoFunctorProperties = testGroup "Properties of a MonoFunctor"
     [ testProperty "omap id === id" omapId
     , testProperty "omap (f . g)  === omap f . omap g" omapComposition
     ]
@@ -198,12 +198,12 @@ elementMonoFunctorProperties = testGroup "Properites of a MonoFunctor"
 
 elementOrderingProperties :: TestTree
 elementOrderingProperties = testGroup "Properties of an Ordering"
-    [ testProperty "ordering preserves symetry"  symetry
+    [ testProperty "ordering preserves symmetry"  symmetry
     , testProperty "ordering is transitive (total)" transitivity
     ]
   where
-    symetry :: DynamicCharacterElement -> DynamicCharacterElement -> Bool
-    symetry lhs rhs =
+    symmetry :: DynamicCharacterElement -> DynamicCharacterElement -> Bool
+    symmetry lhs rhs =
         case (lhs `compare` rhs, rhs `compare` lhs) of
           (EQ, EQ) -> True
           (GT, LT) -> True

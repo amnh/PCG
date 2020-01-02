@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Defines the primative operations for standard Needleman-Wunsch and Ukkonen
+-- Defines the primitive operations for standard Needleman-Wunsch and Ukkonen
 -- algorithms for performing a direct optimization heuristic alignmnet between
 -- two dynamic characters.
 --
@@ -29,7 +29,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   , MatrixFunction
   , NeedlemanWunchMatrix
   , OverlapFunction
-  -- * Direct Optimization primative construction functions
+  -- * Direct Optimization primitive construction functions
   , directOptimization
   , filterGaps
   , handleMissingCharacter
@@ -200,7 +200,7 @@ type OverlapFunction e = e -> e -> (e, Word)
 
 
 -- |
--- Wraps the primative operations in this module to a cohesive operation that is
+-- Wraps the primitive operations in this module to a cohesive operation that is
 -- parameterized by an 'OverlapFunction'.
 --
 -- Reused internally by different implementations.

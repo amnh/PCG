@@ -102,6 +102,6 @@ rstrip = TS.reverse . lstrip . TS.reverse
       -- this implementation is horrible
 
 -- |
--- A list of "word seperator" characters.
+-- A list of "word separator" characters.
 wschars :: String
 wschars = [' ', '\t','\r', 'n']

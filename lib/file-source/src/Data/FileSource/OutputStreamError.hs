@@ -42,13 +42,13 @@ import TextShow
 -- |
 -- The various ways in which writing output data from PCG can fail.
 --
--- A single file can fail at outputing data in multiple ways, /sometimes simultaneously/.
+-- A single file can fail at outputting data in multiple ways, /sometimes simultaneously/.
 -- To account for this the 'OutputStreamError' type is a composable 'Semigroup' to allow
--- for the collection of many possible outputing errors to be coalesced into a single
+-- for the collection of many possible outputting errors to be coalesced into a single
 -- 'OutputStreamError' value.
 --
 -- The 'TextShow' instance should be used to render the 'OutputStreamError' as a human legible
--- collection of output errors that occured while attempting to output data from PCG.
+-- collection of output errors that occurred while attempting to output data from PCG.
 --
 -- The 'Show' instance should only be used for debugging purposes.
 newtype OutputStreamError = OutputStreamError (NonEmpty OutputStreamErrorMessage)
@@ -164,6 +164,6 @@ makePathDoesNotExist = OutputStreamError . pure . PathDoesNotExist
 
 
 -- |
--- Remark that there is not a space on disk when outputing data the file.
+-- Remark that there is not a space on disk when outputting data the file.
 makeNotEnoughSpace :: FileSource -> OutputStreamError
 makeNotEnoughSpace = OutputStreamError . pure . NotEnoughSpace

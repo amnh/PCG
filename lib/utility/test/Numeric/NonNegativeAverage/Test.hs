@@ -26,15 +26,15 @@ testInvariantProperties = testGroup "Invariant properties"
 
 orderingProperties :: TestTree
 orderingProperties = testGroup "Properties of ordering"
-    [ testProperty "ordering preserves symetry"  symetry
+    [ testProperty "ordering preserves symmetry"  symmetry
     , testProperty "order preserving projection" orderPreserving
     ]
   where
     orderPreserving :: (Word, Word) -> Bool
     orderPreserving (a, b) = a `compare` b == fromNonNegativeValue a `compare` fromNonNegativeValue b
 
-    symetry :: (NonNegativeAverage, NonNegativeAverage) -> Bool
-    symetry (a, b) =
+    symmetry :: (NonNegativeAverage, NonNegativeAverage) -> Bool
+    symmetry (a, b) =
       case (a `compare` b, b `compare` a) of
         (EQ, EQ) -> True
         (GT, LT) -> True

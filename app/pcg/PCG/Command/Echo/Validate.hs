@@ -9,7 +9,7 @@ import Data.Either                       (partitionEithers)
 import Data.Monoid                       ((<>))
 import PCG.Command.Types
 import PCG.Command.Types.Report.Internal
-import PCG.Script.Types                  (Argument (..), Lident (..), Primative (..))
+import PCG.Script.Types                  (Argument (..), Lident (..), Primitive (..))
 
 validate :: [Argument] -> Either String Command
 validate xs =
@@ -51,7 +51,7 @@ validateReportArg _ = Left "Unrecognized echo command(s)."
 
 primativeString :: Argument -> Either String FilePath
 primativeString (PrimativeArg   (TextValue str)) = Right str
-primativeString (PrimativeArg   _              ) = Left $ "A primative value that is not a file path " <> primativeStringErrorSuffix
+primativeString (PrimativeArg   _              ) = Left $ "A primitive value that is not a file path " <> primativeStringErrorSuffix
 primativeString (LidentArg      (Lident i)     ) = Left $ "Identifier '"       <> i <> "' " <> primativeStringErrorSuffix
 primativeString (LidentNamedArg (Lident i) _   ) = Left $ "Labeled argument '" <> i <> "' " <> primativeStringErrorSuffix
 primativeString (CommandArg     _              ) = Left $ "Command argument "  <>              primativeStringErrorSuffix

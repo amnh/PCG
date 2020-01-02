@@ -66,8 +66,8 @@ xmlElement name attrs contLst = Element (xmlQName name) attributes contents Noth
   where
     attributes      = xmlAttr   <$> attrs
     contents        = parseList <$> contLst
-    parseList conts =
-        case conts of
+    parseList counts =
+        case counts of
           Left  tuple   -> xmlContent tuple
           Right element -> Elem element
 

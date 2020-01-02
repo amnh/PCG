@@ -186,8 +186,8 @@ generateRandomSequence
   :: forall a b s
   .  GenST s
   -> Set Text                     -- ^ Alphabet
-  -> Ratio Int                    -- ^ Substitution probablity (0,1)
-  -> Maybe (Ratio Int, Ratio Int) -- ^ (Insertion, Deletion)    probablity (0,1)
+  -> Ratio Int                    -- ^ Substitution probability (0,1)
+  -> Maybe (Ratio Int, Ratio Int) -- ^ (Insertion, Deletion)    probability (0,1)
   -> Word                         -- ^ Root sequence length
   -> BinaryTree a b
   -> ST s (BinaryTree (Vector Int) b)

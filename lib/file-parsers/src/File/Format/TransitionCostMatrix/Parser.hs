@@ -75,7 +75,7 @@ data  TCMParseResult
 data  TCM
     = TCM
     { customAlphabet  :: Vector ShortText -- ^ The custom alphabet of "Symbols" for which the TCM matrix is defined
-    , transitionCosts :: Matrix Rational  -- ^ The cost to transition between any two symbols, square but not necessarily symetric
+    , transitionCosts :: Matrix Rational  -- ^ The cost to transition between any two symbols, square but not necessarily symmetric
     } -- n+1 X n+1 matrix where n = length customAlphabet
     deriving stock    (Eq, Generic, Show, Typeable)
     deriving anyclass (NFData)
@@ -96,9 +96,9 @@ tcmStreamParser = validateTCMParseResult =<< tcmDefinition <* eof
 
 -- |
 -- Parses an intermediary result consisting of an Alphabet and a Matrix.
--- Both the Alphabet and Matrix have been validated independantly for
+-- Both the Alphabet and Matrix have been validated independently for
 -- consistencey, but no validation has been performed to ensure that the
--- dimensions of the Matrix and the length of the Alphabet are consistant
+-- dimensions of the Matrix and the length of the Alphabet are consistent
 -- with each other.
 {-# INLINE tcmDefinition #-}
 {-# SPECIALISE tcmDefinition :: Parsec Void  T.Text TCMParseResult #-}

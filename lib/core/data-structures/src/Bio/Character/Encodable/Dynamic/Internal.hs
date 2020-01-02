@@ -52,7 +52,7 @@ import           Data.Hashable
 import           Data.Key
 import           Data.List.NonEmpty                    (NonEmpty (..))
 import qualified Data.List.NonEmpty                    as NE
-import           Data.List.Utility                     (invariantTransformation, occurances)
+import           Data.List.Utility                     (invariantTransformation, occurrences)
 import           Data.Maybe                            (fromJust)
 import           Data.MonoTraversable
 import           Data.Range
@@ -262,11 +262,11 @@ instance MonoFoldable DynamicCharacter where
     ofoldl' f e (DC c)    = ofoldl' (\acc x -> f acc (DCE x)) e c
 
     {-# INLINE ofoldr1Ex #-}
-    ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
+    ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an initial accumulator!"
     ofoldr1Ex f (DC c)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
 
     {-# INLINE ofoldl1Ex' #-}
-    ofoldl1Ex' _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an inital accumulator!"
+    ofoldl1Ex' _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an initial accumulator!"
     ofoldl1Ex' f (DC c)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
 
     {-# INLINE onull #-}
@@ -299,7 +299,7 @@ instance MonoFunctor DynamicCharacter where
              Just i  -> DC . factorRows (toEnum i) $ foldMap unwrap dces
              Nothing -> error $ unlines
                  [ "The mapping function over the Dynamic Character did not return *all* all elements of equal length."
-                 , show . occurances $ finiteBitSize <$> dces
+                 , show . occurrences $ finiteBitSize <$> dces
                  , show $ finiteBitSize <$> dces
                  , unlines $ foldMap (\x -> if x then "1" else "0") . toBits . unwrap <$> dces
                  , show bm
