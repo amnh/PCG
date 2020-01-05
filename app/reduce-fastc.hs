@@ -11,33 +11,21 @@
 
 module Main where
 
-import           Control.Monad
-import           Data.Alphabet
-import           Data.Alphabet.IUPAC
-import qualified Data.Bimap                   as BM
-import           Data.Bits
-import           Data.BitVector.LittleEndian
-import           Data.Foldable
-import           Data.Key
-import           Data.List.NonEmpty           (NonEmpty (..))
-import qualified Data.List.NonEmpty           as NE
-import           Data.Map                     (Map, findMin, singleton)
-import           Data.Maybe
-import           Data.Ratio
-import           Data.Scientific
-import           Data.Semigroup.Foldable
-import           Data.String                  (IsString (fromString))
-import           Data.Text.Short              (ShortText, toString)
-import           Data.Validation
-import           Data.Vector.NonEmpty         (Vector)
-import           Data.Void
-import           File.Format.Fastc
-import           Numeric.Natural
-import           Options.Applicative
-import           System.Random
-import           Text.Megaparsec              (ParseErrorBundle, Stream, Token, parse)
-import           Text.Megaparsec.Error        (errorBundlePretty)
-import           Text.PrettyPrint.ANSI.Leijen (string)
+import Data.Foldable
+import Data.Key
+import Data.List.NonEmpty           (NonEmpty (..))
+import Data.Map                     (Map, findMin, singleton)
+import Data.Scientific
+import Data.Semigroup.Foldable
+import Data.Text.Short              (toString)
+import Data.Validation
+import Data.Vector.NonEmpty         (Vector)
+import Data.Void
+import File.Format.Fastc
+import Options.Applicative
+import Text.Megaparsec              (ParseErrorBundle, Stream, Token, parse)
+import Text.Megaparsec.Error        (errorBundlePretty)
+import Text.PrettyPrint.ANSI.Leijen (string)
 
 
 newtype Specification = Specification { specifiedRatio :: Rational }

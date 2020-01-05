@@ -288,7 +288,6 @@ library core
     Bio.Graph.ReferenceDAG.Traversal,
     Bio.Graph.ReferenceDAG.Utility,
     Bio.Graph.Solution,
-    Bio.Graph.ZipperDAG,
     Data.EdgeLength,
     Data.MetricRepresentation,
     Data.NodeLabel,
@@ -445,7 +444,6 @@ library data-structures
     Bio.Graph.ReferenceDAG.Traversal
     Bio.Graph.ReferenceDAG.Utility
     Bio.Graph.Solution
-    Bio.Graph.ZipperDAG
     Data.EdgeLength
     Data.NodeLabel
     Data.TopologyRepresentation
@@ -496,7 +494,6 @@ library data-structures
     Bio.Graph.PhylogeneticDAG.Postorder
     Bio.Graph.PhylogeneticDAG.Preorder
     Bio.Graph.PhylogeneticDAG.Reification
-    Bio.Graph.ZipperDAG.Internal
     Bio.Sequence.Block.Builder
     Bio.Sequence.Block.Character
     Bio.Sequence.Block.Internal
@@ -1051,7 +1048,6 @@ library utility
   exposed-modules:
     Control.Parallel.Custom
     Data.BitMatrix
-    Data.Binary.Utility
     Data.Either.Custom
     Data.Foldable.Custom
     Data.List.Utility

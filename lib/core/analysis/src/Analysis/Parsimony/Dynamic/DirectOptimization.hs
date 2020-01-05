@@ -27,7 +27,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization
   , foreignPairwiseDO
   , foreignThreeWayDO
   , naiveDO
-  , naiveDOConst
   , naiveDOMemo
   , selectDynamicMetric
   , ukkonenDO

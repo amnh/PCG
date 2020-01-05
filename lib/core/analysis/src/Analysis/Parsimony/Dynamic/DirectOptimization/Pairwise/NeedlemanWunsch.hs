@@ -19,7 +19,6 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
   ( naiveDO
-  , naiveDOConst
   , naiveDOMemo
   ) where
 
@@ -51,13 +50,6 @@ naiveDO :: DOCharConstraint s
                                    --   The gapped alignment of the /second/ input character when aligned with the first character
 
 naiveDO char1 char2 costStruct = directOptimization char1 char2 (overlap2 costStruct) createNeedlemanWunchMatrix
-
-
--- |
--- The same as 'naiveDO' except that the "cost structure" parameter is ignored.
--- Instead a constant cost is used.
-naiveDOConst :: DOCharConstraint s => s -> s -> (Word -> Word -> Word) -> (Word, s, s, s, s)
-naiveDOConst char1 char2 _ = directOptimization char1 char2 overlapConst createNeedlemanWunchMatrix
 
 
 -- |

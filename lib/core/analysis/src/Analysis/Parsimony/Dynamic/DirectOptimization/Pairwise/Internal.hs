@@ -38,16 +38,9 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   , needlemanWunschDefinition
 --  , renderCostMatrix
 --  , traceback
-  -- * Probably removable
-  , overlap
-  , overlapConst
-  , getOverlap
-  , minimalChoice
   ) where
 
 import           Bio.Character.Encodable
-import           Control.Foldl               (Fold (..))
-import qualified Control.Foldl               as F
 import           Control.Monad.State.Strict
 import           Data.Bits
 import           Data.DList                  (snoc)
@@ -59,15 +52,13 @@ import           Data.Matrix.NotStupid       (Matrix)
 import           Data.Maybe                  (fromMaybe)
 import           Data.MonoTraversable
 import           Data.Ord
-import           Data.Semigroup.Foldable
-import           Numeric.Extended.Natural
-import           Prelude                     hiding (lookup)
-
 import qualified Data.Vector.Generic         as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Primitive       as P
 import qualified Data.Vector.Unboxed         as U
 import           Data.Word                   (Word8)
+import           Numeric.Extended.Natural
+import           Prelude                     hiding (lookup)
 
 
 -- |
@@ -91,74 +82,7 @@ import           Data.Word                   (Word8)
 -- deterministic way. Without loss of generality in determining the ordering,
 -- we choose the same biasing as the C code called from the FFI for consistency.
 data Direction = DiagArrow | LeftArrow | UpArrow
-  deriving stock (Eq, Ord)
-
-
--- | (✔)
-instance Show Direction where
-
-    show DiagArrow = "↖"
-    show LeftArrow = "←"
-    show UpArrow   = "↑"
-
-fromDirection :: Direction -> Word8
-{-# INLINE fromDirection #-}
-fromDirection DiagArrow = 0
-fromDirection LeftArrow = 1
-fromDirection UpArrow   = 2
-
-toDirection :: Word8 -> Direction
-{-# INLINE toDirection #-}
-toDirection 0 = DiagArrow
-toDirection 1 = LeftArrow
-toDirection _ = UpArrow
-
-data instance U.MVector s Direction = MV_Direction (P.MVector s Word8)
-data instance U.Vector Direction    = V_Direction  (P.Vector    Word8)
-
-instance U.Unbox Direction
-
-instance M.MVector U.MVector Direction where
-  {-# INLINE basicLength #-}
-  {-# INLINE basicUnsafeSlice #-}
-  {-# INLINE basicOverlaps #-}
-  {-# INLINE basicUnsafeNew #-}
-  {-# INLINE basicInitialize #-}
-  {-# INLINE basicUnsafeReplicate #-}
-  {-# INLINE basicUnsafeRead #-}
-  {-# INLINE basicUnsafeWrite #-}
-  {-# INLINE basicClear #-}
-  {-# INLINE basicSet #-}
-  {-# INLINE basicUnsafeCopy #-}
-  {-# INLINE basicUnsafeGrow #-}
-  basicLength (MV_Direction v) = M.basicLength v
-  basicUnsafeSlice i n (MV_Direction v) = MV_Direction $ M.basicUnsafeSlice i n v
-  basicOverlaps (MV_Direction v1) (MV_Direction v2) = M.basicOverlaps v1 v2
-  basicUnsafeNew n = MV_Direction `liftM` M.basicUnsafeNew n
-  basicInitialize (MV_Direction v) = M.basicInitialize v
-  basicUnsafeReplicate n x = MV_Direction `liftM` M.basicUnsafeReplicate n (fromDirection x)
-  basicUnsafeRead (MV_Direction v) i = toDirection `liftM` M.basicUnsafeRead v i
-  basicUnsafeWrite (MV_Direction v) i x = M.basicUnsafeWrite v i (fromDirection x)
-  basicClear (MV_Direction v) = M.basicClear v
-  basicSet (MV_Direction v) x = M.basicSet v (fromDirection x)
-  basicUnsafeCopy (MV_Direction v1) (MV_Direction v2) = M.basicUnsafeCopy v1 v2
-  basicUnsafeMove (MV_Direction v1) (MV_Direction v2) = M.basicUnsafeMove v1 v2
-  basicUnsafeGrow (MV_Direction v) n = MV_Direction `liftM` M.basicUnsafeGrow v n
-
-instance G.Vector U.Vector Direction where
-  {-# INLINE basicUnsafeFreeze #-}
-  {-# INLINE basicUnsafeThaw #-}
-  {-# INLINE basicLength #-}
-  {-# INLINE basicUnsafeSlice #-}
-  {-# INLINE basicUnsafeIndexM #-}
-  {-# INLINE elemseq #-}
-  basicUnsafeFreeze (MV_Direction v) = V_Direction `liftM` G.basicUnsafeFreeze v
-  basicUnsafeThaw (V_Direction v) = MV_Direction `liftM` G.basicUnsafeThaw v
-  basicLength (V_Direction v) = G.basicLength v
-  basicUnsafeSlice i n (V_Direction v) = V_Direction $ G.basicUnsafeSlice i n v
-  basicUnsafeIndexM (V_Direction v) i = toDirection `liftM` G.basicUnsafeIndexM v i
-  basicUnsafeCopy (MV_Direction mv) (V_Direction v) = G.basicUnsafeCopy mv v
-  elemseq _ = seq
+    deriving stock (Eq, Ord)
 
 
 -- |
@@ -197,6 +121,86 @@ type MatrixFunction m s = s -> s -> OverlapFunction (Element s) -> m (Cost, Dire
 -- elements, supplying the corresponding median and cost to align the two
 -- characters.
 type OverlapFunction e = e -> e -> (e, Word)
+
+
+data instance U.MVector s Direction = MV_Direction (P.MVector s Word8)
+
+
+data instance U.Vector   Direction  = V_Direction  (P.Vector    Word8)
+
+
+instance U.Unbox Direction
+
+
+instance M.MVector U.MVector Direction where
+
+    {-# INLINE basicLength #-}
+    basicLength (MV_Direction v) = M.basicLength v
+
+    {-# INLINE basicUnsafeSlice #-}
+    basicUnsafeSlice i n (MV_Direction v) = MV_Direction $ M.basicUnsafeSlice i n v
+
+    {-# INLINE basicOverlaps #-}
+    basicOverlaps (MV_Direction v1) (MV_Direction v2) = M.basicOverlaps v1 v2
+
+    {-# INLINE basicUnsafeNew #-}
+    basicUnsafeNew n = MV_Direction `liftM` M.basicUnsafeNew n
+
+    {-# INLINE basicInitialize #-}
+    basicInitialize (MV_Direction v) = M.basicInitialize v
+
+    {-# INLINE basicUnsafeReplicate #-}
+    basicUnsafeReplicate n x = MV_Direction `liftM` M.basicUnsafeReplicate n (fromDirection x)
+
+    {-# INLINE basicUnsafeRead #-}
+    basicUnsafeRead (MV_Direction v) i = toDirection `liftM` M.basicUnsafeRead v i
+
+    {-# INLINE basicUnsafeWrite #-}
+    basicUnsafeWrite (MV_Direction v) i x = M.basicUnsafeWrite v i (fromDirection x)
+
+    {-# INLINE basicClear #-}
+    basicClear (MV_Direction v) = M.basicClear v
+
+    {-# INLINE basicSet #-}
+    basicSet (MV_Direction v) x = M.basicSet v (fromDirection x)
+
+    {-# INLINE basicUnsafeCopy #-}
+    basicUnsafeCopy (MV_Direction v1) (MV_Direction v2) = M.basicUnsafeCopy v1 v2
+
+    basicUnsafeMove (MV_Direction v1) (MV_Direction v2) = M.basicUnsafeMove v1 v2
+
+    {-# INLINE basicUnsafeGrow #-}
+    basicUnsafeGrow (MV_Direction v) n = MV_Direction `liftM` M.basicUnsafeGrow v n
+
+
+instance G.Vector U.Vector Direction where
+
+    {-# INLINE basicUnsafeFreeze #-}
+    basicUnsafeFreeze (MV_Direction v) = V_Direction `liftM` G.basicUnsafeFreeze v
+
+    {-# INLINE basicUnsafeThaw #-}
+    basicUnsafeThaw (V_Direction v) = MV_Direction `liftM` G.basicUnsafeThaw v
+
+    {-# INLINE basicLength #-}
+    basicLength (V_Direction v) = G.basicLength v
+
+    {-# INLINE basicUnsafeSlice #-}
+    basicUnsafeSlice i n (V_Direction v) = V_Direction $ G.basicUnsafeSlice i n v
+
+    {-# INLINE basicUnsafeIndexM #-}
+    basicUnsafeIndexM (V_Direction v) i = toDirection `liftM` G.basicUnsafeIndexM v i
+
+    basicUnsafeCopy (MV_Direction mv) (V_Direction v) = G.basicUnsafeCopy mv v
+
+    {-# INLINE elemseq #-}
+    elemseq _ = seq
+
+
+instance Show Direction where
+
+    show DiagArrow = "↖"
+    show LeftArrow = "←"
+    show UpArrow   = "↑"
 
 
 -- |
@@ -488,172 +492,6 @@ traceback alignMatrix longerChar lesserChar = (finalCost, ungapped, medians, lon
               DiagArrow -> (i - 1, j - 1, longerChar `indexStream` (j - 1), lesserChar `indexStream` (i - 1))
 
 
-{--
- - Internal computations
- -}
-
-
--- |
--- Memoized wrapper of the overlap function
-getOverlap :: EncodableStreamElement e => e -> e -> (Word -> Word -> Word) -> (e, Word)
-getOverlap inChar1 inChar2 costStruct = result
-  where
-    result = overlap costStruct inChar1 inChar2
-
-
--- |
--- Takes two 'EncodableStreamElement' and a symbol change cost function and
--- returns a tuple of a new character, along with the cost of obtaining that
--- character. The return character may be (or is even likely to be) ambiguous.
--- Will attempt to intersect the two characters, but will union them if that is
--- not possible, based on the symbol change cost function.
---
--- To clarify, the return character is an intersection of all possible least-cost
--- combinations, so for instance, if @ char1 == A,T @ and @ char2 == G,C @, and
--- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
--- value is A,C,G,T.
-overlap :: (EncodableStreamElement e {- , Show e -}) => (Word -> Word -> Word) -> e -> e -> (e, Word)
-overlap costStruct char1 char2 = F.impurely ofoldMUnwrap (F.premapM g outerFold) char1 `evalState` 0
-  where
-    !zero     = char1 `xor` char1
-
-    outerFold = F.generalize $ Fold f (char1 `xor` char1, maxBound) id
-
-    costAndSymbol (i, x) = (x, cost1 + cost2)
-      where
-        !cost1 = getDistance3 costStruct i char1
-        !cost2 = getDistance3 costStruct i char2
-
-    f (!symbol1, !cost1) (!symbol2, !cost2) =
-        case cost1 `compare` cost2 of
-          EQ -> (symbol1 .|. symbol2, cost1)
-          LT -> (symbol1            , cost1)
-          GT -> (symbol2            , cost2)
-
-    g = const $ do
-        j <- get
-        modify' (+1)
-        let !v = toEnum j
-        let !b = zero `setBit` j
-        pure $ costAndSymbol (v, b)
-
-
-getDistance3 :: (MonoFoldable b, Element b ~ Bool) => (Word -> Word -> Word) -> Word -> b -> Word
-getDistance3 costStruct i b = fromMaybe errMsg $
-    F.impurely ofoldMUnwrap (F.premapM f (F.generalize F.minimum)) b `evalState` 0
-  where
-    errMsg = error "There were no bits set in the character!"
-
-    f e = do
-        j <- get
-        modify' (+1)
-        pure $ if e
-               then costStruct i j
-               else maxBound
-{-
-    getDistance2 :: FiniteBits b => Word -> b -> Word
-    getDistance2 i b =
-        case F.fold (F.prefilter (b `testBit`) (F.premap (costStruct i . toEnum) F.minimum)) indices of
-          Just x  -> x
-          Nothing -> error $ "There were no bits set in the character!"
-      where
-        indices = [0 .. finiteBitSize b - 1]
--}
-
--- |
--- Given a structure of unambiguous character elements and costs, calculates the
--- least costly intersection of unambiguous character elements and the cost of
--- that intersection.
-minimalChoice :: (Bits b, Foldable1 t, Ord c) => t (b, c) -> (b, c)
-minimalChoice = foldl1 f
-  where
-    f (!symbol1, !cost1) (!symbol2, !cost2) =
-        case cost1 `compare` cost2 of
-          EQ -> (symbol1 .|. symbol2, cost1)
-          LT -> (symbol1            , cost1)
-          GT -> (symbol2            , cost2)
-
-
-{-
--- |
--- Finds the cost between all single, unambiguous symbols and two dynamic
--- character elements (ambiguity groups of symbols).
---
--- Takes in a symbol change cost function and two ambiguous elements of a dynamic
--- character and returns a list of tuples of all possible unambiguous pairings,
--- along with the cost of each pairing. The resulting elements each have exactly
--- two bits set.
-symbolDistances
-  :: EncodableStreamElement e
-  => (Word -> Word -> Word)
-  -> e
-  -> e
-  -> NonEmpty (e, Word)
-symbolDistances costStruct char1 char2 = costAndSymbol <$> allSymbols
-  where
-    costAndSymbol (i, x) = (x, cost1 + cost2)
-      where
-        !cost1 = getDistance3 costStruct i char1
-        !cost2 = getDistance3 costStruct i char2
-
-    symbolIndices = NE.fromList [0 .. finiteBitSize char1 - 1]
-    allSymbols    = (toEnum &&& setBit zero) <$> symbolIndices
-    zero          = char1 `xor` char1
--}
-
-{-
-    getDistance3 :: (MonoFoldable b, Element b ~ Bool) => Word -> b -> Word
-    getDistance3 i b =
-        case F.impurely ofoldMUnwrap (F.prefilterM pure (F.premapM f (F.generalize F.minimum))) b `evalState` 0 of
-          Just x  -> x
-          Nothing -> error $ "There were no bits set in the character!"
-      where
-        f _ = do
-            j <- get
-            modify' (+1)
-            pure $ costStruct i j
--}
-
-{-
-    getDistance2 :: FiniteBits b => Word -> b -> Word
-    getDistance2 i b =
-        case F.fold (F.prefilter (b `testBit`) (F.premap (costStruct i . toEnum) F.minimum)) indices of
-          Just x  -> x
-          Nothing -> error $ "There were no bits set in the character!"
-      where
-        indices = [0 .. finiteBitSize b - 1]
--}
-{-
-    getDistance :: FiniteBits b => Word -> b -> Word
-    getDistance i e = F.minimum $ costStruct i <$> getSetBits e
-
-    getSetBits :: FiniteBits b => b -> NonEmpty Word
-    getSetBits b =
-        case fold (F.prefilter (b `testBit`) (costStruct i <$> F.minimum)) indices of
-          x:xs -> x:|xs
-          []   -> error $ "There were no bits set in the character: " <>
-                    show (foldMap (\i -> if b `testBit` i then "1" else "0") indices)
-      where
-        indices = [0 .. finiteBitSize b - 1]
--}
-{-
-        go  0 xs = if b `testBit` 0 then 0:xs else xs
-        go !n xs
-          | b `testBit` n = go (n-1) $ toEnum n:xs
-          | otherwise     = go (n-1) xs
--}
-
-
--- |
--- An overlap function that applies the discrete metric to aligning two elements.
-overlapConst :: (EncodableStreamElement e {- , Show e -}) => e -> e -> (e, Word)
-overlapConst lhs rhs
-  | intersect == zeroBits = (lhs .|. rhs, 1)
-  | otherwise             = (intersect  , 0)
-  where
-    intersect = lhs .&. rhs
-
-
 getMinimalCostDirection :: (EncodableStreamElement e, Ord c) => (c, e) -> (c, e) -> (c, e) -> (c, e, Direction)
 getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  downChar) =
     minimumBy (comparing (\(c,_,d) -> (c,d)))
@@ -665,35 +503,15 @@ getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  
     gap = getGapElement diagChar
 
 
-{-
--- |
--- Given a symbol change cost function and two tuples of an 'Word' and an
--- unambiguous 'EncodableStreamElement', determines the cost of a pairing
--- (intersection) of those characters into an ambiguous character. The 'Word's
--- are the set bits in each character and are used as lookup into the symbol
--- change cost function.
-getCost :: EncodableStreamElement s => (Word -> Word -> Word) -> (Word, s) -> (Word, s) -> (s, Word)
-getCost costStruct seqTup1 seqTup2 =
-    case (seqTup1, seqTup2) of
-        ((pos1, c1), (pos2, c2)) -> (c1 .|. c2, costStruct pos1 pos2)
--}
+{-# INLINE fromDirection #-}
+fromDirection :: Direction -> Word8
+fromDirection DiagArrow = 0
+fromDirection LeftArrow = 1
+fromDirection UpArrow   = 2
 
 
-{-
--- |
--- Transformation should no longer be nescissary
--- Replaced definition with the identiy function over two values.
-correctBiasing :: a -> ([a], [a], [a]) -> ([a], [a], [a])
-correctBiasing = const id
-{-
-correctBiasing   _ ( [], [], []) = ( [],  [],  [])
-correctBiasing   _ ([x],[y],[z]) = ([x], [y], [z])
-correctBiasing gap (x1:x2:xs, y1:y2:ys, z1:z2:zs)
-  | y1 == gap && z1 /= gap && z1 == y2 && z1 == z2 = (x2:xs'', y2:ys'', z2:zs'')
-  | y1 /= gap && z1 == gap && y1 == y2 && y1 == z2 = (x2:xs'', y2:ys'', z2:zs'')
-  | otherwise                                      = (x1:xs' , y1:ys' , z1:zs' )
-  where
-    (xs' , ys' , zs' ) = correctBiasing gap ( x2:xs, y2:ys, z2:zs )
-    (xs'', ys'', zs'') = correctBiasing gap ( x1:xs, y1:ys, z1:zs )
--}
--}
+{-# INLINE toDirection #-}
+toDirection :: Word8 -> Direction
+toDirection 0 = DiagArrow
+toDirection 1 = LeftArrow
+toDirection _ = UpArrow
