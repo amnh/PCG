@@ -142,7 +142,7 @@ instance (Eq a, Bits a, A.IsIntegral a, A.Elt a, Integral a) => Bits (ParEnabled
         -- | mode == SInf = V.foldr (\b acc -> (popCount b) + acc) 0 bit
         | otherwise = error "Node mode error"
 
-    isSigned _ = False
+    assigned _ = False
 
     bit _ = EmptyPackNode
 

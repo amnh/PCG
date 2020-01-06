@@ -7,8 +7,15 @@ Releases are available [on GitHub][2].
 
 ## _0.2.1_ - Unreleased Changes
 
-* None
-
+* Updated to GHC-8.8.1
+* Updated to Cabal-3.0
+* Updated to Cabal's multiple libraries functionality for sub-libraries
+* Updated Travis CI build script
+* Added greedy network search command
+* Added sting alignment benchmarking suite
+* Improved efficiency of median state calculations
+* Corrected defect regarding syntany prefixes in FASTC parser
+* Reduced memory usage and pressure when normalizing and unifying inputs
 
 ## [0.2.0][5] - 2019-07-09
 
@@ -32,7 +39,7 @@ Releases are available [on GitHub][2].
 * Added module for memoized vector computation abstracting the method used in pre/postorder
 * Added Validation monad transformer (for error handling)
 * Added Cost data-type for perfect precision, non-negative rational number accumulation
-* Added specific exit codes to indicate in which phase of the runtime failure(s) occured
+* Added specific exit codes to indicate in which phase of the runtime failure(s) occurred
 * Added option to perform hierarchical clustering in wagner build options
 * Corrected defect in handling of prealigned input data
 * Corrected defect in FFI resulting in a space leak

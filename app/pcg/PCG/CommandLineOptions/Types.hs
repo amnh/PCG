@@ -1,4 +1,5 @@
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric      #-}
+{-# LANGUAGE DerivingStrategies #-}
 
 module PCG.CommandLineOptions.Types
   ( CommandLineOptions(..)
@@ -22,7 +23,7 @@ data  CommandLineOptions
     , printCredits   :: Bool
     , printExitCodes :: Bool
     , verbosity      :: Verbosity
-    } deriving (Generic)
+    } deriving stock (Generic)
 
 
 -- |
@@ -33,7 +34,7 @@ data Verbosity
    | Warnings
    | Informational
    | Debugging
-   deriving (Eq, Enum, Generic, Show)
+   deriving stock (Eq, Enum, Generic, Show)
 
 
 instance NFData CommandLineOptions
@@ -46,7 +47,7 @@ instance NFData Verbosity
 -- Interpret an 'Integer' as a 'Verbosity' value.
 --
 -- 'Integer' values in the range @[0 .. 4]@ are valid.
--- Values oput side the range defualt to @3@.
+-- Values oput side the range default to @3@.
 validateVerbosity :: Integer -> Verbosity
 validateVerbosity 0 = None
 validateVerbosity 1 = Errors

@@ -72,11 +72,11 @@ executeCommand x =
         --readFileHandle <- openFile readFileName ReadMode 
         --fileContents <- hGetContents readFileHandle
         fileContents <- readFile readFileName
-        hPutStrLn stderr "Successfull"
+        hPutStrLn stderr "Successful"
     else 
         error ("Command " ++ show x  ++ " not recognizes/implememnted.")
 
--- | sendMessage is wrapper for update infor via IO ()
+-- | sendMessage is wrapper for update inform via IO ()
 sendMessage :: String -> IO ()
 sendMessage x =
         if null x then hPutStrLn stderr "Unspecified message"
@@ -199,20 +199,20 @@ getMergeAnc nameIndices inNodes =
         let (_, _, a) = inNodes V.! (head) nameIndices
         in a ++ getMergeAnc (tail nameIndices) inNodes
 
---mergeAndPurge takes list of name occurences and 
+--mergeAndPurge takes list of name occurrences and 
 --  if 1 time -> keep
 --  if 2 times -> merge
 --      purge the old nodes
 mergeAndPurge :: [[Int]] -> V.Vector GenPhyNetNode -> GenPhyNet
 mergeAndPurge nameTimes inNodes 
     | null nameTimes = []
-    | occurences == 1 = (inNodes V.! (head curNameList)) : mergeAndPurge (tail nameTimes) inNodes
-    | (occurences > 1) && (length name > 1) = error ("Problem in name list in mergeAndPurge" ++ show name)
-    | occurences > 1 = (head name, descList, ancList) : (mergeAndPurge (tail nameTimes) inNodes)
+    | occurrences == 1 = (inNodes V.! (head curNameList)) : mergeAndPurge (tail nameTimes) inNodes
+    | (occurrences > 1) && (length name > 1) = error ("Problem in name list in mergeAndPurge" ++ show name)
+    | occurrences > 1 = (head name, descList, ancList) : (mergeAndPurge (tail nameTimes) inNodes)
     | otherwise = error "Problem in name list in mergeAndPurge"
         where 
             curNameList = head nameTimes 
-            occurences = length curNameList
+            occurrences = length curNameList
 
             name = nub $ getMergeNames curNameList inNodes
             descList = getMergeDesc curNameList inNodes
@@ -265,7 +265,7 @@ stripLabel inName =
         else outName
         --)
 
---stripBranchLengths take off branch lengths from lables -- part after ':'
+--stripBranchLengths take off branch lengths from labels -- part after ':'
 stripBranchLengths :: String -> String
 stripBranchLengths inLabel =
     if null inLabel then []

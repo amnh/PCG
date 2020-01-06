@@ -1,7 +1,8 @@
-{-# LANGUAGE DeriveFoldable    #-}
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveFoldable     #-}
+{-# LANGUAGE DeriveFunctor      #-}
+{-# LANGUAGE DeriveTraversable  #-}
+{-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE OverloadedStrings  #-}
 
 module Main (main) where
 
@@ -23,7 +24,7 @@ import Text.Megaparsec
 data  BinaryTree a
     = Leaf a
     | Branch (BinaryTree a) (BinaryTree a)
-    deriving (Eq, Foldable, Functor, Traversable, Ord, Show)
+    deriving stock (Eq, Foldable, Functor, Traversable, Ord, Show)
 
 
 -- |
