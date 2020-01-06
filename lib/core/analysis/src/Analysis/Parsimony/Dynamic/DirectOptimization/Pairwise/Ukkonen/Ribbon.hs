@@ -23,7 +23,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
   , generate
   ) where
 
-
 import           Data.Foldable
 import           Data.Key
 import           Data.Maybe            (fromMaybe)
@@ -97,6 +96,7 @@ instance Show (Ribbon a) where
 -- of columns.
 --
 -- If the rows > cols of the matrix, then the ribbon is transposed.
+{-# INLINE generate #-}
 generate
   :: Word              -- ^ Rows of the matrix
   -> Word              -- ^ Columns of the matrix
@@ -133,6 +133,7 @@ generate x y f alpha = result
 
 -- |
 -- Attempts to index the 'Ribbon' at a point within its defined region.
+{-# INLINE ribbonLookup #-}
 ribbonLookup :: (Int, Int) -> Ribbon a -> Maybe a
 ribbonLookup (i,j) r
   | outsideBounds = Nothing
@@ -157,6 +158,7 @@ ribbonLookup (i,j) r
 -- Convert a 2D point to its linear position in the vector.
 --
 -- Will produce undefined behavior when transforming a point outside the 'Ribbon'.
+{-# INLINE transformation #-}
 transformation :: Ribbon a -> (Int, Int) -> Int
 transformation r (i,j) = indexValue
   where
