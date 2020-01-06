@@ -1,8 +1,17 @@
 dist: bionic #Required for GCC >= v5.0
 sudo: true
 
+
 language: haskell
-cabal: "2.4"
+cabal: "3.0"
+
+
+git:
+  depth: 5
+
+
+notifications:
+  email: false
 
 
 cache:
@@ -17,10 +26,16 @@ matrix:
 
     # Cabal
     - ghc: 8.8.1
+#      addons:
+#        apt:
+#          sources:
+#          - hvr-ghc
+#          packages:
+#          - cabal-install-3.0
 
     # Stack
-    - ghc: 8.8.1
-      env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
+#    - ghc: 8.8.1
+#      env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
 
 
 before_install:
@@ -39,6 +54,7 @@ before_install:
 #  - which weeder || tar -xzf weeder.tar.gz
 #  - which weeder || cp weeder-*/weeder ~/.local/bin/weeder
 
+
 install:
   - gcc --version
   - ghc --version
@@ -47,8 +63,9 @@ install:
   - |
     if [ -z "$STACK_YAML" ]; then
       cabal --version
-      cabal new-update
-      cabal new-build --enable-benchmarks --enable-documentation --enable-tests --haddock-all --haddock-hyperlink-source --haddock-internal
+      cabal update
+      cabal configure
+      cabal build --enable-benchmarks --enable-documentation --enable-tests --haddock-all --haddock-hyperlink-source --haddock-internal
     else
       # install stack
       curl -sSL https://get.haskellstack.org/ | sh
@@ -61,9 +78,3 @@ install:
 
 script:
   - make run-hlint
-
-git:
-  depth: 5
-
-notifications:
-  email: false

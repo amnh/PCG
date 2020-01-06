@@ -41,7 +41,7 @@ import Text.Megaparsec                (ParseErrorBundle, Parsec, errorBundlePret
 --
 -- Gracefully handles empty STDIN stream.
 --
--- Initiates phylogenetic search when valid commmand line options are supplied.
+-- Initiates phylogenetic search when valid command line options are supplied.
 main :: IO ()
 main = do
      handleNoInput
@@ -68,8 +68,8 @@ performSearch opts = do
     (code, outputStream) <- runUserComputation opts
     let outputPath = outputFile opts
     (code2, _) <- fmap (renderSearchState . snd) . runEvaluationT () $ renderOutputStream outputPath outputStream
-    -- If the computation was successful and the outputing was unsuccessful,
-    -- only then use the exit code generated during outputing.
+    -- If the computation was successful and the outputting was unsuccessful,
+    -- only then use the exit code generated during outputting.
     case code of
       ExitSuccess{} -> exitWith code2
       _             -> exitWith code
@@ -101,7 +101,7 @@ renderOutputStream filePath outputStream = do
                        else hSetBuffering stdout NoBuffering *>
                             runValidationT (writeSTDOUT (streamText outputStream))
     case result of
-      Failure err -> failWithPhase Outputing err
+      Failure err -> failWithPhase Outputting err
       Success _   -> pure ()
 
 
@@ -129,7 +129,7 @@ parseInputStream path inputStream =
 -- ('Left') is returned. In the error case where no arguments were supplied to
 -- the program, then the help menu is returned as the error message. In the error
 -- case where program arguments were supplied, it is assumed that the STDIN
--- stream was intentionally choosen as the input stream and an error message
+-- stream was intentionally chosen as the input stream and an error message
 -- noting that the stream is empty is returned along with the program's usage
 -- menu.
 retreiveInputStream :: FileSource -> EvaluationT r IO Text

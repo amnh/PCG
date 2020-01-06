@@ -22,7 +22,7 @@ import Data.Validation
 import PCG.Command.Report
 import PCG.Command.Report.GraphViz
 import PCG.Command.Report.Metadata
-import Prelude                        hiding (appendFile, getContents, readFile, writeFile)
+import Prelude                        hiding (appendFile, writeFile)
 import Text.XML
 import TextShow                       (TextShow (showtl))
 
@@ -38,7 +38,7 @@ evaluate (ReportCommand format target) stateValue = reportStreams $> stateValue
   where
     reportStreams =
       case generateOutput stateValue format of
-           ErrorCase    errMsg  -> failWithPhase Outputing errMsg
+           ErrorCase    errMsg  -> failWithPhase Outputting errMsg
            MultiStream  streams -> renderMultiStream streams
            SingleStream output  -> renderSingleStream target output
 
@@ -62,7 +62,7 @@ runOutputStream :: ValidationT OutputStreamError IO () -> EvaluationT GlobalSett
 runOutputStream outputValidation = do
     result <- liftIO $ runValidationT outputValidation
     case result of
-      Failure errMsg -> failWithPhase Outputing errMsg
+      Failure errMsg -> failWithPhase Outputting errMsg
       Success _      -> pure ()
 
 

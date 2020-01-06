@@ -157,9 +157,9 @@ genSeenAlphabets terminals numChars
         let
             heads = map (\(_, chars) -> head chars) terminals
             tails = map (\(n, chars) -> (n, tail chars)) terminals
-            allTogether = nub (map head heads)
+            altogether = nub (map head heads)
             toSee = genSeenAlphabets tails numChars 
-        in allTogether : toSee
+        in altogether : toSee
 
 -- | Get the seen alphabets by a map over each index for parallelization
 --genAlphMap :: [TermData] -> Int -> SeenAlphs

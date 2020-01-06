@@ -78,9 +78,9 @@ convertToBit x
     | otherwise =
        shift 1 x
 
--- | convertDNASeqToBit takes DNA sequnce and returns Storable Vector of Int64 of bit
+-- | convertDNASeqToBit takes DNA sequence and returns Storable Vector of Int64 of bit
 --representations (-=0, Aa = 1, Cc = 2, Gg=4 etc with IUPAC amibuities)
---currelty gap ambiguities not allow in this convertion other than ?
+--currelty gap ambiguities not allow in this conversion other than ?
 --Should make ACGT- but types and add for ambiguities
 convertDNASeqToBit :: String -> BaseChar
 convertDNASeqToBit x | trace ("convert DNA seq yoooo " ++ show x) False = undefined
@@ -131,9 +131,9 @@ redoRootCosts phyloData charInfoList charNum =
         in
         newCharInfo : redoRootCosts phyloData (tail charInfoList) (charNum + 1)
 
--- | convertGenSeqToBit takes custom alphabet sequnce and returns Storable Vector of Int64 of bit
+-- | convertGenSeqToBit takes custom alphabet sequence and returns Storable Vector of Int64 of bit
 --representations
---currelty gap ambiguities not allow in this convertion other than ?
+--currelty gap ambiguities not allow in this conversion other than ?
 --Should make 
 --for now just in order of seeing them--later with matrix file
 --set '-' to 64th bit
@@ -158,7 +158,7 @@ charSetToVectList x charInfo
     | otherwise =
         charSetToVect (head x) (head charInfo) : charSetToVectList (tail x) (tail charInfo)
 
--- | charToBaseChar takes list of input elements and list of char infomation and returns Vector of recoded
+-- | charToBaseChar takes list of input elements and list of char information and returns Vector of recoded
 --base characters that should be ready for analysis
 --"no_data" is missing data message so sets all bits to '0'
 --need to recode ambiguities correctly--read states set each bit in char state
@@ -185,13 +185,13 @@ charSetToVect x charInfo
 
 -- | termToVector takes a pairs of terminal and data (and dat info) and
 --creates Vector of that pairData
---this is curried--reccomended by hlint
+--this is curried--recommended by hlint
 termToVector :: TermData -> [CharInfo] -> CharacterSetList
 termToVector dat | trace "termToVector" False = undefined
 termToVector (_, dataList) = charSetToVectList dataList
 
 -- | termToVectorList takes list of pairs of terminal and data (and dat info) and
---creates Vector of list of pairData recusively
+--creates Vector of list of pairData recursively
 termToVectorList :: [TermData] -> [CharInfo] -> [CharacterSetList]
 termToVectorList x charInfo | trace "term to vector list" False = undefined
 termToVectorList x charInfo =
