@@ -50,7 +50,7 @@ instance Storable AlignResult where
 {-# LINE 41 "FFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 16)) ptr seq2Fin
 {-# LINE 42 "FFI.hsc" #-}
-        ((\hsc_ptr -> pokeByteOff hsc_ptr 24)) ptr alignLen -- need to be able to pass in length of alignemnt string
+        ((\hsc_ptr -> pokeByteOff hsc_ptr 24)) ptr alignLen -- need to be able to pass in length of alignment string
 {-# LINE 43 "FFI.hsc" #-}
 
 sequentialAlign :: Int -> Int -> String -> String -> Either String (Int, String, String) 

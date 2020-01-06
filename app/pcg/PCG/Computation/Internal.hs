@@ -83,20 +83,20 @@ renderError = evaluateResult (\p -> Left . err p) Right
 -- The error code will have one or more bits set in the range [2, 5].
 -- The bits are set progressively as successive phases are passed.
 --
--- If a failure occured in the first phase, reading data from the file system,
+-- If a failure occurred in the first phase, reading data from the file system,
 -- then the first bit (index 2) in the range will be set.
 --
--- If the failure occured in the second phase, after data was successfully read
+-- If the failure occurred in the second phase, after data was successfully read
 -- from the disk but could not be successfully parsed, then the first and second
 -- bits (indices 2 & 3) in the range will be set.
 --
--- If the failure occured in the third phase, after data was read from the disk
+-- If the failure occurred in the third phase, after data was read from the disk
 -- and the streams were successfully parsed but the collection of data was not
 -- consistent and could not be unified, then the first through third bits
 -- (indices 2, 3 & 4) in the range will be set.
 --
--- If the failure occured after reading data from disk, parsing the data streams,
--- and unifying the input data, but an error occured during the phylogenetic
+-- If the failure occurred after reading data from disk, parsing the data streams,
+-- and unifying the input data, but an error occurred during the phylogenetic
 -- search, then the first through fourth bits (indices 2, 3, 4 & 5) in the range
 -- will be set.
 errorPhaseToCode :: ErrorPhase -> ExitCode
@@ -106,7 +106,7 @@ errorPhaseToCode = ExitFailure .
       Parsing   -> bit 3
       Unifying  -> bit 2 .|. bit 3
       Computing -> bit 4
-      Outputing -> bit 5
+      Outputting -> bit 5
 
 
 getGlobalSettings :: IO GlobalSettings

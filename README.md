@@ -60,5 +60,5 @@ Haskell program and libraries for general phylogenetic graph search
 [  release-img]: https://img.shields.io/github/release-pre/amnh/PCG.svg?style=popout&color=orange
 [ tag-date-img]: https://img.shields.io/github/release-date-pre/amnh/PCG.svg?style=popout&color=orange
 
-[ maintain-img]: https://img.shields.io/maintenance/yes/2019.svg?style=popout
+[ maintain-img]: https://img.shields.io/maintenance/yes/2020.svg?style=popout
 [ maintain-ref]: https://github.com/amnh/PCG/graphs/contributors

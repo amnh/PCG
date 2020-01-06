@@ -45,7 +45,7 @@ import TextShow
 -- To account for this the 'ReadCommandError' type is a composable 'Semigroup' to
 -- allow for the collection of possible sub errors to be coalesced into a single
 -- 'ReadCommandError' value. The `show` definition will render the 'ReadCommandError'
--- as a human legible collection of errors that occured within the 'Read' 'Command'.
+-- as a human legible collection of errors that occurred within the 'Read' 'Command'.
 --
 -- Errors related to reading input streams from the @Real World@ are bundled
 -- together as are errors from parsing input streams and errors from unifying the

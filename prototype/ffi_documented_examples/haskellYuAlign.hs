@@ -48,7 +48,7 @@ instance Storable AlignResult where
 {-# LINE 39 "haskellYuAlign.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 16)) ptr seq2Fin
 {-# LINE 40 "haskellYuAlign.hsc" #-}
-        ((\hsc_ptr -> pokeByteOff hsc_ptr 24)) ptr alignLen -- need to be able to pass in length of alignemnt string
+        ((\hsc_ptr -> pokeByteOff hsc_ptr 24)) ptr alignLen -- need to be able to pass in length of alignment string
 {-# LINE 41 "haskellYuAlign.hsc" #-}
 
 sequentialAlign :: Int -> Int -> String -> String -> Either String (Int, String, String) 

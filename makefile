@@ -12,13 +12,13 @@ haddock       = --haddock --haddock-deps
               # --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
-code-dirs     = app test $(shell find . -maxdepth 2 -type d -name "pcg-*") 
+code-dirs     = app bench test $(shell find . -maxdepth 2 -type d -name "pcg-*") 
 
 sub-libs      = pcg-file-parsers pcg-language pcg-utility
 
 # file paths
 
-cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.6.5/phylogenetic-component-graph-0.1.0.1/x/pcg/build/pcg/pcg
+cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.8.1/phylogenetic-component-graph-0.1.0.1/x/pcg/build/pcg/pcg
 
 
 # Target aliases for easy CLI use
@@ -100,7 +100,7 @@ stack-build-quick: phylogenetic-component-graph.cabal stack.yaml
 # built dependencies.
 stack-build-profiling: phylogenetic-component-graph.cabal stack.yaml
 #	stack install $(profiling) --flag phylogenetic-component-graph:build-cpp-files
-	stack install $(profiling) --work-dir=".stack-work-proifle" --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
+	stack install $(profiling) --work-dir=".stack-work-profile" --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
 
 
 # Builds outputting simplified core files (without newtype coercions)
@@ -162,7 +162,7 @@ install-cabal:
 
 
 cabal-setup: phylogenetic-component-graph.cabal cabal.project
-	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests --with-compiler=ghc-8.6.5
+	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests --with-compiler=ghc-8.8.1 --allow-newer
 
 # Builds with no extra generated features and no optimizations
 cabal-build-quick: phylogenetic-component-graph.cabal cabal.project
@@ -296,6 +296,7 @@ clean: phylogenetic-component-graph.cabal stack.yaml
 	  find $$dir -type f -name 'log.out'       -delete; \
 	  find $$dir -type f -name '*dump\-hi*'    -delete; \
 	  find $$dir -type f -name '*dump\-simpl*' -delete; \
+	  find $$dir -type d -name '.stack-work*'  -print0 | xargs -0 rm -rf; \
 	done
 	@echo -n -e "\33[2K\r"
 	@echo "[✓] Cleaning complete!"

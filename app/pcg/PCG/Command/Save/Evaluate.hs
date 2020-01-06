@@ -28,7 +28,7 @@ writeOutBinaryEncoding path g = do
     result <- liftIO . runValidationT $ serializeBinary path refDAG
     case result of
       Success _    -> pure ()
-      Failure oErr -> failWithPhase Outputing oErr
+      Failure oErr -> failWithPhase Outputting oErr
 
 
 writeOutCompactRegion :: FileSource -> GraphState -> EvaluationT GlobalSettings IO ()
@@ -36,4 +36,4 @@ writeOutCompactRegion path g = do
     result <- liftIO . runValidationT $ serializeCompact path g
     case result of
       Success _    -> pure ()
-      Failure oErr -> failWithPhase Outputing oErr
+      Failure oErr -> failWithPhase Outputting oErr

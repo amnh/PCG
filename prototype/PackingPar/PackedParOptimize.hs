@@ -45,7 +45,7 @@ allOptimization input pInfo pMode inWeight parMode =
                     optimizationUpPass downPass pInfo pMode parMode
     in upPass
 
--- | Optimization down pass warpper for recursion from root
+-- | Optimization down pass wrapper for recursion from root
 optimizationDownPass :: (Parable a) => TreeInfo a -> PackedInfo a -> ParPackMode -> Float -> Int -> ExpandTree a
 optimizationDownPass (tree, mat) pInfo pMode inWeight parMode
     | (length $ children root) > 2 = error "Fitch algorithm only applies to binary trees" -- more than two children means fitch won't work
@@ -143,7 +143,7 @@ internalDownPass (tree, mat) pInfo myCode pMode inWeight parMode
 
         where node = tree V.! myCode
 
--- | Bit operations for the down pass: basically creats a mask for union and intersection areas and then takes them
+-- | Bit operations for the down pass: basically creates a mask for union and intersection areas and then takes them
 -- returns the new assignment, the union/intersect mask, and the new total cost
 downBitOps :: Parable a => (NodeCost, ParEnabledNode a) -> (NodeCost, ParEnabledNode a) -> PackedInfo a -> ParPackMode -> Float -> (ParEnabledNode a, ParEnabledNode a, NodeCost)
 --downBitOps (lcost, lbit) (rcost, rbit) pInfo pMode weight | trace ("down bit ops with bit " ++ show lbit ++ " and right " ++ show rbit) False = undefined

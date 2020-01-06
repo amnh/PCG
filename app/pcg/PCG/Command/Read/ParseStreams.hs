@@ -17,6 +17,8 @@
 
 module PCG.Command.Read.ParseStreams
   ( parseSpecifiedFile
+  , parseAndSetTCM
+  , progressiveParse
   , removeGaps
   ) where
 
@@ -25,12 +27,11 @@ import           Data.Alphabet
 import           Data.Bifunctor                    (first)
 import           Data.FileSource
 import           Data.Foldable
-import           Data.Functor
 import           Data.Key
 import           Data.List                         (sortOn)
 import           Data.List.NonEmpty                (NonEmpty (..))
 import qualified Data.List.NonEmpty                as NE
-import           Data.List.Utility                 (occurances)
+import           Data.List.Utility                 (occurrences)
 import           Data.Map                          (Map, updateLookupWithKey)
 import qualified Data.Map                          as M
 import           Data.Maybe                        (mapMaybe)
@@ -39,7 +40,6 @@ import           Data.Normalization.Character
 import           Data.Normalization.Metadata
 import           Data.Normalization.Topology
 import           Data.Ord                          (comparing)
-import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Data.TCM                          (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
 import qualified Data.TCM                          as TCM
@@ -59,7 +59,6 @@ import           File.Format.VertexEdgeRoot
 import           PCG.Command.Read
 import           PCG.Command.Read.InputStreams
 import           PCG.Command.Read.ReadCommandError
-import           Prelude                           hiding (readFile)
 import           System.FilePath                   (takeFileName)
 import           Text.Megaparsec
 
@@ -266,6 +265,7 @@ progressiveParse inputPath = do
 
         associationMap = M.fromList
             [ ("fas", (makeParser         nukeParser, ["fast","fasta"]))
+            , ("fsc", (makeParser  fastcStreamParser, ["fastc"]))
             , ("tre", (makeParser newickStreamParser, ["tree","new","newick","enew","enewick"]))
             , ("dot", (makeParser    dotStreamParser, []))
             , ("ver", (makeParser    verStreamParser, []))
@@ -354,7 +354,7 @@ expandDynamicCharactersMarkedAsAligned pid =
     -- Get the lengths of all the dynamic characters in the map.
     -- They should all be the same length, returning a singleton list.
     getDynamicCharacterLengths :: Foldable f => f NormalizedCharacter -> [Int]
-    getDynamicCharacterLengths = fmap fst . sortOn snd . occurances . mapMaybe dynCharLen . toList
+    getDynamicCharacterLengths = fmap fst . sortOn snd . occurrences . mapMaybe dynCharLen . toList
 
     dynCharLen (NormalizedDynamicCharacter x) = length <$> x
     dynCharLen _                              = Nothing

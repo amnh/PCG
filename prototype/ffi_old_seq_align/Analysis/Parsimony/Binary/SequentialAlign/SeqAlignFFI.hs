@@ -65,7 +65,7 @@ instance Storable AlignResult where
 {-# LINE 56 "SeqAlignFFI.hsc" #-}
         ((\hsc_ptr -> pokeByteOff hsc_ptr 16)) ptr seq2Fin
 {-# LINE 57 "SeqAlignFFI.hsc" #-}
-        ((\hsc_ptr -> pokeByteOff hsc_ptr 24)) ptr alignLen -- need to be able to pass in length of alignemnt string
+        ((\hsc_ptr -> pokeByteOff hsc_ptr 24)) ptr alignLen -- need to be able to pass in length of alignment string
 {-# LINE 58 "SeqAlignFFI.hsc" #-}
 
 -- | A pure FFI call to YU Xiang's sequential alignment algorithm.

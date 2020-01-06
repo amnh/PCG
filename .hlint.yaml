@@ -134,14 +134,14 @@
             ]
           }
 
-- ignore: { name: Monoid law, left identity
+- ignore: { name: "Monoid law, left identity"
           , within:
             [ Data.MutualExclusionSet.Test
             , Numeric.Cost.Test
             ]
           }
 
-- ignore: { name: Monoid law, right identity
+- ignore: { name: "Monoid law, right identity"
           , within:
             [ Data.MutualExclusionSet.Test
             , Numeric.Cost.Test
@@ -153,7 +153,8 @@
 - functions:
   - { name: unsafePerformIO
     , within:
-      [ Data.TCM.Memoized.FFI
+      [ PCG.Command.Build.Evaluate
+      , Data.TCM.Memoized.FFI
       , Analysis.Parsimony.Dynamic.SequentialAlign.FFI
       , Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
       ]

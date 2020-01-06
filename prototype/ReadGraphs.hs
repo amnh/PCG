@@ -61,7 +61,7 @@ import System.Directory
 --for any number of parents and children as lists. Assumes no edges between
 --GeneralPhylogenetic Networks--"gauled" in that sense
 
---definition of non-recusive node type based on String labels or node, desc
+--definition of non-recursive node type based on String labels or node, desc
 --list, and anc list -> (Name, DescendentLIst, AncestorList)
 type GenPhyNetNode = (String, [String], [String])
 
@@ -271,7 +271,7 @@ buildGenPhyNet root directedEdges =
     in    
         (root, descendentList, ancestorList) : buildRestGenPhyNet descendentList restEdges allDirectedEdgeList 
 
---buildForest takes list of roots to initate Forest/Tree/Network contruction
+--buildForest takes list of roots to initate Forest/Tree/Network construction
 buildForest :: [String] -> Set.Set (String, String) -> GenForest 
 buildForest r directedEdges =
     if null r then []
@@ -282,7 +282,7 @@ buildForest r directedEdges =
 
 --stringTupleToForest converts vertex, edge, and root string tuples to
 --GenForest type
---networks are build tree recusively from roots untill done or error
+--networks are build tree recursively from roots until done or error
 stringTupleToForest :: ([String], [String], [String]) -> GenForest 
 stringTupleToForest (v, e, r) = 
     let e2 = filter (not . null) $ deleteAll ",()" e  --need to replace these with " " or cause problems with "words" later
