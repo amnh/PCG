@@ -10,6 +10,7 @@ import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                                    as BM
 import qualified Data.List.NonEmpty                            as NE
 import           Data.TCM.Dense
+import           Data.TCM.Memoized
 import           System.Environment                            (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
@@ -55,17 +56,22 @@ performImplementationComparison lhs rhs = do
     alphabet = fromSymbols ["A","C","G","T"]
     readSequence :: String -> DynamicCharacter
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
-    renderResult (c, w, x, y, z) = unlines
-        [ "Cost           : " <> show c
-        , "Median ungapped: " <> showStream alphabet w
-        , "Median   gapped: " <> showStream alphabet x
-        , "LHS   alignment: " <> showStream alphabet y
-        , "RHS   alignment: " <> showStream alphabet z
+    renderResult (cost, aligned) = unlines
+        [ "  Cost     : " <> show cost
+        , "  Alignment: " <> renderDynamicCharacter alphabet tcm' aligned
         ]
 
 
 alphabetSize :: Word
 alphabetSize = 5
+
+
+tcm :: AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word)
+tcm = getMedianAndCost2D memoMatrixValue
+
+
+tcm' :: AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup
+tcm' x y = fst $ tcm x y
 
 
 gapOpenCost :: Word
@@ -79,3 +85,7 @@ costStructure i j = max i j - min i j
 
 denseMatrixValue :: DenseTransitionCostMatrix
 denseMatrixValue = generateDenseTransitionCostMatrix gapOpenCost alphabetSize costStructure
+
+
+memoMatrixValue :: MemoizedCostMatrix
+memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure

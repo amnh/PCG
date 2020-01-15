@@ -1,4 +1,4 @@
------------------------------------------------------------------------------
+------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Encodable.Dynamic.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -31,38 +31,35 @@
 
 module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicCharacter (DC, Missing)
-  , DynamicCharacters
   , DynamicCharacterElement()
+  , arbitraryDynamicCharacterOfWidth
+  , renderDynamicCharacter
   ) where
 
+import           Bio.Character.Encodable.Dynamic.AmbiguityGroup
 import           Bio.Character.Encodable.Dynamic.Class
+import           Bio.Character.Encodable.Dynamic.Element
 import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable
 import           Control.DeepSeq
 import           Control.Lens
 import           Data.Alphabet
-import           Data.Alphabet.IUPAC
-import qualified Data.Bimap                            as B
 import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
 import           Data.Foldable
 import           Data.Hashable
-import           Data.Key
-import           Data.List.NonEmpty                    (NonEmpty (..))
 import qualified Data.List.NonEmpty                    as NE
 import           Data.List.Utility                     (invariantTransformation, occurrences)
-import           Data.Maybe                            (fromJust)
 import           Data.MonoTraversable
-import           Data.Range
-import           Data.String                           (fromString)
-import           Data.Vector                           (Vector)
 import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
-import           TextShow                              (TextShow (showb))
+import           TextShow                              (TextShow (showb)) --, toString)
+
+import Debug.Trace
 
 
 -- |
@@ -78,31 +75,7 @@ data  DynamicCharacter
     deriving anyclass (NFData)
 
 
--- |
--- Represents a sinlge element of a dynamic character.
-newtype DynamicCharacterElement
-      = DCE BitVector
-      deriving stock   (Generic)
-      deriving newtype (Bits, Eq, FiniteBits, MonoFoldable, MonoFunctor, NFData, Ord, Show, TextShow)
-
-
-type instance Bound DynamicCharacterElement = Word
-
-
 type instance Element DynamicCharacter = DynamicCharacterElement
-
-
-type instance Element DynamicCharacterElement = Bool
-
--- |
--- A sequence of many 'DynamicCharacter's. Probably should be asserted as non-empty.
-type DynamicCharacters = Vector DynamicCharacter
-
-
--- |
--- Functionality to unencode many encoded sequences
--- decodeMany :: DynamicCharacters -> Alphabet -> ParsedChars
--- decodeMany seqs alph = fmap (Just . decodeOverAlphabet alph) seqs
 
 
 -- We restrict the 'DynamicCharacter' values generated to be non-empty.
@@ -110,102 +83,91 @@ type DynamicCharacters = Vector DynamicCharacter
 instance Arbitrary DynamicCharacter where
 
     arbitrary = do
-        alphabetLen  <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
-        characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
-        let randVal  =  choose (1, 2 ^ alphabetLen - 1) :: Gen Integer
-        bitRows      <- vectorOf characterLen randVal
-        pure . DC . fromRows $ fromNumber (toEnum alphabetLen) <$> bitRows
+        alphabetLen <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Word
+        arbitraryDynamicCharacterOfWidth alphabetLen
 
 
-instance Arbitrary DynamicCharacterElement where
+instance CoArbitrary DynamicCharacter where
 
-    arbitrary = do
-        alphabetLen <- arbitrary `suchThat` (\x -> 2 <= x && x <= 62) :: Gen Int
-        DCE . fromNumber (toEnum alphabetLen) <$> (choose (1, 2 ^ alphabetLen - 1) :: Gen Integer)
-
-
-instance CoArbitrary DynamicCharacterElement
+    coarbitrary v = coarbitrary $
+        case v of
+         Missing w -> Left w
+         DC     bm -> Right $ rows bm
 
 
 instance EncodedAmbiguityGroupContainer DynamicCharacter where
 
     {-# INLINE symbolCount #-}
     symbolCount (Missing n) = n
-    symbolCount (DC c)      = numCols c
-
-
-instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
-
-    {-# INLINE symbolCount  #-}
-    symbolCount = dimension . unwrap
+    symbolCount (DC c)      = numCols c `div` 2
 
 
 instance EncodableDynamicCharacter DynamicCharacter where
 
-    constructDynamic = DC . fromRows . fmap unwrap . toList
+    constructDynamic = DC . fromRows . fmap packDynamicCharacterElement . toList
 
     destructDynamic = NE.nonEmpty . otoList
-
-    encodeDynamic alphabet = encodeStream alphabet . NE.fromList . fmap (NE.fromList . toList) . toList
 
 
 instance EncodableStream DynamicCharacter where
 
-    decodeStream alphabet char
-      | isAlphabetDna alphabet  = (dnaIUPAC B.!) <$> rawResult
-      | isAlphabetRna alphabet  = (rnaIUPAC B.!) <$> rawResult
-      | otherwise               = rawResult
+    encodeStream alphabet = DC . fromRows . fmap f . toList
       where
-        rawResult    = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
-        dnaIUPAC     = convertBimap iupacToDna
-        rnaIUPAC     = convertBimap iupacToRna
-        convertBimap = B.mapR (fmap fromString) . B.map (fmap fromString)
-
-    encodeStream alphabet = DC . fromRows . fmap (unwrap . encodeElement alphabet) . toList
-
-    lookupStream (DC bm) i
-      | 0 <= i    = let !j = toEnum i
-                    in  if j < numRows bm
-                        then Just . DCE $ bm `row` j
-                        else Nothing
-      | otherwise = Nothing
-    lookupStream _ _ = Nothing
+        f x = let !v = packAmbiguityGroup $ (encodeElement alphabet x :: AmbiguityGroup)
+              in  v <> v
 
     {-# INLINE gapOfStream #-}
     gapOfStream = bit . fromEnum . pred . symbolCount
 
+    lookupStream (Missing{}) _ = Nothing
+    lookupStream (DC bm) i
+      | 0 > i     = Nothing
+      | otherwise = let !j = toEnum i
+                    in  if j < numRows bm
+                        then Just . DCE $ bm `row` j
+                        else Nothing
 
-instance EncodableStreamElement DynamicCharacterElement where
 
-    decodeElement alphabet character =
-        case foldMapWithKey f alphabet of
-          []   -> error "Attempting to decode an empty dynamic character element."
-          x:xs -> x:|xs
+instance ExportableElements DynamicCharacter where
+
+{-  toExportableElements
+      :: (Subcomponent (Element c) -> Subcomponent (Element c) -> Subcomponent (Element c))
+      -> c
+      -> Maybe ExportableCharacterElements
+-}
+    toExportableElements _ Missing{} = Nothing
+    toExportableElements t dc        = Just ExportableCharacterElements
+        { exportedElementCountElements = toEnum $ olength dc
+        , exportedElementWidthElements = symbolCount dc
+        , exportedCharacterElements    = toNumber . getMedian t <$> otoList dc
+        }
       where
-        f i symbol
-          | character `testBit` i = [symbol]
-          | otherwise             = []
-
-    -- Use foldl here to do an implicit reversal of the alphabet!
-    -- The head element of the list is the most significant bit when calling fromBits.
-    -- We need the first element of the alphabet to correspond to the least significant bit.
-    -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-    encodeElement alphabet ambiguity = DCE . fromBits $ (`elem` ambiguity) <$> toList alphabet
-
-
-instance Enum DynamicCharacterElement where
-
-    fromEnum = toUnsignedNumber . unwrap
-
-    toEnum i = DCE $ fromNumber dim i
+        toNumber = toUnsignedNumber . packAmbiguityGroup
+    
+    fromExportableElements riCharElems = DC $ fromRows bvs
       where
-        dim = toEnum $ finiteBitSize i - countLeadingZeros i
+        bvs = packDynamicCharacterElement . f <$> inputElems
+        fromValue  = AG . fromNumber charWidth
+        charWidth  = reimportableElementWidthElements riCharElems
+        inputElems = reimportableCharacterElements    riCharElems --  :: ![(CUInt, CUInt, CUInt)]
+        gap = bit . fromEnum $ charWidth - 1
+        f (x,y,z) =
+            let x' = fromValue x
+                y' = fromValue y
+                z' = fromValue z
+            in  case (y' == gap, z' == gap) of
+                  (False, False)             ->    gapElement charWidth
+--                  (False, True ) | x' == y'  ->  alignElement y' z'
+                  (False, True ) | otherwise -> insertElement    z'
+--                  (True , False) | x' == z'  ->  alignElement y' z'
+                  (True , False) | otherwise -> deleteElement y'
+                  (True , True )             ->  alignElement y' z'
 
 
-instance Exportable DynamicCharacter where
+instance ExportableBuffer DynamicCharacter where
 
     toExportableBuffer Missing {} = error "Attempted to 'Export' a missing dynamic character to foreign functions."
-    toExportableBuffer (DC bm) = ExportableCharacterSequence x y . bitVectorToBufferChunks x y $ expandRows bm
+    toExportableBuffer (DC bm) = ExportableCharacterBuffer x y . bitVectorToBufferChunks x y $ expandRows bm
       where
         x = numRows bm
         y = numCols bm
@@ -216,35 +178,11 @@ instance Exportable DynamicCharacter where
         elemCount = ecs ^. exportedElementCount
         elemWidth = ecs ^. exportedElementWidth
 
-    toExportableElements = encodableStreamToExportableCharacterElements
-
-    fromExportableElements = DC . exportableCharacterElementsToBitMatrix
-
-
-instance Exportable DynamicCharacterElement where
-
-    toExportableBuffer e@(DCE bv) = ExportableCharacterSequence 1 widthValue $ bitVectorToBufferChunks 1 widthValue bv
-      where
-        widthValue = symbolCount e
-
-    fromExportableBuffer ecs = DCE newBitVec
-      where
-        newBitVec = bufferChunksToBitVector 1 elemWidth $ exportedBufferChunks ecs
-        elemWidth = ecs ^. exportedElementWidth
-
-    toExportableElements e@(DCE bv)
-      | bitsInElement > bitsInLocalWord = Nothing
-      | otherwise                       = Just $ ExportableCharacterElements 1 bitsInElement [toUnsignedNumber bv]
-      where
-        bitsInElement   = symbolCount e
-
-    fromExportableElements = DCE . exportableCharacterElementsHeadToBitVector
-
 
 instance Hashable DynamicCharacter where
 
     hashWithSalt salt (Missing n) = salt `xor` fromEnum n
-    hashWithSalt salt (DC bm) = salt `xor` fromEnum (numRows bm) `xor` hashWithSalt salt (toUnsignedNumber (expandRows bm) :: Integer)
+    hashWithSalt salt (DC     bm) = salt `xor` fromEnum (numCols bm) `xor` hashWithSalt salt bm
 
 
 instance MonoFoldable DynamicCharacter where
@@ -263,11 +201,11 @@ instance MonoFoldable DynamicCharacter where
 
     {-# INLINE ofoldr1Ex #-}
     ofoldr1Ex _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an initial accumulator!"
-    ofoldr1Ex f (DC c)    = DCE . ofoldr1Ex (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
+    ofoldr1Ex f (DC c)    = DCE . ofoldr1Ex (\x y -> packDynamicCharacterElement $ f (DCE x) (DCE y)) $ c
 
     {-# INLINE ofoldl1Ex' #-}
     ofoldl1Ex' _ Missing{} = error "Trying to mono-morphically fold over an empty structure without supplying an initial accumulator!"
-    ofoldl1Ex' f (DC c)    = DCE . ofoldl1Ex' (\x y -> unwrap $ f (DCE x) (DCE y)) $ c
+    ofoldl1Ex' f (DC c)    = DCE . ofoldl1Ex' (\x y -> packDynamicCharacterElement $ f (DCE x) (DCE y)) $ c
 
     {-# INLINE onull #-}
     onull Missing{} = True
@@ -296,23 +234,14 @@ instance MonoFunctor DynamicCharacter where
         case f <$> otoList bm of
           []   -> bm
           dces -> case invariantTransformation finiteBitSize dces of
-             Just i  -> DC . factorRows (toEnum i) $ foldMap unwrap dces
+             Just i  -> DC . factorRows (toEnum i) $ foldMap packDynamicCharacterElement dces
              Nothing -> error $ unlines
                  [ "The mapping function over the Dynamic Character did not return *all* all elements of equal length."
                  , show . occurrences $ finiteBitSize <$> dces
                  , show $ finiteBitSize <$> dces
-                 , unlines $ foldMap (\x -> if x then "1" else "0") . toBits . unwrap <$> dces
+                 , unlines $ foldMap (\x -> if x then "1" else "0") . toBits . packDynamicCharacterElement <$> dces
                  , show bm
                  ]
-
-
-instance MonoTraversable DynamicCharacterElement where
-
-    {-# INLINE otraverse #-}
-    otraverse f = fmap (DCE . fromBits) . traverse f . otoList
-
-    {-# INLINE omapM #-}
-    omapM = otraverse
 
 
 instance PossiblyMissingCharacter DynamicCharacter where
@@ -325,28 +254,6 @@ instance PossiblyMissingCharacter DynamicCharacter where
     isMissing _         = False
 
 
-instance Ranged DynamicCharacterElement where
-
-    toRange dce = fromTupleWithPrecision (firstSetBit, lastSetBit) totalBits
-      where
-        firstSetBit = toEnum $ countLeadingZeros dce
-        lastSetBit  = toEnum . max 0 $ totalBits - countTrailingZeros dce - 1
-        totalBits   = finiteBitSize dce
-
-    fromRange x
-      | ub == lb  = toDCE $ 2 ^ ub
-      | otherwise = allBitsUpperBound `xor` allBitsLowerBound
-      where
-        toDCE = DCE . fromNumber dim
-        dim   = toEnum . fromJust $ precision x
-        ub    = upperBound x
-        lb    = lowerBound x
-        allBitsUpperBound = toDCE $ (2 :: Integer) ^ upperBound x - 1
-        allBitsLowerBound = toDCE $ (2 :: Integer) ^ lowerBound x - 1
-
-    zeroRange sc = fromTupleWithPrecision (0,0) $ finiteBitSize sc
-
-
 instance TextShow DynamicCharacter where
 
     showb (Missing w)  = "Missing " <> showb w
@@ -356,26 +263,30 @@ instance TextShow DynamicCharacter where
 instance ToXML DynamicCharacter where
 
     toXML dynamicChar = xmlElement "Dynamic_character" attributes contents
-        where
-            attributes            = []
-            contents              = Left . contentTuple <$> otoList dynamicChar -- toXML on all dynamic character elements
-            contentTuple (DCE bv) = ("Character_states", (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
+      where
+        attributes            = []
+        contents              = Left . contentTuple <$> otoList dynamicChar -- toXML on all dynamic character elements
+        contentTuple (DCE bv) = ("Character_states", (\x -> if x then '1' else '0') <$> toBits bv) -- the value of this character
 
-{- Don't think I need this, since it's taken care of in ToXML DynamicCharacter
-instance ToXML DynamicCharacterElement where
 
-    toXML (DCE bv) = xmlElement "Dynamic_character_element" attributes content
-        where
-            attributes = []
-            content    = [("Character_states", (\x -> if x then '1' else '0') <$> toBits bv)] -- the value of this character
--}
+arbitraryDynamicCharacterOfWidth :: Word -> Gen DynamicCharacter
+arbitraryDynamicCharacterOfWidth alphabetLen = do
+    characterLen  <- arbitrary `suchThat` (> 0) :: Gen Int
+    let randVal    = arbitraryOfSize alphabetLen :: Gen DynamicCharacterElement
+    bitRows       <- vectorOf characterLen randVal
+    pure . DC . fromRows . force $ packDynamicCharacterElement <$> bitRows
 
-{-
-{-# INLINE unstream #-}
-unstream :: DynamicCharacter -> BitMatrix
-unstream (DC x) = x
--}
 
-{-# INLINE unwrap #-}
-unwrap :: DynamicCharacterElement -> BitVector
-unwrap (DCE x) = x
+renderDynamicCharacter
+  :: Alphabet String
+  -> (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup)
+  -> DynamicCharacter
+  -> String
+renderDynamicCharacter alphabet transiton char
+  | isMissing char = "<Missing>"
+  | otherwise      =
+    let shownElems = showStreamElement alphabet . getMedian transiton <$> otoList char
+    in  if   any (\e -> length e > 1) shownElems
+        then unwords shownElems
+        -- All elements were rendered as a single character.                                          
+        else fold shownElems

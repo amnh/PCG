@@ -17,9 +17,10 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns     #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Internal
   ( directOptimizationPostorder
@@ -36,21 +37,15 @@ import           Bio.Graph.Node.Context
 import           Bio.Metadata                                           hiding (DenseTransitionCostMatrix)
 import           Control.Lens
 import           Data.Bits
-import           Data.Foldable
-import           Data.Foldable.Custom                                   (sum')
-import           Data.IntMap                                            (IntMap)
-import qualified Data.IntMap                                            as IM
 import           Data.Key
 import           Data.List.NonEmpty                                     (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty                                     as NE
-import           Data.List.Utility                                      (invariantTransformation)
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
 import qualified Data.Sequence                                          as Seq
 import           Data.TCM.Dense                                         (DenseTransitionCostMatrix)
 import           Data.Word
-import           Numeric.Extended.Natural
 import           Prelude                                                hiding (zipWith)
 
 
@@ -66,7 +61,7 @@ import           Prelude                                                hiding (
 -- The fourth result in the tuple is the first input aligned with respect to the second.
 --
 -- The fifth result in the tuple is the second input aligned with respect to the first.
-type PairwiseAlignment s = s -> s -> (Word, s, s, s, s)
+type PairwiseAlignment s = s -> s -> (Word, s)
 
 
 -- |
@@ -78,16 +73,18 @@ sequentialAlignOverride = False
 -- |
 -- Select the most appropriate direct optimization metric implementation.
 selectDynamicMetric
-  :: ( EncodableDynamicCharacter c
-     , Exportable c
+  :: ( -- EncodableDynamicCharacterElement (Element c)
+--       EncodedAmbiguityGroupContainer (Subcomponent (Element c))
+       EncodableDynamicCharacter c
+     , ExportableElements c
      , GetDenseTransitionCostMatrix    dec (Maybe DenseTransitionCostMatrix)
-     , GetPairwiseTransitionCostMatrix dec (Element c) Word -- (OverlapFunction (Element c))
-     , Ord (Element c)
+     , GetPairwiseTransitionCostMatrix dec (Subcomponent (Element c)) Word -- (OverlapFunction (Element c))
+     , Show (Element c)
      )
   => dec
   -> c
   -> c
-  -> (Word, c, c, c, c)
+  -> (Word, c)
 selectDynamicMetric meta
   | sequentialAlignOverride = undefined -- sequentialAlign sTCM
   | otherwise =
@@ -131,9 +128,6 @@ initializeLeaf =
       <*> const 0
       <*> toAverageLength . toEnum . olength . (^. encoded)
       <*> (^. encoded)
-      <*> (^. encoded)
-      <*> (^. encoded)
-      <*> (^. encoded)
 
 
 -- |
@@ -149,8 +143,8 @@ directOptimizationPostorderPairwise
   -> d
 directOptimizationPostorderPairwise pairwiseAlignment (lChild , rChild) = resultDecoration
   where
-    resultDecoration = extendDynamicToPostorder lChild localCost totalCost combinedAverageLength ungapped gapped lhsAlignment rhsAlignment
-    (localCost, ungapped, gapped, lhsAlignment, rhsAlignment) = pairwiseAlignment (lChild ^. preliminaryUngapped) (rChild ^. preliminaryUngapped)
+    resultDecoration = extendDynamicToPostorder lChild localCost totalCost combinedAverageLength subtreeAlignment
+    (localCost, subtreeAlignment) = pairwiseAlignment (lChild ^. alignmentContext) (rChild ^. alignmentContext)
     totalCost = localCost + lChild ^. characterCost +  rChild ^. characterCost
     combinedAverageLength = lChild ^. averageLength <> rChild ^. averageLength
 
@@ -162,18 +156,21 @@ directOptimizationPostorderPairwise pairwiseAlignment (lChild , rChild) = result
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
-     , Bound (Element c) ~ Word
-     , Ranged (Element c)
-     , Show (Element c)
+     , Bound (Subcomponent (Element c)) ~ Word
+     , EncodableStreamElement (Subcomponent (Element c))
+--     , ExportableBuffer (Element c)
+--     , FiniteBits (Subcomponent (Element c))
+     , Ranged (Subcomponent (Element c))
+--     , Show (Element c)
      )
   => PairwiseAlignment c
-  -> DynamicCharacterMetadataDec (Element c)
+  -> DynamicCharacterMetadataDec (Subcomponent (Element c))
   -> PreorderContext d (DynamicDecorationDirectOptimization c)
   -> DynamicDecorationDirectOptimization c
 directOptimizationPreorder pairwiseAlignment meta =
     preorderContextSym rootFn internalFn
   where
-    rootFn     = initializeRoot
+    rootFn     = initializeRoot meta
     internalFn = updateFromParent pairwiseAlignment meta
 
 
@@ -182,49 +179,101 @@ directOptimizationPreorder pairwiseAlignment meta =
 -- initializes the root node decoration as the base case of the pre-order
 -- traversal.
 initializeRoot
-  :: DirectOptimizationPostorderDecoration d c
-  => d
+  :: ( Bound (Subcomponent (Element c)) ~ Word
+     , DirectOptimizationPostorderDecoration d c
+     , EncodableStreamElement (Subcomponent (Element c))
+--     , FiniteBits (Subcomponent (Element c))
+     , Ranged (Subcomponent (Element c))
+     )
+  => DynamicCharacterMetadataDec (Subcomponent (Element c))
+--  => dec -- DynamicCharacterMetadataDec (Subcomponent (Element c))
+  -> d
   -> DynamicDecorationDirectOptimization c
-initializeRoot =
+initializeRoot meta =
     extendPostorderToDirectOptimization
       <$> id
-      <*> (^. preliminaryUngapped)
-      <*> (^. preliminaryGapped)
-      <*> lexicallyDisambiguate . (^. preliminaryUngapped)
+      <*> lexicallyDisambiguate meta . (^. alignmentContext)
+      <*> (^. alignmentContext)
 
 
 -- |
 -- Disambiguate the elements of a dynamic character using only lexical ordering
 -- of the alphabet.
-lexicallyDisambiguate :: (MonoFunctor f, FiniteBits (Element f)) => f -> f
-lexicallyDisambiguate = omap disambiguateElement
+lexicallyDisambiguate
+  :: forall c.
+     ( Bound (Subcomponent (Element c)) ~ Word
+--     , EncodableDynamicCharacterElement (Element c)
+--     , EncodedAmbiguityGroupContainer (Subcomponent (Element c))
+     , EncodableDynamicCharacter c
+     , FiniteBits (Subcomponent (Element c))
+--     , MonoFunctor c
+     , EncodableStreamElement (Subcomponent (Element c))
+     , ExportableBuffer (Subcomponent (Element c))
+     , Ranged (Subcomponent (Element c))
+     )
+  => DynamicCharacterMetadataDec (Subcomponent (Element c))
+  -> c
+  -> c
+lexicallyDisambiguate meta =
+  let pTCM :: Subcomponent (Element c) -> Subcomponent (Element c) -> (Subcomponent (Element c), Word)
+      pTCM  = meta ^. pairwiseTransitionCostMatrix
+      f x y = fst $ pTCM x y 
+  in  omap (disambiguateElement f)
 
 
 -- |
 -- Disambiguate a single element of a Dynamic Character.
-disambiguateElement :: FiniteBits b => b -> b
-disambiguateElement x = zed `setBit` idx
+disambiguateElement
+  :: ( EncodableDynamicCharacterElement e
+     , FiniteBits (Subcomponent e)
+     )
+  => (Subcomponent e -> Subcomponent e -> Subcomponent e)
+  -> e
+  -> e
+disambiguateElement f x = alignElement val val
   where
-    idx = min (finiteBitSize x - 1) $ countLeadingZeros x
-    zed = x `xor` x
+    med = getMedian f x
+    idx = min (finiteBitSize med - 1) $ countLeadingZeros med
+    zed = med `xor` med
+    val = zed `setBit` idx
 
 
 -- |
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: ( DirectOptimizationPostorderDecoration d c
-     , Bound (Element c) ~ Word
-     , Ranged (Element c)
-     , Show (Element c)
+  :: ( Bound (Subcomponent (Element c)) ~ Word
+     , DirectOptimizationPostorderDecoration d c
+--     , EncodableDynamicCharacterElement (Element c)
+     , EncodableStreamElement (Subcomponent (Element c))
+--     , ExportableBuffer (Element c)
+--     , FiniteBits (Subcomponent (Element c))
+     , Ranged (Subcomponent (Element c))
+--     , Show (Element c)
      )
   => PairwiseAlignment c
-  -> DynamicCharacterMetadataDec (Element c)
+  -> DynamicCharacterMetadataDec (Subcomponent (Element c))
   -> d
   -> DynamicDecorationDirectOptimization c
   -> DynamicDecorationDirectOptimization c
 updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = resultDecoration
   where
+    resultDecoration = extendPostorderToDirectOptimization currentDecoration single cia
+    pia =  parentDecoration ^. impliedAlignment
+    pac =  parentDecoration ^. alignmentContext
+    cac = currentDecoration ^. alignmentContext
+
+    (cia, single)
+      | isMissing cac = (pia, parentDecoration ^. singleDisambiguation)
+      | otherwise     = let x = deriveImpliedAlignment pia pac cac
+                        in  (x, lexicallyDisambiguate meta x)
+
+
+-- deriveImpliedAlignment :: _
+deriveImpliedAlignment = error "Implied alignment not yet implemented!"
+
+    
+{-    
     -- If the current node has a missing character value representing its
     -- preliminary median assignment then we take the parent's final assignment
     -- values and assign them to the current node as its own final assignments.
@@ -246,14 +295,18 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
     pUngapped     = parentDecoration ^. finalUngapped
     pGapped       = parentDecoration ^. finalGapped
     pSingle       = parentDecoration ^. singleDisambiguation
+-}
 
-
+{-
 -- |
 -- A three way comparison of characters used in the DO preorder traversal.
 tripleComparison
-  :: ( DirectOptimizationPostorderDecoration d c
+  :: ( Bound (Element c) ~ Word
+     , DirectOptimizationPostorderDecoration d c
+     , EncodableDynamicCharacterElement (Element c)
+     , EncodableStreamElement (Element c)
+     , ExportableBuffer (Element c)
      , Ranged (Element c)
-     , Bound (Element c) ~ Word
      , Show (Element c)
      )
   => PairwiseAlignment c
@@ -327,7 +380,7 @@ tripleComparison pairwiseAlignment meta childDecoration parentCharacter parentSi
 -- Given a node, its parent, and its children; this function aligns the dynamic
 -- characters around the current node.
 alignAroundCurrentNode
-  :: EncodableDynamicCharacter c
+  :: (EncodableDynamicCharacter c, Eq (Element c))
   => PairwiseAlignment c
   -> c -- ^ local character
   -> c -- ^ parent character
@@ -350,7 +403,7 @@ alignAroundCurrentNode pairwiseAlignment current parent child1 child2 =
 -- |
 -- Returns the indices of the gaps that were added in the second character when
 -- compared to the first character.
-newGapLocations :: EncodableDynamicCharacter c => c -> c -> IntMap Int
+newGapLocations :: (Eq (Element c), EncodableDynamicCharacter c) => c -> c -> IntMap Int
 newGapLocations unaligned aligned
   | olength unaligned == olength aligned = mempty
   | otherwise                            = newGaps
@@ -414,6 +467,7 @@ insertNewGaps insertionIndicies character
 -- Calculates the mean character and cost between three supplied characters.
 threeWayMean
   :: ( EncodableDynamicCharacter c
+     , EncodableDynamicCharacterElement (Element c)
      , Show (Element c)
      )
   => (Element c -> Element c -> Element c -> (Element c, Word))
@@ -434,7 +488,7 @@ threeWayMean sigma char1 char2 char3 =
             Just (a, b, c) ->
               let (meanStates, costValues) = NE.unzip $ zipWith ($) (zipWith sigma a b) c
                   gap  = gapOfStream char1
-              in  case NE.filter (/= gap) meanStates of
+              in  case NE.filter isGap meanStates of
                     []   -> error $ unlines
                                   [ "The zipped/ sequence was length zero after filtering gaps!"
                                   , "gap: "    <> show gap
@@ -447,3 +501,4 @@ threeWayMean sigma char1 char2 char3 =
                             , constructDynamic $ y:|ys
                             , constructDynamic meanStates
                             )
+-}

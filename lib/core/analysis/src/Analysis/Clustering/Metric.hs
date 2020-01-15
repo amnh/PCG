@@ -18,8 +18,8 @@
 
 {-# LANGUAGE NoMonoLocalBinds    #-}
 
-module Analysis.Clustering.Metric (
-  characterSequenceDistance
+module Analysis.Clustering.Metric
+  ( characterSequenceDistance
   ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization
@@ -41,13 +41,13 @@ import           Numeric.Extended.Real
 
 characterSequenceDistance
   :: forall f u v w x y z m.
-  ( (HasIntervalCharacter u ContinuousCharacter )
-  , (HasDiscreteCharacter v StaticCharacter       )
-  , (HasDiscreteCharacter w StaticCharacter       )
-  , (HasDiscreteCharacter x StaticCharacter       )
-  , (HasDiscreteCharacter y StaticCharacter       )
-  , (DirectOptimizationPostorderDecoration z DynamicCharacter)
-  , Applicative f
+  ( Applicative f
+  , DirectOptimizationPostorderDecoration z DynamicCharacter
+  , HasIntervalCharacter u ContinuousCharacter
+  , HasDiscreteCharacter v StaticCharacter
+  , HasDiscreteCharacter w StaticCharacter
+  , HasDiscreteCharacter x StaticCharacter
+  , HasDiscreteCharacter y StaticCharacter
   , Foldable f
   )
   => MetadataSequence m
@@ -60,13 +60,13 @@ characterSequenceDistance =
 
 blockDistance
   :: forall u v w x y z m f .
-     ( (HasIntervalCharacter u ContinuousCharacter )
-     , (HasDiscreteCharacter v StaticCharacter       )
-     , (HasDiscreteCharacter w StaticCharacter       )
-     , (HasDiscreteCharacter x StaticCharacter       )
-     , (HasDiscreteCharacter y StaticCharacter       )
-     , (DirectOptimizationPostorderDecoration z DynamicCharacter)
-     , Applicative f
+     ( Applicative f
+     , DirectOptimizationPostorderDecoration z DynamicCharacter
+     , HasIntervalCharacter u ContinuousCharacter
+     , HasDiscreteCharacter v StaticCharacter
+     , HasDiscreteCharacter w StaticCharacter
+     , HasDiscreteCharacter x StaticCharacter
+     , HasDiscreteCharacter y StaticCharacter
      , Foldable f
      )
   => MetadataBlock m
@@ -87,7 +87,6 @@ blockDistance meta block1 block2
       block2
 
 
-
 characterDistance
   :: forall n m c d f .
      ( Real n
@@ -104,13 +103,13 @@ characterDistance f m c1 c2 = fold $
 dynamicCharacterDistance
   :: forall m d c f .
      ( DirectOptimizationPostorderDecoration d c
-     , Exportable c
+     , ExportableElements c
      , GetDenseTransitionCostMatrix m (Maybe DenseTransitionCostMatrix)
-     , GetPairwiseTransitionCostMatrix m (Element c) Word
+     , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
      , HasCharacterWeight m Double
-     , Ord (Element c)
      , Applicative f
      , Foldable f
+     , Show (Element c)
      )
   => m -> f d -> f d -> Sum Double
 dynamicCharacterDistance meta c1 c2
@@ -122,10 +121,10 @@ dynamicCharacterDistance meta c1 c2
 dynamicCharacterDistance'
   :: forall m d c
    . ( DirectOptimizationPostorderDecoration d c
-     , Exportable c
-     , GetDenseTransitionCostMatrix m (Maybe DenseTransitionCostMatrix)
-     , GetPairwiseTransitionCostMatrix m (Element c) Word
-     , Ord (Element c)
+     , ExportableElements c
+     , GetDenseTransitionCostMatrix    m (Maybe DenseTransitionCostMatrix)
+     , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
+     , Show (Element c)
      )
   => m -> d -> d -> Word
 dynamicCharacterDistance' meta d1 d2 = (^. _1) $ selectDynamicMetric meta c1 c2

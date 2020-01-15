@@ -63,42 +63,35 @@ constistentImplementation = testGroup "All implementations return same states"
 consistentResults :: String -> (Word -> Word -> Word) -> TestTree
 consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll checkConsistency
   where
-    dense = genDenseMatrix metric
+    dense  = genDenseMatrix metric
     memoed = getMedianAndCost2D (genMemoMatrix metric)
+    median x y = fst $ memoed x y
     f :: DynamicCharacterElement -> DynamicCharacter
     f = constructDynamic . (:|[])
 
     checkConsistency :: (NucleotideBase, NucleotideBase) -> Either String String
-    checkConsistency p@(NB x, NB y) =
-        let res = naiveResult =~= memoedResult && naiveResult =~= foreignResult
-        in  if   res
-            then Right $ show p
-            else Left errorMessage
+    checkConsistency p@(NB x, NB y)  
+      | naiveResult == memoedResult && naiveResult == foreignResult = Right $ show p
+      | otherwise = Left errorMessage
       where
-        -- Ignore the ungapped value, It might be empty and throw an exception!
-        (=~=) :: (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter)
-              -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter)
-              -> Bool
-        (=~=) (a,_,b,c,d) (s,_,t,u,v) = (a,b,c,d) == (s,t,u,v)
-
         naiveResult   = naiveDO           (f x) (f y) metric
         memoedResult  = naiveDOMemo       (f x) (f y) memoed
         foreignResult = foreignPairwiseDO (f x) (f y) dense
         errorMessage  = unlines
                    [ ""
-                   , "Naive:   " <> showResult   naiveResult
-                   , "Memoed:  " <> showResult  memoedResult
-                   , "Foreign: " <> showResult foreignResult
+                   , unwords [ "Naive:  ", showResult median   naiveResult, show   naiveResult ]
+                   , unwords [ "Memoed: ", showResult median  memoedResult, show  memoedResult ]
+                   , unwords [ "Foreign:", showResult median foreignResult, show foreignResult ]
                    ]
 
 
-showResult :: (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) -> String
-showResult (cost, _w, x, y, z) = (\a->"("<>a<>")") $ intercalate ","
+showResult
+  :: (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup)
+  -> (Word, DynamicCharacter)
+  -> String
+showResult transformation (cost, a) = (\x->"("<>x<>")") $ intercalate ","
     [ show cost
-    , "_" -- showStream alphabet w
-    , showStream alphabet x
-    , showStream alphabet y
-    , showStream alphabet z
+    , renderDynamicCharacter alphabet transformation a
     ]
 
 
@@ -163,50 +156,40 @@ isValidPairwiseAlignment
 -}
 isValidPairwiseAlignment
   :: String
-  -> (DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter))
+  -> (DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter))
   -> TestTree
 isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
     [  testProperty "alignment function is commutative"               commutivity
-     , testProperty "aligned results are all equal length"            resultsAreEqualLength
      , testProperty "output length is >= input length"                greaterThanOrEqualToInputLength
      , testProperty "alignment length is =< sum of input lengths"     totalAlignmentLengthLessThanOrEqualToSumOfLengths
-     , testProperty "output alignments were not erroneously swapped"  outputsCorrespondToInputs
-     , testProperty "output alignments were not erroneously reversed" outputsAreNotReversed
-     , testProperty "output alignments only contain new gaps"         filterGapsEqualsInput
-     , testProperty "ungapped output contains no gaps"                ungappedHasNogaps
+--     , testProperty "output alignments were not erroneously swapped"  outputsCorrespondToInputs
+--     , testProperty "output alignments were not erroneously reversed" outputsAreNotReversed
+--     , testProperty "output alignments only contain new gaps"         filterGapsEqualsInput
     ]
   where
     commutivity :: (NucleotideSequence, NucleotideSequence) -> Property
-    commutivity (NS lhs, NS rhs) =
-        a === x .&&. b === z .&&. c === y
-      where
-        (_, _, a, b, c) = alignmentFunction lhs rhs
-        (_, _, x, y, z) = alignmentFunction rhs lhs
-
-    resultsAreEqualLength :: (NucleotideSequence, NucleotideSequence) -> Property
-    resultsAreEqualLength (NS lhs, NS rhs) =
-        olength med === olength lhs' .&&. olength lhs' === olength rhs'
-      where
-        (_, _, med, lhs', rhs') = alignmentFunction lhs rhs
+    commutivity _input@(NS lhs, NS rhs) =
+        let x@(a,b) = alignmentFunction lhs rhs
+            y@(c,d) = alignmentFunction rhs lhs
+        in  x === (c, omap swapContext d) .&&. (a, omap swapContext b) === y
 
     greaterThanOrEqualToInputLength :: (NucleotideSequence, NucleotideSequence) -> Bool
     greaterThanOrEqualToInputLength (NS lhs, NS rhs) =
-        olength lhs' >= olength lhs && olength rhs' >= olength rhs
+        olength med >= olength lhs && olength med >= olength rhs
       where
-        (_, _, _, lhs', rhs') = alignmentFunction lhs rhs
+        (_, med) = alignmentFunction lhs rhs
 
-{--}
     totalAlignmentLengthLessThanOrEqualToSumOfLengths :: (NucleotideSequence, NucleotideSequence) -> Property
     totalAlignmentLengthLessThanOrEqualToSumOfLengths (NS lhs, NS rhs) =
         counterexample shownCounterexample $ medLen <= lhsLen + rhsLen
       where
-        (_, _, med, _, _) = alignmentFunction lhs rhs
+        (_, med) = alignmentFunction lhs rhs
         medLen = olength med
         lhsLen = olength lhs
         rhsLen = olength rhs
         shownCounterexample = unwords [ show medLen, ">", show lhsLen, "+", show rhsLen ]
-{--}
 
+{-
     outputsCorrespondToInputs :: (NucleotideSequence, NucleotideSequence) -> Property
     outputsCorrespondToInputs (NS lhs, NS rhs) =
         lhs /= rhs && filterGaps lhs' /= filterGaps rhs' ==>
@@ -234,19 +217,7 @@ isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
       where
         (_, _, _, lhs', rhs') = alignmentFunction lhs rhs
 
-    ungappedHasNogaps :: (NucleotideSequence, NucleotideSequence) -> Property
-    ungappedHasNogaps (NS lhs, NS rhs) = counterexample shownGappedResult $
-        oany (/=gap) meds ==> oall (/=gap) unGap
-      where
-        gap = gapOfStream meds
-        (_, unGap, meds, lhs', rhs') = alignmentFunction lhs rhs
-        shownGappedResult = (\x->"("<>x<>")") $ intercalate ","
-          [ "_"
-          , showStream alphabet unGap
-          , showStream alphabet meds
-          , showStream alphabet lhs'
-          , showStream alphabet rhs'
-          ]
+-}
 
 
 genDenseMatrix :: (Word -> Word -> Word) -> DenseTransitionCostMatrix

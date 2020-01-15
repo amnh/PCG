@@ -77,7 +77,7 @@ assignOptimalDynamicCharacterRootEdges
      , TextShow y
      , TextShow z
      )
-  => (DynamicCharacterMetadataDec (Element DynamicCharacter)
+  => (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter))
   -> PostorderContext z z -> z)  -- ^ Post-order traversal function for Dynamic Characters.
   -> PhylogeneticDAG m e n u v w x y z
   -> ( PhylogeneticDAG m e n u v w x y z

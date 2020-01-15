@@ -234,7 +234,7 @@ getMemoizedCostMatrix alphabetSize costFn = unsafePerformIO . withArray rowMajor
 -- symbol sets.
 --
 -- *Note:* This operation is lazily evaluated and memoized for future calls.
-getMedianAndCost2D :: Exportable s => MemoizedCostMatrix -> s -> s -> (s, Word)
+getMedianAndCost2D :: ExportableBuffer s => MemoizedCostMatrix -> s -> s -> (s, Word)
 getMedianAndCost2D memo e1 e2 = unsafePerformIO $ do
     medianPtr     <- constructEmptyElement alphabetSize
     e1'           <- constructElement e1
@@ -247,8 +247,8 @@ getMedianAndCost2D memo e1 e2 = unsafePerformIO $ do
     _             <- destructElement medianPtr
     pure (medianValue, coerceEnum cost)
   where
-    alphabetSize    = exportedElementWidthSequence $ toExportableBuffer e1
-    buildExportable = fromExportableBuffer . ExportableCharacterSequence 1 alphabetSize
+    alphabetSize    = exportedElementWidthBuffer $ toExportableBuffer e1
+    buildExportable = fromExportableBuffer . ExportableCharacterBuffer 1 alphabetSize
     bufferLength    = calculateBufferLength alphabetSize 1
 
 
@@ -259,7 +259,7 @@ getMedianAndCost2D memo e1 e2 = unsafePerformIO $ do
 -- symbol sets.
 --
 -- *Note:* This operation is lazily evaluated and memoized for future calls.
-getMedianAndCost3D :: Exportable s => MemoizedCostMatrix -> s -> s -> s -> (s, Word)
+getMedianAndCost3D :: ExportableBuffer s => MemoizedCostMatrix -> s -> s -> s -> (s, Word)
 getMedianAndCost3D memo e1 e2 e3 = unsafePerformIO $ do
     medianPtr     <- constructEmptyElement alphabetSize
     e1'           <- constructElement e1
@@ -274,8 +274,8 @@ getMedianAndCost3D memo e1 e2 e3 = unsafePerformIO $ do
     _             <- destructElement medianPtr
     pure (medianValue, coerceEnum cost)
   where
-    alphabetSize    = exportedElementWidthSequence $ toExportableBuffer e1
-    buildExportable = fromExportableBuffer . ExportableCharacterSequence 1 alphabetSize
+    alphabetSize    = exportedElementWidthBuffer $ toExportableBuffer e1
+    buildExportable = fromExportableBuffer . ExportableCharacterBuffer 1 alphabetSize
     bufferLength    = calculateBufferLength alphabetSize 1
 
 

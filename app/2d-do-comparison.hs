@@ -68,25 +68,29 @@ performCounterExampleSearch valueMay = do
 
 
 counterExampleCheck :: NucleotideSequence -> NucleotideSequence -> Property
-counterExampleCheck (NS lhs) (NS rhs) = counterexample contextRendering $
-    all (== naiveDOResult) [memoizeDOResult, ukkonenDOResult, foreignDOResult]
+counterExampleCheck x@(NS lhs) y@(NS rhs) = counterexample contextRendering $
+--    all (== naiveDOResult) [memoizeDOResult, ukkonenDOResult, foreignDOResult]
+--    all (== ukkonenDOResult) [ukkonenDOResult]
+    all (== memoizeDOResult) [memoizeDOResult, ukkonenDOResult]
   where
-    contextRendering = niceContextRendering naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult
-    naiveDOResult    = naiveDO           lhs rhs  costStructure
-    memoizeDOResult  = naiveDOMemo       lhs rhs (getMedianAndCost2D memoMatrixValue)
-    ukkonenDOResult  = ukkonenDO         lhs rhs (getMedianAndCost2D memoMatrixValue)
-    foreignDOResult  = foreignPairwiseDO lhs rhs  denseMatrixValue
+    contextRendering = niceContextRendering x y naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult
+--    contextRendering = niceContextRendering x y memoizeDOResult ukkonenDOResult foreignDOResult
+--    contextRendering = niceContextRendering x y ukkonenDOResult
+    naiveDOResult    = naiveDO           lhs rhs costStructure
+    memoizeDOResult  = naiveDOMemo       lhs rhs tcm
+    ukkonenDOResult  = ukkonenDO         lhs rhs tcm
+    foreignDOResult  = foreignPairwiseDO lhs rhs denseMatrixValue
 --    shownInputs      = mconcat ["\n(",showStream alphabet lhs,",",showStream alphabet rhs,")"]
 
 
 performImplementationComparison :: DynamicCharacter -> DynamicCharacter -> IO ()
 performImplementationComparison char1 char2 = putStrLn renderedComparison
   where
-    renderedComparison = niceContextRendering naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult
-    naiveDOResult      = naiveDO           char1 char2  costStructure
-    memoizeDOResult    = naiveDOMemo       char1 char2 (getMedianAndCost2D memoMatrixValue)
-    ukkonenDOResult    = ukkonenDO         char1 char2 (getMedianAndCost2D memoMatrixValue)
-    foreignDOResult    = foreignPairwiseDO char1 char2  denseMatrixValue
+    renderedComparison = niceContextRendering (NS char1) (NS char2) naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult
+    naiveDOResult      = naiveDO           char1 char2 costStructure
+    memoizeDOResult    = naiveDOMemo       char1 char2 tcm
+    ukkonenDOResult    = ukkonenDO         char1 char2 tcm
+    foreignDOResult    = foreignPairwiseDO char1 char2 denseMatrixValue
 
 
 niceContextRendering
@@ -94,30 +98,17 @@ niceContextRendering
      , Show c2
      , Show c3
      , Show c4
-     , EncodableStream s1
-     , EncodableStream s2
-     , EncodableStream s3
-     , EncodableStream s4
-     , EncodableStream s5
-     , EncodableStream s6
-     , EncodableStream s7
-     , EncodableStream s8
-     , EncodableStream s9
-     , EncodableStream s10
-     , EncodableStream s11
-     , EncodableStream s12
-     , EncodableStream s13
-     , EncodableStream s14
-     , EncodableStream s15
-     , EncodableStream s16
      )
-  => (c1, s1 , s2 , s3 , s4 )
-  -> (c2, s5 , s6 , s7 , s8 )
-  -> (c3, s9 , s10, s11, s12)
-  -> (c4, s13, s14, s15, s16)
+  => NucleotideSequence
+  -> NucleotideSequence
+  -> (c1, DynamicCharacter)
+  -> (c2, DynamicCharacter)
+  -> (c3, DynamicCharacter)
+  -> (c4, DynamicCharacter)
   -> String
-niceContextRendering a b c d = unlines
-    [ "Native Naive    DO Result:"
+niceContextRendering m n a b c d = unlines
+    [ show (m, n)
+    , "Native Naive    DO Result:"
     , naiveMessage
     , "Native Memoized DO Result:"
     , memoizeMessage
@@ -137,12 +128,9 @@ niceContextRendering a b c d = unlines
     memoizeMessage = renderResult b
     ukkonenMessage = renderResult c
     foreignMessage = renderResult d
-    renderResult (v, w, x, y, z) = unlines
-        [ "  Cost           : " <> show v
-        , "  Median ungapped: " <> showStream alphabet w
-        , "  Median   gapped: " <> showStream alphabet x
-        , "  LHS   alignment: " <> showStream alphabet y
-        , "  RHS   alignment: " <> showStream alphabet z
+    renderResult (cost, aligned) = unlines
+        [ "  Cost     : " <> show cost
+        , "  Alignment: " <> renderDynamicCharacter alphabet tcm' aligned
         ]
 
     whichDoNotMatch =
@@ -150,7 +138,7 @@ niceContextRendering a b c d = unlines
           [] -> "[!] Results MATCH"
           xs -> "[X] Results DO NOT MATCH\n\n" <> foldMap renderDiff xs
       where
-        messages     = [naiveMessage, memoizeMessage, ukkonenMessage, foreignMessage]
+        messages     = [ {- naiveMessage, memoizeMessage, -} ukkonenMessage {- , foreignMessage -}]
         messageDiffs = catMaybes [ (\i -> (i, x, y)) <$> diffIndex x y | x <- messages, y <- messages, x > y ]
         renderDiff (i, x, y) = unlines [ "At index " <> show i, x, y]
 
@@ -166,6 +154,14 @@ diffIndex x y
 alphabet :: Alphabet String
 alphabet = fromSymbols ["A","C","G","T"]
 
+
+tcm :: AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word)
+tcm = getMedianAndCost2D memoMatrixValue
+
+
+tcm' :: AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup
+tcm' x y = fst $ tcm x y
+               
 
 costStructure :: (Ord a, Num a) => a -> a -> a
 --costStructure i j = if i /= j then 1 else 0

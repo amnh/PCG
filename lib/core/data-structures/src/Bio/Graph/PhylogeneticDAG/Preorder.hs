@@ -75,12 +75,12 @@ type BlockTopologies = NEV.Vector TraversalTopology
 -- and returns the new decoration for the current node.
 preorderSequence ::
   forall m e n u v w x y z u' v' w' x' y' z' . HasBlockCost u  v  w  x  y  z
-  => (ContinuousCharacterMetadataDec                         -> AP.PreorderContext u u' -> u')
-  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext v v' -> v')
-  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext w w' -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext x x' -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> AP.PreorderContext z z' -> z')
+  => (ContinuousCharacterMetadataDec                      -> AP.PreorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> AP.PreorderContext z z' -> z')
   -> PhylogeneticDAG m e n u  v  w  x  y  z
   -> PhylogeneticDAG m e n u' v' w' x' y' z'
 preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneticForest .~ newRDAG
@@ -246,12 +246,12 @@ mockResInfo currentResolutions newSequence =
 
 computeOnApplicableResolution
   :: forall m u v w x y z u' v' w' x' y' z'
-   . (ContinuousCharacterMetadataDec                         -> AP.PreorderContext u u' -> u')
-  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext v v' -> v')
-  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext w w' -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext x x' -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> AP.PreorderContext z z' -> z')
+   . (ContinuousCharacterMetadataDec                                        -> AP.PreorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                                          -> AP.PreorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                                          -> AP.PreorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter                   -> AP.PreorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter                   -> AP.PreorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> AP.PreorderContext z z' -> z')
   -> MetadataSequence m
   -> NEV.Vector
        ( TraversalTopology
@@ -353,7 +353,7 @@ adjustResolution f = pure . f . NE.head . resolutions . nodeDecoration
 preorderFromRooting
   :: forall m u v w x y z e' n' u' v' w' x' y' z'
   .  (TextShow n')
-  => (DynamicCharacterMetadataDec (Element DynamicCharacter) ->  AP.PreorderContext z z' -> z')
+  => (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) ->  AP.PreorderContext z z' -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NEV.Vector (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
@@ -560,7 +560,7 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                     excludedEdges = excludedNetworkEdges topology
                     updatedDynamicCharacters = mapWithKey dynCharGen $ mBlock ^. dynamicBin
 
-                    dynCharGen :: Int -> DynamicCharacterMetadataDec DynamicCharacterElement -> z'
+                    dynCharGen :: Int -> DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> z'
                     dynCharGen k m =
                         case parentRefContext of
                           NoBlockData      -> error "This is bad and sad plus I'm mad."
@@ -621,12 +621,12 @@ constructDefaultMetadata = ((mempty, mempty, Nothing) <$) . graphData
 -- Computes and sets the virtual node sequence on each edge.
 setEdgeSequences
   :: forall m e n u v w x y z u' v' w' x' y' z' u'' v'' w'' x'' y''
-  .  (ContinuousCharacterMetadataDec                         -> (u, u) -> u')
-  -> (DiscreteCharacterMetadataDec                           -> (v, v) -> v')
-  -> (DiscreteCharacterMetadataDec                           -> (w, w) -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (x, x) -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (y, y) -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> (z, z) -> z')
+  .  (ContinuousCharacterMetadataDec                                        -> (u, u) -> u')
+  -> (DiscreteCharacterMetadataDec                                          -> (v, v) -> v')
+  -> (DiscreteCharacterMetadataDec                                          -> (w, w) -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter                   -> (x, x) -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter                   -> (y, y) -> y')
+  -> (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> (z, z) -> z')
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z')))
   -> PhylogeneticDAG m e n u v w x y z
   -> PhylogeneticDAG m (e, CharacterSequence u' v' w' x' y' z') n u v w x y z

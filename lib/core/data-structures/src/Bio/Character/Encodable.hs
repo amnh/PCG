@@ -13,20 +13,24 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Encodable
-  ( ContinuousCharacter()
+  ( AmbiguityGroup()
+  , ContinuousCharacter()
+  , DecodableStream(..)
   , DynamicCharacter(..)
-  , DynamicCharacters
   , DynamicCharacterElement()
   , StaticCharacter()
   , StaticCharacterBlock()
   , EncodedAmbiguityGroupContainer(..)
   , EncodableContinuousCharacter(..)
   , EncodableDynamicCharacter(..)
+  , EncodableDynamicCharacterElement(..)
   , EncodableStaticCharacter(..)
   , EncodableStaticCharacterStream(..)
   , EncodableStreamElement(..)
   , EncodableStream(..)
   , PossiblyMissingCharacter(..)
+  , Subcomponent
+  , renderDynamicCharacter
   , showStream
   , showStreamElement
   ) where

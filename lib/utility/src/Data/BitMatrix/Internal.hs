@@ -24,6 +24,7 @@ import Control.DeepSeq
 import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.Foldable
+import Data.Hashable
 import Data.List.Utility           (equalityOf, invariantTransformation)
 import Data.MonoTraversable
 import Data.Ord
@@ -48,6 +49,11 @@ import TextShow                    (TextShow (showb), singleton, unlinesB, unwor
 data  BitMatrix
     = BitMatrix {-# UNPACK #-} !Int {-# UNPACK #-} !BitVector
     deriving stock (Eq, Generic)
+
+
+instance Hashable BitMatrix where
+
+    hashWithSalt salt (BitMatrix n bv) = salt `xor` n `xor` hashWithSalt salt bv
 
 
 -- |

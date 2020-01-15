@@ -268,11 +268,11 @@ coerceEnum = toEnum . fromEnum
 -- /O(n)/ where @n@ is the length of the dynamic character.
 --
 -- Malloc and populate a pointer to an exportable representation of the
--- 'Exportable' value. The supplied value is assumed to be a dynamic character
+-- 'ExportableSequence' value. The supplied value is assumed to be a dynamic character
 -- and the result is a pointer to a C representation of a dynamic character.
 --
 -- Call 'destructCharacter' to free the resulting pointer.
-constructCharacter :: Exportable s => s -> IO (Ptr CDynamicChar)
+constructCharacter :: ExportableBuffer s => s -> IO (Ptr CDynamicChar)
 constructCharacter exChar = do
     valueBuffer <- newArray $ exportedBufferChunks exportableBuffer
     charPointer <- malloc :: IO (Ptr CDynamicChar)
@@ -280,8 +280,8 @@ constructCharacter exChar = do
     !_ <- poke charPointer charValue
     pure charPointer
   where
-    count  = exportedElementCountSequence exportableBuffer
-    width  = exportedElementWidthSequence exportableBuffer
+    count  = exportedElementCountBuffer exportableBuffer
+    width  = exportedElementWidthBuffer exportableBuffer
     bufLen = calculateBufferLength count width
     exportableBuffer = toExportableBuffer exChar
 
@@ -290,12 +290,12 @@ constructCharacter exChar = do
 -- /O(1)/
 --
 -- Malloc and populate a pointer to an exportable representation of the
--- 'Exportable' value. The supplied value is assumed to be a dynamic character
+-- 'ExportableSequence' value. The supplied value is assumed to be a dynamic character
 -- element and the result is a pointer to a C representation of a dynamic
 -- character element.
 --
 -- Call 'destructElement' to free the resulting pointer.
-constructElement :: Exportable s => s -> IO (Ptr DCElement)
+constructElement :: ExportableBuffer s => s -> IO (Ptr DCElement)
 constructElement exChar = do
     valueBuffer    <- newArray $ exportedBufferChunks exportableBuffer
     elementPointer <- malloc :: IO (Ptr DCElement)
@@ -303,7 +303,7 @@ constructElement exChar = do
     !_ <- poke elementPointer elementValue
     pure elementPointer
   where
-    width  = exportedElementWidthSequence exportableBuffer
+    width  = exportedElementWidthBuffer exportableBuffer
     exportableBuffer = toExportableBuffer exChar
 
 

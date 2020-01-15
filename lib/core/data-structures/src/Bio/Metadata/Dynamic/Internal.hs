@@ -159,12 +159,12 @@ instance DiscreteCharacterMetadata (DynamicCharacterMetadataDec c) where
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, ExportableBuffer c, Ranged c)
     => DiscreteWithTcmCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, ExportableBuffer c, Ranged c)
     => DynamicCharacterMetadata (DynamicCharacterMetadataDec c) c where
 
     {-# INLINE extractDynamicCharacterMetadata #-}
@@ -227,14 +227,14 @@ instance GetSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> 
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, ExportableBuffer c, Ranged c)
     => GetPairwiseTransitionCostMatrix (DynamicCharacterMetadataDec c) c Word where
 
     pairwiseTransitionCostMatrix = to extractPairwiseTransitionCostMatrix
 
 
 -- | (✔)
-instance (Bound c ~ Word, EncodableStreamElement c, Exportable c, Ranged c)
+instance (Bound c ~ Word, EncodableStreamElement c, ExportableBuffer c, Ranged c)
     => GetThreewayTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> c -> (c, Word)) where
 
     threewayTransitionCostMatrix = to extractThreewayTransitionCostMatrix
@@ -342,7 +342,7 @@ maybeConstructDenseTransitionCostMatrix alpha sigma = force f
 -- Correctly select the most efficient TCM function based on the alphabet size
 -- and metric specification.
 extractPairwiseTransitionCostMatrix
-  :: ( Exportable c
+  :: ( ExportableBuffer c
      , EncodableStreamElement c
      , Ranged c
      , Bound c ~ Word
@@ -364,7 +364,7 @@ extractPairwiseTransitionCostMatrix =
 -- Correctly select the most efficient TCM function based on the alphabet size
 -- and metric specification.
 extractThreewayTransitionCostMatrix
-  :: ( Exportable c
+  :: ( ExportableBuffer c
      , EncodableStreamElement c
      , Ranged c
      , Bound c ~ Word
@@ -509,9 +509,9 @@ overlap sigma xs = go n maxBound zero
 
 
 {-# INLINE overlap2 #-}
-{-# SPECIALISE overlap2 :: (Word -> Word -> Word) -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
+{-# SPECIALISE overlap2 :: (Word -> Word -> Word) -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 overlap2
-  :: (EncodableStreamElement e {- , Show e -})
+  :: (FiniteBits e {- , Show e -})
   => (Word -> Word -> Word)
   -> e
   -> e
@@ -520,9 +520,9 @@ overlap2 sigma char1 char2 = overlap sigma $ char1 :| [char2]
 
 
 {-# INLINE overlap3 #-}
-{-# SPECIALISE overlap3 :: (Word -> Word -> Word) -> DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
+{-# SPECIALISE overlap3 :: (Word -> Word -> Word) -> AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 overlap3
-  :: (EncodableStreamElement e {- , Show e -})
+  :: (FiniteBits e {- , Show e -})
   => (Word -> Word -> Word)
   -> e
   -> e

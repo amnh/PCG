@@ -25,7 +25,6 @@
 
 module Data.Alphabet.Internal
   ( Alphabet()
-  , AmbiguityGroup
   , alphabetStateNames
   , alphabetSymbols
   , fromSymbols
@@ -57,11 +56,6 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
 import           TextShow                            (TextShow (showb))
-
-
--- |
--- A non empty collection of symbols from an 'Alphabet'.
-type AmbiguityGroup a = NonEmpty a
 
 
 -- |

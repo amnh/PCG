@@ -42,6 +42,7 @@ import           Bio.Graph.Node
 import           Bio.Graph.Node.Context
 import           Bio.Graph.PhylogeneticDAG                     (setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
+import           Bio.Metadata
 import           Bio.Sequence
 import           Control.Lens.Operators                        ((%~), (.~), (^.))
 import           Data.Default
@@ -49,6 +50,7 @@ import           Data.EdgeLength
 import           Data.Function                                 ((&))
 import           Data.IntMap                                   (IntMap)
 import qualified Data.List.NonEmpty                            as NE
+import           Data.MonoTraversable
 import           Data.NodeLabel
 import           Data.Vector                                   (Vector)
 
@@ -113,9 +115,10 @@ performDecoration
      ( DiscreteCharacterDecoration v StaticCharacter
      , DiscreteCharacterDecoration x StaticCharacter
      , DiscreteCharacterDecoration y StaticCharacter
-     , RangedCharacterDecoration u ContinuousCharacter
-     , RangedCharacterDecoration w StaticCharacter
-     , SimpleDynamicDecoration z DynamicCharacter
+     , RangedCharacterDecoration   u ContinuousCharacter
+     , RangedCharacterDecoration   w StaticCharacter
+     , SimpleDynamicDecoration     z DynamicCharacter
+--     , EncodableStreamElement DynamicCharacterElement
      )
   => PhylogeneticDAG m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
@@ -176,6 +179,12 @@ performDecoration x =
           (const sankoffPreorder )
           (const extractPreNode  )
       where
+        adaptiveDirectOptimizationPreorder
+          :: DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter))
+          -> PreorderContext
+               (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+               (DynamicDecorationDirectOptimization DynamicCharacter)
+          -> DynamicDecorationDirectOptimization DynamicCharacter
         adaptiveDirectOptimizationPreorder meta decorationPreContext
           = directOptimizationPreorder pairwiseAlignmentFunction meta decorationPreContext
             where

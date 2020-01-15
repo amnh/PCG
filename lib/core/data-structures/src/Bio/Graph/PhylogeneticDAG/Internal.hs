@@ -469,12 +469,12 @@ applySoftwireResolutions nodeInfo =
 -- transformations to each possible resolution that is not inconsistent.
 generateLocalResolutions
   :: HasBlockCost u' v' w' x' y' z'
-  => (ContinuousCharacterMetadataDec                         -> PostorderContext u u' -> u')
-  -> (DiscreteCharacterMetadataDec                           -> PostorderContext v v' -> v')
-  -> (DiscreteCharacterMetadataDec                           -> PostorderContext w w' -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> PostorderContext x x' -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> PostorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> PostorderContext z z' -> z')
+  => (ContinuousCharacterMetadataDec                      -> PostorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                        -> PostorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                        -> PostorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> PostorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> PostorderContext z z' -> z')
   ->  MetadataSequence m
   ->  ResolutionInformation
         (PostorderContext
@@ -548,7 +548,7 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta resolutionContext =
 -- apply the transformation to all possible resolution combinations.
 localResolutionApplication
   :: HasBlockCost u v w x y d
-  => (DynamicCharacterMetadataDec (Element DynamicCharacter) -> PostorderContext d d -> d)
+  => (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> PostorderContext d d -> d)
   -> MetadataSequence m
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))
   -> NonEmpty (ResolutionInformation (CharacterSequence u v w x y d))

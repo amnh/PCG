@@ -292,6 +292,7 @@ clean: phylogenetic-component-graph.cabal stack.yaml
 	  find $$dir -type f -name '*.hi'          -delete; \
 	  find $$dir -type f -name '*.*~'          -delete; \
 	  find $$dir -type f -name '#*.*'          -delete; \
+	  find $$dir -type f -name '*#.*#'         -delete; \
 	  find $$dir -type f -name 'log.err'       -delete; \
 	  find $$dir -type f -name 'log.out'       -delete; \
 	  find $$dir -type f -name '*dump\-hi*'    -delete; \

@@ -16,7 +16,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
   ( OverlapFunction
   , filterGaps
   , foreignPairwiseDO
-  , foreignThreeWayDO
+--  , foreignThreeWayDO
   , naiveDO
   , naiveDOMemo
   , ukkonenDO

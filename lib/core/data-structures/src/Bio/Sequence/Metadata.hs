@@ -180,7 +180,7 @@ hexFoldMap
   -> (DiscreteCharacterMetadataDec                        -> m)
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> m)
   -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> m)
-  -> (DynamicCharacterMetadataDec DynamicCharacterElement -> m)
+  -> (DynamicCharacterMetadataDec         AmbiguityGroup  -> m)
   -> (MetadataSequence meta -> m)
 hexFoldMap m1 m2 m3 m4 m5 m6 metaSeq =
     foldMap foldMapBlock (toBlocks metaSeq)

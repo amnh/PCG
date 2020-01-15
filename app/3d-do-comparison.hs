@@ -18,6 +18,11 @@ import           Test.QuickCheck
 
 
 main :: IO ()
+main = pure ()
+
+
+{-
+main :: IO ()
 main = do
     args <- getArgs
     case parseArgs args of
@@ -143,3 +148,4 @@ denseMatrixValue = generateDenseTransitionCostMatrix 0  5 costStructure
 
 memoMatrixValue :: MemoizedCostMatrix
 memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
+-}

@@ -12,14 +12,16 @@
 
 module Bio.Character
   (  -- * Character Types
-    ContinuousCharacter()
+    AmbiguityGroup
+  , ContinuousCharacter()
   , DynamicCharacter()
   , DynamicCharacterElement()
-  , DynamicCharacters
-  , ExportableCharacterSequence(..)
+  , ExportableCharacterBuffer(..)
   , StaticCharacter()
   , StaticCharacterBlock()
+  , Subcomponent
     -- * Character Classes
+  , DecodableStream(..)
   , EncodedAmbiguityGroupContainer(..)
   , EncodableContinuousCharacter(..)
   , EncodableDynamicCharacter(..)
@@ -27,7 +29,8 @@ module Bio.Character
   , EncodableStaticCharacterStream(..)
   , EncodableStream(..)
   , EncodableStreamElement(..)
-  , Exportable(..)
+  , ExportableBuffer(..)
+  , ExportableElements(..)
   , PossiblyMissingCharacter(..)
   , showStream
   , showStreamElement

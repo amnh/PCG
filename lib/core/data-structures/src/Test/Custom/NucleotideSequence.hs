@@ -14,23 +14,42 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 
 module Test.Custom.NucleotideSequence
   ( NucleotideBase(..)
   , NucleotideSequence(..)
   ) where
 
-import           Bio.Character
+import           Bio.Character.Encodable
+import           Bio.Character.Encodable.Dynamic
+import           Bio.Character.Encodable.Dynamic.Element
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
-import           Data.Bimap             (elems)
+import           Data.Bits
+import           Data.BitMatrix
+import qualified Data.Bimap                            as B                                            
 import           Data.Foldable
-import           Data.List
+import           Data.Key
+import           Data.List              (delete)
+import           Data.List.NonEmpty     (NonEmpty(..))
 import qualified Data.List.NonEmpty     as NE
-import           Test.QuickCheck        hiding (generate)
-import           Test.SmallCheck.Series
+import           Data.Map               (Map)
+import           Data.MonoTraversable
+import           Data.String            (fromString)
+import           Prelude                hiding (lookup)
+import           Test.QuickCheck        (Arbitrary(..), Gen, suchThat, vectorOf)
+import           Test.SmallCheck.Series hiding (NonEmpty)
+
+import Debug.Trace
+
+
+-- |
+-- Represents an arbitrary, non-empty ambiguity group which may include gaps.
+newtype NucleotideBase = NB DynamicCharacterElement
 
 
 -- |
@@ -39,41 +58,34 @@ import           Test.SmallCheck.Series
 newtype NucleotideSequence = NS DynamicCharacter
 
 
-instance Show NucleotideSequence where
-
-    show (NS x) = showStream alphabet x
-
-
 instance Arbitrary NucleotideSequence where
 
-    arbitrary = NS . encodeStream alphabet . NE.fromList <$> streamGen
+    arbitrary = fmap NS . arbitraryDynamicCharacterOfWidth . toEnum $ length alphabet
+
+
+instance Show NucleotideSequence where
+
+    show (NS x) = showDNA x
       where
-        streamGen  = listOf1 elementGen
-        elementGen = elements $ elems iupacToDna
-
-
--- |
--- Represents an arbitrary, non-empty ambiguity group which may include gaps.
-newtype NucleotideBase = NB DynamicCharacterElement
+        showDNA = foldMap renderBase . otoList
 
 
 instance Show NucleotideBase where
 
-    show (NB x) = showStreamElement alphabet x
-
-
-instance Arbitrary NucleotideBase where
-
-    arbitrary = NB . encodeElement alphabet <$> elementGen
-      where
-        elementGen = elements $ elems iupacToDna
+    show (NB x) = renderBase x
 
 
 instance Monad m => Serial m NucleotideBase where
 
-    series = generate $ const (NB . encodeElement alphabet <$> validSpace)
+    series = generate $ const (NB <$> validSpace)
       where
-        validSpace = fmap NE.fromList $ [] `delete` powerSet (toList alphabet)
+        validSpace   = fold
+                     [ pure . gapElement . symbolCount $ head validMedians
+                     , deleteElement <$> validMedians
+                     , insertElement <$> validMedians
+                     ,  alignElement <$> validMedians <*> validMedians
+                     ]
+        validMedians = fmap (encodeElement alphabet . NE.fromList) $ [] `delete` powerSet (toList alphabet)
         powerSet :: [a] -> [[a]]
         powerSet []     = [[]]
         powerSet (x:xs) = [x:ps | ps <- powerSet xs] <> powerSet xs
@@ -81,3 +93,27 @@ instance Monad m => Serial m NucleotideBase where
 
 alphabet :: Alphabet String
 alphabet = fromSymbols ["A","C","G","T"]
+
+
+renderBase :: DynamicCharacterElement -> String
+renderBase x =
+    let dnaIUPAC     = convertBimap iupacToDna
+        convertBimap :: B.Bimap (NonEmpty String) (NonEmpty String) -> Map (NonEmpty String) Char
+        convertBimap = fmap (head . NE.head) . B.toMapR . B.mapR (fmap fromString)
+        encoding     = case getContext x of
+                         Gapping   -> bit . fromEnum $ symbolCount x - 1
+                         Deletion  -> let v = getRight x in v .|. getGapElement v
+                         Insertion -> let v = getLeft  x in v .|. getGapElement v
+                         Alignment -> let l = getLeft  x
+                                          r = getRight x
+                                          m | l == r = l
+                                            | popCount (l .&. r) > 0 = l .&. r
+                                            | otherwise = l .|. r
+                                      in  m
+    in case decodeElement alphabet encoding `lookup` dnaIUPAC of
+         Just v  -> [v]
+         Nothing -> error $ unlines
+                      [ "Could not find key for:"
+                      , show encoding
+                      , show $ decodeElement alphabet encoding
+                      ]

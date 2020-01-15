@@ -49,10 +49,8 @@ import           Prelude                                       hiding (zipWith)
 -- Computes the total edge cost over all the disambiguated final assignments.
 totalEdgeCosts
   :: ( EncodableDynamicCharacter c
-     , Exportable c
-     , Exportable (Element c)
-     , HasSingleDisambiguation       z c
-     , Ord (Element c)
+     , ExportableElements c
+     , HasSingleDisambiguation z c
      , Element c ~ DynamicCharacterElement
      )
   => PhylogeneticDAG m e n u v w x y z
@@ -78,8 +76,7 @@ totalEdgeCosts (PDAG2 dag meta) = {-- toNonEmpty . --} applyWeights $ foldlWithK
 
     functionSequence = fmap getDynamicMetric <$> dynamicMetadataSeq
       where
-        getDynamicMetric m x y = let (!c,_,_,_,_) = selectDynamicMetric m x y
-                                 in {- trace ("Cost " <> show c) -} c
+        getDynamicMetric m x y = fst $ selectDynamicMetric m x y
 
     applyWeights = force . zipWith (zipWith (\d w -> d * fromIntegral w)) weightSequence
 

@@ -12,16 +12,15 @@
 
 module Bio.Character.Encodable.Internal
   ( EncodedAmbiguityGroupContainer(..)
+  , EncodedGapElementContainer(..)
   , PossiblyMissingCharacter(..)
   , bitVectorToBufferChunks
   , bufferChunksToBitVector
-  , exportableCharacterElementsToBitMatrix
   , exportableCharacterElementsHeadToBitVector
   ) where
 
 import Bio.Character.Exportable
 import Control.Lens
-import Data.BitMatrix              (BitMatrix, fromRows)
 import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.Foldable
@@ -32,9 +31,17 @@ import Foreign.C.Types
 -- Represents a type which stores one or more abiguity groups from an alphabet.
 -- Allows /O(1)/ derivation of the number of possibly-present symbols in the
 -- ambiguity group.
-class EncodedAmbiguityGroupContainer w where
+class EncodedAmbiguityGroupContainer b where
 
-    symbolCount :: w -> Word
+    symbolCount :: b -> Word
+
+
+-- |
+-- Represents a type which can store a "gap" element.
+-- Allows /O(1)/ derivation of the "gap" element.
+class EncodedGapElementContainer b where
+
+    getGapElement :: b -> b
 
 
 -- |
@@ -97,17 +104,6 @@ bufferChunksToBitVector elemWidth elemCount chunks = fromNumber totalBits . fst 
     f (summation, shiftDistance) e = (summation + addend, shiftDistance + longWidth')
       where
         addend = fromIntegral e `shift` shiftDistance
-
-
--- Use 'Data.BitMatrix.fromRows', which corrects the Semigroup operator for
--- 'BitVector's to behave correctly.
--- |
--- Converts an exportable character context to a 'BitMatrix'.
-exportableCharacterElementsToBitMatrix :: ExportableCharacterElements -> BitMatrix
-exportableCharacterElementsToBitMatrix ece = fromRows $ fromNumber elementWidth <$> integralValues
-  where
-    elementWidth   = ece ^. exportedElementWidth
-    integralValues = exportedCharacterElements ece
 
 
 -- |
