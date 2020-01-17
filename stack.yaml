@@ -1,6 +1,6 @@
 allow-newer: true
 
-compiler: ghc-8.8.1
+compiler: ghc-8.8.2
 
 compiler-check: match-exact
 

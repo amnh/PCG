@@ -7,7 +7,7 @@ Releases are available [on GitHub][2].
 
 ## _0.2.1_ - Unreleased Changes
 
-* Updated to GHC-8.8.1
+* Updated to GHC-8.8.2
 * Updated to Cabal-3.0
 * Updated to Cabal's multiple libraries functionality for sub-libraries
 * Updated Travis CI build script
