@@ -15,6 +15,7 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeOperators              #-}
 
+
 module Data.Graph.Postorder.Resolution where
 
 import           Control.DeepSeq
@@ -88,23 +89,30 @@ data Resolution cs = Resolution
 
 --virtualParentResolution
 --  :: ResolutionCache cs -> ResolutionCache cs
-
+{-
 generateLocalResolutions
   :: ( AssociatedCharacterMetadata continuousMeta   u
      , AssociatedCharacterMetadata continuousMeta   u'
      , AssociatedCharacterMetadata discreteMeta     v
+     , AssociatedCharacterMetadata discreteMeta     v'
      , AssociatedCharacterMetadata discreteMeta'    w
+     , AssociatedCharacterMetadata discreteMeta'    w'     
      , AssociatedCharacterMetadata discreteWithTCM  x
+     , AssociatedCharacterMetadata discreteWithTCM  x'     
      , AssociatedCharacterMetadata discreteWithTCM' y
+     , AssociatedCharacterMetadata discreteWithTCM' y'     
      , AssociatedCharacterMetadata dynamicMeta      z
+     , AssociatedCharacterMetadata dynamicMeta      z'
      , MetadataSequence            meta
-     , HexZippableMeta      charSeq
+     , HexZippableMeta charSeq
+     , HasSequenceCost charSeq
+     , HasBlockCost u' v' w' x' y' z'
      )
   => (continuousMeta   -> PostorderContext u u' -> u')
   -> (discreteMeta     -> PostorderContext v v' -> v')
   -> (discreteMeta'    -> PostorderContext w w' -> w')
   -> (discreteWithTCM  -> PostorderContext x x' -> x')
-  -> (discreteWithTCM' -> PostorderContext y y' -> z')
+  -> (discreteWithTCM' -> PostorderContext y y' -> y')
   -> (dynamicMeta      -> PostorderContext z z' -> z')
   -> meta
   -> Resolution
@@ -149,7 +157,6 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta childResolutionContext =
           , rightChild = rightCharSequence
           } ->
           let
-            totalChildCost = view _totalSubtreeCost childResolutionContext
             newCharacterSequence
                 = hexZipMeta2
                     f1Bin
@@ -163,13 +170,78 @@ generateLocalResolutions f1 f2 f3 f4 f5 f6 meta childResolutionContext =
                     rightCharSequence
                     
             newTotalCost      = sequenceCost meta newCharacterSequence
-            newLocalCost      = newTotalCost - totalChildCost
               in
-            resolutionContext
+            childResolutionContext
               & _characterSequence .~ newCharacterSequence
               & _totalSubtreeCost  .~ newTotalCost
-              & _localSequenceCost .~ newLocalCost
+      --        & _localSequenceCost .~ newLocalCost
 
+generateLocalResolutions'
+  :: ( Blockbin block
+     , 
+     )
+  -> MetadataSeqeunce block meta
+  -> Resolution
+       (PostorderContext
+         CharacterSequence block
+         CharacterSequence block
+       )
+  -> Resolution (CharacterSequence block)
+generateLocalResolutions' meta childResolutionContext =
+  let
+    (f1Leaf, f1Bin) = (leafFunction <$> f1 , postBinaryFunction <$> f1)
+    (f2Leaf, f2Bin) = (leafFunction <$> f2 , postBinaryFunction <$> f2)
+    (f3Leaf, f3Bin) = (leafFunction <$> f3 , postBinaryFunction <$> f3)
+    (f4Leaf, f4Bin) = (leafFunction <$> f4 , postBinaryFunction <$> f4)
+    (f5Leaf, f5Bin) = (leafFunction <$> f5 , postBinaryFunction <$> f5)
+    (f6Leaf, f6Bin) = (leafFunction <$> f6 , postBinaryFunction <$> f6)
+  in  case (view _characterSequence childResolutionContext) of
+        LeafContext leafCharSequence ->
+          let newCharacterSequence
+                = hexZipMeta
+                    f1Leaf
+                    f2Leaf
+                    f3Leaf
+                    f4Leaf
+                    f5Leaf
+                    f6Leaf
+                    meta
+                    leafCharSequence
+              newTotalCost = sequenceCost meta newCharacterSequence
+          in
+            childResolutionContext
+              & _characterSequence .~ newCharacterSequence
+              & _totalSubtreeCost  .~ newTotalCost
+
+        PostNetworkContext netChildCharSequence ->
+          childResolutionContext & _characterSequence .~ netChildCharSequence
+          -- Want to propogate what is stored in the network child resolution
+          -- to the parent.
+
+        PostBinaryContext
+          { leftChild  = leftCharSequence
+          , rightChild = rightCharSequence
+          } ->
+          let
+            newCharacterSequence
+                = hexZipMeta2
+                    f1Bin
+                    f2Bin
+                    f3Bin
+                    f4Bin
+                    f5Bin
+                    f6Bin
+                    meta
+                    leftCharSequence
+                    rightCharSequence
+                    
+            newTotalCost      = sequenceCost meta newCharacterSequence
+              in
+            childResolutionContext
+              & _characterSequence .~ newCharacterSequence
+              & _totalSubtreeCost  .~ newTotalCost
+      --        & _localSequenceCost .~ newLocalCost
+-}
 type ResolutionCache cs = ResolutionCacheM Identity cs
 
 
