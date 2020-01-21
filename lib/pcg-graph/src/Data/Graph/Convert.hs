@@ -134,7 +134,7 @@ addIndicesFromUnfold unfoldFn input =
       -> [a]
       -> Map t ([(t, e)], [(t, e)], TaggedIndex)
       -> (# (# Int, Int, Int, Int #), Map t ([(t, e)], [(t, e)], TaggedIndex) #)
-    go lens [] res = (# lens, res #)
+    go lengths [] res = (# lengths, res #)
     go (# l, t, n, r #) (a:as) res =
       let
         (parSeeds, nodeVal, childSeeds) = unfoldFn a
@@ -183,7 +183,7 @@ addIndicesFromUnfold unfoldFn input =
 
 
 indexAdjacencyGraphToGraph
-  :: forall a f c e t . (Applicative f, Ord t)
+  :: forall f e t . (Applicative f, Ord t)
   => ((Int, Int, Int, Int), Map t ([(t, e)], [(t, e)], TaggedIndex))
   -> Graph f () e t t
 indexAdjacencyGraphToGraph ((numL, numT, numN, numR), adjGraph) =
