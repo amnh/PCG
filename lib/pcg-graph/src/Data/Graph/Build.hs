@@ -56,7 +56,7 @@ type FinalDecorationGraphM m c e n t =
 type FinalDecorationGraph c e n t = FinalDecorationGraphM Identity c e n t
 
 
-class (HasCharacterSequence t (CharacterSequence t)) => HasGraphDecoration c e n t where
+class (HasCharacterSequence' t (CharacterSequence t)) => HasGraphDecoration c e n t where
 
     decorate :: Graph Maybe c () n t -> FinalDecorationGraph c e n t
 

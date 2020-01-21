@@ -104,7 +104,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     -- Step 1: Construct a hashmap of all the *unrooted* edges.
     unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
 
-    -- Step 2: Create a lazy, memoized hashmap of the edge costs for each dynmaic character.
+    -- Step 2: Create a lazy, memoized hashmap of the edge costs for each dynamic character.
     edgeCostMapping = referenceEdgeMapping
 
     -- Step 3: For each display tree, for each dynamic character, find the

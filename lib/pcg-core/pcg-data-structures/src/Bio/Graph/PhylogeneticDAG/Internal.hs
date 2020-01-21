@@ -465,7 +465,7 @@ applySoftwireResolutions nodeInfo =
            ]
 
 -- |
--- Given a pre-order transformation for each type parameter, apply the
+-- Given a postorder transformation for each type parameter, apply the
 -- transformations to each possible resolution that is not inconsistent.
 generateLocalResolutions
   :: HasBlockCost u' v' w' x' y' z'
