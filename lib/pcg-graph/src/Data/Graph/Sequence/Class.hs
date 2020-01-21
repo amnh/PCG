@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE TypeApplications       #-}
+{-# LANGUAGE AllowAmbiguousTypes    #-}
 
 module Data.Graph.Sequence.Class where
 
@@ -59,24 +60,32 @@ instance HasBlocks
 
 newtype CharacterSequence block = CharacterSequence {getCharacterSequence :: Vector block}
 
-characterLeafUpdate :: (BlockBin block)
+
+characterLeafInitialise :: (BlockBin block)
   => MetadataSequence  block meta
   -> CharacterSequence (LeafBin block)
   -> CharacterSequence block
-characterLeafUpdate meta charSeq =
+characterLeafInitialise meta charSeq =
   let
-    mSeq = meta    ^. blockSequence
+    mSeq = blockDataSet <$> view blockSequence meta
     cSeq = charSeq ^. blockSequence
   in
-    view (from blockSequence) $ Vector.zipWith undefined mSeq cSeq
+    view (from blockSequence) $ Vector.zipWith leafInitialise mSeq cSeq
 
 
-characterBinaryUpdate :: (BlockBin block)
+characterBinaryPostorder :: (BlockBin block)
   => MetadataSequence block meta
   -> CharacterSequence block
   -> CharacterSequence block
   -> CharacterSequence block
-characterBinaryUpdate = undefined
+characterBinaryPostorder meta leftCharSeq rightCharSeq =
+  let
+    mSeq      = blockDataSet <$> view blockSequence meta
+    leftCSeq  = leftCharSeq  ^. blockSequence
+    rightCSeq = rightCharSeq ^. blockSequence  
+  in
+    view (from blockSequence) $ Vector.zipWith3 binaryPostorder mSeq leftCSeq rightCSeq
+
 
 
 data MetadataBlock block meta = MetadataBlock
@@ -91,10 +100,18 @@ newtype MetadataSequence block meta = MetadataSequence
 
 class BlockBin bin where
   type LeafBin           bin
+  -- to do: make this a data family with newtypes to make it injective for the lens in subblock
   type CharacterMetadata bin
 
-  leafUpdate :: CharacterMetadata bin -> LeafBin bin -> bin
-  binUpdate  :: CharacterMetadata bin -> bin -> bin -> bin
+  leafInitialise :: CharacterMetadata bin -> LeafBin bin -> bin
+  binaryPostorder  :: CharacterMetadata bin -> bin -> bin -> bin
+
+class (BlockBin subBlock, BlockBin block) => SubBlock subBlock block where
+  _hasSubBlock :: Lens' block subBlock
+
+  _hasSubBlockMetadata :: Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
+  
+  
 
 instance (BlockBin a, BlockBin b, BlockBin c, BlockBin d, BlockBin e, BlockBin f)
     => BlockBin (a, b, c, d, e, f) where
@@ -116,26 +133,26 @@ instance (BlockBin a, BlockBin b, BlockBin c, BlockBin d, BlockBin e, BlockBin f
       )
 
    -- Note we can add parallelism here
-  leafUpdate ~(m1, m2, m3, m4, m5, m6) ~(b1, b2, b3, b4, b5, b6) =
-    ( leafUpdate m1 b1
-    , leafUpdate m2 b2
-    , leafUpdate m3 b3
-    , leafUpdate m4 b4
-    , leafUpdate m5 b5
-    , leafUpdate m6 b6
+  leafInitialise ~(m1, m2, m3, m4, m5, m6) ~(b1, b2, b3, b4, b5, b6) =
+    ( leafInitialise m1 b1
+    , leafInitialise m2 b2
+    , leafInitialise m3 b3
+    , leafInitialise m4 b4
+    , leafInitialise m5 b5
+    , leafInitialise m6 b6
     )
     
    -- Note we can add parallelism here
-  binUpdate
+  binaryPostorder
     ~(m1, m2, m3, m4, m5, m6)
     ~(b1, b2, b3, b4, b5, b6)
     ~(b1', b2', b3', b4', b5', b6')
-    = ( binUpdate m1 b1 b1'
-      , binUpdate m2 b2 b2'
-      , binUpdate m3 b3 b3'
-      , binUpdate m4 b4 b4'
-      , binUpdate m5 b5 b5'
-      , binUpdate m6 b6 b6'
+    = ( binaryPostorder m1 b1 b1'
+      , binaryPostorder m2 b2 b2'
+      , binaryPostorder m3 b3 b3'
+      , binaryPostorder m4 b4 b4'
+      , binaryPostorder m5 b5 b5'
+      , binaryPostorder m6 b6 b6'
       )
 
 
@@ -151,23 +168,22 @@ class HasCharacterCost s a | s -> a where
     {-# MINIMAL characterCost #-}
     characterCost :: Lens' s a
 
--- |
--- CharacterBlocks satisfying this constraint have a calculable cost.
-type HasBlockCost u v w x y z =
-    ( HasCharacterCost u Double
-    , HasCharacterCost v Word
-    , HasCharacterCost w Word
-    , HasCharacterCost x Word
-    , HasCharacterCost y Word
-    , HasCharacterCost z Word
-    )
+--type HasBlockCost block =
+--    ( HasCharacterCost u Double
+--    , HasCharacterCost v Word
+--    , HasCharacterCost w Word
+--    , HasCharacterCost x Word
+--    , HasCharacterCost y Word
+--    , HasCharacterCost z Word
+--    )
 
---class HasSequenceCost charSeq where
---  sequenceCost
---    :: (HasBlockCost u v w x y z, MetadataSequence meta)
---    => meta
---    -> charSeq u v w x y z
---    -> Double
+class HasBlockCost block where
+
+class HasSequenceCost block where
+  sequenceCost
+    :: meta
+    -> charSeq block
+    -> Double
   
 
 
