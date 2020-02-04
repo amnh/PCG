@@ -16,8 +16,10 @@
 
 module Data.Graph.Type
   ( Graph(..)
+  , GraphShape(..)
   , GraphBuilder(..)
   , MGraph(..)
+  , numberOfNodes
   , newMGraph
   , writeL
   , writeR
@@ -84,7 +86,8 @@ import Control.Monad.Primitive
 --      │    Types    │
 --      └─────────────┘
 
-{-
+-- |
+-- The GraphShape type is for storing data in the same `shape` as our graph.
 data GraphShape i n r t
   = GraphShape
   { leafData    :: Vector t
@@ -92,7 +95,7 @@ data GraphShape i n r t
   , networkData :: Vector n
   , rootData    :: Vector r
   }
--}
+
 
 
 data  Graph
@@ -109,6 +112,14 @@ data  Graph
    , cachedData        :: c
    }
    deriving stock Show
+
+
+-- |
+-- Returns the total number of nodes in the graph
+numberOfNodes :: Graph f c e n t -> Int
+numberOfNodes (Graph lRef tRef netRef rootRef _) =
+  length lRef + length tRef + length netRef + length rootRef
+
 
 data  MGraph
         (s :: Type)
