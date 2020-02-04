@@ -6,6 +6,11 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE AllowAmbiguousTypes    #-}
+{-# LANGUAGE DerivingStrategies     #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Data.Graph.Sequence.Class where
 
@@ -17,102 +22,51 @@ import qualified Data.Vector as Vector
 import Data.Coerce
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
+import Data.Kind (Type)
+import GHC.Generics (Generic)
 
+
+-- |
+-- A type class for those types which have a metric.
 class MetricSpace charSeq where
   dist :: charSeq -> charSeq -> Double
 
+-- |
+-- A typeclass for those types which have a function for finding medians.
 class MedianSpace charSeq where
   median :: charSeq -> charSeq -> charSeq
 
--- |
--- A 'Lens' for the 'characterSequence' field
-class HasCharacterSequence s t a b | s -> a, t -> b, s b -> t, t a -> s where
-
-    _characterSequence :: Lens s t a b
-
 
 -- |
--- A 'Lens' for the 'characterSequence' field
-class HasCharacterSequence' s a | s -> a where
-    _characterSequence' :: Lens' s a
-
-
--- |
--- A 'Iso' for 'blockSequence'.
-class HasBlocks s t a b | s t -> a, s t  -> b where
-    blockSequence :: Iso s t a b
-
-instance HasBlocks
-  (MetadataSequence block m)
-  (MetadataSequence block m')
-  (Vector (MetadataBlock block m))
-  (Vector (MetadataBlock block m')) where
-
-    blockSequence = iso coerce coerce
-
-instance HasBlocks
-  (CharacterSequence block)
-  (CharacterSequence block')
-  (Vector block)
-  (Vector block') where
-
-      blockSequence = iso coerce coerce
-
-newtype CharacterSequence block = CharacterSequence {getCharacterSequence :: Vector block}
-
-
-characterLeafInitialise :: (BlockBin block)
-  => MetadataSequence  block meta
-  -> CharacterSequence (LeafBin block)
-  -> CharacterSequence block
-characterLeafInitialise meta charSeq =
-  let
-    mSeq = blockDataSet <$> view blockSequence meta
-    cSeq = charSeq ^. blockSequence
-  in
-    view (from blockSequence) $ Vector.zipWith leafInitialise mSeq cSeq
-
-
-characterBinaryPostorder :: (BlockBin block)
-  => MetadataSequence block meta
-  -> CharacterSequence block
-  -> CharacterSequence block
-  -> CharacterSequence block
-characterBinaryPostorder meta leftCharSeq rightCharSeq =
-  let
-    mSeq      = blockDataSet <$> view blockSequence meta
-    leftCSeq  = leftCharSeq  ^. blockSequence
-    rightCSeq = rightCharSeq ^. blockSequence  
-  in
-    view (from blockSequence) $ Vector.zipWith3 binaryPostorder mSeq leftCSeq rightCSeq
-
-
-
-data MetadataBlock block meta = MetadataBlock
-    { blockMetadata :: meta
-    , blockDataSet  :: CharacterMetadata block
-    }
---    deriving stock   (Generic, Show)
---    deriving anyclass(NFData)
-newtype MetadataSequence block meta = MetadataSequence
-  { getMetadataSequence :: Vector (MetadataBlock block meta)
-  }
-
+-- The BlockBin class gives an abstraction over a collection of character bins.
+-- For example we would expect a particular character (Continuous, Discrete, Dynamic etc.)
+-- to be an instance of this class but also that records containing fields of characters
+-- to also be instances. In the case of records we expect the associated types and functions
+-- to operate component wise (for example one would expect:
+--
+-- LeafBin (bin1, bin2) ~ (LeafBin bin1, LeafBin bin2)
 class BlockBin bin where
+-- For any given character we have an associated type for how that character
+-- is intialised at a leaf.
   type LeafBin           bin
-  -- to do: make this a data family with newtypes to make it injective for the lens in subblock
+-- Associated with each character type we have specific character metadata.
+-- For example here we might store something like the character metric.
   type CharacterMetadata bin
 
+-- This function takes the associated metadata and the data initially on a leaf
+-- and `decorates` that data so that it can be used in a full postorder traversal
   leafInitialise :: CharacterMetadata bin -> LeafBin bin -> bin
+-- The binary postPostorder function takes the metadata and the data at two internal
+-- nodes and gives the character we get back at the parent node.
   binaryPostorder  :: CharacterMetadata bin -> bin -> bin -> bin
 
-class (BlockBin subBlock, BlockBin block) => SubBlock subBlock block where
-  _hasSubBlock :: Lens' block subBlock
 
-  _hasSubBlockMetadata :: Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
-  
-  
-
+-- Note (TODO) :
+--   - Currently we write a baked in instance for a tuple of size 6.
+--   - Eventually we instead plan to use something like generics-sop to generate
+--   - all such instance which are products of primitive character types. This
+--   - will include records and thus allow us to have strict or unpacked fields
+--   - for those characters for which this is appropriate.
 instance (BlockBin a, BlockBin b, BlockBin c, BlockBin d, BlockBin e, BlockBin f)
     => BlockBin (a, b, c, d, e, f) where
   type LeafBin (a, b, c, d, e, f)
@@ -132,7 +86,7 @@ instance (BlockBin a, BlockBin b, BlockBin c, BlockBin d, BlockBin e, BlockBin f
       , CharacterMetadata f
       )
 
-   -- Note we can add parallelism here
+   -- Note (TODO): we can add parallelism here
   leafInitialise ~(m1, m2, m3, m4, m5, m6) ~(b1, b2, b3, b4, b5, b6) =
     ( leafInitialise m1 b1
     , leafInitialise m2 b2
@@ -141,8 +95,8 @@ instance (BlockBin a, BlockBin b, BlockBin c, BlockBin d, BlockBin e, BlockBin f
     , leafInitialise m5 b5
     , leafInitialise m6 b6
     )
-    
-   -- Note we can add parallelism here
+
+   -- Note (TODO): we can add parallelism here
   binaryPostorder
     ~(m1, m2, m3, m4, m5, m6)
     ~(b1, b2, b3, b4, b5, b6)
@@ -155,82 +109,137 @@ instance (BlockBin a, BlockBin b, BlockBin c, BlockBin d, BlockBin e, BlockBin f
       , binaryPostorder m6 b6 b6'
       )
 
-
-
-
-class AssociatedCharacterMetadata charMeta charType | charType -> charMeta where
+-- |
+-- A character sequence is backed by an underlying vector of blocks.
+-- The block type is expected to be an instance of the `BlockBin` typeclass.
+newtype CharacterSequence block = CharacterSequence {getCharacterSequence :: Vector block}
+  deriving stock Functor
 
 
 -- |
--- A 'Lens' for the 'characterCost' field.
-class HasCharacterCost s a | s -> a where
+-- A bidirectional 'Lens' for a type containing a 'characterSequence' field.
+class HasCharacterSequence s t a b | s -> a, t -> b, s b -> t, t a -> s where
 
-    {-# MINIMAL characterCost #-}
-    characterCost :: Lens' s a
+    _characterSequence :: Lens s t a b
 
---type HasBlockCost block =
---    ( HasCharacterCost u Double
---    , HasCharacterCost v Word
---    , HasCharacterCost w Word
---    , HasCharacterCost x Word
---    , HasCharacterCost y Word
---    , HasCharacterCost z Word
---    )
 
-class HasBlockCost block where
+-- |
+-- A unidirectional 'Lens'' for a type containing a 'characterSequence' field
+class HasCharacterSequence' s a | s -> a where
+    _characterSequence' :: Lens' s a
 
+
+-- |
+-- A metadata block has a blockMetadtata field containing global metadtata for
+-- an entire character block. It also contains a field holding `CharacterMetadata`
+-- for the metadata associated to specific characters.
+--
+-- Note: CharacterMetadata is an associated type family from the BlockBin typeclass
+--       storing metadata associated with a specific character type.
+data MetadataBlock block meta = MetadataBlock
+    { blockMetadata :: meta
+    , binMetadata   :: CharacterMetadata block
+    }
+  deriving stock Functor
+
+-- |
+-- A 'Lens'` the `blockMetadata` field in a `MetadataBlock`.
+class HasBlockMetadata s a | s -> a where
+  _blockMetadata :: Lens' s a
+
+
+instance HasBlockMetadata (MetadataBlock block meta) meta where
+   {-# INLINE _blockMetadata #-}
+   _blockMetadata = lens blockMetadata $ \e x -> e {blockMetadata = x}
+
+
+-- |
+-- A `Lens'` for the `binMetadata` field in a `MetadataBlock`.
+--
+-- Note: This is a top-level binding as opposed to a typeclass as this
+-- field contains an type family which Haskell does not allow to appear
+-- in an instance. The reason here is that if this did not have
+-- a functional dependency then because the type family is not necessarily
+-- injective this would lead to overlapping instances and so instance
+-- resolution would not be type directed.
+_binMetadata
+  :: Lens
+       (MetadataBlock block meta)
+       (MetadataBlock block' meta)
+       (CharacterMetadata block)
+       (CharacterMetadata block')
+_binMetadata = lens binMetadata $ \e x -> e {binMetadata = x}
+
+
+-- |
+-- A MetadataSequence is a `Vector` of `Metadata` blocks.
+newtype MetadataSequence block meta = MetadataSequence
+  { getMetadataSequence :: Vector (MetadataBlock block meta)
+  }
+  deriving stock Functor
+
+-- |
+-- A 'Iso' for any sort of 'blockSequence'.
+class HasBlocks s a | s -> a where
+    blockSequence :: Iso' s a
+
+-- |
+-- The underlying representation of a `MetadataSequence` is a `Vector` of metadata blocks.
+instance HasBlocks (MetadataSequence block m) (Vector (MetadataBlock block m)) where
+
+  blockSequence = iso coerce coerce
+
+-- |
+-- The underlying representation of a `CharacterSequence` is a `Vector` of blocks
+-- which implement the `BlockBin` typeclass.
+instance HasBlocks (CharacterSequence block) (Vector block) where
+
+  blockSequence = iso coerce coerce
+
+
+-- |
+-- If we have a `CharacterSequence` then this function initialises
+-- the leaves over all blocks.
+characterLeafInitialise :: (BlockBin block)
+  => MetadataSequence  block meta
+  -> CharacterSequence (LeafBin block)
+  -> CharacterSequence block
+characterLeafInitialise meta charSeq =
+  let
+    mSeq = binMetadata <$> view blockSequence  meta
+    cSeq = charSeq ^. blockSequence
+  in
+    view (from blockSequence) $ Vector.zipWith leafInitialise mSeq cSeq
+
+-- |
+-- If we have a pair of `CharacterSequence`s then this function performs
+-- the blockwise postorder update.
+characterBinaryPostorder :: (BlockBin block)
+  => MetadataSequence block meta
+  -> CharacterSequence block
+  -> CharacterSequence block
+  -> CharacterSequence block
+characterBinaryPostorder meta leftCharSeq rightCharSeq =
+  let
+    mSeq      = binMetadata <$> view blockSequence meta
+    leftCSeq  = leftCharSeq  ^. blockSequence
+    rightCSeq = rightCharSeq ^. blockSequence
+  in
+    view (from blockSequence) $ Vector.zipWith3 binaryPostorder mSeq leftCSeq rightCSeq
+
+
+-- |
+-- A typeclass to indicate blocks which have an associated cost.
+class HasBlockCost block where   -- Note (TODO): should this be rolled into blockBin?
+
+-- Note (TODO): does it make sense ot have this as a typeclass or should it be a function
+-- using blockcost above?
 class HasSequenceCost block where
   sequenceCost
     :: meta
     -> charSeq block
     -> Double
-  
 
 
-
-type family FinalDecoration   a :: Type
---type family CharacterSequence a :: Type
-
-{-
-class HexZippableMeta (charSeq :: Type -> Type -> Type -> Type -> Type -> Type -> Type) where
-  hexZipMeta
-     :: ( AssociatedCharacterMetadata continuousMeta   u
-        , AssociatedCharacterMetadata discreteMeta     v
-        , AssociatedCharacterMetadata discreteMeta'    w
-        , AssociatedCharacterMetadata discreteWithTCM  x
-        , AssociatedCharacterMetadata discreteWithTCM' y
-        , AssociatedCharacterMetadata dynamicMeta      z
-        , MetadataSequence            meta
-        )
-     => (continuousMeta   -> u -> u')
-     -> (discreteMeta     -> v -> v')
-     -> (discreteMeta'    -> w -> w')
-     -> (discreteWithTCM  -> x -> x')
-     -> (discreteWithTCM' -> y -> y')
-     -> (dynamicMeta      -> z -> z')
-     -> meta
-     -> charSeq u   v   w   x   y   z
-     -> charSeq u'  v'  w'  x'  y'  z'
-
-
-
-  hexZipMeta2
-   :: ( AssociatedCharacterMetadata continuousMeta   u
-      , AssociatedCharacterMetadata discreteMeta     v
-      , AssociatedCharacterMetadata discreteMeta'    w
-      , AssociatedCharacterMetadata discreteWithTCM  x
-      , AssociatedCharacterMetadata discreteWithTCM' y
-      , AssociatedCharacterMetadata dynamicMeta      z
-      , MetadataSequence            meta
-      )
-   => (continuousMeta   -> u -> u  -> u')
-   -> (discreteMeta     -> v -> v  -> v')
-   -> (discreteMeta'    -> w -> w  -> w')
-   -> (discreteWithTCM  -> x -> x  -> x')
-   -> (discreteWithTCM' -> y -> y  -> y')
-   -> (dynamicMeta      -> z -> z  -> z')
-   -> meta
-   -> charSeq u   v   w   x   y   z
-   -> charSeq u   v   w   x   y   z
-   -> charSeq u'  v'  w'  x'  y'  z'
--}
+-- Note (TODO): this should probably be rolled into the BlockBin typeclass
+type family FinalDecoration a :: Type
