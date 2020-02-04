@@ -96,6 +96,28 @@ childInfoTag tag e =
 class HasChildIndex s a | s -> a where
   _childIndex :: Lens' s a
 
+
+class HasIndexType s a | s -> a where
+  _indexType :: Getter s a
+
+
+instance HasIndexType TaggedIndex IndexType where
+  _indexType = to tag
+
+
+instance HasIndexType ParentIndex IndexType where
+  _indexType = to (coerce tag)
+
+
+instance HasIndexType ChildIndex IndexType where
+  _indexType = to (coerce tag)
+
+
+instance HasIndexType (ChildInfo e) IndexType where
+  _indexType = _childIndex . _indexType
+
+
+
 instance HasChildIndex (ChildInfo e) ChildIndex where
   _childIndex = lens childIndex (\c i -> c { childIndex = i})
 
