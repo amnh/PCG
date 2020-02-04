@@ -15,12 +15,24 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE LambdaCase                 #-}
 
 
 module Data.Graph.Postorder.Resolution where
 
 import           Control.DeepSeq
-import           Control.Lens                      (Lens, Lens', lens, view, (&), (.~))
+import           Control.Lens
+                   ( Lens
+                   , Lens'
+                   , Iso'
+                   , lens
+                   , iso
+                   , view
+                   , (&)
+                   , (.~)
+                   , set
+                   , over
+                   )
 import           Control.Monad                     (guard)
 import           Data.Bits
 import           Data.Functor.Apply
@@ -36,6 +48,9 @@ import           GHC.TypeLits
 import           Data.Graph.TopologyRepresentation
 import           Data.Graph.Sequence.Class
 import           Data.Graph.Node.Context
+import qualified Data.Vector as Vector
+import           Data.Graph.Indices
+import Data.Coerce
 
 -- |
 -- The metadata of a subtree resolution.
@@ -88,24 +103,76 @@ data Resolution cs = Resolution
   deriving stock    (Functor, Foldable, Traversable, Generic)
   deriving anyclass (NFData)
 
+applySoftwireResolutions
+  :: forall block . ()
+  => ChildContext     -- ^ Possible subtree resolution information
+       (IndexType, (ResolutionCache (CharacterSequence block)))
+  -> ResolutionCache  -- ^ Potential subtree contexts
+       (PostorderContext (CharacterSequence (LeafBin block)) (CharacterSequence block))
+applySoftwireResolutions =
+    \case
+      OneChild (_, childCache)       -> PostNetworkContext <$> childCache
+
+      TwoChildren leftCtxt rightCtxt ->
+        let
+          pairingLogic (leftIndexType, leftCache) (rightIndexType, rightCache) =
+            let
+              pairedResolutions = liftF2 PostBinaryContext leftCache rightCache
+              lhsNetResolutions = PostNetworkContext <$> leftCache
+              rhsNetResolutions = PostNetworkContext <$> rightCache
+              allResolutions = pairedResolutions <> lhsNetResolutions <> rhsNetResolutions
+            in
+            case (leftIndexType, rightIndexType) of
+              (NetworkTag, NetworkTag) -> allResolutions
+              (NetworkTag, _         ) -> pairedResolutions <> rhsNetResolutions
+              (_         , NetworkTag) -> pairedResolutions <> lhsNetResolutions
+              (_         , _         ) -> pairedResolutions
+        in
+          pairingLogic leftCtxt rightCtxt
+
+
 virtualParentResolution
   :: forall block subBlock meta .
      ( BlockBin block
      , BlockBin subBlock
+     , HasSequenceCost block
      )
   => Lens' block subBlock
+  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
   -> MetadataSequence block meta
   -> ResolutionCache (CharacterSequence block)
   -> ResolutionCache (CharacterSequence block)
   -> ResolutionCache (CharacterSequence block)
-virtualParentResolution _subBlock meta leftResolutions rightResolutions =
+virtualParentResolution
+    _subBlock _subMeta blockMeta leftResolutions rightResolutions =
   let
---    metaSeq :: _
-    metaSeq = blockDataSet <$> view blockSequence meta
-    subMeta = undefined --view _subBlock <$> undefined
+    resolutionContext
+      :: ResolutionCache (PostorderContext
+                            (CharacterSequence (LeafBin block))
+                            (CharacterSequence block))
+    resolutionContext
+      = applySoftwireResolutions $
+          TwoChildren
+            (TreeTag, leftResolutions )
+            (TreeTag, rightResolutions)
+
+    updatedBlockResolutions
+      :: ResolutionCache (CharacterSequence block)
+    updatedBlockResolutions =
+      let
+        subBlockUpdate =
+          generateSubBlockLocalResolutions
+            _subBlock
+            _subMeta
+            blockMeta
+      in
+          coerce                 -- Convert back to abstract type
+        . fmap subBlockUpdate    -- Update each subBlock accordingly
+        . view _resolutionCache  -- Convert to nonempty list of resolutions
+        $ resolutionContext
   in
-    undefined
---  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)    
+    updatedBlockResolutions
+
 
 generateLocalResolutions
   :: ( BlockBin block
@@ -129,7 +196,7 @@ generateLocalResolutions meta childResolutionContext =
               & _characterSequence .~ newCharacterSequence
               & _totalSubtreeCost  .~ newTotalCost
 
-        PostNetworkContext netChildCharSequence -> 
+        PostNetworkContext netChildCharSequence ->
           childResolutionContext & _characterSequence .~ netChildCharSequence
           -- Want to propogate what is stored in the network child resolution
           -- to the parent.
@@ -146,11 +213,102 @@ generateLocalResolutions meta childResolutionContext =
               & _totalSubtreeCost  .~ newTotalCost
 
 
+generateSubBlockLocalResolutions
+  :: forall block subBlock meta .
+     ( BlockBin block
+     , BlockBin subBlock
+     , HasSequenceCost block
+     )
+  => Lens' block subBlock
+  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
+  -> MetadataSequence block meta
+  -> Resolution
+       (PostorderContext
+         (CharacterSequence (LeafBin block))
+         (CharacterSequence block)
+       )
+  -> Resolution (CharacterSequence block)
+generateSubBlockLocalResolutions _subBlock _subMeta meta childResolutionContext =
+  case (view _characterSequence childResolutionContext) of
+    LeafContext leafCharSequence ->
+      let
+        newCharacterSequence = characterLeafInitialise meta leafCharSequence
+        newTotalCost = sequenceCost meta newCharacterSequence
+      in
+        childResolutionContext
+          & _characterSequence .~ newCharacterSequence
+          & _totalSubtreeCost  .~ newTotalCost
+    PostNetworkContext netChildCharSequence -> 
+      childResolutionContext & _characterSequence .~ netChildCharSequence
+      -- Want to propogate what is stored in the network child resolution
+      -- to the parent.
+
+      -- So far this is the same as generate local resolution, in the case
+      -- where we have resolutions from each of our children we then update
+      -- only the subblock that are leneses pick out.
+    PostBinaryContext
+      { leftChild  = leftCharSequence, rightChild = rightCharSequence} ->
+      let
+        -- update blockwise the subblocks in each bin
+        updateSubBlock
+          :: CharacterSequence subBlock
+          -> CharacterSequence block
+          -> CharacterSequence block
+        updateSubBlock = coerce $ Vector.zipWith (set _subBlock)
+
+        -- extract out the metadata sequence of the subblock
+        subMeta :: MetadataSequence subBlock meta
+        subMeta
+          = coerce                                    -- convert back to metadata sequence
+          . fmap (over _binMetadata (view _subMeta))  -- extract subBlock metadata
+          . view blockSequence                        -- convert to a vector of metadata blocks
+          $ meta
+
+        -- Extract the subblock character sequences
+        leftSubBlockSequence  :: CharacterSequence subBlock
+        rightSubBlockSequence :: CharacterSequence subBlock
+        leftSubBlockSequence  = view _subBlock <$> leftCharSequence
+        rightSubBlockSequence = view _subBlock <$> rightCharSequence
+
+        -- This is the updated character sequence on the subblocks
+        subBlockCharacterSequence :: CharacterSequence subBlock
+        subBlockCharacterSequence
+          = characterBinaryPostorder subMeta leftSubBlockSequence rightSubBlockSequence
+
+        -- Put the updated subblock character sequences back into the original
+        newCharacterSequence :: CharacterSequence block
+        newCharacterSequence = updateSubBlock subBlockCharacterSequence leftCharSequence
+
+        -- Finally recompute the cost for the new character sequence
+        newTotalCost
+          = sequenceCost meta newCharacterSequence
+      in
+        childResolutionContext
+          & _characterSequence .~ newCharacterSequence
+          & _totalSubtreeCost  .~ newTotalCost
+
+
 type ResolutionCache cs = ResolutionCacheM Identity cs
+
+_resolutionCache :: Iso' (ResolutionCache cs) (NonEmpty (Resolution cs))
+_resolutionCache = iso coerce coerce
+
+singleton :: Resolution cs -> ResolutionCache cs
+singleton = ResolutionCacheM . Identity . pure
 
 
 newtype ResolutionCacheM m cs
   = ResolutionCacheM {runResolutionCacheM :: m (NonEmpty (Resolution cs))}
+
+
+instance Apply m => Semigroup (ResolutionCacheM m cs) where
+  ls <> rs =
+    ResolutionCacheM $
+      liftF2 (<>)
+      (runResolutionCacheM ls)
+      (runResolutionCacheM rs)
+
+
 
 
 newtype SelectMonad (n :: Nat) m a = SelectMonad {runSelectMonad :: m a}
