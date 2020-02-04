@@ -126,6 +126,7 @@ library
     Data.Graph.Build
     Data.Graph.Sequence.Class
     Data.Graph.Postorder.Resolution
+    Data.Graph.Postorder.DynamicTraversalFoci
     Data.Graph.TopologyRepresentation
     Data.Graph.Node.Context
 
