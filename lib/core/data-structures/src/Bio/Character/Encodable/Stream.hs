@@ -70,7 +70,7 @@ class ( Element b ~ Bool
 
     decodeElement :: Eq a => Alphabet a -> b -> AmbiguityGroup a
 
-    encodeElement :: (Eq a, IsString a) => Alphabet a -> AmbiguityGroup a -> b
+    encodeElement :: (Ord a, IsString a) => Alphabet a -> AmbiguityGroup a -> b
 
     {-# INLINE getGapElement #-}
     getGapElement :: b -> b

@@ -13,6 +13,8 @@ Releases are available [on GitHub][2].
 * Updated Travis CI build script
 * Added greedy network search command
 * Added sting alignment benchmarking suite
+* Enhanced alphabet data-type to support sorted alphabets whenever possible
+* Improved efficiency of character encoding
 * Improved efficiency of median state calculations
 * Corrected defect regarding syntany prefixes in FASTC parser
 * Reduced memory usage and pressure when normalizing and unifying inputs
