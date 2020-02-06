@@ -15,11 +15,16 @@
 {-# LANGUAGE TypeOperators #-}
 
 module Data.Graph.Type
-  ( Graph(..)
+  ( -----------
+    -- Types --
+    -----------
+    Graph(..)
   , GraphShape(..)
   , GraphBuilder(..)
   , MGraph(..)
-  , numberOfNodes
+    -----------------------
+    -- Mutable interface --
+    -----------------------
   , newMGraph
   , writeL
   , writeR
@@ -31,18 +36,30 @@ module Data.Graph.Type
   , readT
   , unsafeFreezeGraph
   , unsafeThawGraph
+    ------------------------------
+    -- construct builder graphs --
+    ------------------------------
   , leafGB
   , treeGB
   , rootGB
   , networkGB
+    ---------------------------
+    -- classy lens accessors --
+    ---------------------------
   , HasTreeReferences(..)
   , HasNetworkReferences(..)
   , HasRootReferences(..)
   , HasLeafReferences(..)
   , HasCachedData(..)
+    -------------------------------
+    -- graph with specified root --
+    -------------------------------
   , RootFocusGraph
   , Focus
   , makeRootFocusGraphs
+    ----------------------
+    -- utility functions--
+    ----------------------
   , buildGraph
   , index
   , getRootInds
@@ -50,6 +67,12 @@ module Data.Graph.Type
   , unsafeRootInd
   , unsafeTreeInd
   , unsafeNetworkInd
+  , numberOfNodes
+  , getTreeEdges
+  , getNetworkEdges
+  , getRootEdges
+  , getEdgeGraphShape
+  , getEdges
   )where
 
 import Prelude hiding (read)
@@ -58,28 +81,19 @@ import Data.Graph.Indices
 import Data.Graph.NodeContext
 import Data.Kind                 (Type)
 import Data.Pair.Strict
-import Data.Hashable
-import VectorBuilder.Vector
-import VectorBuilder.Builder
-import Data.Set (Set)
-import qualified Data.Set as S
-import Control.Monad.State.Strict
-import Data.Maybe (catMaybes)
-import Control.Arrow (first)
-import Control.Lens.Tuple
-import Data.HashSet (HashSet)
-import qualified Data.HashSet as HS
-import Data.Hashable
-import Data.List.Extra (maximumOn)
-import Data.Foldable (toList)
+import qualified VectorBuilder.Vector as Builder
+-- import Data.Hashable
 import Data.Vector               (Vector, generate, unsafeFreeze, unsafeThaw)
 import Data.Vector.Instances     ()
 import Test.QuickCheck.Arbitrary
 import TextShow                  hiding (Builder)
-import VectorBuilder.Builder as VB
-import VectorBuilder.Vector as VB
+import qualified VectorBuilder.Builder as Builder
+import VectorBuilder.Builder (Builder)
 import Data.Vector.Mutable (MVector, new, write, read)
 import Control.Monad.Primitive
+import           Data.Vector.Instances ()
+import Data.Key (foldMapWithKey)
+import Data.Coerce
 
 
 --      ┌─────────────┐
@@ -112,7 +126,6 @@ data  Graph
    , cachedData        :: c
    }
    deriving stock Show
-
 
 -- |
 -- Returns the total number of nodes in the graph
@@ -192,10 +205,10 @@ data  GraphBuilder
         (n :: Type)
         (t :: Type)
    = GraphBuilder
-   { leafReferencesBuilder    :: {-# UNPACK #-} !(Builder (LeafIndexData       t   ))
-   , treeReferencesBuilder    :: {-# UNPACK #-} !(Builder (TreeIndexData    (f n) e))
-   , networkReferencesBuilder :: {-# UNPACK #-} !(Builder (NetworkIndexData (f n) e))
-   , rootReferencesBuilder    :: {-# UNPACK #-} !(Builder (RootIndexData    (f n) e))
+   { leafReferencesBuilder    :: {-# UNPACK #-} !(Builder.Builder (LeafIndexData       t   ))
+   , treeReferencesBuilder    :: {-# UNPACK #-} !(Builder.Builder (TreeIndexData    (f n) e))
+   , networkReferencesBuilder :: {-# UNPACK #-} !(Builder.Builder (NetworkIndexData (f n) e))
+   , rootReferencesBuilder    :: {-# UNPACK #-} !(Builder.Builder (RootIndexData    (f n) e))
    }
 
 instance Semigroup (GraphBuilder f e n t) where
@@ -213,28 +226,28 @@ instance Monoid (GraphBuilder f e n t) where
 buildGraph :: GraphBuilder f e n t -> c -> Graph f c e n t
 buildGraph GraphBuilder{..} cachedData =
     let
-      leafReferences    = build leafReferencesBuilder
-      treeReferences    = build treeReferencesBuilder
-      networkReferences = build networkReferencesBuilder
-      rootReferences    = build rootReferencesBuilder
+      leafReferences    = Builder.build leafReferencesBuilder
+      treeReferences    = Builder.build treeReferencesBuilder
+      networkReferences = Builder.build networkReferencesBuilder
+      rootReferences    = Builder.build rootReferencesBuilder
     in
       Graph{..}
 
 leafGB :: LeafIndexData t -> GraphBuilder f e n t
 leafGB leafInd =
-  GraphBuilder (VB.singleton leafInd) mempty mempty mempty
+  GraphBuilder (Builder.singleton leafInd) mempty mempty mempty
 
 treeGB :: TreeIndexData (f n) e -> GraphBuilder f e n t
 treeGB treeInd =
-  GraphBuilder mempty (VB.singleton treeInd) mempty mempty
+  GraphBuilder mempty (Builder.singleton treeInd) mempty mempty
 
 networkGB :: NetworkIndexData (f n) e -> GraphBuilder f e n t
 networkGB networkInd =
-  GraphBuilder mempty mempty (VB.singleton networkInd) mempty
+  GraphBuilder mempty mempty (Builder.singleton networkInd) mempty
 
 rootGB :: RootIndexData (f n) e -> GraphBuilder f e n t
 rootGB rootInd =
-  GraphBuilder mempty mempty mempty (VB.singleton rootInd)
+  GraphBuilder mempty mempty mempty (Builder.singleton rootInd)
 
 
 type  Focus = Pair IndexType UntaggedIndex
@@ -392,147 +405,6 @@ getRootInds graph =
     roots
 
 
-size :: Builder a -> Int
-size = length . build @Vector
-
-
-data RoseTree e t = RoseTree
-  { root      :: t
-  , subForest :: [(RoseTree e t, e)]
-  }
-
-roseBranch :: (Monoid t, Monoid e) => RoseForest e t -> RoseTree e t
-roseBranch forests =
-  let
-    labelledForests = fmap (\f -> (f,mempty)) forests
-  in
-    RoseTree mempty labelledForests
-
-type RoseForest e t = [RoseTree e t]
-
-
-class (Hashable t) => Fresh t where
-  -- We ask that `hash . fromInt` gives the identity
-  fromInt :: Int -> t
-  fresh   :: HashSet t -> t
-  fresh hs =
-    let
-      m = maximumOn hash . toList $ hs
-    in
-      fromInt . (+ 1) . hash $ m
-                
-unfoldToRoseForest
-  :: forall a e t. (Eq a, Show a, Monoid e, Ord a, Hashable t, Eq t)
-  => (a -> ([(a,e)], t, [(a,e)]))
-  -> a
-  -> (RoseForest e t, HashSet t)
-unfoldToRoseForest unfoldFn seed = (unfoldFromRoots roots, nodeIDs)
-  where
-    (roots, nodeIDs) = rootsAndNodes
-
-    rootsAndNodes :: ([a], HashSet t)
-    rootsAndNodes = findRootsFrom seed `runState` mempty
-
-    isRoot :: a -> [b] -> Maybe a
-    isRoot start pars =
-        if null pars
-          then (Just start)
-          else Nothing
-
-    addRoot :: a -> State (HashSet t) (Maybe a)
-    addRoot start = do
-      let (pars, val, childs) = unfoldFn start
-      seenNodes <- get
-      put (val `HS.insert` seenNodes)
-      case val `HS.member` seenNodes of
-        True  -> pure Nothing
-        False ->
-          do
-            pure $ isRoot start pars
-
-    findRootsFrom :: a -> State (HashSet t) [a]
-    findRootsFrom start = do
-      let (pars, val, childs) = unfoldFn start
-      let otherNodes = fst <$> pars <> childs
-      startRoot <- addRoot start
-      let
-        otherRootNodes :: State (HashSet t) [a]
-        otherRootNodes = catMaybes <$> traverse addRoot otherNodes
-
-      case startRoot of
-        Nothing -> otherRootNodes
-        Just r  -> (r :) <$> otherRootNodes  
-
-
-    unfoldFromRoots :: [a] -> RoseForest e t
-    unfoldFromRoots = fmap unfoldFromRoot
-
-    unfoldFromRoot :: a -> RoseTree e t
-    unfoldFromRoot root =
-      let
-        (pars, val, childs) = unfoldFn root
-        subtrees = first unfoldFromRoot <$> childs
-        parVals  = first ((view _2) . unfoldFn) <$> pars
-      in
-        RoseTree
-          { root = val
-          , subForest = undefined --(subtrees, parVals)
-          }
-
--- |
--- This function will convert a rose tree into a binary tree which we then convert to our internal format.
-normaliseRoseTree
-  :: forall e t
-  .  (Ord t, Fresh t, Monoid e)
-  => (RoseTree e t, HashSet t) -> RoseTree e t
-normaliseRoseTree (rt, nodeIDs) = undefined
-
-
-createBinaryForest :: (Monoid t, Monoid e) => RoseForest e t -> RoseForest e t
-createBinaryForest forest =
-  case length forest of
-    1 -> forest
-    2 -> forest
-    3 ->
-      let
-        (left : right) = forest
-      in
-        [left, roseBranch right]
-    n ->
-      let
-        lenHalf = n `div` 2
-        (leftTrees, rightTrees) = splitAt lenHalf forest
-        leftBin  = createBinaryForest leftTrees
-        rightBin = createBinaryForest rightTrees
-      in
-        [roseBranch leftBin, roseBranch rightBin]
-        
-
-fromRoseTree :: RoseTree e t -> Graph Identity () e t t
-fromRoseTree = undefined
-  
-      
-      
--- |
--- This function is intended as a way to convert from unstructured
--- external tree formats to our *internal* phylogenetic binary networks.
--- It is not intended to be used for internal logic.
-unfoldGraph
-  :: forall a e t. (Eq a, Show a, Monoid e)
-  => (a -> ([(a,e)], t, [(a,e)]))
-  -> a
-  -> Graph Identity () e t t
-unfoldGraph unfoldFn seed = undefined
-  where
-    go :: a -> GraphBuilder Identity e t t -> GraphBuilder Identity e t t
-    go a (GraphBuilder currTreeRefs currLeafRefs currNetRefs currRootRefs)
-      = case unfoldFn  a of
-          ([], t, [(par, e)]) ->
-            let
-              newInd = undefined
-            in
-              undefined
-    
   
 --      ┌───────────────────────┐
 --      │    Unsafe Indexing    │
@@ -576,3 +448,108 @@ referenceRendering = undefined
 toBinaryRenderingTree :: (n -> String) -> Graph f e c n t -> NonEmpty BinaryRenderingTree
 toBinaryRenderingTree = undefined
 -}
+
+--      ┌─────────────────┐
+--      │    Edges        │
+--      └─────────────────┘
+
+getTreeEdges :: Vector (TreeIndexData (f n) e) -> Vector EdgeIndex
+getTreeEdges treeVec = Builder.build treeEdgesB
+  where
+    treeEdgesB :: Builder EdgeIndex
+    treeEdgesB = foldMapWithKey buildEdges treeVec
+
+    buildEdges :: Int -> TreeIndexData (f n) e -> Builder EdgeIndex
+    buildEdges ind treeData =
+      let
+        sourceTaggedIndex :: TaggedIndex
+        sourceTaggedIndex = TaggedIndex ind TreeTag
+
+        childTaggedIndices :: TaggedIndex :!: TaggedIndex
+        childTaggedIndices = coerce $ view _childInds treeData
+
+        addTwoEdges source target =
+          let
+            e1 = Builder.singleton
+               $ EdgeIndex {edgeSource = source, edgeTarget = view _left target}
+            e2 = Builder.singleton
+               $ EdgeIndex {edgeSource = source, edgeTarget = view _right target}
+          in
+            e1 <> e2
+      in
+        addTwoEdges sourceTaggedIndex childTaggedIndices
+
+
+getNetworkEdges :: Vector (NetworkIndexData (f n) e) -> Vector EdgeIndex
+getNetworkEdges netVec = Builder.build netEdgesB
+  where
+    netEdgesB :: Builder EdgeIndex
+    netEdgesB = foldMapWithKey buildEdges netVec
+
+    buildEdges :: Int -> NetworkIndexData (f n) e -> Builder.Builder EdgeIndex
+    buildEdges ind netData =
+      let
+        sourceTaggedIndex :: TaggedIndex
+        sourceTaggedIndex = TaggedIndex ind NetworkTag
+
+        childTaggedIndex :: TaggedIndex
+        childTaggedIndex = coerce $ view _childInds netData
+      in
+        Builder.singleton $
+          EdgeIndex {edgeSource = sourceTaggedIndex, edgeTarget = childTaggedIndex}
+
+
+getRootEdges :: forall f n e . Vector (RootIndexData (f n) e) -> Vector EdgeIndex
+getRootEdges rootVec = Builder.build rootEdgesB
+  where
+    rootEdgesB :: Builder EdgeIndex
+    rootEdgesB = foldMapWithKey buildEdges rootVec
+
+    buildEdges :: Int -> RootIndexData (f n) e -> Builder EdgeIndex
+    buildEdges ind treeData =
+      let
+        sourceTaggedIndex :: TaggedIndex
+        sourceTaggedIndex = TaggedIndex ind RootTag
+
+        childTaggedIndices :: Either TaggedIndex (TaggedIndex :!: TaggedIndex)
+        childTaggedIndices = coerce $ view _childInds treeData
+
+        addOneEdge source target =
+          Builder.singleton $ EdgeIndex {edgeSource = source, edgeTarget = target}
+
+        addTwoEdges source target =
+          let
+            e1 = Builder.singleton
+               $ EdgeIndex {edgeSource = source, edgeTarget = view _left target}
+            e2 = Builder.singleton
+               $ EdgeIndex {edgeSource = source, edgeTarget = view _right target}
+          in
+            e1 <> e2
+      in
+        either (addOneEdge sourceTaggedIndex) (addTwoEdges sourceTaggedIndex)
+          $ childTaggedIndices
+        
+
+-- |
+-- This returns a graph shape where each data bucket contains
+-- those edges with that node as _parent_.
+--
+-- Note: This means the leafData is empty as there are no edges with leaves as parents.
+getEdgeGraphShape :: Graph f c e n t -> GraphShape EdgeIndex EdgeIndex EdgeIndex EdgeIndex
+getEdgeGraphShape graph = GraphShape{..}
+  where
+    leafData = mempty
+    treeData = getTreeEdges    (view _treeReferences graph)
+    networkData  = getNetworkEdges (view _networkReferences graph)
+    rootData = getRootEdges    (view _rootReferences    graph)
+
+
+-- |
+-- This returns all of the edges from parents to children in the graph.
+getEdges :: Graph f c e n t -> Vector EdgeIndex
+getEdges graph =
+  let
+    GraphShape{..} = getEdgeGraphShape graph
+  in
+    leafData <> treeData <> networkData <> rootData
+    
