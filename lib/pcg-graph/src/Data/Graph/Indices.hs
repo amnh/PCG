@@ -46,7 +46,6 @@ data TaggedIndex  = TaggedIndex
   { untaggedIndex :: {-# UNPACK #-} !Int
   , tag           :: {-# UNPACK #-} !IndexType
   }
-
   deriving stock (Eq, Show)
 
 type UntaggedIndex = Int
@@ -150,7 +149,6 @@ toUntagged ind = getTag ind :!: getIndex ind
 --      └───────────────────────┘
 
 data EdgeIndex = EdgeIndex
-  { edgeParType    :: {-# UNPACK #-} !IndexType
-  , edgeParIndex   :: {-# UNPACK #-} !ParentIndex
-  , edgeChildIndex :: {-# UNPACK #-} !ChildIndex
+  { edgeSource    :: {-# UNPACK #-} !TaggedIndex
+  , edgeTarget    :: {-# UNPACK #-} !TaggedIndex
   }
