@@ -82,7 +82,6 @@ import Data.Graph.NodeContext
 import Data.Kind                 (Type)
 import Data.Pair.Strict
 import qualified VectorBuilder.Vector as Builder
--- import Data.Hashable
 import Data.Vector               (Vector, generate, unsafeFreeze, unsafeThaw)
 import Data.Vector.Instances     ()
 import Test.QuickCheck.Arbitrary
@@ -405,7 +404,7 @@ getRootInds graph =
     roots
 
 
-  
+
 --      ┌───────────────────────┐
 --      │    Unsafe Indexing    │
 --      └───────────────────────┘
@@ -453,9 +452,12 @@ toBinaryRenderingTree = undefined
 --      │    Edges        │
 --      └─────────────────┘
 
-getTreeEdges :: Vector (TreeIndexData (f n) e) -> Vector EdgeIndex
-getTreeEdges treeVec = Builder.build treeEdgesB
+getTreeEdges :: forall f c e n t . Graph f c e n t -> Vector EdgeIndex
+getTreeEdges graph = Builder.build treeEdgesB
   where
+    treeVec :: Vector (TreeIndexData (f n) e)
+    treeVec = view _treeReferences graph
+
     treeEdgesB :: Builder EdgeIndex
     treeEdgesB = foldMapWithKey buildEdges treeVec
 
@@ -480,9 +482,12 @@ getTreeEdges treeVec = Builder.build treeEdgesB
         addTwoEdges sourceTaggedIndex childTaggedIndices
 
 
-getNetworkEdges :: Vector (NetworkIndexData (f n) e) -> Vector EdgeIndex
-getNetworkEdges netVec = Builder.build netEdgesB
+getNetworkEdges :: forall f c e n t . Graph f c e n t -> Vector EdgeIndex
+getNetworkEdges graph = Builder.build netEdgesB
   where
+    netVec :: Vector (NetworkIndexData (f n) e)
+    netVec = view _networkReferences graph
+
     netEdgesB :: Builder EdgeIndex
     netEdgesB = foldMapWithKey buildEdges netVec
 
@@ -499,9 +504,12 @@ getNetworkEdges netVec = Builder.build netEdgesB
           EdgeIndex {edgeSource = sourceTaggedIndex, edgeTarget = childTaggedIndex}
 
 
-getRootEdges :: forall f n e . Vector (RootIndexData (f n) e) -> Vector EdgeIndex
-getRootEdges rootVec = Builder.build rootEdgesB
+getRootEdges :: forall f c e n t . Graph f c e n t -> Vector EdgeIndex
+getRootEdges graph = Builder.build rootEdgesB
   where
+    rootVec :: Vector (RootIndexData (f n) e)
+    rootVec = view _rootReferences graph
+
     rootEdgesB :: Builder EdgeIndex
     rootEdgesB = foldMapWithKey buildEdges rootVec
 
@@ -528,7 +536,7 @@ getRootEdges rootVec = Builder.build rootEdgesB
       in
         either (addOneEdge sourceTaggedIndex) (addTwoEdges sourceTaggedIndex)
           $ childTaggedIndices
-        
+
 
 -- |
 -- This returns a graph shape where each data bucket contains
@@ -538,10 +546,10 @@ getRootEdges rootVec = Builder.build rootEdgesB
 getEdgeGraphShape :: Graph f c e n t -> GraphShape EdgeIndex EdgeIndex EdgeIndex EdgeIndex
 getEdgeGraphShape graph = GraphShape{..}
   where
-    leafData = mempty
-    treeData = getTreeEdges    (view _treeReferences graph)
-    networkData  = getNetworkEdges (view _networkReferences graph)
-    rootData = getRootEdges    (view _rootReferences    graph)
+    leafData    = mempty
+    treeData    = getTreeEdges    graph
+    networkData = getNetworkEdges graph
+    rootData    = getRootEdges    graph
 
 
 -- |
@@ -552,4 +560,3 @@ getEdges graph =
     GraphShape{..} = getEdgeGraphShape graph
   in
     leafData <> treeData <> networkData <> rootData
-    
