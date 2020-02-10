@@ -27,9 +27,7 @@ module Bio.Metadata.Dynamic
     , TraversalFocusEdge
     , TraversalTopology
     , dynamicMetadata
-    , dynamicMetadataFromTCM
-    , dynamicMetadataWithTCM
-    , maybeConstructDenseTransitionCostMatrix
+    , dynamicMetadataWithSCM
     , overlap
     , overlap2
     , overlap3

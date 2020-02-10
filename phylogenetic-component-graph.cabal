@@ -60,9 +60,9 @@ common ffi-buildinfo
 common ghc-flags
 
   ghc-options:
-    -debug
-    -rtsopts          
-    -g                    
+--    -debug
+--    -rtsopts          
+--    -g                    
     -- Optimization flags
     -O2
     -fexcess-precision
@@ -2193,6 +2193,60 @@ benchmark bench-string-alignment-small
     PCG.Command.Read.ParseStreams
     PCG.Command.Read.ReadCommandError
             
+
+benchmark bench-new-str-align
+
+  import:
+    ghc-flags,
+    language-specs
+
+  type:
+    exitcode-stdio-1.0
+
+  main-is:
+    bench-new-str-align.hs
+
+  ghc-options:
+    -threaded
+    -rtsopts
+    -with-rtsopts=-T
+
+  build-depends:
+    alphabet,
+    core,
+    data-normalization,
+    data-unification,
+    evaluation,
+    file-parsers,
+    file-source,
+    language,
+    tcm-memo,
+    utility,
+    validation-transformer,
+    base                     >= 4.11      && < 5.0,
+    bench-show               >= 0.3       && < 1.0,            
+    containers               >= 0.5.8     && < 1.0,
+    criterion                >= 1.5       && < 2.0,
+    deepseq                  >= 1.4       && < 2.0,
+    directory                >= 1.3       && < 1.4,
+    filepath                 >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.17      && < 5.0,
+    megaparsec               >= 8.0       && < 9.0,
+    mono-traversable         >= 1.0       && < 2.0,
+    parallel                 >= 3.2       && < 4.0,
+    semigroupoids            >= 5.2.1     && < 5.4,
+    split                    >= 0.2       && < 1.0,            
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1       && < 1.0,
+    text-show                >= 3.8.1     && < 4.0,
+    validation               >= 1.1       && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
+    weigh                    >= 0.0.16    && < 1.0,            
+
+  hs-source-dirs:
+    bench
+
 
 benchmark bench-utility
 

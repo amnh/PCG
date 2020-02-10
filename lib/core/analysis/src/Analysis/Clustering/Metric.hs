@@ -27,7 +27,6 @@ import           Bio.Character
 import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Discrete
 import           Bio.Character.Decoration.Dynamic
-import           Bio.Metadata
 import           Bio.Metadata.Metric
 import           Bio.Sequence
 import qualified Bio.Sequence.Block                            as Blk
@@ -104,7 +103,6 @@ dynamicCharacterDistance
   :: forall m d c f .
      ( DirectOptimizationPostorderDecoration d c
      , ExportableElements c
-     , GetDenseTransitionCostMatrix m (Maybe DenseTransitionCostMatrix)
      , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
      , HasCharacterWeight m Double
      , Applicative f
@@ -122,7 +120,6 @@ dynamicCharacterDistance'
   :: forall m d c
    . ( DirectOptimizationPostorderDecoration d c
      , ExportableElements c
-     , GetDenseTransitionCostMatrix    m (Maybe DenseTransitionCostMatrix)
      , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
      , Show (Element c)
      )

@@ -39,11 +39,8 @@ module Bio.Metadata
   , TraversalFocusEdge
   , TraversalTopology
   , dynamicMetadata
-  , dynamicMetadataFromTCM
-  , dynamicMetadataWithTCM
-  , maybeConstructDenseTransitionCostMatrix
+  , dynamicMetadataWithSCM
   -- * Lens fields
-  , GetDenseTransitionCostMatrix(..)
   , GetSparseTransitionCostMatrix(..)
   , GetSymbolChangeMatrix(..)
   , GetPairwiseTransitionCostMatrix(..)

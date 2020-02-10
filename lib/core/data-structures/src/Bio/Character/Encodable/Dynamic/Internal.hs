@@ -59,8 +59,6 @@ import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
 import           TextShow                              (TextShow (showb)) --, toString)
 
-import Debug.Trace
-
 
 -- |
 -- Represents an encoded dynamic character, consisting of one or more static
@@ -117,7 +115,7 @@ instance EncodableStream DynamicCharacter where
               in  v <> v
 
     {-# INLINE gapOfStream #-}
-    gapOfStream = bit . fromEnum . pred . symbolCount
+    gapOfStream = DCE . (`fromNumber` (0 :: Word)) . (2*) . symbolCount
 
     lookupStream (Missing{}) _ = Nothing
     lookupStream (DC bm) i
@@ -151,17 +149,14 @@ instance ExportableElements DynamicCharacter where
         charWidth  = reimportableElementWidthElements riCharElems
         inputElems = reimportableCharacterElements    riCharElems --  :: ![(CUInt, CUInt, CUInt)]
         gap = bit . fromEnum $ charWidth - 1
-        f (x,y,z) =
-            let x' = fromValue x
-                y' = fromValue y
+        f (_,y,z) =
+            let y' = fromValue y
                 z' = fromValue z
             in  case (y' == gap, z' == gap) of
-                  (False, False)             ->    gapElement charWidth
---                  (False, True ) | x' == y'  ->  alignElement y' z'
-                  (False, True ) | otherwise -> insertElement    z'
---                  (True , False) | x' == z'  ->  alignElement y' z'
-                  (True , False) | otherwise -> deleteElement y'
-                  (True , True )             ->  alignElement y' z'
+                  (False, False) ->    gapElement charWidth
+                  (False, True ) -> insertElement    z'
+                  (True , False) -> deleteElement y'
+                  (True , True ) ->  alignElement y' z'
 
 
 instance ExportableBuffer DynamicCharacter where
