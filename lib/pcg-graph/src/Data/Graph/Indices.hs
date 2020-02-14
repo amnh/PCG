@@ -16,6 +16,16 @@ import Control.Lens
 import Data.Monoid
 import Data.Pair.Strict
 import Data.Coerce
+import Data.Hashable
+import Data.Bits
+
+
+-- To do: put this into pcg-utility
+combine :: Int -> Int -> Int
+combine h1 h2 = (h1 * 16777619) `xor` h2
+
+defaultHashWithSalt :: Hashable a => Int -> a -> Int
+defaultHashWithSalt salt x = salt `combine` hash x
 
 
 newtype LeafInd = LeafInd {getLeafInd :: Int}
@@ -46,7 +56,12 @@ data TaggedIndex  = TaggedIndex
   { untaggedIndex :: {-# UNPACK #-} !Int
   , tag           :: {-# UNPACK #-} !IndexType
   }
-  deriving stock (Eq, Show)
+  deriving stock (Eq, Ord, Show)
+
+
+instance Hashable TaggedIndex where
+  hash (TaggedIndex uInd t)  = hash uInd `hashWithSalt` t
+  hashWithSalt = defaultHashWithSalt
 
 type UntaggedIndex = Int
 
@@ -129,7 +144,11 @@ instance HasEdgeData (ChildInfo e) (ChildInfo e') e e' where
 
 
 data IndexType = LeafTag | TreeTag | NetworkTag | RootTag
-  deriving stock (Eq, Enum)
+  deriving stock (Eq, Ord, Enum)
+
+instance Hashable IndexType where
+  hash = fromEnum
+  hashWithSalt = defaultHashWithSalt
 
 instance Show IndexType where
   show =
@@ -152,3 +171,10 @@ data EdgeIndex = EdgeIndex
   { edgeSource    :: {-# UNPACK #-} !TaggedIndex
   , edgeTarget    :: {-# UNPACK #-} !TaggedIndex
   }
+  deriving stock (Eq, Ord, Show)
+
+
+-- Adapted from the Hashable library
+instance Hashable EdgeIndex where
+  hash (EdgeIndex src tgt)  = hash src `hashWithSalt` tgt
+  hashWithSalt = defaultHashWithSalt
