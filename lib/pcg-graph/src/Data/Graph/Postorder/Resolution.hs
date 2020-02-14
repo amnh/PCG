@@ -289,6 +289,7 @@ generateSubBlockLocalResolutions _subBlock _subMeta meta childResolutionContext 
 
 
 type ResolutionCache cs = ResolutionCacheM Identity cs
+type CharacterResolutionCache block = ResolutionCache (CharacterSequence block)
 
 _resolutionCache :: Iso' (ResolutionCache cs) (NonEmpty (Resolution cs))
 _resolutionCache = iso coerce coerce
@@ -299,6 +300,9 @@ singleton = ResolutionCacheM . Identity . pure
 
 newtype ResolutionCacheM m cs
   = ResolutionCacheM {runResolutionCacheM :: m (NonEmpty (Resolution cs))}
+
+-- to do: We can't partially apply a type synonym so we should figure out a better story with
+-- resolutionCache, probably could make it a newtype that takes the instances from ResolutionCacheM or just remove ResolutionCacheM
 
 
 instance Apply m => Semigroup (ResolutionCacheM m cs) where
