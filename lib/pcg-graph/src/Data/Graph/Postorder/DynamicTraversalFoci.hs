@@ -3,6 +3,7 @@
 {-# LANGUAGE RankNTypes          #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE RecordWildCards     #-}
 
 module Data.Graph.Postorder.DynamicTraversalFoci where
 
@@ -23,13 +24,9 @@ import qualified VectorBuilder.Vector as Builder
 import VectorBuilder.Builder (Builder)
 import Data.Key (foldMapWithKey)
 import Data.Coerce
+import Data.List.NonEmpty (NonEmpty)
+import qualified Data.List.NonEmpty as NonEmpty
 
-
-
-data EdgeReference nodeContext1 nodeContext2 = MkEdge
-  { source :: !nodeContext1
-  , target :: !nodeContext2
-  }
 
 
 --      (i)
@@ -48,13 +45,48 @@ data EdgeTreeMap edge edgeData = EdgeTreeMap
 --      (n)
 --     /   \
 --   (j)   (k)
-data EdgeNetworkMap edge edgeData = EdgeNetworkMap
-  { parentEdge     :: !(edge :!: edgeData)  -- (n) -> (i)
-  , leftChildEdge  :: !(edge :!: edgeData)  -- (n) -> (j)
-  , rightChildEdge :: !(edge :!: edgeData)  -- (n) -> (k)
+data EdgeNetworkMapFull edgeData =
+    EdgeNetworkMapFull
+    { parentEdge     :: !(TaggedIndex :!: edgeData)  -- (n) -> (i)
+    , leftChildEdge  :: !(TaggedIndex :!: edgeData)  -- (n) -> (j)
+    , rightChildEdge :: !(TaggedIndex :!: edgeData)  -- (n) -> (k)
+    }
+
+--
+--
+--      (n)
+--       |
+--       |
+--      (c)
+--
+newtype EdgeNetworkMapSingle edgeData =
+  EdgeNetworkMapSingle
+    { parentEdgeSingle     :: (TaggedIndex :!: edgeData)  -- (n) -> (c)
+    }
+
+type EdgeNetworkMap edgeData = Either (EdgeNetworkMapFull edgeData) (EdgeNetworkMapSingle edgeData)
+  
+  
+
+type Topology = ()
+  -- to do: incorporate topology
+
+type NonExactCharacterMapping = HashMap Topology NonExactCharacterTraversals
+
+type NonExactCharacterTraversals = NonEmpty NonExactCharacterInfo
+
+data NonExactCharacterInfo = NonExactCharacterInfo
+  { cost ::  Double
+  , minimalCostEdges :: Vector (Word :!: NonEmpty EdgeIndex)
   }
 
-type Edge = Int
+  
+type GraphEdgeMapping block =
+  GraphShape' Identity (EdgeNetworkMap (ResolutionCache (CharacterSequence block))) ()
+
+emptyEdgeMapping :: GraphEdgeMapping block
+emptyEdgeMapping =
+  GraphShape mempty mempty mempty mempty
 
 assignOptimalDynamicCharacterRootEdges
   :: forall f block subBlock meta c e .
@@ -65,36 +97,67 @@ assignOptimalDynamicCharacterRootEdges
   => Lens' block subBlock
   -> Lens' (LeafBin block) (LeafBin subBlock)
   -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
-  -> Graph f c e (CharacterSequence block) (CharacterSequence (LeafBin block))
-  -> ( HashMap Edge (ResolutionCache (CharacterSequence block))
-     , GraphShape () () () ()
-
+  -> Graph (ResolutionCacheM Identity) c e (CharacterSequence block) (CharacterSequence (LeafBin block))
+  -> ( HashMap EdgeIndex (ResolutionCache (CharacterSequence block))
+     , GraphEdgeMapping block
      )
 assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta graph =
   case numberOfNodes graph of
-    0 -> undefined
-    1 -> undefined
+    0 -> (mempty, emptyEdgeMapping)
+    1 -> (mempty, emptyEdgeMapping)
+    2 ->
+      let
+        rootCache :: ResolutionCache (CharacterSequence block)
+        rootCache  = (view _nodeData) . Vector.head $ (view _rootReferences graph)
+        childInd = undefined
+        edge :: EdgeIndex
+        edge = undefined
+        edgeMap :: EdgeNetworkMap (ResolutionCache (CharacterSequence block))
+        edgeMap = Right $ EdgeNetworkMapSingle (childInd :!: rootCache)
+        mapping = HashMap.fromList [(edge, rootCache)]
+        graphMapping :: GraphEdgeMapping block
+        graphMapping
+          = GraphShape mempty mempty mempty (coerce . Vector.singleton $ edgeMap)
+      in
+        (mapping, graphMapping)
+        
+        
+    _ -> undefined
 
-
+-- |
+-- Gives back a vector of all edges we wish to consider as traversal
+-- edges from an unrooted network which are not adjacent to a root edge.
 getUnrootedEdges
   :: Graph f c e n t
-  -> Vector EdgeIndex
-getUnrootedEdges = liftA2 (<>) getNetworkEdges getTreeEdges
+  -> Vector (Either EdgeIndex EdgeIndex)
+getUnrootedEdges = fmap Left . (liftA2 (<>) getNetworkEdges getTreeEdges)
 
 
+-- |
+-- Given a root edge:
+--
+--          r                  r
+--          |       or        / \
+--          |                /   \
+--          x               x     y
+--
+-- returns a vector consisting of the edges r -> x in the first case
+-- and x -> y in the second. This is because when we are re-rooting
+-- the binary root edge is not considered part of the associated
+-- _unrooted_ tree.
 getRootEdges
   :: forall f c e n t . ()
   => Graph f c e n t
-  -> Vector EdgeIndex
+  -> Vector (Either EdgeIndex EdgeIndex)
 getRootEdges graph = Builder.build rootEdgesB
   where
     rootVec :: Vector (RootIndexData (f n) e)
     rootVec = view _rootReferences graph
 
-    rootEdgesB :: Builder EdgeIndex
+    rootEdgesB :: Builder (Either EdgeIndex EdgeIndex)
     rootEdgesB = foldMapWithKey buildEdges rootVec
 
-    buildEdges :: Int -> RootIndexData (f n) e -> Builder EdgeIndex
+    buildEdges :: Int -> RootIndexData (f n) e -> Builder (Either EdgeIndex EdgeIndex)
     buildEdges ind treeData =
       let
         sourceTaggedIndex :: TaggedIndex
@@ -104,14 +167,21 @@ getRootEdges graph = Builder.build rootEdgesB
         childTaggedIndices = coerce $ view _childInds treeData
 
         oneChildHandler source target =
-          Builder.singleton $ EdgeIndex {edgeSource = source, edgeTarget = target}
+          Builder.singleton $ Left $ EdgeIndex {edgeSource = source, edgeTarget = target}
 
         twoChildHandler childInds =
-          Builder.singleton
+          Builder.singleton . Right $
             EdgeIndex {edgeSource = view _left childInds, edgeTarget = view _right childInds}
       in
         either (oneChildHandler sourceTaggedIndex) twoChildHandler
           $ childTaggedIndices
+
+
+-- |
+-- This checks if an edge has a target network node i.e. the target node
+-- has muiltiple parents.
+isNetworkEdge :: EdgeIndex -> Bool
+isNetworkEdge EdgeIndex{..} = getTag edgeTarget == NetworkTag
   
   
 
