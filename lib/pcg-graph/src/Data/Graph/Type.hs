@@ -20,6 +20,7 @@ module Data.Graph.Type
     -----------
     Graph(..)
   , GraphShape(..)
+  , GraphShape'
   , GraphBuilder(..)
   , MGraph(..)
     -----------------------
@@ -101,13 +102,15 @@ import Data.Coerce
 
 -- |
 -- The GraphShape type is for storing data in the same `shape` as our graph.
-data GraphShape i n r t
+data GraphShape f i n r t
   = GraphShape
   { leafData    :: Vector t
-  , treeData    :: Vector i
-  , networkData :: Vector n
-  , rootData    :: Vector r
+  , treeData    :: Vector (f i)
+  , networkData :: Vector (f n)
+  , rootData    :: Vector (f r)
   }
+
+type GraphShape' f tree leaf = GraphShape f tree tree tree leaf
 
 
 
@@ -118,10 +121,10 @@ data  Graph
         (n :: Type)
         (t :: Type)
    = Graph
-   { leafReferences    :: {-# unpack #-} !(Vector (LeafIndexData       t   ))
-   , treeReferences    :: {-# unpack #-} !(Vector (TreeIndexData    (f n) e))
-   , networkReferences :: {-# unpack #-} !(Vector (NetworkIndexData (f n) e))
-   , rootReferences    :: {-# unpack #-} !(Vector (RootIndexData    (f n) e))
+   { leafReferences    :: {-# UNPACK #-} !(Vector (LeafIndexData       t   ))
+   , treeReferences    :: {-# UNPACK #-} !(Vector (TreeIndexData    (f n) e))
+   , networkReferences :: {-# UNPACK #-} !(Vector (NetworkIndexData (f n) e))
+   , rootReferences    :: {-# UNPACK #-} !(Vector (RootIndexData    (f n) e))
    , cachedData        :: c
    }
    deriving stock Show
@@ -543,13 +546,13 @@ getRootEdges graph = Builder.build rootEdgesB
 -- those edges with that node as _parent_.
 --
 -- Note: This means the leafData is empty as there are no edges with leaves as parents.
-getEdgeGraphShape :: Graph f c e n t -> GraphShape EdgeIndex EdgeIndex EdgeIndex EdgeIndex
+getEdgeGraphShape :: Graph f c e n t -> GraphShape Identity EdgeIndex EdgeIndex EdgeIndex EdgeIndex
 getEdgeGraphShape graph = GraphShape{..}
   where
     leafData    = mempty
-    treeData    = getTreeEdges    graph
-    networkData = getNetworkEdges graph
-    rootData    = getRootEdges    graph
+    treeData    = coerce $ getTreeEdges    graph
+    networkData = coerce $ getNetworkEdges graph
+    rootData    = coerce $ getRootEdges    graph
 
 
 -- |
@@ -559,4 +562,4 @@ getEdges graph =
   let
     GraphShape{..} = getEdgeGraphShape graph
   in
-    leafData <> treeData <> networkData <> rootData
+    leafData <> (coerce $ treeData <> networkData <> rootData)
