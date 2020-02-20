@@ -10,14 +10,14 @@ import           Data.Coerce
 import           Data.Graph.Indices
 import           Data.Graph.NodeContext
 import           Data.Graph.Type
-import           Data.Key
+import           Data.Key hiding ((!))
 import           Data.Pair.Strict
 import           Data.Vector.Instances  ()
 import           Control.Monad.Par
-
 import           Data.Maybe             (fromJust)
 
 import qualified Data.Vector            as V
+import Data.Vector ((!))
 
 type Endo a = (a -> a)
 
@@ -28,7 +28,28 @@ data MemoGen i n r l = MemoGen
   , rootGen    :: Int -> r
   }
 
-type MemoGen' i l = MemoGen i i i l
+type MemoGen' f i l = MemoGen (f i) (f i) (f i) l
+
+generateMemoGraphShape
+  :: forall f i l . ()
+  => Int
+  -> Int
+  -> Int
+  -> Int
+  -> Endo (MemoGen' f i l)
+  -> GraphShape' f i l
+generateMemoGraphShape numL numI numN numR recursiveFuns = memoGraphShape
+  where
+    memoGraphShape :: GraphShape' f i l
+    memoGraphShape = generateGraphShape numL numI numN numR (recursiveFuns memoizedFunction)
+
+    memoizedFunction :: MemoGen' f i l
+    memoizedFunction = MemoGen
+      { leafGen     = ((memoGraphShape ^. _leafData   ) !)
+      , treeGen     = ((memoGraphShape ^. _treeData   ) !)
+      , networkGen  = ((memoGraphShape ^. _networkData) !)
+      , rootGen     = ((memoGraphShape ^. _rootData   ) !)
+      }
 
 type MemoGenGraph i l e =
   MemoGen
@@ -38,8 +59,8 @@ type MemoGenGraph i l e =
     (LeafIndexData     l)
 
 generateMemoGraph
-  :: forall f c e n t
-  .  c
+  :: forall f c e n t . ()
+  => c
   -> Int
   -> Int
   -> Int
@@ -77,15 +98,31 @@ generateGraph cache numL numI numN numR MemoGen{..} =
   , cachedData         = cache
   }
 
+
+generateGraphShape
+  :: Int
+  -> Int
+  -> Int
+  -> Int
+  -> MemoGen' f i l
+  -> GraphShape' f i l
+generateGraphShape numL numI numN numR MemoGen{..} =
+  GraphShape
+  { leafData     = V.generate numL leafGen
+  , treeData     = V.generate numI treeGen
+  , networkData  = V.generate numN networkGen
+  , rootData     = V.generate numR rootGen
+  }
+
 memoPostorder
   :: forall g f c e n t val . (Applicative g)
   => (t  -> val)
   -> (g val -> g val -> g val)
   -> (val -> val)
-  -> Graph f c e n t -> Endo (MemoGen' (g val) val)
+  -> Graph f c e n t -> Endo (MemoGen' g val val)
 memoPostorder leafFn treeFn netFn graph = f
   where
-    f :: MemoGen' (g val) val -> MemoGen' (g val) val
+    f :: MemoGen' g val val -> MemoGen' g val val
     f MemoGen{..} = MemoGen leafGen' treeGen' networkGen' rootGen'
       where
         childVal :: TaggedIndex -> g val
