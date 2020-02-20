@@ -47,7 +47,7 @@ postorderFold _leafFn _internalFn _graph = undefined -- foldMap (view _rootRefer
         TreeTag    ->
           let
             treeNode :: TreeIndexData (f n) e
-            treeNode   = graph `unsafeTreeInd` coerce untaggedInd
+            treeNode   = graph `indexTree` coerce untaggedInd
             childInd1, childInd2 :: ChildIndex
             childInd1  = view (_childInds . _left ) treeNode
             childInd2  = view (_childInds . _right) treeNode
@@ -196,7 +196,7 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
     parIndexData :: TreeIndexData (f n) e
     parIndexData =
         case getTag leafParInd of
-          TreeTag -> graph `unsafeTreeInd` TreeInd untaggedParInd
+          TreeTag -> graph `indexTree` untaggedParInd
           _       -> error "breaking an edge from a non-tree index is not yet implemented"
 
     parChildInfo :: ChildInfo e
@@ -223,13 +223,13 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
 
     -- src and target contexts
     srcNodeInfo :: TreeIndexData (f n) e
-    srcNodeInfo    = graph `unsafeTreeInd` coerce (getIndex srcInd)
+    srcNodeInfo    = graph `indexTree` getIndex srcInd
     tgtInfo :: ChildInfo e
     tgtInfo = srcNodeInfo ^. _srcChildLens
     tgtInd :: ChildIndex
     tgtInd       = tgtInfo ^. _childIndex
     tgtNodeInfo :: TreeIndexData (f n) e
-    tgtNodeInfo  = graph `unsafeTreeInd` coerce (getIndex tgtInd)
+    tgtNodeInfo  = graph `indexTree` getIndex tgtInd
     untaggedSource :: Int
     untaggedSource = getIndex srcInd
     untaggedTarget :: Int
@@ -254,9 +254,9 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
         then _right
       else _left
 
-    leafParParentNodeInfo = graph `unsafeTreeInd` coerce (getIndex leafParParentNodeInd)
+    leafParParentNodeInfo = graph `indexTree` getIndex leafParParentNodeInd
     leafParParentNodeInd     = parIndexData ^. _parentInds
-    leafParChildNodeInfo  = graph `unsafeTreeInd` coerce (getIndex leafParParentNodeInd)
+    leafParChildNodeInfo  = graph `indexTree` getIndex leafParParentNodeInd
     leafParChildInfo      = parIndexData ^. _otherLeafParChild
     leafParChildNodeInd = leafParChildInfo ^. _childIndex
 
