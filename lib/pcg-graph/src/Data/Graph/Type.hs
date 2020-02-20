@@ -52,22 +52,30 @@ module Data.Graph.Type
   , HasRootReferences(..)
   , HasLeafReferences(..)
   , HasCachedData(..)
+  , HasLeafData(..)
+  , HasTreeData(..)
+  , HasNetworkData(..)
+  , HasRootData(..)
     -------------------------------
     -- graph with specified root --
     -------------------------------
   , RootFocusGraph
   , Focus
   , makeRootFocusGraphs
+    --------------
+    -- Indexing --
+    --------------
+  , index
+  , indexRoot
+  , indexTree
+  , indexNetwork
+  , indexLeaf
     ----------------------
     -- utility functions--
     ----------------------
   , buildGraph
-  , index
+  , lookupTreeNode
   , getRootInds
-  , unsafeLeafInd
-  , unsafeRootInd
-  , unsafeTreeInd
-  , unsafeNetworkInd
   , numberOfNodes
   , getTreeEdges
   , getNetworkEdges
@@ -76,14 +84,14 @@ module Data.Graph.Type
   , getEdges
   )where
 
-import Prelude hiding (read)
+import Prelude hiding (read, lookup)
 import Control.Lens              hiding (index)
 import Data.Graph.Indices
 import Data.Graph.NodeContext
 import Data.Kind                 (Type)
 import Data.Pair.Strict
 import qualified VectorBuilder.Vector as Builder
-import Data.Vector               (Vector, generate, unsafeFreeze, unsafeThaw)
+import Data.Vector               (Vector, generate, unsafeFreeze, unsafeThaw, (!))
 import Data.Vector.Instances     ()
 import Test.QuickCheck.Arbitrary
 import TextShow                  hiding (Builder)
@@ -92,8 +100,9 @@ import VectorBuilder.Builder (Builder)
 import Data.Vector.Mutable (MVector, new, write, read)
 import Control.Monad.Primitive
 import           Data.Vector.Instances ()
-import Data.Key (foldMapWithKey)
+import Data.Key (foldMapWithKey, lookup)
 import Data.Coerce
+
 
 
 --      ┌─────────────┐
@@ -111,6 +120,15 @@ data GraphShape f i n r t
   }
 
 type GraphShape' f tree leaf = GraphShape f tree tree tree leaf
+
+lookupTreeNode :: TaggedIndex -> GraphShape' f tree leaf -> Maybe (f tree)
+lookupTreeNode taggedIndex GraphShape{..} =
+  case getTag taggedIndex of
+    -- to do : improve error message
+    LeafTag    -> Nothing
+    TreeTag    -> (getIndex taggedIndex) `lookup` treeData
+    NetworkTag -> (getIndex taggedIndex) `lookup` networkData
+    RootTag    -> (getIndex taggedIndex) `lookup` rootData
 
 
 
@@ -303,6 +321,51 @@ instance TextShow (Graph f c e n t) where
 
 
 
+class HasLeafData s t a b | s -> a, t -> b, s b -> t, t a -> s where
+    _leafData :: Lens s t a b
+
+
+instance HasLeafData
+           (GraphShape f i n r t )
+           (GraphShape f i n r t')
+           (Vector  t)
+           (Vector  t') where
+
+    _leafData = lens leafData (\g l -> g { leafData = l})
+
+
+
+class HasTreeData s a | s -> a where
+    _treeData :: Lens' s a
+
+
+instance HasTreeData
+           (GraphShape f i n r t)
+           (Vector (f i)) where
+    _treeData = lens treeData (\g fn -> g {treeData = fn})
+
+
+class HasNetworkData s a | s -> a where
+    _networkData :: Lens' s a
+
+
+instance HasNetworkData
+           (GraphShape f i n r t)
+           (Vector (f n)) where
+    _networkData = lens networkData (\g fn -> g {networkData = fn})
+
+
+class HasRootData s a | s -> a where
+
+    _rootData :: Lens' s a
+
+
+instance HasRootData
+           (GraphShape f i n r t)
+           (Vector (f r)) where
+    _rootData = lens rootData (\g fn -> g {rootData = fn})
+
+
 class HasLeafReferences s t a b | s -> a, t -> b, s b -> t, t a -> s where
 
     _leafReferences :: Lens s t a b
@@ -367,10 +430,17 @@ instance HasCachedData
     _cachedData = lens cachedData (\g c2 -> g {cachedData = c2})
 
 
---      ┌───────────────┐
---      │    Utility    │
---      └───────────────┘
+--      ┌────────────────┐
+--      │    Indexing    │
+--      └────────────────┘
 
+-- Note: Each of these index functions is as unsafe as indexing into a vector.
+-- They are intended to be used when working with the underlying graph representation.
+
+-- |
+-- This function indexes into a graph using the tag to correctly index into the
+-- node type. As we can't know what this returns we use a new sum type which
+-- may be inconvenient and so we also offer index variants for the specific node type.
 index :: Tagged taggedInd => Graph f c e n t -> taggedInd -> NodeIndexData (f n) e t
 index graph taggedIndex =
   let
@@ -397,6 +467,36 @@ index graph taggedIndex =
                        _rootReferences
                      . singular (ix ind)
 
+-- |
+-- Index into the root reference vector.
+indexRoot :: Graph f c e n t -> Int -> RootIndexData (f n) e
+indexRoot graph untaggedIndex =
+  view (_rootReferences . singular (ix untaggedIndex)) graph
+
+-- |
+-- Index into the tree reference vector.
+indexTree :: Graph f c e n t -> Int -> TreeIndexData (f n) e
+indexTree graph untaggedIndex =
+  view (_treeReferences . singular (ix untaggedIndex)) graph
+
+-- |
+-- Index into the network reference vector.
+indexNetwork :: Graph f c e n t -> Int -> NetworkIndexData (f n) e
+indexNetwork graph untaggedIndex =
+  view (_networkReferences . singular (ix untaggedIndex)) graph
+
+-- |
+-- Index into the leaf reference vector.
+indexLeaf :: Graph f c e n t -> Int -> LeafIndexData t
+indexLeaf graph untaggedIndex =
+  view (_leafReferences . singular (ix untaggedIndex)) graph
+
+
+
+
+--      ┌───────────────┐
+--      │    Utility    │
+--      └───────────────┘
 
 getRootInds :: Graph f c e n t -> Vector TaggedIndex
 getRootInds graph =
@@ -405,30 +505,6 @@ getRootInds graph =
     roots = generate numberOfRoots (`TaggedIndex` RootTag)
   in
     roots
-
-
-
---      ┌───────────────────────┐
---      │    Unsafe Indexing    │
---      └───────────────────────┘
-
-{-# INLINE unsafeLeafInd #-}
-unsafeLeafInd    :: Graph f c e n t -> LeafInd -> LeafIndexData t
-unsafeLeafInd graph (LeafInd i) = graph ^. _leafReferences . singular (ix i)
-
-{-# INLINE unsafeTreeInd #-}
-unsafeTreeInd    :: Graph f c e n t -> TreeInd -> TreeIndexData (f n) e
-unsafeTreeInd graph (TreeInd i) = graph ^. _treeReferences . singular (ix i)
-
-{-# INLINE unsafeRootInd #-}
-unsafeRootInd    :: Graph f c e n t -> RootInd -> RootIndexData (f n) e
-unsafeRootInd graph (RootInd i) = graph ^. _rootReferences . singular (ix i)
-
-{-# INLINE unsafeNetworkInd #-}
-unsafeNetworkInd :: Graph f c e n t -> NetworkInd -> NetworkIndexData (f n) e
-unsafeNetworkInd graph (NetworkInd i) = graph ^. _networkReferences . singular (ix i)
-
-
 
 --      ┌─────────────────┐
 --      │    Rendering    │
@@ -454,6 +530,8 @@ toBinaryRenderingTree = undefined
 --      ┌─────────────────┐
 --      │    Edges        │
 --      └─────────────────┘
+
+
 
 getTreeEdges :: forall f c e n t . Graph f c e n t -> Vector EdgeIndex
 getTreeEdges graph = Builder.build treeEdgesB
