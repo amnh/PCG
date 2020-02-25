@@ -4,4 +4,4 @@ allow-newer:
 
 packages: .
 
-with-compiler: ghc-8.8.2
+with-compiler: ghc-8.8.3

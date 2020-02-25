@@ -17,12 +17,15 @@ description:        Phylogenetic Componet Graph provides a library for
                     searches. Said scripts can be evaluated by the provided pcg
                     program to perform a phylogenetic search on an input dataset.
 
+tested-with:
+    GHC == 8.8.3
+
 extra-source-files:
     AUTHORS.md
     CHANGELOG.md
     FUNDING.md
     README.md
-    
+
         
 -- Group of buildinfo specifications to correctly build and link to the C & C++:
 -- FFI code.
