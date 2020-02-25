@@ -146,7 +146,6 @@ library alphabet
   -- Apparently this is needed to compile with profiling, which is really stupid.
   -- It should only be in the modules which use TemplateHaskell, not all modules.
   -- I consider this a temporary hack to get things to compile with profiling.
-  -- TODO: remove this in the future when cabal gets it's act together.
   other-extensions: TemplateHaskell
   
   exposed-modules:
@@ -190,6 +189,7 @@ library analysis
     foldl                    >= 1.3.2     && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.18      && < 5.0,
+    matrices                 >= 0.5       && < 1.0,            
     mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
@@ -224,6 +224,9 @@ library analysis
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedFullMatrix
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonen
 
 
 -- Data-types for defining and interacting with phylogenetic components.
@@ -1224,7 +1227,10 @@ executable 2d-do-comparison
     tcm-memo,
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 2.0,
+    mono-traversable         >= 1.0       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
+    tasty                    >= 1.2       && < 2.0,
+    tasty-quickcheck         >= 0.9       && < 1.0,
 
 
 executable 3d-do-comparison

@@ -22,7 +22,6 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
-import           Bio.Character.Exportable
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Graph.ReferenceDAG
@@ -49,7 +48,6 @@ import           Prelude                                       hiding (zipWith)
 -- Computes the total edge cost over all the disambiguated final assignments.
 totalEdgeCosts
   :: ( EncodableDynamicCharacter c
-     , ExportableElements c
      , HasSingleDisambiguation z c
      , Element c ~ DynamicCharacterElement
      )

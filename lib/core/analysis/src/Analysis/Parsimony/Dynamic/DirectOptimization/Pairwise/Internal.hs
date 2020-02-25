@@ -23,7 +23,7 @@
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   ( Cost
-  , Direction()
+  , Direction(..)
   , DOCharConstraint
   , MatrixConstraint
   , MatrixFunction
@@ -57,9 +57,7 @@ import qualified Data.Vector.Primitive       as P
 import qualified Data.Vector.Unboxed         as U
 import           Data.Word                   (Word8)
 import           Numeric.Extended.Natural
-import           Prelude                     hiding (lookup)
-
-import Debug.Trace
+import           Prelude                     hiding (lookup, zipWith)
 
 
 -- |
@@ -109,7 +107,7 @@ type DOCharConstraint s = (EncodableDynamicCharacter s, Ord (Element s), Encodab
 -- |
 -- Constraints on the type of structure a "matrix" exposes to be used in rendering
 -- and traceback functions.
-type MatrixConstraint m = (Indexable m, Key m ~ (Int, Int))
+type MatrixConstraint m = (Foldable m, Functor m, Indexable m, Key m ~ (Int, Int))
 
 
 -- |
@@ -369,7 +367,7 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
                                     ]
 
 
-{-
+{--
 -- |
 -- Serializes an alignment matrix to a 'String'. Uses input characters for row
 -- and column labelings.
@@ -377,7 +375,6 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
 -- Useful for debugging purposes.
 renderCostMatrix
   :: ( DOCharConstraint s
-     , Enum (Element s)
      , Foldable f
      , Functor f
      , Indexable f
@@ -387,7 +384,7 @@ renderCostMatrix
      )
   => s
   -> s
-  -> f (a, b, c) -- ^ The Needleman-Wunsch alignment matrix
+  -> f (a, b) -- ^ The Needleman-Wunsch alignment matrix
   -> String
 renderCostMatrix lhs rhs mtx = unlines
     [ dimensionPrefix
@@ -399,12 +396,24 @@ renderCostMatrix lhs rhs mtx = unlines
     (_,longer,lesser) = measureCharacters lhs rhs
     longerTokens      = toShownIntegers longer
     lesserTokens      = toShownIntegers lesser
-    toShownIntegers   = fmap (show . fromEnum) . otoList
+--    toShownIntegers   = fmap (show . showBitsValue) . otoList
+    toShownIntegers   = fmap (const "#") . otoList
     matrixTokens      = showCell <$> mtx
-    showCell (c,d,_)  = show c <> show d
+    showCell (c,d)    = show c <> show d
     maxPrefixWidth    = maxLengthOf lesserTokens
     maxColumnWidth    = max (maxLengthOf longerTokens) . maxLengthOf $ toList matrixTokens
     maxLengthOf       = maximum . fmap length
+
+{-
+    showBitsValue :: FiniteBits b => b -> Word
+    showBitsValue b = go (finiteBitSize b) 0
+      where
+        go 0 v = v
+        go i v = let i' = i-1
+                     v' | b `testBit` i' = v + bit i'
+                        | otherwise      = v
+                 in  go i' v'
+-}
 
     colCount = olength longer + 1
     rowCount = olength lesser + 1
@@ -447,7 +456,7 @@ renderCostMatrix lhs rhs mtx = unlines
     pad n e = replicate (n - len) ' ' <> e <> " "
       where
         len = length e
--}
+--}
 
 
 -- |
@@ -484,7 +493,6 @@ traceback overlapFunction alignMatrix longerChar lesserChar = (finalCost, alignm
 
     col = olength longerChar
     row = olength lesserChar
---    gap = gapOfStream longerChar
 
     go p@(i, j)
       | p == (0,0) = mempty

@@ -57,8 +57,6 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()
 import           TextShow                              (TextShow (showb), toString)
 
-import Debug.Trace
-
 
 -- |
 -- Represents a single element of a dynamic character, which holds two
@@ -153,19 +151,12 @@ instance EncodableDynamicCharacterElement DynamicCharacterElement where
           rhs = coerce $ getRight dce
       in  DCE $ rhs <> lhs 
 
-
---  getMedian     :: (Subcomponent e -> Subcomponent e -> Subcomponent e) -> e -> Subcomponent e
     getMedian transform dce =
         let gap = AG . bit . fromEnum . pred
---                  . (\x -> trace (unlines [ "In 'gap' creation of getMedian,"
---                                          , "DCE: " <> show dce
---                                          , "symbolCount " <> show (symbolCount dce)
---                                          ]) x)
                     $ symbolCount dce
-            one = {- (\x -> trace ("one " <> show x) x) . -} getLeft  dce
-            two = {- (\x -> trace ("two " <> show x) x) . -} getRight dce
-        in  -- (\x -> trace ("From input: " <> show dce <> "\nMedian got: " <> show x) x) $
-            case getContext dce of
+            one = getLeft  dce
+            two = getRight dce
+        in  case getContext dce of
                 Gapping   -> gap
                 Deletion  -> transform gap two
                 Insertion -> transform one gap

@@ -30,6 +30,9 @@ module Analysis.Parsimony.Dynamic.DirectOptimization
   , naiveDOMemo
   , selectDynamicMetric
   , ukkonenDO
+  , unboxedFullMatrixDO
+  , unboxedSwappingDO
+  , unboxedUkkonenDO
   ) where
 
 

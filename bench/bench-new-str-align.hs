@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Main
@@ -16,6 +16,8 @@ import           Criterion.Main                                hiding (defaultCo
 import qualified Criterion.Main                                as Crit
 import           Criterion.Types                               (Config (..))
 import           Data.Alphabet
+import           Data.Bifunctor
+import           Data.Bits
 import           Data.Char
 import           Data.Either
 import           Data.Foldable
@@ -29,11 +31,11 @@ import           Data.Normalization.Character
 import qualified Data.Set                                      as Set
 import           Data.String
 import           Data.TCM.Dense
-import           Data.TCM.Memoized
+--import           Data.TCM.Memoized
 import           Data.Text.Short                               (ShortText, toString)
 import           Data.Void
 import           Data.Word
-import           File.Format.Fasta                             hiding   (FastaSequenceType (..))
+import           File.Format.Fasta                             hiding (FastaSequenceType (..))
 import qualified File.Format.Fasta                             as Fasta (FastaSequenceType (..))
 import           Prelude                                       hiding (lookup, zip, zipWith)
 import           Text.Megaparsec                               (ParseErrorBundle, errorBundlePretty, parse)
@@ -45,14 +47,14 @@ alphabet = fromSymbols $ Set.fromList ["A","C","G","T"]
 
 
 inputPairs :: [((ShortText, String), (ShortText, String))]
-inputPairs = [ ( ("a008", "CCGGGAGG")
-               , ("r009", "??VBYbBah")
+inputPairs = [ ( ("a008",  "CGTATGCC")
+               , ("a009", "CCGTATGCC")
                )
              , ( ("a064", "CAATCAGTAGCCTTCGGTCCAGGCTAACGGGGCGATCCCTTGGTTTGGCCGTCGCATTCCTTTG")
-               , ("r072", "VchbbTMaHgNhAhSts-KvBAtYCDWTAtHvhb-MWTSdHKkKADatGmsrWGrktbmKRTBvSmKHAbVM")
+               , ("a072", "CCAATCAGTAGCCTTCCCGGTCCAGGCTAAGGGGGATCCCCCTTTTGGTTTGGCCGTTTCGCAAATTCCTTT")
                )
-             , ( ("a512", "GGTAACCTTTAGCTACCTCCCTACTCTGCGAACCGTATTTGCGCCGCGAGCGCTGGCGTGATTAAGCAGCGTGCAGCTCAAAGGTTGACTCTCCAGATATCCCTTTCGAGCACAGAAATACGACGTGCTATGGTGCGGGAGCTGTGGGAGCTAAAGACCTTTGTCCTTTCTACTTCTAGACATCTCGAGGAGGTAGCCCATCGATGTCGGATACCCCCGTTTCTCTTCGCAAGACCGTGTGTCCCGCAGCGCGCGATCTTGATTTGCTCCGACATACGACCACTTGAGGCCAGATACTGTCACCTCCTAGGCGGAAACGCGGGAAACGTGCGGGGGCACCTTCCAAGGTACCCTTTGACCCTTGCGGCTCTCTGATATTCAGAACCGGGCCAATAAGGGGCCTACTATCTTATCAATAGCATTAACGTTCACGTTAAGGCCCCTGTGGATTCGTGAGCCACGAGACCAGGAAACAATAGCTTGGCCGGAGAAACCTTAGCACTTGATTTAGA")
-               , ("r576", "V??sABvBHaADNaW-CHVrTACCB?Hty--KwTAByTgbbRmKchT?SvwtWbV?BsGWTCdB-gakKNgrHNYhrtCTAkwYmrGtyAYS?KWmKN?cv?VrkysswYVYtVgDTgMwYbgMgstVcBsRa-TwatVhBHcGcawkC-CHdyhbc-tcYHRBRMRt-h-sdkYabRScSMkhBH-a-AgAtBmRCTGrhahShvC-mgam-yK-wVDCwmkyCTBwmMGA?CWSdDYSBKSYwmDBCggCgV?KTvgKkNCaghhdddcMVktYc?ahy?DcaytcyrwsDRCCcagHhSAsbraBw-tktNbbgKmHaSb-BSbThAHawyAGwRDkAa-RBshBNr?yRwWRaW?hrwYHA?MyAkddhM?BmsaVWMVT?D?aKATcamvgAvrcAKCrGMrRCdmMDCSSSCyHtgMhATDR?cGTVVHWBrhgGsMVK??Bv-WV?HvwycKH-CwsCNyVMBRKGDARR?syaBvbaDNwtKAhmAvdbtvyGgNmhGasNCcgBvSGHBhyMVDykwBmsmymdytTkyrCHKSSCCSgbvmN-vwaVTtgVTTC-gaMrrKmmWhb")
+             , ( ("a512", "GGTAACCTTTAGCTACCTCCCTACTCTGCGAACCGTATTTGCGCCGCGAGCGCTGGCGTGATTAAGCAGCGTGCAGCTCAAAGGTTGACTCTCCAGATATCCCTTTCGAGCACAGAAATACGACGTGCTATGGTGCGGGAGCTGTGGGAGCTAAAGACCTTTGTCCTTTCTACTTCTAGACATCTCGAGGAGGTAGCCCATCGATGTCGGATACCCCCGTTTCTCTTCGCAAGACCGTGTGTCCCGCAGCGCGCGATCTTGATTTGCTCCGACATACGACCACTTGAGGCCAGATACTGTCACCTCCTAGGCGGAAACGCGGGAAACGTGCGGGGGCACCTTCCAAGGTACCCTTTGACCCTTGCGGCTCTCTGATATTCAGAACCGGGCCAATAAGGGGCCTACTATCTTATCAATAGCATTAACGTTCACGTTAAGGCCCCTGTGGATTCGTGAGCCACGAGACCAGGAAACAATAGCTTAGGCCGGAGAAACCTTAGCACTTGATTTAG")
+               , ("a576", "ACGGTAACCTTTAAGGCTTACCTTCCCTTACTCTGCGCCGTAGTTTAGCGCCGCGAGCGCTAGGCGTAGATTAGTAGCAGCCGGTTAGCAGCTCGGTTAGACTCTCTCTCTCCAGATAGTCCCTTTGAGAGCACTAGAAATACGACGTAGCTAGTAGGTAGCGGGAGCTAGTAGGGAGCTAGATAGACCTTTAGTCCTTTCTACTTCTAGACATACTACGTAGGTAGGTAGCCCATCGATAGTCGGATAGCCCCCGTTTCTCTTCGCATAGACCGTAGTAGTCCCGCTAGCGCGCGATCTTGATTTGCTCCGACATACGACCACTTAGAGGCCAGATACTAGTCACCTCCTAGGCGGAAACGCGGGAAACGTAGCGGGGGCACCTTCCAAGGTACCCTTTAGACCCTTGCGGCTCTCTAGATATTCAGAACCGGGCCAATAGAGGGGCCTAGCTAGTCTTAGTCAATAGCATTAGACGTTCACGTTAGTAGGCCCCTAGTAGGATTCGATAGTAGCCACGAGACCTAGGAAACAATAGCTTAGGCCGGAGAAACCTTAGCACTTGATTTAGA")
                )
              ]
 
@@ -99,22 +101,29 @@ benchmarkSpace points =
     in  do
         mapping <- fold <$> traverse benchSpace points
         content <- filter (/='\r') <$> readFile outputFile
-        let (prevLines, newLines) = splitAt 10 . reverse . take 20 . reverse $ lines content
+        let numRows = 1 + (length inputPairs * length measurements)
+        let (prevLines, newLines) = splitAt numRows . reverse . take numRows . reverse $ lines content
         let updatedLines
               | null newLines =                  appendSpaceInfo mapping <$> prevLines
-              | otherwise     = (prevLines <>) $ appendSpaceInfo mapping <$>  newLines
+              | otherwise     = (<> prevLines) $ appendSpaceInfo mapping <$>  newLines
         let str = force $ unlines updatedLines
         -- length and seq to handle lazy I/O
-        length content `seq` (writeFile outputFile str)
+        length content `seq` writeFile outputFile str
 
 
 benchmarkRendering :: IO ()
 benchmarkRendering =
     let cfg = Bench.defaultConfig
-                { presentation      = Groups PercentDiff
-                , selectFields      = filter (flip elem ["time", "mean", "maxrss", "allocatedbytes","livebytes"] . map toLower)
-                , classifyBenchmark = \x -> Just ("op", x)
+--                { presentation      = Groups PercentDiff
+--                { presentation      = Groups Diff
+                { presentation      = Groups Absolute
+                , threshold         = 5
+                , selectFields      = selector
+                , classifyBenchmark = classifier
                 }
+        selector     = filter (flip elem ["mean","allocatedbytes","livebytes"] . fmap toLower)
+--        classifier x = Just ("op", x)
+        classifier x = Just . second tail $ span (/='-') x
     in  report outputFile Nothing cfg
 
 
@@ -152,7 +161,7 @@ makeInputPairs ((a,b), (c,d)) = do
 sequenceStreamParser :: String -> Either (ParseErrorBundle String Void) DynamicCharacter
 sequenceStreamParser = fmap characterEncoder . parse dnaParser "Embedded-String" . ("> X\n" <>)
   where
-    dnaParser = (fastaStreamConverter Fasta.DNA =<< fastaStreamParser)
+    dnaParser = fastaStreamConverter Fasta.DNA =<< fastaStreamParser
 
     characterEncoder = encodeDynamicCharacter . extractFromNormalized . extractFromMap . getNormalizedCharacters
 
@@ -171,7 +180,34 @@ measureStringAlignment
       , (DynamicCharacter, DynamicCharacter)
       )
      ]
-measureStringAlignment x = [measureForeignAlignment, measureNewAlignment, measureOldAlignment] <*> [x]
+measureStringAlignment x = force $ measurements <*> pure x
+
+
+measurements
+  :: [ (    (ShortText, DynamicCharacter), (ShortText, DynamicCharacter))
+         -> (String, (DynamicCharacter, DynamicCharacter)
+         -> (Word, DynamicCharacter), (DynamicCharacter, DynamicCharacter)
+       )
+     ]
+measurements = [ measureUnboxedUkkonenAlignment
+               , measureOldAlignment
+               , measureUnboxedFullAlignment
+               , measureUnboxedSwappingAlignment
+               , measureNaiveAlignment
+               , measureForeignAlignment
+               ]
+
+
+measureNaiveAlignment
+  :: ((ShortText, DynamicCharacter), (ShortText, DynamicCharacter))
+  -> ( String
+     , (DynamicCharacter, DynamicCharacter) -> (Word, DynamicCharacter)
+     , (DynamicCharacter, DynamicCharacter)
+     )
+measureNaiveAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
+  where
+    align (x,y) = naiveDOMemo x y discreteMetricPairwiseLogic
+    label = fold ["bad-", toString a, "-X-", toString b]
 
 
 measureOldAlignment
@@ -182,20 +218,44 @@ measureOldAlignment
      )
 measureOldAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
   where
-    align (x,y) = ukkonenDO x y $ getMedianAndCost2D memoMatrixValue
+    align (x,y) = ukkonenDO x y discreteMetricPairwiseLogic
     label = fold ["old-", toString a, "-X-", toString b]
 
 
-measureNewAlignment
+measureUnboxedFullAlignment
   :: ((ShortText, DynamicCharacter), (ShortText, DynamicCharacter))
   -> ( String
      , (DynamicCharacter, DynamicCharacter) -> (Word, DynamicCharacter)
      , (DynamicCharacter, DynamicCharacter)
      )
-measureNewAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
+measureUnboxedFullAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
   where
-    align (x,y) = ukkonenDO x y $ getMedianAndCost2D memoMatrixValue
-    label = fold ["new-", toString a, "-X-", toString b]
+    align (x,y) = unboxedFullMatrixDO x y discreteMetricPairwiseLogic
+    label = fold ["ful-", toString a, "-X-", toString b]
+
+
+measureUnboxedSwappingAlignment
+  :: ((ShortText, DynamicCharacter), (ShortText, DynamicCharacter))
+  -> ( String
+     , (DynamicCharacter, DynamicCharacter) -> (Word, DynamicCharacter)
+     , (DynamicCharacter, DynamicCharacter)
+     )
+measureUnboxedSwappingAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
+  where
+    align (x,y) = unboxedSwappingDO x y discreteMetricPairwiseLogic
+    label = fold ["swp-", toString a, "-X-", toString b]
+
+
+measureUnboxedUkkonenAlignment
+  :: ((ShortText, DynamicCharacter), (ShortText, DynamicCharacter))
+  -> ( String
+     , (DynamicCharacter, DynamicCharacter) -> (Word, DynamicCharacter)
+     , (DynamicCharacter, DynamicCharacter)
+     )
+measureUnboxedUkkonenAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
+  where
+    align (x,y) = unboxedUkkonenDO x y discreteMetricPairwiseLogic
+    label = fold ["ukn-", toString a, "-X-", toString b]
 
 
 measureForeignAlignment
@@ -208,6 +268,25 @@ measureForeignAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
   where
     align (x,y) = foreignPairwiseDO x y denseMatrixValue
     label = fold ["ffi-", toString a, "-X-", toString b]
+
+
+discreteMetricPairwiseLogic
+  :: ( Bits a
+     , Num b
+     )
+  => a
+  -> a
+  -> (a, b)
+discreteMetricPairwiseLogic lhs rhs
+  | popCount intersect > 0 = (intersect, 0)
+  | otherwise              = (  unioned, 1)
+  where
+    unioned   = lhs .|. rhs
+    intersect = lhs .&. rhs
+
+
+--memoTCM :: AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word)
+--memoTCM = getMedianAndCost2D memoMatrixValue
 
 
 costStructure :: (Ord a, Num a) => a -> a -> a
@@ -224,5 +303,5 @@ denseMatrixValue :: DenseTransitionCostMatrix
 denseMatrixValue = generateDenseTransitionCostMatrix 0  5 costStructure
 
 
-memoMatrixValue :: MemoizedCostMatrix
-memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure
+--memoMatrixValue :: MemoizedCostMatrix
+--memoMatrixValue  = generateMemoizedTransitionCostMatrix 5 costStructure

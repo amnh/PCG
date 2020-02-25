@@ -28,10 +28,11 @@ module Test.Custom.NucleotideSequence
 import           Bio.Character.Encodable
 import           Bio.Character.Encodable.Dynamic
 import           Bio.Character.Encodable.Dynamic.Element
+import           Control.Arrow          ((***), (&&&))
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import           Data.Bits
-import qualified Data.Bimap                            as B                                            
+import qualified Data.Bimap                            as B
 import           Data.Foldable
 import           Data.Key
 import           Data.List              (delete)
@@ -67,9 +68,11 @@ instance Arbitrary NucleotideSequence where
 
 instance Show NucleotideSequence where
 
-    show (NS x) = showDNA x
+    show (NS x) = fold ["(",shownDNA,",",shownContext,")"]
       where
-        showDNA = foldMap renderBase . otoList
+        (shownDNA, shownContext) = (fold *** fold) . unzip
+                                 $ (grabMedian &&& id) . renderBase <$> otoList x
+        grabMedian = pure . head . tail
 
 
 instance Show NucleotideBase where
@@ -135,12 +138,12 @@ renderBase x =
                                | popCount (l .&. r) > 0 = l .&. r
                                | otherwise = l .|. r
                          in  ('A', m, l, r)
-    in case decodeBase median of
-         Nothing ->  errorMsg median
-         Just a  ->
-           case decodeBase lVal of
-             Nothing ->  errorMsg lVal
-             Just b  ->
-               case decodeBase rVal of
-                 Nothing ->  errorMsg rVal
-                 Just c  -> [pref,a,b,c]
+    in  case decodeBase median of
+          Nothing ->  errorMsg median
+          Just a  ->
+            case decodeBase lVal of
+              Nothing ->  errorMsg lVal
+              Just b  ->
+                case decodeBase rVal of
+                  Nothing ->  errorMsg rVal
+                  Just c  -> [pref,a,b,c]

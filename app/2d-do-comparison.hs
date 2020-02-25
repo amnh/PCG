@@ -8,14 +8,18 @@ import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                                    as BM
+import           Data.Foldable
+import           Data.List                                     (isPrefixOf, uncons)
 import           Data.List.NonEmpty                            (NonEmpty)
 import qualified Data.List.NonEmpty                            as NE
 import           Data.Maybe
-import           Data.TCM.Dense
+import           Data.MonoTraversable
+--import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           System.Environment                            (getArgs)
 import           Test.Custom.NucleotideSequence
-import           Test.QuickCheck
+import           Test.Tasty
+import           Test.Tasty.QuickCheck
 
 
 data OperationalMode a
@@ -29,16 +33,17 @@ main :: IO ()
 main = do
     args <- getArgs
     case parseArgs args of
-      Search                       -> performCounterExampleSearch Nothing
-      SearchAgainst    char1       -> performCounterExampleSearch $ Just char1
+      Search                       -> performCounterExampleSearch' Nothing
+      SearchAgainst    char1       -> performCounterExampleSearch' $ Just char1
       RenderComparison char1 char2 -> performImplementationComparison char1 char2
       TooManyParameters            -> putStrLn "Expecting only two parameters!"
 
 
-parseArgs :: [String] -> OperationalMode DynamicCharacter -- Either String (String, String)
+parseArgs :: [String] -> OperationalMode DynamicCharacter
 parseArgs args =
     case args of
       []          -> Search
+      arg1:_ | "--quickcheck-replay" `isPrefixOf` arg1 -> Search
       arg1:xs     ->
         let char1 = readSequence arg1
         in  case xs of
@@ -54,102 +59,84 @@ parseArgs args =
     (.!.) bm k = fromMaybe (error $ "Bimap left key not found: " <> show k) $ BM.lookup k bm
 
 
-performCounterExampleSearch :: Maybe DynamicCharacter -> IO ()
-performCounterExampleSearch valueMay = do
-    putStrLn "Performing stocastic counter-example search:"
-    case valueMay of
-      Nothing   -> quickCheckWith extraItertations $ uncurry counterExampleCheck
-      Just char -> quickCheckWith extraItertations $ counterExampleCheck (NS char)
+performCounterExampleSearch' :: Maybe DynamicCharacter -> IO ()
+performCounterExampleSearch' valueMay =
+        case valueMay of
+          Nothing   -> makeMain . testProperty preamble $ uncurry counterExampleCheck
+          Just char -> makeMain . testProperty preamble $ counterExampleCheck (NS char)
   where
-    extraItertations = stdArgs { maxSuccess = 1000000 }
--- Can't do this because the monomorphism restriction unexpectedly fixes the type.
---  where
---    stocasticSearchContext = quickCheckWith stdArgs { maxSuccess = 10000 }
+    preamble = "Performing stocastic counter-example search"
+    makeMain = defaultMain . localOption (QuickCheckTests 1000000) . localOption (QuickCheckShowReplay True)
 
 
 counterExampleCheck :: NucleotideSequence -> NucleotideSequence -> Property
-counterExampleCheck x@(NS lhs) y@(NS rhs) = counterexample contextRendering $
---    all (== naiveDOResult) [memoizeDOResult, ukkonenDOResult, foreignDOResult]
---    all (== ukkonenDOResult) [ukkonenDOResult]
-    all (== memoizeDOResult) [memoizeDOResult, ukkonenDOResult]
-  where
-    contextRendering = niceContextRendering x y naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult
---    contextRendering = niceContextRendering x y memoizeDOResult ukkonenDOResult foreignDOResult
---    contextRendering = niceContextRendering x y ukkonenDOResult
-    naiveDOResult    = naiveDO           lhs rhs costStructure
-    memoizeDOResult  = naiveDOMemo       lhs rhs tcm
-    ukkonenDOResult  = ukkonenDO         lhs rhs tcm
-    foreignDOResult  = foreignPairwiseDO lhs rhs denseMatrixValue
---    shownInputs      = mconcat ["\n(",showStream alphabet lhs,",",showStream alphabet rhs,")"]
+counterExampleCheck (NS lhs) (NS rhs) = uncurry counterexample $ gatherContexts lhs rhs
 
 
 performImplementationComparison :: DynamicCharacter -> DynamicCharacter -> IO ()
-performImplementationComparison char1 char2 = putStrLn renderedComparison
-  where
-    renderedComparison = niceContextRendering (NS char1) (NS char2) naiveDOResult memoizeDOResult ukkonenDOResult foreignDOResult
-    naiveDOResult      = naiveDO           char1 char2 costStructure
-    memoizeDOResult    = naiveDOMemo       char1 char2 tcm
-    ukkonenDOResult    = ukkonenDO         char1 char2 tcm
-    foreignDOResult    = foreignPairwiseDO char1 char2 denseMatrixValue
+performImplementationComparison lhs rhs = putStrLn . fst $ gatherContexts lhs rhs
 
 
-niceContextRendering
-  :: ( Show c1
-     , Show c2
-     , Show c3
-     , Show c4
-     )
-  => NucleotideSequence
-  -> NucleotideSequence
-  -> (c1, DynamicCharacter)
-  -> (c2, DynamicCharacter)
-  -> (c3, DynamicCharacter)
-  -> (c4, DynamicCharacter)
-  -> String
-niceContextRendering m n a b c d = unlines
-    [ show (m, n)
-    , "Native Naive    DO Result:"
-    , naiveMessage
-    , "Native Memoized DO Result:"
-    , memoizeMessage
-    , "Native Ukkonen  DO Result:"
-    , ukkonenMessage
-    , "Foreign C code  DO Result:"
-    , foreignMessage
-    , whichDoNotMatch
-{-
-    , if   all (== naiveMessage) [memoizeMessage, ukkonenMessage, foreignMessage]
-      then "[!] Results MATCH"
-      else "[X] Results DO NOT MATCH"
--}
-    ]
+gatherContexts
+  :: DynamicCharacter
+  -> DynamicCharacter
+  -> (String, Bool)
+gatherContexts lhs rhs = (contextRendering, contextSameness)
   where
-    naiveMessage   = renderResult a
-    memoizeMessage = renderResult b
-    ukkonenMessage = renderResult c
-    foreignMessage = renderResult d
+    contextSameness  = sameAlignment $ snd <$> contexts
+
+    contextRendering = renderContexts (NS lhs) (NS rhs) contexts
+
+    contexts =
+        [ ("Old Full"    ,        memoizeDOResult)
+        , ("Old Ukkonen" ,     ukkonenOldDOResult)
+        , ("Unboxed Full",        unboxedDOResult)
+        , ("Unboxed Swapping",   swappingDOResult)
+        , ("Unboxed Ukkonen",  ukkonenNewDOResult)
+        ]
+
+--    naiveDOResult      = naiveDO             lhs rhs costStructure
+--    foreignDOResult    = foreignPairwiseDO   lhs rhs denseMatrixValue
+    memoizeDOResult    = naiveDOMemo         lhs rhs tcm
+    ukkonenOldDOResult = ukkonenDO           lhs rhs tcm
+    unboxedDOResult    = unboxedFullMatrixDO lhs rhs tcm
+    swappingDOResult   = unboxedSwappingDO   lhs rhs tcm
+    ukkonenNewDOResult = unboxedUkkonenDO    lhs rhs tcm
+
+
+sameAlignment :: (Foldable t, MonoFoldable s, Eq c, Eq s) => t (c, s) -> Bool
+sameAlignment v =
+    case uncons $ toList v of
+      Nothing       -> True
+      Just ((c,a),xs) ->
+          let sameCost = all (== c)         $           fst <$> xs
+              sameLen  = all (== olength a) $ olength . snd <$> xs
+              sameStr  = all (== a)         $           snd <$> xs
+          in  sameCost && (not sameLen || sameStr)
+
+
+renderContexts
+ :: ( Eq c
+    , Foldable f
+    , Functor f
+    , Show c
+    )
+ => NucleotideSequence
+ -> NucleotideSequence
+ -> f (String, (c, DynamicCharacter))
+ -> String
+renderContexts m n xs = unlines . (\x -> [prefix] <> x <> [suffix]) . fmap f $ toList xs
+  where
+    f (s, c) = s <> "\n" <> renderResult c
     renderResult (cost, aligned) = unlines
         [ "  Cost     : " <> show cost
         , "  Alignment: " <> renderDynamicCharacter alphabet tcm' aligned
         ]
 
-    whichDoNotMatch =
-        case messageDiffs of
-          [] -> "[!] Results MATCH"
-          xs -> "[X] Results DO NOT MATCH\n\n" <> foldMap renderDiff xs
-      where
-        messages     = [ {- naiveMessage, memoizeMessage, -} ukkonenMessage {- , foreignMessage -}]
-        messageDiffs = catMaybes [ (\i -> (i, x, y)) <$> diffIndex x y | x <- messages, y <- messages, x > y ]
-        renderDiff (i, x, y) = unlines [ "At index " <> show i, x, y]
-
-
-diffIndex :: String -> String -> Maybe Int
-diffIndex x y
-  | null remaining = Nothing
-  | otherwise      = Just $ length matched
-  where
-    (matched, remaining) = span id $ zipWith (==) x y
-
+    prefix = show (m, n)
+    suffix
+      | sameAlignment $ snd <$> xs = "[!] Results MATCH"
+      | otherwise                  = "[X] Results DO NOT MATCH"
 
 alphabet :: Alphabet String
 alphabet = fromSymbols ["A","C","G","T"]
@@ -161,7 +148,7 @@ tcm = getMedianAndCost2D memoMatrixValue
 
 tcm' :: AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup
 tcm' x y = fst $ tcm x y
-               
+
 
 costStructure :: (Ord a, Num a) => a -> a -> a
 --costStructure i j = if i /= j then 1 else 0
@@ -173,8 +160,8 @@ costStructure i j
   | otherwise = 2
 
 
-denseMatrixValue :: DenseTransitionCostMatrix
-denseMatrixValue = generateDenseTransitionCostMatrix 0  5 costStructure
+--denseMatrixValue :: DenseTransitionCostMatrix
+--denseMatrixValue = generateDenseTransitionCostMatrix 0  5 costStructure
 
 
 memoMatrixValue :: MemoizedCostMatrix

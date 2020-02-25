@@ -102,7 +102,6 @@ characterDistance f m c1 c2 = fold $
 dynamicCharacterDistance
   :: forall m d c f .
      ( DirectOptimizationPostorderDecoration d c
-     , ExportableElements c
      , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
      , HasCharacterWeight m Double
      , Applicative f
@@ -119,7 +118,6 @@ dynamicCharacterDistance meta c1 c2
 dynamicCharacterDistance'
   :: forall m d c
    . ( DirectOptimizationPostorderDecoration d c
-     , ExportableElements c
      , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
      , Show (Element c)
      )

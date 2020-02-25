@@ -38,14 +38,10 @@ import           Bio.Metadata                                           hiding (
 import           Control.Lens
 import           Data.Bits
 import           Data.Foldable
-import           Data.Key
-import           Data.List.NonEmpty                                     (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty                                     as NE
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
-import qualified Data.Sequence                                          as Seq
-import           Data.TCM.Dense                                         (DenseTransitionCostMatrix)
 import           Data.Word
 import           Prelude                                                hiding (zipWith)
 
@@ -66,16 +62,9 @@ type PairwiseAlignment s = s -> s -> (Word, s)
 
 
 -- |
--- sequentialAlignOverride, iff True forces seqAlign to run; otherwise, DO runs.
-sequentialAlignOverride :: Bool
-sequentialAlignOverride = False
-
-
--- |
 -- Select the most appropriate direct optimization metric implementation.
 selectDynamicMetric
   :: ( EncodableDynamicCharacter c
-     , ExportableElements c
      , GetPairwiseTransitionCostMatrix dec (Subcomponent (Element c)) Word
      , Show (Element c)
      )
@@ -85,7 +74,7 @@ selectDynamicMetric
   -> (Word, c)
 selectDynamicMetric meta =
     let !pTCM = meta ^. pairwiseTransitionCostMatrix
-    in  \x y -> ukkonenDO x y pTCM
+    in  \x y -> unboxedUkkonenDO x y pTCM
 
 
 -- |
@@ -238,7 +227,7 @@ updateFromParent
   -> d
   -> DynamicDecorationDirectOptimization c
   -> DynamicDecorationDirectOptimization c
-updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = resultDecoration
+updateFromParent _pairwiseAlignment meta currentDecoration parentDecoration = resultDecoration
   where
     resultDecoration = extendPostorderToDirectOptimization currentDecoration single cia
     pia =  parentDecoration ^. impliedAlignment
@@ -254,10 +243,7 @@ updateFromParent pairwiseAlignment meta currentDecoration parentDecoration = res
 {-# INLINEABLE deriveImpliedAlignment #-}
 {-# SPECIALISE deriveImpliedAlignment :: DynamicCharacter -> DynamicCharacter -> DynamicCharacter -> DynamicCharacter #-}
 deriveImpliedAlignment
-  :: ( EncodableDynamicCharacter c
-     , EncodableDynamicCharacterElement (Element c)
-     , EncodableStreamElement (Subcomponent (Element c))
-     )
+  :: EncodableDynamicCharacter c
   => c -- ^ Parent Final       Alignment
   -> c -- ^ Parent Preliminary Context
   -> c -- ^ Child  Preliminary Context
@@ -270,6 +256,7 @@ deriveImpliedAlignment pAlignment pContext cContext = cAlignment
     extractVector (x,_,_) = constructDynamic . NE.fromList $ reverse x
 
     go (acc,   [],    _) _ = (gap : acc, [], [])
+    go (  _,    _,   []) _ = error "Impossible happened in 'deriveImpliedAlignment'"
     go (acc, x:xs, y:ys) e =
         case getContext e of
           Gapping   -> (e : acc, x:xs, y:ys)
