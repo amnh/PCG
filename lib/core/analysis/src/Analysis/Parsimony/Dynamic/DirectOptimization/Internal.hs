@@ -45,6 +45,8 @@ import           Data.Semigroup
 import           Data.Word
 import           Prelude                                                hiding (zipWith)
 
+import Debug.Trace
+
 
 -- |
 -- A function representing an alignment of two dynamic characters.
@@ -148,7 +150,7 @@ directOptimizationPreorder
   -> PreorderContext d (DynamicDecorationDirectOptimization c)
   -> DynamicDecorationDirectOptimization c
 directOptimizationPreorder pairwiseAlignment meta =
-    preorderContextSym rootFn internalFn
+    preorderContext rootFn internalFn
   where
     rootFn     = initializeRoot meta
     internalFn = updateFromParent pairwiseAlignment meta
@@ -224,15 +226,21 @@ updateFromParent
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Subcomponent (Element c))
-  -> d
+  -> Either d d
   -> DynamicDecorationDirectOptimization c
   -> DynamicDecorationDirectOptimization c
-updateFromParent _pairwiseAlignment meta currentDecoration parentDecoration = resultDecoration
+updateFromParent _pairwiseAlignment meta decorationDirection parentDecoration = resultDecoration
   where
-    resultDecoration = extendPostorderToDirectOptimization currentDecoration single cia
-    pia =  parentDecoration ^. impliedAlignment
-    pac =  parentDecoration ^. alignmentContext
-    cac = currentDecoration ^. alignmentContext
+    resultDecoration  = extendPostorderToDirectOptimization currentDecoration single cia
+    currentDecoration = either id id decorationDirection
+
+    pia = parentDecoration ^. impliedAlignment
+    pac = parentDecoration ^. alignmentContext
+    cac = f $ currentDecoration ^. alignmentContext
+
+    f   = case decorationDirection of
+            Left {} -> omap swapContext
+            Right{} -> id
 
     (cia, single)
       | isMissing cac = (pia, parentDecoration ^. singleDisambiguation)
@@ -255,6 +263,21 @@ deriveImpliedAlignment pAlignment pContext cContext = cAlignment
     cAlignment   = extractVector . foldl' go initialState $ otoList pAlignment
     extractVector (x,_,_) = constructDynamic . NE.fromList $ reverse x
 
+{-
+    showChar = foldMap (showElem . getContext)
+      where
+        showElem Gapping   = "G"
+        showElem Insertion = "I"
+        showElem Deletion  = "D"
+        showElem Alignment = "A"
+
+    go (acc,   xs,   ys) _ | trace ( unlines [ "Parent alignment: " <> showChar (otoList pAlignment)
+                                             , "Parent context:   " <> showChar ys
+                                             , "Child  context:   " <> showChar xs
+                                             , "Child  alignment: " <> showChar (reverse acc)
+                                             ]
+                                   ) False = undefined
+-}
     go (acc,   [],    _) _ = (gap : acc, [], [])
     go (  _,    _,   []) _ = error "Impossible happened in 'deriveImpliedAlignment'"
     go (acc, x:xs, y:ys) e =
@@ -263,8 +286,8 @@ deriveImpliedAlignment pAlignment pContext cContext = cAlignment
           Alignment -> (x : acc,   xs,   ys)
           Deletion  ->
               case getContext y of
-                Deletion -> (gap : acc, x:xs,   ys)
-                _        -> (  x : acc,   xs,   ys)
+                Deletion  -> (gap : acc, x:xs,   ys)
+                _         -> (  x : acc,   xs,   ys)
           Insertion ->
               case getContext y of
                 Insertion -> (  x : acc,   xs,   ys)
