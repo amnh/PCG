@@ -178,6 +178,12 @@ newtype MetadataSequence block meta = MetadataSequence
   }
   deriving stock Functor
 
+
+-- |
+-- A class for those types which have a lens onto a `MetadataSequence`.
+class HasMetadataSequence s a | s -> a where
+    _metadataSequence :: Lens' s a
+
 -- |
 -- A 'Iso' for any sort of 'blockSequence'.
 class HasBlocks s a | s -> a where
