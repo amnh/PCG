@@ -78,10 +78,16 @@ module Data.Graph.Type
   , getRootInds
   , numberOfNodes
   , getTreeEdges
+  , getTreeEdgeSet
   , getNetworkEdges
+  , getNetworkEdgeSet
   , getRootEdges
+  , getRootEdgeSet
   , getEdgeGraphShape
   , getEdges
+  , hasRootParent
+  , getSibling
+  , getParents
   )where
 
 import Prelude hiding (read, lookup)
@@ -102,6 +108,9 @@ import Control.Monad.Primitive
 import           Data.Vector.Instances ()
 import Data.Key (foldMapWithKey, lookup)
 import Data.Coerce
+import Data.Set (Set)
+import qualified Data.Set as Set
+
 
 
 
@@ -111,25 +120,26 @@ import Data.Coerce
 
 -- |
 -- The GraphShape type is for storing data in the same `shape` as our graph.
-data GraphShape f i n r t
+data GraphShape i n r t
   = GraphShape
   { leafData    :: Vector t
-  , treeData    :: Vector (f i)
-  , networkData :: Vector (f n)
-  , rootData    :: Vector (f r)
+  , treeData    :: Vector i
+  , networkData :: Vector n
+  , rootData    :: Vector r
   }
 
-type GraphShape' f tree leaf = GraphShape f tree tree tree leaf
+type GraphShape' tree leaf = GraphShape tree tree tree leaf
 
-lookupTreeNode :: TaggedIndex -> GraphShape' f tree leaf -> Maybe (f tree)
+lookupTreeNode
+  :: TaggedIndex
+  -> GraphShape internal internal root leaf -> Maybe internal
 lookupTreeNode taggedIndex GraphShape{..} =
   case getTag taggedIndex of
     -- to do : improve error message
     LeafTag    -> Nothing
     TreeTag    -> (getIndex taggedIndex) `lookup` treeData
     NetworkTag -> (getIndex taggedIndex) `lookup` networkData
-    RootTag    -> (getIndex taggedIndex) `lookup` rootData
-
+    RootTag    -> Nothing
 
 
 data  Graph
@@ -326,8 +336,8 @@ class HasLeafData s t a b | s -> a, t -> b, s b -> t, t a -> s where
 
 
 instance HasLeafData
-           (GraphShape f i n r t )
-           (GraphShape f i n r t')
+           (GraphShape i n r t )
+           (GraphShape i n r t')
            (Vector  t)
            (Vector  t') where
 
@@ -340,8 +350,8 @@ class HasTreeData s a | s -> a where
 
 
 instance HasTreeData
-           (GraphShape f i n r t)
-           (Vector (f i)) where
+           (GraphShape i n r t)
+           (Vector i) where
     _treeData = lens treeData (\g fn -> g {treeData = fn})
 
 
@@ -350,8 +360,8 @@ class HasNetworkData s a | s -> a where
 
 
 instance HasNetworkData
-           (GraphShape f i n r t)
-           (Vector (f n)) where
+           (GraphShape i n r t)
+           (Vector n) where
     _networkData = lens networkData (\g fn -> g {networkData = fn})
 
 
@@ -361,8 +371,8 @@ class HasRootData s a | s -> a where
 
 
 instance HasRootData
-           (GraphShape f i n r t)
-           (Vector (f r)) where
+           (GraphShape i n r t)
+           (Vector r) where
     _rootData = lens rootData (\g fn -> g {rootData = fn})
 
 
@@ -562,6 +572,35 @@ getTreeEdges graph = Builder.build treeEdgesB
       in
         addTwoEdges sourceTaggedIndex childTaggedIndices
 
+getTreeEdgeSet :: forall f c e n t . Graph f c e n t -> Set EdgeIndex
+getTreeEdgeSet graph = edgeSet
+  where
+    treeVec :: Vector (TreeIndexData (f n) e)
+    treeVec = view _treeReferences graph
+
+    edgeSet :: Set EdgeIndex
+    edgeSet = foldMapWithKey buildEdges treeVec
+
+    buildEdges :: Int -> TreeIndexData (f n) e -> Set EdgeIndex
+    buildEdges ind treeData =
+      let
+        sourceTaggedIndex :: TaggedIndex
+        sourceTaggedIndex = TaggedIndex ind TreeTag
+
+        childTaggedIndices :: TaggedIndex :!: TaggedIndex
+        childTaggedIndices = coerce $ view _childInds treeData
+
+        addTwoEdges source target =
+          let
+            e1 = Set.singleton
+               $ EdgeIndex {edgeSource = source, edgeTarget = view _left target}
+            e2 = Set.singleton
+               $ EdgeIndex {edgeSource = source, edgeTarget = view _right target}
+          in
+            e1 <> e2
+      in
+        addTwoEdges sourceTaggedIndex childTaggedIndices
+
 
 getNetworkEdges :: forall f c e n t . Graph f c e n t -> Vector EdgeIndex
 getNetworkEdges graph = Builder.build netEdgesB
@@ -582,6 +621,27 @@ getNetworkEdges graph = Builder.build netEdgesB
         childTaggedIndex = coerce $ view _childInds netData
       in
         Builder.singleton $
+          EdgeIndex {edgeSource = sourceTaggedIndex, edgeTarget = childTaggedIndex}
+
+getNetworkEdgeSet :: forall f c e n t . Graph f c e n t -> Set EdgeIndex
+getNetworkEdgeSet graph = edgeSet
+  where
+    netVec :: Vector (NetworkIndexData (f n) e)
+    netVec = view _networkReferences graph
+
+    edgeSet :: Set EdgeIndex
+    edgeSet = foldMapWithKey buildEdges netVec
+
+    buildEdges :: Int -> NetworkIndexData (f n) e -> Set EdgeIndex
+    buildEdges ind netData =
+      let
+        sourceTaggedIndex :: TaggedIndex
+        sourceTaggedIndex = TaggedIndex ind NetworkTag
+
+        childTaggedIndex :: TaggedIndex
+        childTaggedIndex = coerce $ view _childInds netData
+      in
+        Set.singleton $
           EdgeIndex {edgeSource = sourceTaggedIndex, edgeTarget = childTaggedIndex}
 
 
@@ -618,19 +678,52 @@ getRootEdges graph = Builder.build rootEdgesB
         either (addOneEdge sourceTaggedIndex) (addTwoEdges sourceTaggedIndex)
           $ childTaggedIndices
 
+getRootEdgeSet :: forall f c e n t . Graph f c e n t -> Set EdgeIndex
+getRootEdgeSet graph = edgeSet
+  where
+    rootVec :: Vector (RootIndexData (f n) e)
+    rootVec = view _rootReferences graph
+
+    edgeSet :: Set EdgeIndex
+    edgeSet = foldMapWithKey buildEdges rootVec
+
+    buildEdges :: Int -> RootIndexData (f n) e -> Set EdgeIndex
+    buildEdges ind treeData =
+      let
+        sourceTaggedIndex :: TaggedIndex
+        sourceTaggedIndex = TaggedIndex ind RootTag
+
+        childTaggedIndices :: Either TaggedIndex (TaggedIndex :!: TaggedIndex)
+        childTaggedIndices = coerce $ view _childInds treeData
+
+        addOneEdge source target =
+          Set.singleton $ EdgeIndex {edgeSource = source, edgeTarget = target}
+
+        addTwoEdges source target =
+          let
+            e1 = Set.singleton
+               $ EdgeIndex {edgeSource = source, edgeTarget = view _left target}
+            e2 = Set.singleton
+               $ EdgeIndex {edgeSource = source, edgeTarget = view _right target}
+          in
+            e1 <> e2
+      in
+        either (addOneEdge sourceTaggedIndex) (addTwoEdges sourceTaggedIndex)
+          $ childTaggedIndices
+
 
 -- |
 -- This returns a graph shape where each data bucket contains
 -- those edges with that node as _parent_.
 --
 -- Note: This means the leafData is empty as there are no edges with leaves as parents.
-getEdgeGraphShape :: Graph f c e n t -> GraphShape Identity EdgeIndex EdgeIndex EdgeIndex EdgeIndex
+getEdgeGraphShape :: Graph f c e n t -> GraphShape EdgeIndex EdgeIndex EdgeIndex EdgeIndex
 getEdgeGraphShape graph = GraphShape{..}
   where
     leafData    = mempty
-    treeData    = coerce $ getTreeEdges    graph
-    networkData = coerce $ getNetworkEdges graph
-    rootData    = coerce $ getRootEdges    graph
+    treeData    = getTreeEdges    graph
+    networkData = getNetworkEdges graph
+    rootData    = getRootEdges    graph
 
 
 -- |
@@ -641,3 +734,72 @@ getEdges graph =
     GraphShape{..} = getEdgeGraphShape graph
   in
     leafData <> (coerce $ treeData <> networkData <> rootData)
+
+
+
+-- |
+-- Get sibling of a node or return Nothing if one doesn't exist.
+getSibling :: TaggedIndex -> Graph f c e n t -> Maybe TaggedIndex
+getSibling taggedIndex graph =
+  case view _indexType taggedIndex of
+    RootTag    -> Nothing
+    NetworkTag -> Nothing
+    LeafTag    -> f taggedIndex
+    TreeTag    -> f taggedIndex
+  where
+    f index = 
+      let
+        nodeInfo = indexLeaf graph (view _untaggedIndex index)
+        parIndex :: TaggedIndex
+        parIndex = coerce $ view _parentInds nodeInfo
+        untaggedPar = view _untaggedIndex parIndex
+        parTag = view _indexType parIndex
+      in
+        case parTag of
+          TreeTag ->
+            let
+              l :!: r = coerce $ view _childInds (indexTree graph untaggedPar)
+            in
+              if index == l then pure r else pure l
+          _       -> Nothing
+
+
+hasRootParent :: TaggedIndex -> Graph f c e n t -> Bool
+hasRootParent taggedIndex graph =
+  case view _indexType taggedIndex of
+    RootTag    -> False
+    NetworkTag -> False
+    LeafTag    -> f taggedIndex
+    RootTag    -> f taggedIndex
+  where
+    f index =
+      let
+        nodeInfo = indexLeaf graph (view _untaggedIndex index)
+        parTag :: IndexType
+        parTag = view (_parentInds . _indexType) nodeInfo
+      in
+        parTag == RootTag
+
+
+getParents :: TaggedIndex -> Graph f c e n t -> [TaggedIndex]
+getParents taggedIndex graph =
+  case view _indexType taggedIndex of
+    RootTag -> []
+    NetworkTag ->
+      let
+        nodeInfo = indexNetwork graph (view _untaggedIndex taggedIndex)
+        par1 :!: par2 = coerce $ view _parentInds nodeInfo
+      in
+        [par1, par2]
+    LeafTag ->
+      let
+        nodeInfo = indexLeaf graph (view _untaggedIndex taggedIndex)
+        par = coerce $ view _parentInds nodeInfo
+      in
+        pure par
+    TreeTag ->
+      let
+        nodeInfo = indexTree graph (view _untaggedIndex taggedIndex)
+        par = coerce $ view _parentInds nodeInfo
+      in
+        pure par
