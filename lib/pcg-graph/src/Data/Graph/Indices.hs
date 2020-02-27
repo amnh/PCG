@@ -1,5 +1,7 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE DerivingVia                #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -18,6 +20,8 @@ import Data.Pair.Strict
 import Data.Coerce
 import Data.Hashable
 import Data.Bits
+import           GHC.Generics         (Generic)
+import Control.DeepSeq
 
 
 -- To do: put this into pcg-utility
@@ -29,20 +33,24 @@ defaultHashWithSalt salt x = salt `combine` hash x
 
 
 newtype LeafInd = LeafInd {getLeafInd :: Int}
-  deriving stock  (Eq, Ord, Show)
+  deriving stock  (Eq, Ord, Generic, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
+  deriving newtype (NFData)
 
 newtype RootInd = RootInd {getRootInd :: Int}
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Generic, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
+  deriving newtype (NFData)
 
 newtype NetworkInd = NetworkInd {getNetworkInd  :: Int}
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Generic, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
+  deriving newtype (NFData)
 
 newtype TreeInd = TreeInd {getTreeInd :: Int}
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Generic, Show)
   deriving (Semigroup, Monoid) via (Sum Int)
+  deriving newtype (NFData)
 
 class Tagged t where
   tagValue   :: IndexType -> Int -> t
@@ -56,7 +64,8 @@ data TaggedIndex  = TaggedIndex
   { untaggedIndex :: {-# UNPACK #-} !Int
   , tag           :: {-# UNPACK #-} !IndexType
   }
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData)
 
 
 instance Hashable TaggedIndex where
@@ -115,6 +124,7 @@ class HasIndexType s a | s -> a where
   _indexType :: Getter s a
 
 
+
 instance HasIndexType TaggedIndex IndexType where
   _indexType = to tag
 
@@ -131,6 +141,14 @@ instance HasIndexType (ChildInfo e) IndexType where
   _indexType = _childIndex . _indexType
 
 
+class HasUntaggedIndex s a | s -> a where
+  _untaggedIndex :: Getter s a
+
+
+instance HasUntaggedIndex TaggedIndex Int where
+  _untaggedIndex = to untaggedIndex
+
+
 
 instance HasChildIndex (ChildInfo e) ChildIndex where
   _childIndex = lens childIndex (\c i -> c { childIndex = i})
@@ -144,7 +162,9 @@ instance HasEdgeData (ChildInfo e) (ChildInfo e') e e' where
 
 
 data IndexType = LeafTag | TreeTag | NetworkTag | RootTag
-  deriving stock (Eq, Ord, Enum)
+  deriving stock (Eq, Ord, Enum, Generic)
+  deriving anyclass (NFData)
+
 
 instance Hashable IndexType where
   hash = fromEnum
@@ -171,7 +191,8 @@ data EdgeIndex = EdgeIndex
   { edgeSource    :: {-# UNPACK #-} !TaggedIndex
   , edgeTarget    :: {-# UNPACK #-} !TaggedIndex
   }
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData)
 
 
 -- Adapted from the Hashable library
