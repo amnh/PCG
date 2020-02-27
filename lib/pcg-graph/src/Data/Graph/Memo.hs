@@ -21,8 +21,8 @@ import Data.Vector ((!))
 
 type Endo a = (a -> a)
 
-data MemoGen i n r l = MemoGen
-  { leafGen    :: Int -> l
+data MemoGen i n r t = MemoGen
+  { leafGen    :: Int -> t
   , treeGen    :: Int -> i
   , networkGen :: Int -> n
   , rootGen    :: Int -> r
@@ -31,19 +31,19 @@ data MemoGen i n r l = MemoGen
 type MemoGen' f i l = MemoGen (f i) (f i) (f i) l
 
 generateMemoGraphShape
-  :: forall f i l . ()
+  :: forall f i n r t . ()
   => Int
   -> Int
   -> Int
   -> Int
-  -> Endo (MemoGen' f i l)
-  -> GraphShape' f i l
+  -> Endo (MemoGen i n r t)
+  -> GraphShape i n r t
 generateMemoGraphShape numL numI numN numR recursiveFuns = memoGraphShape
   where
-    memoGraphShape :: GraphShape' f i l
+    memoGraphShape :: GraphShape i n r t
     memoGraphShape = generateGraphShape numL numI numN numR (recursiveFuns memoizedFunction)
 
-    memoizedFunction :: MemoGen' f i l
+    memoizedFunction :: MemoGen i n r t
     memoizedFunction = MemoGen
       { leafGen     = ((memoGraphShape ^. _leafData   ) !)
       , treeGen     = ((memoGraphShape ^. _treeData   ) !)
@@ -104,8 +104,8 @@ generateGraphShape
   -> Int
   -> Int
   -> Int
-  -> MemoGen' f i l
-  -> GraphShape' f i l
+  -> MemoGen i n r t
+  -> GraphShape i n r t
 generateGraphShape numL numI numN numR MemoGen{..} =
   GraphShape
   { leafData     = V.generate numL leafGen
