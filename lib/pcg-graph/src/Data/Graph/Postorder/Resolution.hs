@@ -48,9 +48,14 @@ import           GHC.TypeLits
 import           Data.Graph.TopologyRepresentation
 import           Data.Graph.Sequence.Class
 import           Data.Graph.Node.Context
+import           Data.Graph.NodeContext (HasNodeData(..))
+import qualified Data.Graph.NodeContext as NodeContext
 import qualified Data.Vector as Vector
 import           Data.Graph.Indices
-import Data.Coerce
+import           Data.Graph.Type
+import           Data.Coerce
+import           Data.Set (Set)
+import qualified Data.Set as Set
 
 -- |
 -- The metadata of a subtree resolution.
@@ -59,10 +64,14 @@ data  ResolutionMetadata
     { totalSubtreeCost       :: {-# UNPACK #-} !Double
     , leafSetRepresentation  :: {-# UNPACK #-} !UnionSet
     , topologyRepresentation :: {-# UNPACK #-} !(TopologyRepresentation (Int :!: Int))
+    , subTreeEdgeSet         :: {-# UNPACK #-} !(Set (EdgeIndex))
     , subTreeHash            :: {-# UNPACK #-} !Int
     }
     deriving stock    (Eq, Ord, Generic)
     deriving anyclass (NFData)
+
+leafResolutionMetadata :: Int -> CharacterSequence block -> ResolutionMetadata
+leafResolutionMetadata untaggedInd characterSequence = error "to do"
 
 combineResolutionMetadata
   :: Double
@@ -71,12 +80,16 @@ combineResolutionMetadata
   -> ResolutionMetadata
 combineResolutionMetadata
   newCost
-  (ResolutionMetadata total1 leafSet1 topology1 hash1)
-  (ResolutionMetadata total2 leafSet2 topology2 hash2) =
+  (ResolutionMetadata total1 leafSet1 topology1 edge1 hash1)
+  (ResolutionMetadata total2 leafSet2 topology2 edge2 hash2) =
   ResolutionMetadata
+  -- Note: This adds the subtree resolution metadata but doesn't add the
+  -- node metadata which must be done during the post order so we have
+  -- access to the relevant information.
     (newCost + total1 + total2)
     (leafSet1  <> leafSet2)
     (topology1 <> topology2)
+    (edge1     <> edge2)
     -- TODO : once we decide how to hash trees we should re-visit this
     -- to give a better account. One possiblity is to have a newtype
     -- with a monoid instance that uses bits to keep track of the
@@ -84,9 +97,53 @@ combineResolutionMetadata
     (hash1 + hash2)
 
 
+-- |
+-- Adds an edge reference to an existing subtree resolution.
+-- This should not be called by itself but instead invoked by
+-- `updateResolutionMetadataFromNetwork` or `UpdateResolutionMetadataFromTree`
+addEdgeToSet :: EdgeIndex -> Resolution s -> Resolution s
+addEdgeToSet e r =
+  over (_resolutionMetadata . _subTreeEdgeSet) (<> Set.singleton e) r
+
 
 -- |
--- Assert that the two leafsets in a resolution do not overlap
+-- This is the function we call to do all resolution metadata updates necessary
+-- from a network node during a post order traversal.
+updateResMetaSingle
+  :: TaggedIndex -> TaggedIndex -> Resolution s -> Resolution s
+updateResMetaSingle currNodeInd childInd
+  = addEdgeToSet (EdgeIndex {edgeSource = currNodeInd, edgeTarget = childInd})
+
+-- |
+-- This is the function we call to do all resolution metadata updates necessary
+-- from a network node during a post order traversal.
+updateResMetaBinary
+  :: TaggedIndex -> TaggedIndex -> TaggedIndex -> Resolution s -> Resolution s
+updateResMetaBinary currNodeInd leftChildInd rightChildInd res
+  = undefined
+
+updateResCacheMetaBinary
+  :: TaggedIndex -> TaggedIndex -> TaggedIndex -> ResolutionCache cs -> ResolutionCache cs
+updateResCacheMetaBinary currNodeInd leftChildInd rightChildInd =
+  mapResolution (updateResMetaBinary currNodeInd leftChildInd rightChildInd)
+
+
+
+updateResCacheMetaSingle
+  :: TaggedIndex -> TaggedIndex -> ResolutionCache cs -> ResolutionCache cs
+updateResCacheMetaSingle currNodeInd childInd =
+  mapResolution (updateResMetaSingle currNodeInd childInd)
+
+
+
+
+
+
+-- |
+-- Assert that the two leafsets in a resolution do not overlap.
+-- This is used when we propagate resolutions upwards during a postorder.
+-- This rules out the possibility of including _both_ network edges within
+-- a single chosen resolution.
 disjointResolutions
   :: ( HasLeafSetRepresentation res1 UnionSet
      , HasLeafSetRepresentation res2 UnionSet)
@@ -103,29 +160,71 @@ data Resolution cs = Resolution
   deriving stock    (Functor, Foldable, Traversable, Generic)
   deriving anyclass (NFData)
 
+
+leafResolution
+  :: (BlockBin block)
+  => Int
+  -> CharacterSequence (LeafBin block)
+  -> MetadataSequence block meta
+  -> Resolution (CharacterSequence block)
+leafResolution untaggedInd leafSequence meta = Resolution{..}
+  where
+    characterSequence  = characterLeafInitialise meta leafSequence
+    resolutionMetadata = leafResolutionMetadata untaggedInd characterSequence
+
+
 applySoftwireResolutions
   :: forall block . ()
-  => ChildContext     -- ^ Possible subtree resolution information
-       (IndexType, (ResolutionCache (CharacterSequence block)))
+  => TaggedIndex
+  -> ChildContext     -- ^ Possible subtree resolution information
+       (TaggedIndex, (ResolutionCache (CharacterSequence block)))
   -> ResolutionCache  -- ^ Potential subtree contexts
        (PostorderContext (CharacterSequence (LeafBin block)) (CharacterSequence block))
-applySoftwireResolutions =
+applySoftwireResolutions currNodeIndex =
     \case
-      OneChild (_, childCache)       -> PostNetworkContext <$> childCache
+      OneChild (childIndexType, childCache) ->
+        let
+          updatedResCache
+            = updateResCacheMetaSingle currNodeIndex childIndexType $
+                childCache
+        in
+          PostNetworkContext <$> updatedResCache
 
       TwoChildren leftCtxt rightCtxt ->
         let
-          pairingLogic (leftIndexType, leftCache) (rightIndexType, rightCache) =
+          pairingLogic (leftIndex, leftCache) (rightIndex, rightCache) =
             let
-              pairedResolutions = liftF2 PostBinaryContext leftCache rightCache
-              lhsNetResolutions = PostNetworkContext <$> leftCache
-              rhsNetResolutions = PostNetworkContext <$> rightCache
+           -- This updates the resolution metadata to account for taking both child
+           -- resolutions
+              updateMetaBinary   =  updateResCacheMetaBinary currNodeIndex leftIndex rightIndex
+           -- This function takes a tagged index argument and updates the metadata
+           -- from the resolutions in that argument
+              updateMetaSingle   =  updateResCacheMetaSingle currNodeIndex
+           -- The left and right node types
+              leftIndexType      = view _indexType leftIndex
+              rightIndexType     = view _indexType rightIndex
+           -- These are the resolutions for which include both child nodes in the display tree
+              pairedResolutions
+                = updateMetaBinary $ liftF2 PostBinaryContext leftCache rightCache
+           -- The resolutions where we do not include the right child edge
+              lhsNetResolutions
+                = updateMetaSingle leftIndex  . fmap PostNetworkContext $ leftCache
+           -- The resolutions where we do not include the right child edge                
+              rhsNetResolutions
+                = updateMetaSingle rightIndex . fmap PostNetworkContext $ rightCache
+           -- This is all possible combinations of resolutions
               allResolutions = pairedResolutions <> lhsNetResolutions <> rhsNetResolutions
             in
             case (leftIndexType, rightIndexType) of
+           -- if both children are network nodes then include all possible resoluitions
               (NetworkTag, NetworkTag) -> allResolutions
+           -- if only the left node is a network node then we include those edges
+           -- resolutions which do not include this edge in the display tree
               (NetworkTag, _         ) -> pairedResolutions <> rhsNetResolutions
+           -- mutatis mutandis
               (_         , NetworkTag) -> pairedResolutions <> lhsNetResolutions
+           -- If neither child is a network node then take all those network
+           -- nodes which are compatible from each.
               (_         , _         ) -> pairedResolutions
         in
           pairingLogic leftCtxt rightCtxt
@@ -140,21 +239,30 @@ virtualParentResolution
   => Lens' block subBlock
   -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
   -> MetadataSequence block meta
-  -> ResolutionCache (CharacterSequence block)
-  -> ResolutionCache (CharacterSequence block)
+  -> (TaggedIndex, ResolutionCache (CharacterSequence block))
+  -> (TaggedIndex, ResolutionCache (CharacterSequence block))
   -> ResolutionCache (CharacterSequence block)
 virtualParentResolution
-    _subBlock _subMeta blockMeta leftResolutions rightResolutions =
+    _subBlock
+    _subMeta
+    blockMeta
+    (leftChildIndex, leftResolutions)
+    (rightChildIndex, rightResolutions) =
   let
     resolutionContext
       :: ResolutionCache (PostorderContext
                             (CharacterSequence (LeafBin block))
                             (CharacterSequence block))
+
+    virtualRootIndex :: TaggedIndex
+    virtualRootIndex = TaggedIndex 0 RootTag
+    
     resolutionContext
-      = applySoftwireResolutions $
+      = applySoftwireResolutions
+          virtualRootIndex $
           TwoChildren
-            (TreeTag, leftResolutions )
-            (TreeTag, rightResolutions)
+            (leftChildIndex, leftResolutions )
+            (rightChildIndex, rightResolutions)
 
     updatedBlockResolutions
       :: ResolutionCache (CharacterSequence block)
@@ -288,6 +396,52 @@ generateSubBlockLocalResolutions _subBlock _subMeta meta childResolutionContext 
           & _totalSubtreeCost  .~ newTotalCost
 
 
+
+getResolutionCache
+  :: MetadataSequence block meta
+  -> TaggedIndex
+  -> Graph
+       (ResolutionCacheM Identity)
+       cache
+       e
+       (CharacterSequence block)
+       (CharacterSequence (LeafBin block))
+  -> ResolutionCache (CharacterSequence block)
+getResolutionCache meta taggedIndex graph =
+  case view _indexType taggedIndex of
+    LeafTag ->
+      let
+        untaggedInd = view _untaggedIndex taggedIndex
+        node = indexLeaf graph untaggedInd
+        nodeInfo = view _nodeData node
+      in
+        makeLeafResolution untaggedInd nodeInfo
+    RootTag -> 
+      let
+        node = indexRoot graph (view _untaggedIndex taggedIndex)
+        nodeInfo = view _nodeData node
+      in
+        nodeInfo
+    NetworkTag ->
+      let
+        node = indexNetwork graph (view _untaggedIndex taggedIndex)
+        nodeInfo = view _nodeData node
+      in
+        nodeInfo
+    TreeTag ->
+      let
+        node = indexTree graph (view _untaggedIndex taggedIndex)
+        nodeInfo = view _nodeData node
+      in
+        nodeInfo
+  where
+    makeLeafResolution
+      :: Int
+      -> CharacterSequence (LeafBin block)
+      -> ResolutionCache (CharacterSequence block)
+    makeLeafResolution untaggedInd leafCharSeq = undefined
+
+
 type ResolutionCache cs = ResolutionCacheM Identity cs
 type CharacterResolutionCache block = ResolutionCache (CharacterSequence block)
 
@@ -303,6 +457,25 @@ newtype ResolutionCacheM m cs
 
 -- to do: We can't partially apply a type synonym so we should figure out a better story with
 -- resolutionCache, probably could make it a newtype that takes the instances from ResolutionCacheM or just remove ResolutionCacheM
+
+mapResolution
+  :: forall m cs cs' . (Functor m)
+  => (Resolution cs -> Resolution cs')
+  -> (ResolutionCacheM m cs -> ResolutionCacheM m cs')
+mapResolution resFn =
+    ResolutionCacheM
+  . fmap (fmap resFn)
+  . runResolutionCacheM
+
+
+filterResolution
+  :: forall m cs cs' . (Functor m)
+  => (Resolution cs -> Bool)
+  -> (ResolutionCacheM m cs -> m [(Resolution cs)])
+filterResolution p =
+    fmap (NonEmpty.filter p)
+  . runResolutionCacheM
+
 
 
 instance Apply m => Semigroup (ResolutionCacheM m cs) where
@@ -481,3 +654,25 @@ instance HasResolutionMetadata (Resolution s) ResolutionMetadata where
 
     {-# INLINE _resolutionMetadata #-}
     _resolutionMetadata = lens resolutionMetadata (\r m -> r {resolutionMetadata = m})
+
+
+
+-- |
+-- A 'Lens' for the 'subtreeSet' field in 'ResolutionMetadata'
+{-# SPECIALISE _subTreeEdgeSet:: Lens' ResolutionMetadata (Set EdgeIndex) #-}
+{-# SPECIALISE _subTreeEdgeSet :: Lens' (Resolution s) (Set EdgeIndex) #-}
+class HasSubtreeSet s a | s -> a where
+
+    _subTreeEdgeSet :: Lens' s a
+
+
+instance HasSubtreeSet ResolutionMetadata (Set EdgeIndex) where
+
+    {-# INLINE _subTreeEdgeSet #-}
+    _subTreeEdgeSet = lens subTreeEdgeSet (\r s -> r {subTreeEdgeSet = s})
+
+
+instance HasSubtreeSet (Resolution s) (Set EdgeIndex) where
+
+    {-# INLINE _subTreeEdgeSet #-}
+    _subTreeEdgeSet = _resolutionMetadata . _subTreeEdgeSet
