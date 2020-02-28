@@ -429,6 +429,7 @@ library data-structures
     Bio.Metadata.DiscreteWithTCM
     Bio.Metadata.Dynamic
     Bio.Metadata.Metric
+    Bio.Metadata.Overlap
     Bio.Sequence
     Bio.Sequence.Block
     Bio.Sequence.Character

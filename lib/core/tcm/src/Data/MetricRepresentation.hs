@@ -71,14 +71,13 @@ retreivePairwiseTCM
      , Bound c ~ Word
      , Ranged c
      )
-  => (TCM -> a -> c -> c -> (c, Word))
-  -> MetricRepresentation a
+  => MetricRepresentation (c -> c -> (c, Word))
   -> c
   -> c
   -> (c, Word)
-retreivePairwiseTCM f (ExplicitLayout tcm a) = f tcm a
-retreivePairwiseTCM _ DiscreteMetric         = discreteMetricPairwiseLogic
-retreivePairwiseTCM _ LinearNorm             = firstLinearNormPairwiseLogic
+retreivePairwiseTCM (ExplicitLayout _ f) = f
+retreivePairwiseTCM DiscreteMetric       = discreteMetricPairwiseLogic
+retreivePairwiseTCM LinearNorm           = firstLinearNormPairwiseLogic
 
 
 retreiveThreewayTCM
@@ -86,15 +85,14 @@ retreiveThreewayTCM
      , Bound c ~ Word
      , Ranged c
      )
-  => (TCM -> a -> c -> c -> c -> (c, Word))
-  -> MetricRepresentation a
+  => MetricRepresentation (c -> c -> c -> (c, Word))
   -> c
   -> c
   -> c
   -> (c, Word)
-retreiveThreewayTCM f (ExplicitLayout tcm a) = f tcm a
-retreiveThreewayTCM _ DiscreteMetric         =  discreteMetricThreewayLogic
-retreiveThreewayTCM _ LinearNorm             = firstLinearNormThreewayLogic
+retreiveThreewayTCM (ExplicitLayout _ f) = f
+retreiveThreewayTCM DiscreteMetric       =  discreteMetricThreewayLogic
+retreiveThreewayTCM LinearNorm           = firstLinearNormThreewayLogic
 
 
 discreteMetricPairwiseLogic

@@ -41,6 +41,7 @@ import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
 import           Data.Foldable
+import           Data.Hashable
 import           Data.Key
 import qualified Data.List.NonEmpty                   as NE
 import           Data.Maybe
@@ -60,7 +61,7 @@ import           TextShow                             (TextShow)
 newtype StaticCharacter
       = SC BitVector
       deriving stock   (Generic)
-      deriving newtype (Arbitrary, Bits, Eq, MonoFunctor, MonoFoldable, Ord, Show, TextShow)
+      deriving newtype (Arbitrary, Bits, Eq, Hashable, MonoFunctor, MonoFoldable, Ord, Show, TextShow)
 
 
 -- |
