@@ -19,7 +19,7 @@
 {-# LANGUAGE RecordWildCards    #-}
 
 module PCG.Command.Report.Distance
-  ( outputDistance
+  ( outputDistanceMatrix
   ) where
 
 import           Analysis.Distance
@@ -30,9 +30,9 @@ import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Decoration.Fitch
 import           Bio.Character.Decoration.Metric
 import           Bio.Graph
+import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Sequence
-import           Bio.Sequence.Metadata
 import           Control.Lens
 import           Data.Coerce
 import           Data.List                           (intersperse)
@@ -49,10 +49,18 @@ import qualified Data.Vector                         as Vector
 import           TextShow
 
 
+
+outputDistanceMatrix :: DecoratedCharacterResult -> Text
+outputDistanceMatrix solution = distanceMatrixCSV leaves meta
+  where
+    meta = view _columnMetadata . extractSolution $  solution
+
+    leaves = fromLeafSet $ view leafSet solution
+
 -- |
 -- This function outputs the distance matrix of each of the leaves
 -- in csv format.
-outputDistance
+distanceMatrixCSV
   :: Vector
        (PhylogeneticNode
        (CharacterSequence
@@ -65,7 +73,7 @@ outputDistance
        NodeLabel)
   -> MetadataSequence m
   -> Text
-outputDistance l meta = Text.unlines $ rowNames : rows
+distanceMatrixCSV l meta = Text.unlines $ rowNames : rows
 
   where
  -- coerce to use a type amenable to the characterDistanceMatrix
@@ -84,7 +92,7 @@ outputDistance l meta = Text.unlines $ rowNames : rows
     toRow =
         toLazyText
       . intercalateM (Builder.singleton ',')
-      . (fmap Builder.realFloat)
+      . fmap Builder.realFloat
 
  -- From the leaves get a comma-seprated list of row names
     rowNames :: Text
