@@ -26,6 +26,8 @@ module Data.NodeLabel
   , nodeLabel
   , nodeLabelString
   , nodeLabelToString
+  , nodeLabelToLazyText
+  , nodeLabelToStrictText
   ) where
 
 
@@ -40,6 +42,8 @@ import           Data.Text.Short      as TS
 import           GHC.Generics
 import           TextShow             (TextShow (showb))
 import qualified TextShow             as Show
+import qualified Data.Text            as Strict
+import qualified Data.Text.Lazy       as Lazy
 
 
 -- |
@@ -85,6 +89,12 @@ isEmpty = coerce TS.null
 -- Converts a NodeLabel to a string.
 nodeLabelToString :: NodeLabel -> String
 nodeLabelToString = coerce TS.toString
+
+nodeLabelToStrictText :: NodeLabel -> Strict.Text
+nodeLabelToStrictText = coerce TS.toText
+
+nodeLabelToLazyText :: NodeLabel -> Lazy.Text
+nodeLabelToLazyText = Lazy.fromStrict . nodeLabelToStrictText
 
 
 instance Default NodeLabel where
