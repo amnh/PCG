@@ -191,6 +191,7 @@ library analysis
     foldl                    >= 1.3.2     && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.18      && < 5.0,
+    matrices                 >= 0.5       && < 0.6,
     mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
@@ -249,6 +250,7 @@ library core
 
   reexported-modules:
     Analysis.Clustering,
+    Analysis.Distance,
     Analysis.Parsimony.Additive,
     Analysis.Parsimony.Dynamic.DirectOptimization,
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise,
@@ -1154,6 +1156,7 @@ executable pcg
     integer-gmp              >= 1.0       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.17      && < 5.0,
+    matrices                 >= 0.5       && < 0.6,
     megaparsec               >= 8.0       && < 9.0,
     mmark                    >= 0.0.7.2   && < 1.0,
     modern-uri               >= 0.3       && < 1.0,
@@ -1192,6 +1195,7 @@ executable pcg
     PCG.Command.Read.InputStreams
     PCG.Command.Read.ParseStreams
     PCG.Command.Read.ReadCommandError
+    PCG.Command.Report.Distance
     PCG.Command.Report.Evaluate
     PCG.Command.Report.GraphViz
     PCG.Command.Report.Metadata
