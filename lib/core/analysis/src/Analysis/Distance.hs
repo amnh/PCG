@@ -19,7 +19,8 @@
 {-# LANGUAGE NoMonoLocalBinds    #-}
 
 module Analysis.Distance (
-  characterSequenceDistance
+    characterSequenceDistance
+  , characterDistanceMatrix
   ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization
@@ -37,6 +38,9 @@ import           Data.Foldable
 import           Data.Monoid
 import           Data.MonoTraversable
 import           Numeric.Extended.Real
+import Data.Matrix.Unboxed (Matrix)
+import qualified Data.Matrix.Unboxed as Matrix
+import Data.Vector hiding (length)
 
 
 characterSequenceDistance
@@ -56,6 +60,28 @@ characterSequenceDistance
   -> Sum Double
 characterSequenceDistance =
   foldZipWithMeta blockDistance
+
+
+characterDistanceMatrix
+  :: forall f u v w x y z m .
+  ( (HasIntervalCharacter u ContinuousCharacter )
+  , (HasDiscreteCharacter v StaticCharacter       )
+  , (HasDiscreteCharacter w StaticCharacter       )
+  , (HasDiscreteCharacter x StaticCharacter       )
+  , (HasDiscreteCharacter y StaticCharacter       )
+  , (DirectOptimizationPostorderDecoration z DynamicCharacter)
+  , Applicative f
+  , Foldable f
+  )
+  => Vector (CharacterSequence (f u) (f v) (f w) (f x) (f y) (f z))
+  -> MetadataSequence m
+  -> Matrix Double
+characterDistanceMatrix leaves meta =
+  let
+    numLeaves = length leaves
+    distFn (i,j) =  getSum $ characterSequenceDistance meta (leaves ! i) (leaves ! j)
+  in
+    Matrix.generate (numLeaves, numLeaves) distFn
 
 
 blockDistance
