@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.Clustering.Metric
+-- Module      :  Analysis.Distance
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -18,7 +18,7 @@
 
 {-# LANGUAGE NoMonoLocalBinds    #-}
 
-module Analysis.Clustering.Metric (
+module Analysis.Distance (
   characterSequenceDistance
   ) where
 

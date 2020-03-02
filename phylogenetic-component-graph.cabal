@@ -205,6 +205,7 @@ library analysis
   exposed-modules:
     Analysis.Clustering
     Analysis.Clustering.Hierarchical
+    Analysis.Distance
     Analysis.Parsimony.Additive
     Analysis.Parsimony.Dynamic.DirectOptimization
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
@@ -214,7 +215,6 @@ library analysis
     Analysis.TotalEdgeCost
 
   other-modules:
-    Analysis.Clustering.Metric
     Analysis.Parsimony.Additive.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
