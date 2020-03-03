@@ -34,13 +34,14 @@ import           Bio.Sequence
 import qualified Bio.Sequence.Block                            as Blk
 import           Control.Applicative
 import           Control.Lens
+import           Control.Parallel.Strategies                   (parMap, rpar)
 import           Data.Foldable
+import           Data.Matrix.Unboxed                           (Matrix)
+import qualified Data.Matrix.Unboxed                           as Matrix
 import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.Vector                                   hiding (length)
 import           Numeric.Extended.Real
-import Data.Matrix.Unboxed (Matrix)
-import qualified Data.Matrix.Unboxed as Matrix
-import Data.Vector hiding (length)
 
 
 characterSequenceDistance
@@ -79,9 +80,11 @@ characterDistanceMatrix
 characterDistanceMatrix leaves meta =
   let
     numLeaves = length leaves
-    distFn (i,j) =  getSum $ characterSequenceDistance meta (leaves ! i) (leaves ! j)
+    distFn (i,j)  =  getSum $ characterSequenceDistance meta (leaves ! i) (leaves ! j)
+    matrixEntries :: [Double]
+    matrixEntries = parMap rpar distFn [(i,j) | i <- [0..(numLeaves - 1)], j <- [0..(numLeaves - 1)]]
   in
-    Matrix.generate (numLeaves, numLeaves) distFn
+    Matrix.fromList (numLeaves, numLeaves) matrixEntries
 
 
 blockDistance
