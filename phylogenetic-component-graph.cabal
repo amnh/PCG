@@ -197,6 +197,7 @@ library analysis
     matrices                 >= 0.5       && < 1.0,            
     mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
+    parallel                 >= 3.2       && < 4.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
     text-show                >= 3.8.1     && < 4.0,
