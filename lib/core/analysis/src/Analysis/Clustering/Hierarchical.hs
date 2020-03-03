@@ -19,7 +19,7 @@
 module Analysis.Clustering.Hierarchical where
 
 import           AI.Clustering.Hierarchical
-import           Analysis.Clustering.Metric
+import           Analysis.Distance
 import           Bio.Graph.Constructions
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node

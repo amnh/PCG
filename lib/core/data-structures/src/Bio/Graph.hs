@@ -28,6 +28,7 @@ module Bio.Graph
   , FinalReferenceVector
   , GlobalSettings
   , GraphState
+  , HasColumnMetadata(..)
   , HasPhylogeneticForest(..)
   , PhylogeneticFreeDAG(..)
   , PhylogeneticDAG(..)

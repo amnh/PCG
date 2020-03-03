@@ -76,10 +76,10 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
       let g :: (Int, Int) -> Int
           g (i,j) = if i == j then 0 else 1
       in  structureType (generate (k + 2) g) === NonAdditive
-                                  -- |
-                                  -- |
-                                  -- | -- Ensure matrix is at least 3 x 3 as k = 2 case is both
-                                  -- | -- additive and nonadditive.
+                                  -- │
+                                  -- │
+                                  -- └─┬ Ensure matrix is at least 3 x 3 as k = 2 case is both
+                                  --   └ additive and nonadditive.
 
 
 -- Generate cases for TCMDiagnosis factoring

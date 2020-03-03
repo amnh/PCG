@@ -23,7 +23,6 @@ module PCG.Command.Report.Metadata
   ) where
 
 import Bio.Graph
-import Bio.Graph.PhylogeneticDAG
 import Bio.Metadata
 import Bio.Metadata.CharacterName
 import Bio.Sequence.Metadata

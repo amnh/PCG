@@ -140,8 +140,8 @@ instance ExportableElements DynamicCharacter where
         , exportedCharacterElements    = toNumber . getMedian t <$> otoList dc
         }
       where
-        toNumber = toUnsignedNumber . packAmbiguityGroup
-    
+        toNumber = toUnsignedNumber . packAmbiguityGroup    
+
     fromExportableElements riCharElems = DC $ fromRows bvs
       where
         bvs = packDynamicCharacterElement . f <$> inputElems
