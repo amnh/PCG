@@ -13,6 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts   #-}
@@ -37,6 +38,7 @@ module Data.MutualExclusionSet.Internal
 
 
 import           Control.DeepSeq
+import           Data.Binary
 import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
@@ -70,7 +72,8 @@ data  MutualExclusionSet a
     , includedFullMap :: !(Map a (Set a))
     , excludedFullMap :: !(Map a (Set a))
     }
-    deriving stock (Generic)
+    deriving anyclass (Binary)
+    deriving stock    (Generic)
 
 
 -- | (✔)

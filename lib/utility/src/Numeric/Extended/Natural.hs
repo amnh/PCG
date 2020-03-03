@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE MagicHash             #-}
@@ -25,6 +26,7 @@ module Numeric.Extended.Natural
 
 import           Control.DeepSeq
 import           Control.Monad
+import           Data.Binary
 import           Data.Bits
 import qualified Data.Vector.Generic         as G
 import qualified Data.Vector.Generic.Mutable as M
@@ -67,7 +69,8 @@ import           Test.QuickCheck
 --     @infinity@ as the denominator.
 --
 newtype ExtendedNatural = Cost Word
-  deriving stock (Eq, Generic, Ord)
+    deriving anyclass (Binary, NFData)
+    deriving stock    (Eq, Generic, Ord)
 
 
 type instance Finite ExtendedNatural = Word
@@ -116,9 +119,6 @@ instance ExtendedNumber ExtendedNatural where
     fromFinite = fromWord
 
     infinity = Cost maxBound
-
-
-instance NFData ExtendedNatural
 
 
 instance Num ExtendedNatural where

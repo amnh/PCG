@@ -11,7 +11,6 @@ import Bio.Graph
 import Control.Evaluation
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Validation
-import Data.Compact                   (getCompact)
 import Data.FileSource                (FileSource)
 import Data.FileSource.IO
 import Data.Foldable                  (traverse_)
@@ -70,18 +69,16 @@ generateOutput
   :: GraphState
   -> OutputFormat
   -> FileStreamContext
-generateOutput g' format =
-  case format of
-    Data     {} -> SingleStream . streamText $ either showtl showtl g
-    XML      {} -> SingleStream . streamText $ either showtl (fromString . ppTopElement . toXML) g
-    DotFile  {} -> SingleStream . streamText $ generateDotFile g'
-    Metadata {} -> either
-                     (const $ ErrorCase "No metadata in topological solution")
-                     (SingleStream . streamText . outputMetadata)
-                     g
-    _           -> ErrorCase "Unrecognized 'report' command"
-  where
-    g = getCompact g'
+generateOutput g format =
+    case format of
+      Data     {} -> SingleStream . streamText $ either showtl showtl g
+      XML      {} -> SingleStream . streamText $ either showtl (fromString . ppTopElement . toXML) g
+      DotFile  {} -> SingleStream . streamText $ generateDotFile g
+      Metadata {} -> either
+                       (const $ ErrorCase "No metadata in topological solution")
+                       (SingleStream . streamText . outputMetadata)
+                       g
+      _           -> ErrorCase "Unrecognized 'report' command"
 
 
 {--

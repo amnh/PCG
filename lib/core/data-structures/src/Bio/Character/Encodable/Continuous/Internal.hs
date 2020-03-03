@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass        #-}
 {-# LANGUAGE DeriveGeneric         #-}
 {-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -26,6 +27,7 @@ import Bio.Character.Encodable.Continuous.Class
 import Bio.Character.Encodable.Internal
 import Control.Arrow                            ((&&&))
 import Control.DeepSeq
+import Data.Binary
 import Data.Foldable
 import Data.Range
 import GHC.Generics
@@ -38,7 +40,8 @@ import TextShow                                 (TextShow (showb))
 -- Represents a real-valued range with a minimum lower bound of zero and a
 -- maximum upper bound of infinity.
 newtype ContinuousCharacter = CC (ExtendedReal, ExtendedReal)
-  deriving stock (Eq, Generic)
+    deriving anyclass (Binary, NFData)
+    deriving stock    (Eq, Generic)
 
 
 type instance Bound ContinuousCharacter = ExtendedReal
@@ -50,10 +53,6 @@ instance EncodableContinuousCharacter ContinuousCharacter where
     toContinuousCharacter = CC . maybe missingRange (f &&& f)
       where
         f = fromRational . toRational
-
-
--- | (✔)
-instance NFData ContinuousCharacter
 
 
 -- | (✔)

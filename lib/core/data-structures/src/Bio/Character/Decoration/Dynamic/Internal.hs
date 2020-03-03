@@ -34,6 +34,7 @@ import Bio.Character.Encodable
 import Bio.Character.Exportable
 import Control.DeepSeq
 import Control.Lens
+import Data.Binary
 import Data.Bits
 import Data.Hashable
 import Data.MonoTraversable
@@ -60,7 +61,7 @@ data  DynamicDecorationDirectOptimization d
     , dynamicDecorationDirectOptimizationRightAlignmentField      :: !d
     }
     deriving stock    (Eq, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 -- |
@@ -76,7 +77,8 @@ data  DynamicDecorationDirectOptimizationPostorderResult d
     , dynamicDecorationDirectOptimizationPostorderLeftAlignmentField       :: !d
     , dynamicDecorationDirectOptimizationPostorderRightAlignmentField      :: !d
     }
-    deriving stock (Eq, Generic)
+    deriving stock    (Eq, Generic)
+    deriving anyclass (Binary, NFData)
 
 
 -- |
@@ -97,6 +99,7 @@ data  DynamicDecorationImpliedAlignment d
     , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: !d
     }
     deriving stock (Eq, Generic)
+    deriving anyclass (Binary, NFData)
 
 
 -- |
@@ -107,11 +110,12 @@ data  DynamicDecorationInitial d
     { dynamicDecorationInitialEncodedField           :: !d
     , dynamicDecorationInitialCharacterAverageLength :: {-# UNPACK #-} !AverageLength
     }
-    deriving stock (Eq, Generic)
+    deriving stock    (Eq, Generic)
+    deriving anyclass (Binary, NFData)
 
 
 -- | (✔)
-instance NFData d => NFData (DynamicDecorationInitial d)
+--instance NFData d => NFData (DynamicDecorationInitial d)
 
 
 -- | (✔)
@@ -119,11 +123,11 @@ instance NFData d => NFData (DynamicDecorationInitial d)
 
 
 -- | (✔)
-instance NFData d => NFData (DynamicDecorationDirectOptimizationPostorderResult d)
+--instance NFData d => NFData (DynamicDecorationDirectOptimizationPostorderResult d)
 
 
 -- | (✔)
-instance NFData d => NFData (DynamicDecorationImpliedAlignment d)
+--instance NFData d => NFData (DynamicDecorationImpliedAlignment d)
 
 
 -- | (✔)

@@ -24,8 +24,10 @@ module Data.UnionSet
   where
 
 import Control.DeepSeq
+import Data.Binary
 import Data.Bits
 import Data.BitVector.LittleEndian
+import Data.BitVector.LittleEndian.Instances ()
 import GHC.Generics
 import TextShow                    (TextShow)
 
@@ -34,9 +36,9 @@ import TextShow                    (TextShow)
 -- Represents the union of several elements with a lexical ordering over a
 -- pre-determined finite range. Represented internally as a bit-vector for efficiency.
 newtype UnionSet = Union BitVector
-  deriving stock    (Generic)
-  deriving anyclass (NFData)
-  deriving newtype  (Bits, Ord, TextShow)
+    deriving stock    (Generic)
+    deriving anyclass (NFData)
+    deriving newtype  (Binary, Bits, Ord, TextShow)
 
 
 instance Eq UnionSet where
@@ -60,6 +62,7 @@ instance Semigroup UnionSet where
   {-# SPECIALISE instance Semigroup UnionSet #-}
   {-# INLINE (<>) #-}
   (<>) = (.|.)
+
 
 instance Monoid UnionSet where
   {-# SPECIALISE instance Monoid UnionSet #-}

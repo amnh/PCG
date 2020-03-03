@@ -10,13 +10,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE DerivingStrategies    #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module Bio.Sequence.Metadata
   ( MetadataBlock()
@@ -44,6 +45,7 @@ import           Bio.Sequence.Block.Metadata
 import           Bio.Sequence.Internal
 import           Control.DeepSeq
 import           Control.Lens
+import           Data.Binary
 import           Data.Foldable
 import           Data.MonoTraversable
 import           Data.Semigroup.Foldable
@@ -62,8 +64,8 @@ import           Text.XML
 -- Blocks are optimized atomically with resepect to network resolutions.
 newtype MetadataSequence m
     = MetaSeq (Vector (MetadataBlock m))
-    deriving stock (Generic, Show)
-
+    deriving stock   (Generic, Show)
+    deriving newtype (Binary)
 
 
 type instance Element (MetadataSequence m) = MetadataBlock m

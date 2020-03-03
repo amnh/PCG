@@ -13,7 +13,6 @@ import Control.Monad                             (when)
 import Control.Monad.IO.Class
 import Control.Parallel.Custom
 import Control.Parallel.Strategies
-import Data.Compact                              (compact)
 import Data.Semigroup.Foldable
 import Data.Unification
 import Data.Validation
@@ -39,7 +38,7 @@ evaluate (ReadCommand fileSpecs) = do
         case decoration . unifyPartialInputs $ transformation <$> fold1 pRes of
           Failure uErr -> failWithPhase Unifying uErr   -- Report structural errors here.
           -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
-          Success g    ->  liftIO $ compact g
+          Success g    -> pure g
                          -- liftIO (putStrLn "DECORATION CALL:" *> print g) *> pure g
                          -- (liftIO . putStrLn {- . take 500000 -} $ either show (ppTopElement . toXML) g)
                          -- (liftIO . putStrLn $ show g) $> g

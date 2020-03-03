@@ -31,11 +31,9 @@ module Data.FileSource.IO
     -- * Binary data I/O
   , deserializeBinary
   , serializeBinary
-    -- * Compact region I/O
-  , deserializeCompact
-  , serializeCompact
     -- * Error types of I/O
   , InputStreamError()
+  , ParseStreamError()
   , OutputStreamError()
   ) where
 
@@ -49,8 +47,6 @@ import           Data.Binary                       (Binary, decodeFileOrFail, en
 import           Data.ByteString.Lazy              (ByteString)
 import qualified Data.ByteString.Lazy              as BS
 import           Data.Char                         (isNumber)
-import           Data.Compact                      (Compact)
-import           Data.Compact.Serialize            (hPutCompact, unsafeReadCompact)
 import           Data.FileSource
 import           Data.FileSource.InputStreamError
 import           Data.FileSource.OutputStreamError
@@ -62,7 +58,6 @@ import           Data.MonoTraversable
 import           Data.String
 import           Data.Text.Lazy                    (Text)
 import qualified Data.Text.Lazy.IO                 as T
-import           Data.Typeable                     (Typeable)
 import           Data.Validation
 import           Pipes                             (for, runEffect, yield)
 import           Prelude                           hiding (appendFile, readFile, writeFile)
@@ -213,8 +208,9 @@ deserializeBinary filePath =
                    (Success <$> decodeFileOrFail (otoList fp))
                    (fmap (first Left) . runValidationT . inputErrorHandling fp)
         case res of
-          Left  (_, err) -> invalid . Right . makeDeserializeErrorInBinaryEncoding fp $ fromString err
-          Right val      -> pure val
+          Right val        -> pure val
+          Left  (off, err) -> invalid . Right . makeDeserializeErrorInBinaryEncoding fp $
+                                fold ["At stream offset ", fromString $ show off, ", ", fromString err]
 
 
 -- |
@@ -225,38 +221,6 @@ serializeBinary :: Binary a => FileSource -> a -> ValidationT OutputStreamError 
 serializeBinary filePath val =
     ValidationT $ catch
       (fmap Success . streamToFile WriteMode filePath . streamBytes $ encode val)
-      (runValidationT . outputErrorHandling filePath)
-
-
--- |
--- Deserialize a compact region from the specified file path.
---
--- Operational inverse of 'serializeCompact'.
-deserializeCompact :: Typeable a => FileSource -> ValidationT (Either InputStreamError ParseStreamError) IO (Compact a)
-deserializeCompact filePath =
-    readFilesAndLocate'
-      Left
-      deserialize
-      (invalid . Left . makeAmbiguousFiles filePath)
-      filePath
-  where
-    deserialize fp = do
-        res <- ValidationT $ catch
-                   (Success <$> unsafeReadCompact (otoList fp))
-                   (fmap (first Left) . runValidationT . inputErrorHandling fp)
-        case res of
-          Left  err -> invalid . Right . makeDeserializeErrorInCompactRegion fp $ fromString err
-          Right val -> pure val
-
-
--- |
--- Serialize a compact region's contents to the specified file path.
---
--- Operational inverse of 'deserializeCompact'.
-serializeCompact :: Typeable a => FileSource -> Compact a -> ValidationT OutputStreamError IO ()
-serializeCompact filePath val =
-    ValidationT $ catch
-      (Success <$> runStream hPutCompact WriteMode filePath val)
       (runValidationT . outputErrorHandling filePath)
 
 
@@ -392,6 +356,7 @@ streamfromFile filePath = do
     hClose h
     pure txt
 -}
+
 
 -- |
 -- Streams text to a file in constant memory.

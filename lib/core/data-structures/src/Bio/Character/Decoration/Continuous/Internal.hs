@@ -27,17 +27,16 @@ module Bio.Character.Decoration.Continuous.Internal
   , continuousDecorationInitial
   ) where
 
-
 import Bio.Character.Decoration.Additive
 import Bio.Character.Encodable
 import Control.DeepSeq
 import Control.Lens
+import Data.Binary
 import Data.Range
 import GHC.Generics
 import Numeric.Extended
 import Text.XML
 import TextShow                          (TextShow (showb), unlinesB)
-
 
 
 -- |
@@ -47,8 +46,8 @@ newtype ContinuousDecorationInitial c
     = ContinuousDecorationInitial
     { continuousDecorationInitialCharacter :: c
     }
-    deriving stock    (Generic)
-    deriving newtype  (Ranged)
+    deriving stock   (Generic)
+    deriving newtype (Ranged)
 
 
 -- |
@@ -98,6 +97,15 @@ lensCPostD f g = lens (getterCPostD f) (setterCPostD g)
 
 
 type instance Bound (ContinuousDecorationInitial c) = Bound c
+
+
+-- | (✔)
+instance (Binary a, Binary (Finite (Bound a)), Binary (Range (Bound a))) => Binary (ContinuousOptimizationDecoration a)
+
+
+-- | (✔)
+instance (Binary a, Binary (Finite (Bound a)), Binary (Range (Bound a))) => Binary (ContinuousPostorderDecoration a)
+
 
 -- | (✔)
 instance (Finite (Bound a) ~ c) => HasCharacterCost (ContinuousOptimizationDecoration a) c where

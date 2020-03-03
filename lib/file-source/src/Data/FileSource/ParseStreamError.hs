@@ -24,7 +24,6 @@ module Data.FileSource.ParseStreamError
   ( ParseStreamError()
   , makeInvalidPrealigned
   , makeDeserializeErrorInBinaryEncoding
-  , makeDeserializeErrorInCompactRegion
   , makeUnparsableFile
   ) where
 
@@ -79,14 +78,18 @@ data  ParseStreamErrorMessage
 
 data  DataSerializationFormat
     = BinaryFormat
-    | CompactFormat
-    deriving stock    (Data, Generic, Show, Typeable)
+    deriving stock    (Data, Generic, Typeable)
     deriving anyclass (NFData)
 
 
 instance Semigroup ParseStreamError where
 
     (ParseStreamError lhs) <> (ParseStreamError rhs) = ParseStreamError $ lhs <> rhs
+
+
+instance Show DataSerializationFormat where
+
+    show BinaryFormat  = "Binary Encoding"
 
 
 instance TextShow ParseStreamError where
@@ -162,13 +165,6 @@ makeInvalidPrealigned path =
 makeDeserializeErrorInBinaryEncoding :: FileSource -> ShortText -> ParseStreamError
 makeDeserializeErrorInBinaryEncoding path =
     ParseStreamError . pure . FileBadDeserialize path BinaryFormat
-
-
--- |
--- Remark that the file has could not be deserialized.
-makeDeserializeErrorInCompactRegion :: FileSource -> ShortText -> ParseStreamError
-makeDeserializeErrorInCompactRegion path =
-    ParseStreamError . pure . FileBadDeserialize path CompactFormat
 
 
 showBadDeserialize :: (TextShow a, Show b) => (a, b, ShortText) -> Builder

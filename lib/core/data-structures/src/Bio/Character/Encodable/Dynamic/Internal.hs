@@ -45,9 +45,11 @@ import           Control.Lens
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                            as B
+import           Data.Binary
 import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
+import           Data.BitVector.LittleEndian.Instances ()
 import           Data.Coerce
 import           Data.Foldable
 import           Data.Hashable
@@ -77,7 +79,7 @@ data  DynamicCharacter
     = Missing {-# UNPACK #-} !Word
     | DC      {-# UNPACK #-} !BitMatrix
     deriving stock    (Eq, Generic, Ord, Show)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 -- |
@@ -85,7 +87,7 @@ data  DynamicCharacter
 newtype DynamicCharacterElement
       = DCE BitVector
       deriving stock    (Generic)
-      deriving newtype  (Bits, Eq, FiniteBits, Hashable, MonoFoldable, MonoFunctor, NFData, Ord, Show, TextShow)
+      deriving newtype  (Binary, Bits, Eq, FiniteBits, Hashable, MonoFoldable, MonoFunctor, NFData, Ord, Show, TextShow)
 
 
 type instance Bound DynamicCharacterElement = Word

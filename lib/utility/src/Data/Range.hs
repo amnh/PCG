@@ -42,6 +42,7 @@ module Data.Range
 
 
 import Control.DeepSeq
+import Data.Binary
 import Data.Foldable
 import Data.Kind
 import GHC.Generics
@@ -52,7 +53,7 @@ import TextShow        (TextShow (showb))
 -- to the upper bound.
 newtype Range r = Range (r, r, Maybe Int)
   deriving stock    (Eq, Generic)
-  deriving anyclass (NFData)
+  deriving anyclass (Binary, NFData)
 
 
 -- |

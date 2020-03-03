@@ -57,6 +57,7 @@ module Bio.Metadata.CharacterName
 
 import Control.DeepSeq
 import Control.Monad.State.Lazy
+import Data.Binary              (Binary)
 import Data.FileSource
 import Data.Foldable
 import Data.Map                 (Map, insertWith)
@@ -81,7 +82,7 @@ data CharacterName
    = UserDefined !FileSource !ShortText
    | Default     !FileSource {-# UNPACK #-} !Word
    deriving stock    (Eq, Generic)
-   deriving anyclass (NFData)
+   deriving anyclass (Binary, NFData)
 
 
 type instance Element CharacterName = Char

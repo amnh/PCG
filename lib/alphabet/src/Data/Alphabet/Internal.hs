@@ -14,6 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE DeriveGeneric      #-}
@@ -38,6 +39,7 @@ module Data.Alphabet.Internal
 import           Control.DeepSeq                     (NFData)
 import           Control.Monad.State.Strict
 import           Data.Bifunctor                      (bimap)
+import           Data.Binary                         (Binary)
 import           Data.Data
 import           Data.Foldable
 import           Data.Key
@@ -66,12 +68,13 @@ type AmbiguityGroup a = NonEmpty a
 
 -- |
 -- A collection of symbols and optional corresponding state names.
-data Alphabet a =
-     Alphabet
-     { symbolVector :: {-# UNPACK #-} !(Vector a)
-     , stateNames   :: [a]
-     }
-     deriving stock (Data, Generic, Functor, Typeable)
+data  Alphabet a =
+      Alphabet
+      { symbolVector :: {-# UNPACK #-} !(Vector a)
+      , stateNames   :: [a]
+      }
+      deriving anyclass (Binary, NFData)
+      deriving stock    (Data, Generic, Functor, Typeable)
 
 
 type instance Key Alphabet = Int
@@ -79,9 +82,11 @@ type instance Key Alphabet = Int
 
 -- Newtypes for corecing and consolidation of alphabet input processing logic
 newtype AlphabetInputSingle a = ASI  { toSingle ::  a    }
-    deriving stock (Eq, Ord)
+    deriving anyclass (NFData)
+    deriving stock    (Eq, Generic, Ord)
 newtype AlphabetInputTuple  a = ASNI { toTuple  :: (a,a) }
-    deriving stock (Eq, Ord)
+    deriving anyclass (NFData)
+    deriving stock    (Eq, Generic, Ord)
 
 
 -- |
@@ -332,15 +337,6 @@ instance Lookup Alphabet where
 
     {-# INLINE lookup #-}
     lookup i = lookup i . symbolVector
-
-
-instance NFData a => NFData (Alphabet a)
-
-
-instance NFData a => NFData (UnnamedSymbol a)
-
-
-instance NFData a => NFData (  NamedSymbol a)
 
 
 instance Show a => Show (Alphabet a) where

@@ -33,15 +33,16 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   , discreteMetadataWithTCM
   ) where
 
-import Bio.Character.Exportable
 import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class
 import Bio.Metadata.Overlap
+import Control.Applicative
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
+import Data.Binary
 import Data.Functor
 import Data.FileSource
 import Data.Hashable
@@ -75,6 +76,43 @@ foreignPointerData x =
       ExplicitLayout _ (v,_,_) -> Just v
       _                        -> Nothing
 
+
+instance
+     ( Eq c
+     , FiniteBits c
+     , Hashable c
+     , NFData c
+     ) => Binary (DiscreteWithTCMCharacterMetadataDec c) where
+
+    {-# INLINE put #-}
+    put x = put (void (metricRepresentation x)) <> put (discreteData x)
+
+    {-# INLINE get #-}
+    get   = liftA2 DiscreteWithTCMCharacterMetadataDec (rebuildMetricRepresentation <$> get) get
+
+
+rebuildMetricRepresentation
+  :: ( FiniteBits c
+     , Hashable c
+     , NFData c
+     )
+  => MetricRepresentation ()
+  -> MetricRepresentation ( MemoizedCostMatrix
+                          , c -> c -> (c, Word)
+                          , c -> c -> c -> (c, Word)
+                          )            
+rebuildMetricRepresentation metricRep =
+    case metricRep of
+      DiscreteMetric       -> DiscreteMetric
+      LinearNorm           -> LinearNorm
+      ExplicitLayout tcm _ ->
+          let     scm i j = toEnum . fromEnum $ tcm TCM.! (fromEnum i, fromEnum j)
+                  len     = toEnum $ TCM.size tcm
+          in  ExplicitLayout tcm ( generateMemoizedTransitionCostMatrix len scm
+                                 , memoize2 $ overlap2 scm
+                                 , memoize3 $ overlap3 scm
+                                 )
+      
 
 {-
 data RepresentedTCM a where
@@ -202,7 +240,7 @@ instance GetSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> 
 
 -- |
 -- A 'Lens' for the 'pairwiseTransitionCostMatrix' field
-instance (Bits c, Bound c ~ Word, Exportable c, Ranged c)
+instance (Bits c, Bound c ~ Word, Ranged c)
     => GetPairwiseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) c Word where
 
     pairwiseTransitionCostMatrix =
@@ -243,8 +281,7 @@ instance ToXML (DiscreteWithTCMCharacterMetadataDec c) where
 -- |
 -- Construct a concrete typed 'DiscreteWithTCMCharacterMetadataDec' value from the supplied inputs.
 discreteMetadataFromTCM
-  :: ( Eq c
-     , FiniteBits c
+  :: ( FiniteBits c
      , Hashable c
      , NFData c
      )
@@ -254,7 +291,7 @@ discreteMetadataFromTCM
   -> FileSource
   -> TCM
   -> DiscreteWithTCMCharacterMetadataDec c
-discreteMetadataFromTCM name weight alpha tcmSource tcm =
+discreteMetadataFromTCM name weight alpha tcmSource tcm' =
     DiscreteWithTCMCharacterMetadataDec
     { metricRepresentation = representaionOfTCM
     , discreteData   = discreteMetadata name (weight * coefficient) alpha tcmSource
@@ -269,17 +306,16 @@ discreteMetadataFromTCM name weight alpha tcmSource tcm =
 
     scm             = (\i j -> toEnum . fromEnum $ tcm TCM.! (fromEnum i, fromEnum j))
     tcm             = factoredTcm diagnosis
-    diagnosis       = diagnoseTcm tcm
+    diagnosis       = diagnoseTcm tcm'
     coefficient     = fromIntegral $ factoredWeight diagnosis
-    sigma  i j      = toEnum . fromEnum $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)
+    sigma  i j      = toEnum . fromEnum $ tcm ! (fromEnum i, fromEnum j)
     memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) sigma
 
 
 -- |
 -- Construct a concrete typed 'DiscreteWithTCMCharacterMetadataDec' value from the supplied inputs.
 discreteMetadataWithTCM
-  :: ( Eq c
-     , FiniteBits c
+  :: ( FiniteBits c
      , Hashable c
      , NFData c
      )

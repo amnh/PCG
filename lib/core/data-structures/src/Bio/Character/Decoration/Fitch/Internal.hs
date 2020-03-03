@@ -27,6 +27,7 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Control.DeepSeq
 import Control.Lens
+import Data.Binary
 import Data.Bits
 import GHC.Generics
 import Text.XML
@@ -49,7 +50,7 @@ data  FitchOptimizationDecoration f
     , fitchCharacterField    :: !f
     }
     deriving stock    (Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 -- | (✔)

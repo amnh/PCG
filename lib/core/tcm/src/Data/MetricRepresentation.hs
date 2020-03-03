@@ -33,6 +33,7 @@ module Data.MetricRepresentation
 
 import Control.DeepSeq
 import Data.Bits
+import Data.Binary
 import Data.Foldable
 import Data.Ord        (comparing)
 import Data.Range
@@ -57,7 +58,7 @@ data  MetricRepresentation a
     | DiscreteMetric
     | LinearNorm
     deriving stock    (Eq, Foldable, Functor, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 retreiveSCM :: MetricRepresentation a -> Word -> Word -> Word

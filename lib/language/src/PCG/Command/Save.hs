@@ -43,8 +43,7 @@ data SaveCommand = SaveCommand !FileSource !SerialType
 -- |
 -- Type of serialisation formats
 data  SerialType
-    = Compact
-    | Binary
+    = Binary
     deriving stock (Show)
 
 
@@ -61,10 +60,9 @@ saveCommandSpecification = command "save" . argList $ SaveCommand <$> filePath <
 -- |
 -- Defines the serialization options.
 serialType :: Ap SyntacticArgument SerialType
-serialType = choiceFrom [saveCompact , saveBinary] `withDefault` defaultFormat
+serialType = choiceFrom [saveBinary] `withDefault` defaultFormat
   where
-    saveCompact  = value "compact" $> Compact
-    saveBinary   = value "binary"  $> Binary
+    saveBinary = value "binary"  $> Binary
 
 
 -- |
@@ -77,4 +75,4 @@ defaultSaveFilePath = toFileSource ".pcg.save"
 -- |
 -- The default format to serialise to disk.
 defaultFormat :: SerialType
-defaultFormat = Compact
+defaultFormat = Binary

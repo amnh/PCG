@@ -17,12 +17,10 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE TypeFamilies          #-}
-
 -- We need this for the generalized type family derivation of Ranged instances.
 {-# LANGUAGE UndecidableInstances  #-}
 
 module Bio.Character.Decoration.Additive.Internal where
-
 
 import Bio.Character.Decoration.Additive.Class
 import Bio.Character.Decoration.Discrete
@@ -30,6 +28,8 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Control.DeepSeq
 import Control.Lens
+import Data.Binary
+--import Data.Foldable
 import Data.Range
 import GHC.Generics
 import Numeric.Extended
@@ -44,7 +44,7 @@ data  AdditiveOptimizationDecoration a
     { additiveFinalInterval :: {-# UNPACK #-} !(Range (Bound a))
     , postorderDecoration   :: {-# UNPACK #-} !(AdditivePostorderDecoration a)
     }
-    deriving stock (Generic)
+    deriving stock    (Generic)
 
 
 -- |
@@ -58,7 +58,34 @@ data  AdditivePostorderDecoration a
     , additiveIsLeaf               :: !Bool
     , additiveCharacterField       :: !a
     }
-    deriving stock (Generic)
+    deriving stock    (Generic)
+
+
+{-
+-- | (✔)
+instance ( Binary a
+         , Binary (Bound a)
+         , Binary (Finite (Bound a))
+         ) => Binary (AdditivePostorderDecoration a) where
+
+    put x = fold $
+              [ put . additiveCost
+              , put . additivePreliminaryInterval
+              , put . additiveChildPrelimIntervals
+              , put . additiveIsLeaf
+              , put . additiveCharacterField
+              ] <*> [x]
+
+    get = AdditivePostorderDecoration <$> get <*> get <*> get <*> get <*> get
+-}
+
+
+-- | (✔)
+instance (Binary a, Binary (Finite (Bound a)), Binary (Range (Bound a))) => Binary (AdditiveOptimizationDecoration a)
+
+
+-- | (✔)
+instance (Binary a, Binary (Finite (Bound a)), Binary (Range (Bound a))) => Binary (AdditivePostorderDecoration a)
 
 
 -- | (✔)

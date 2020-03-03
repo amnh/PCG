@@ -14,6 +14,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE DerivingStrategies         #-}
@@ -32,6 +33,7 @@ module Bio.Graph.Forest
 import Bio.Graph.LeafSet
 import Control.DeepSeq
 import Control.Lens            as Lens hiding (Indexable)
+import Data.Binary
 import Data.Foldable
 import Data.GraphViz.Printing
 import Data.Key
@@ -50,8 +52,9 @@ import Text.XML.Custom
 -- A newtype wrapper for a 'NonEmpty' collection of forests.
 newtype PhylogeneticForest a
       = PhylogeneticForest {getPhylogeneticForest :: NonEmpty a}
-      deriving stock   (Foldable, Generic, Traversable)
-      deriving newtype (Foldable1, Functor, Semigroup)
+      deriving anyclass (Binary)
+      deriving stock    (Foldable, Generic, Traversable)
+      deriving newtype  (Foldable1, Functor, Semigroup)
 
 
 type instance Key PhylogeneticForest = Int

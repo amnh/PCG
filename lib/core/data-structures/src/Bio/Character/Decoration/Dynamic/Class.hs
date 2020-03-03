@@ -51,6 +51,7 @@ import Bio.Character.Encodable
 import Bio.Character.Exportable
 import Control.DeepSeq
 import Control.Lens
+import Data.Binary
 import Data.MonoTraversable            (Element)
 import GHC.Generics
 import Numeric.NonNegativeAverage
@@ -62,11 +63,7 @@ import Numeric.NonNegativeAverage
 -- Forms a 'Semigroup' for efficient recursive post-order accumulation on the tree.
 newtype AverageLength = AL NonNegativeAverage
   deriving stock   (Eq, Generic, Ord)
-  deriving newtype (Semigroup)
-
-
--- | (✔)
-instance NFData AverageLength
+  deriving newtype (Binary, NFData, Semigroup)
 
 
 -- | (✔)

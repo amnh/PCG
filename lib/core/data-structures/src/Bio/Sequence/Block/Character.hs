@@ -61,6 +61,7 @@ import           Control.Lens
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Bifunctor
+import           Data.Binary
 import           Data.Foldable
 import           Data.List.NonEmpty           (NonEmpty (..))
 import           Data.MonoTraversable         (Element)
@@ -85,7 +86,7 @@ data  CharacterBlock u v w x y z
     = BlockDoesNotExist
     | CB {-# UNPACK #-} !(Block u v w x y z)
     deriving stock    (Eq, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 instance HasContinuousBin (CharacterBlock u v w x y z) (Vector u) where

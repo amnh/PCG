@@ -29,6 +29,7 @@ import Bio.Metadata.CharacterName
 import Bio.Metadata.General.Class
 import Control.DeepSeq
 import Control.Lens
+import Data.Binary
 import GHC.Generics
 import Text.XML.Class
 
@@ -42,7 +43,7 @@ data  GeneralCharacterMetadataDec
     , weight :: {-# UNPACK #-} !Double
     }
     deriving stock    (Eq, Generic, Show)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 -- |

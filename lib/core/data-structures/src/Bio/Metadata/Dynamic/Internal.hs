@@ -56,15 +56,15 @@ import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic.Class   hiding (DenseTransitionCostMatrix)
 import           Bio.Metadata.Overlap
+import           Control.Arrow                ((&&&))
 import           Control.DeepSeq
 import           Control.Lens                 hiding (Fold)
-import           Control.Monad.State.Strict
 import           Data.Alphabet
+import           Data.Binary
 import           Data.Bits
---import           Data.BitVector.LittleEndian
 import           Data.FileSource
 import           Data.Foldable
-import           Data.Functor                 (($>))
+import           Data.Functor                 (($>), void)
 import           Data.Hashable
 import           Data.Hashable.Memoize
 import           Data.List                    (intercalate)
@@ -121,9 +121,6 @@ data  DynamicCharacterMetadataDec c
                                                                )
                                          )
                                       )
-    {-                                  TODO: try to change to this
-                                        (MetricRepresentation (c -> c -> (c, Word)))
-    -}
     , metadata                    :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
     }
     deriving stock    (Generic)
@@ -142,6 +139,29 @@ class ( DiscreteWithTcmCharacterMetadata s c
       ) => DynamicCharacterMetadata s c | s -> c where
 
     extractDynamicCharacterMetadata :: s -> DynamicCharacterMetadataDec c
+
+
+instance
+     ( Eq c
+     , FiniteBits c
+     , Hashable c
+     , NFData c
+     ) => Binary (DynamicCharacterMetadataDec c) where
+
+    {-# INLINE put #-}
+    put x = fold [ put $ optimalTraversalFoci x
+                 , put . bimap snd void $ structuralRepresentationTCM x
+                 , put $ metadata x
+                 ]
+
+    {-# INLINE get #-}
+    get = do
+      x <- get
+      y <- get
+      z <- get
+      let len     = toEnum . length $ z ^. characterAlphabet
+      let rebuild = bimap (rebuildDenseMatrix len &&& id) rebuildMetricRepresentation
+      pure $ DynamicCharacterMetadataDec x (rebuild y) z
 
 
 instance Eq (DynamicCharacterMetadataDec c) where
@@ -293,7 +313,7 @@ dynamicMetadata name weight alpha tcmSource tcm denseMay =
     representaionOfTCM = maybe largeAlphabet smallAlphabet denseMay
       where
         largeAlphabet   = Right $ metricRep $> memoedFunctions
-        smallAlphabet x = Left (x,metricRep)
+        smallAlphabet x = Left (x, metricRep)
 
     metricRep =
         case tcmStructure diagnosis of
@@ -303,12 +323,10 @@ dynamicMetadata name weight alpha tcmSource tcm denseMay =
 
     memoedFunctions = (memoMatrixValue, memoize2 $ overlap2 scm, memoize3 $ overlap3 scm)
 
-    scm             = (\i j -> toEnum . fromEnum $ tcm' TCM.! (fromEnum i, fromEnum j))
+    scm i j         = toEnum . fromEnum $ tcm' TCM.! (fromEnum i, fromEnum j)
     tcm'            = factoredTcm diagnosis
     diagnosis       = diagnoseTcm tcm
---    coefficient     = fromIntegral $ factoredWeight diagnosis
-    sigma  i j      = toEnum . fromEnum $ factoredTcm diagnosis TCM.! (fromEnum i, fromEnum j)
-    memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) sigma
+    memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) scm
 
 
 -- |
@@ -411,3 +429,30 @@ extractThreewayTransitionCostMatrix =
     (lookupThreeway . fst)
     (retreiveThreewayTCM . fmap (\(_, _, x) -> x))
   . structuralRepresentationTCM
+
+
+rebuildMetricRepresentation
+  :: ( FiniteBits c
+     , Hashable c
+     , NFData c
+     )
+  => MetricRepresentation ()
+  -> MetricRepresentation ( MemoizedCostMatrix
+                          , c -> c -> (c, Word)
+                          , c -> c -> c -> (c, Word)
+                          )
+rebuildMetricRepresentation metricRep =
+    case metricRep of
+      DiscreteMetric       -> DiscreteMetric
+      LinearNorm           -> LinearNorm
+      ExplicitLayout tcm _ ->
+          let     scm i j = toEnum . fromEnum $ tcm TCM.! (fromEnum i, fromEnum j)
+                  len     = toEnum $ TCM.size tcm
+          in  ExplicitLayout tcm ( generateMemoizedTransitionCostMatrix len scm
+                                 , memoize2 $ overlap2 scm
+                                 , memoize3 $ overlap3 scm
+                                 )
+
+
+rebuildDenseMatrix :: Word -> MetricRepresentation () -> DenseTransitionCostMatrix
+rebuildDenseMatrix len = generateDenseTransitionCostMatrix 0 len . retreiveSCM

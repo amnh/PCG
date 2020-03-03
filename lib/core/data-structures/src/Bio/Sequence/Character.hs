@@ -37,6 +37,7 @@ import           Bio.Sequence.Internal
 import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bifunctor
+import           Data.Binary
 import           Data.Foldable
 import           Data.Key
 import           Data.MonoTraversable
@@ -66,7 +67,7 @@ newtype CharacterSequence u v w x y z
     = CharSeq (Vector (CharacterBlock u v w x y z))
     deriving stock    (Eq, Generic)
     deriving anyclass (NFData)
-    deriving newtype  (TextShow)
+    deriving newtype  (Binary, TextShow)
 
 
 type instance Element (CharacterSequence u v w x y z) = CharacterBlock u v w x y z

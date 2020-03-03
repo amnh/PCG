@@ -34,12 +34,12 @@ import           Bio.Character.Encodable
 import           Bio.Character.Exportable
 import           Bio.Graph.Node.Context
 import           Bio.Metadata                                           hiding (DenseTransitionCostMatrix)
-import           Control.DeepSeq
+--import           Control.DeepSeq
 import           Control.Lens                                           hiding ((<|), (|>))
 import           Data.Bits
 import           Data.Foldable
 import           Data.Foldable.Custom                                   (sum')
-import           Data.Hashable
+--import           Data.Hashable
 import           Data.IntMap                                            (IntMap)
 import qualified Data.IntMap                                            as IM
 import           Data.Key
@@ -157,8 +157,8 @@ directOptimizationPostorderPairwise pairwiseAlignment (lChild , rChild) = result
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
      , Bound (Element c) ~ Word
-     , Hashable (Element c)
-     , NFData (Element c)
+--     , Hashable (Element c)
+--     , NFData (Element c)
      , Ranged (Element c)
      , Show (Element c)
      )
@@ -211,8 +211,8 @@ disambiguateElement x = zed `setBit` idx
 updateFromParent
   :: ( DirectOptimizationPostorderDecoration d c
      , Bound (Element c) ~ Word
-     , Hashable (Element c)
-     , NFData (Element c)
+--     , Hashable (Element c)
+--     , NFData (Element c)
      , Ranged (Element c)
      , Show (Element c)
      )
@@ -252,8 +252,8 @@ tripleComparison
   :: ( DirectOptimizationPostorderDecoration d c
      , Ranged (Element c)
      , Bound (Element c) ~ Word
-     , Hashable (Element c)
-     , NFData (Element c)
+--     , Hashable (Element c)
+--     , NFData (Element c)
      --     , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element c)) MemoizedCostMatrix
      , Show (Element c)
      )

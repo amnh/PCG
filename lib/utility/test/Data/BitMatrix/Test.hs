@@ -9,6 +9,7 @@ import Control.DeepSeq
 import Control.Exception
 import Data.BitMatrix
 import Data.BitVector.LittleEndian
+import Data.BitVector.LittleEndian.Instances ()
 import Data.Foldable
 import Data.Functor.Compose
 import Data.Functor.Identity

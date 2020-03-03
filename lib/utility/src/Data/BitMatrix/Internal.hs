@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE BangPatterns       #-}
+{-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings  #-}
@@ -21,8 +22,10 @@
 module Data.BitMatrix.Internal where
 
 import Control.DeepSeq
+import Data.Binary
 import Data.Bits
 import Data.BitVector.LittleEndian
+import Data.BitVector.LittleEndian.Instances ()
 import Data.Foldable
 import Data.List.Utility           (equalityOf, invariantTransformation)
 import Data.MonoTraversable
@@ -47,7 +50,8 @@ import TextShow                    (TextShow (showb), singleton, unlinesB, unwor
 -}
 data  BitMatrix
     = BitMatrix {-# UNPACK #-} !Int {-# UNPACK #-} !BitVector
-    deriving stock (Eq, Generic)
+    deriving anyclass (Binary, NFData)
+    deriving stock    (Eq, Generic)
 
 
 -- |
@@ -151,10 +155,6 @@ instance MonoTraversable BitMatrix where
           case invariantTransformation finiteBitSize xs of
             Just i  -> BitMatrix i $ fold xs
             Nothing -> error "The mapping function over the bit matrix did not return *all* bit vectors of equal length."
-
-
--- | (✔)
-instance NFData BitMatrix
 
 
 -- | (✔)

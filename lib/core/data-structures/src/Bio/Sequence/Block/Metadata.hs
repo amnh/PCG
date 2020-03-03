@@ -44,6 +44,7 @@ import Bio.Metadata.Dynamic
 import Bio.Sequence.Block.Internal
 import Control.DeepSeq
 import Control.Lens
+import Data.Binary
 import Data.Foldable
 import Data.Key
 import Data.List.NonEmpty           (last)
@@ -55,6 +56,7 @@ import GHC.Generics
 import Prelude                      hiding (last, zipWith)
 import Text.XML
 import Text.XML.Light.Types
+
 
 -- |
 -- Represents a block of data which are optimized atomically together across
@@ -73,8 +75,8 @@ data MetadataBlock m = MB
           (DynamicCharacterMetadataDec DynamicCharacterElement)
       )
     }
-    deriving stock   (Generic, Show)
-    deriving anyclass(NFData)
+    deriving stock    (Generic, Show)
+    deriving anyclass (Binary, NFData)
 
 
 instance Functor MetadataBlock where

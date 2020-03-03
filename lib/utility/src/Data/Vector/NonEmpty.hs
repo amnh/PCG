@@ -43,6 +43,7 @@ module Data.Vector.NonEmpty
 
 import           Control.DeepSeq            hiding (force)
 import qualified Control.Foldl              as L
+import           Data.Binary
 import           Data.Coerce
 import           Data.Data
 import           Data.Foldable
@@ -57,6 +58,7 @@ import           Data.Pointed
 import           Data.Semigroup.Foldable
 import           Data.Semigroup.Traversable
 import qualified Data.Vector                as V
+import           Data.Vector.Binary         ()
 import           Data.Vector.Instances      ()
 import           Test.QuickCheck            hiding (generate)
 import           TextShow                   (TextShow)
@@ -70,6 +72,7 @@ newtype Vector a = NEV { unwrap :: V.Vector a }
   deriving newtype ( Adjustable
                    , Applicative
                    , Apply
+                   , Binary
                    , Bind
                    , Eq1
                    , Extend
