@@ -32,7 +32,7 @@ import Data.Functor
 import Data.Hashable
 import Data.HashTable.IO
 --import Data.HashTable.ST.Basic
-import Data.IORef
+--import Data.IORef
 import Prelude                hiding (lookup)
 import System.IO.Unsafe
 
@@ -73,9 +73,11 @@ import System.IO.Unsafe
 memoize :: forall a b. (Eq a, Hashable a, NFData b) => (a -> b) -> a -> b
 memoize f = unsafePerformIO $ do
 
+{-
     modifyIORef memoEntries succ
     entries <- readIORef memoEntries
     if entries `mod` 50 == 0 then print entries else pure ()
+-}
     let initialSize = 2 ^ (16 :: Word)
 
     -- Create a TVar which holds the ST state and the HashTable
@@ -122,9 +124,11 @@ memoize f = unsafePerformIO $ do
                   $> v
 
 
+{-
 {-# NOINLINE memoEntries #-}
 memoEntries :: IORef Word
 memoEntries = unsafePerformIO $ newIORef 0
+-}
 
 
 -- |
