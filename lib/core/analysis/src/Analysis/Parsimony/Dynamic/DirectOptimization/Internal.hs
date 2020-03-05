@@ -45,8 +45,6 @@ import           Data.Semigroup
 import           Data.Word
 import           Prelude                                                hiding (zipWith)
 
-import Debug.Trace
-
 
 -- |
 -- A function representing an alignment of two dynamic characters.
@@ -75,8 +73,7 @@ selectDynamicMetric
   -> c
   -> (Word, c)
 selectDynamicMetric meta =
-    let !pTCM = meta ^. pairwiseTransitionCostMatrix
-    in  \x y -> unboxedUkkonenDO x y pTCM
+    unboxedUkkonenDO $ meta ^. pairwiseTransitionCostMatrix
 
 
 -- |

@@ -16,7 +16,7 @@
 {-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE ConstraintKinds  #-}
 {-# LANGUAGE FlexibleContexts #-}
---{-# LANGUAGE Strict           #-}
+{-# LANGUAGE Strict           #-} -- This makes things a little bit faster
 {-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
@@ -43,24 +43,25 @@ import qualified Data.Vector.Unboxed.Mutable as V
 -- character with gaps included, the aligned version of the first input character,
 -- and the aligned version of the second input character. The process for this
 -- algorithm is to generate a traversal matrix, then perform a traceback.
+{-# SCC unboxedSwappingDO #-}
 {-# INLINE unboxedSwappingDO #-}
-{-# SPECIALISE unboxedSwappingDO :: DynamicCharacter -> DynamicCharacter -> OverlapFunction AmbiguityGroup -> (Word, DynamicCharacter) #-}
+{-# SPECIALISE unboxedSwappingDO :: OverlapFunction AmbiguityGroup -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
 unboxedSwappingDO
   :: DOCharConstraint s
-  => s
+  => OverlapFunction (Subcomponent (Element s))
   -> s
-  -> OverlapFunction (Subcomponent (Element s))
+  -> s
   -> (Word, s)
-unboxedSwappingDO char1 char2 tcm = directOptimization char1 char2 tcm buildDirectionMatrix
+unboxedSwappingDO tcm = directOptimization tcm buildDirectionMatrix
 
 
 buildDirectionMatrix
   :: DOCharConstraint s
-  => s
+  => OverlapFunction (Subcomponent (Element s))
   -> s
-  -> OverlapFunction (Subcomponent (Element s))
+  -> s
   -> (Word, Matrix Direction)
-buildDirectionMatrix topChar leftChar overlapFunction = fullMatrix
+buildDirectionMatrix overlapFunction topChar leftChar = fullMatrix
   where
     med  x y   = fst $ overlapFunction x y
     cost x y   = snd $ overlapFunction x y
@@ -127,16 +128,16 @@ buildDirectionMatrix topChar leftChar overlapFunction = fullMatrix
 directOptimization
   :: ( DOCharConstraint s
      )
-  => s
+  => OverlapFunction (Subcomponent (Element s))
+  -> (OverlapFunction (Subcomponent (Element s)) -> s -> s -> (Word, Matrix Direction))
   -> s
-  -> OverlapFunction (Subcomponent (Element s))
-  -> (s -> s -> OverlapFunction (Subcomponent (Element s)) -> (Word, Matrix Direction))
+  -> s
   -> (Word, s)
-directOptimization char1 char2 overlapλ matrixFunction =
+directOptimization overlapλ matrixFunction char1 char2 =
     handleMissingCharacter char1 char2 alignment
   where
     (swapped, longerChar, shorterChar) = measureCharacters char1 char2
-    (alignmentCost, traversalMatrix)   = matrixFunction longerChar shorterChar overlapλ
+    (alignmentCost, traversalMatrix)   = matrixFunction overlapλ longerChar shorterChar
     alignmentContext                   = traceback overlapλ traversalMatrix longerChar shorterChar
     alignment                          = (alignmentCost, transformation alignmentContext)
     transformation
@@ -165,25 +166,26 @@ traceback overlapFunction alignMatrix longerChar lesserChar = alignmentContext
 
     go p@(i, j)
       | p == (0,0) = mempty
-      | otherwise  = previousSequence `snoc` localContext
-      where
-        previousSequence = go (row', col')
+      | otherwise  = 
+        let
+            previousSequence = go (row', col')
 
-        directionArrow = unsafeIndex alignMatrix p
+            directionArrow = unsafeIndex alignMatrix p
 
-        (row', col', localContext) =
-            case directionArrow of
-              LeftArrow -> let j' = j-1
-                               te = longerChar `indexStream` j'
-                               e  = deleteElement $ getMedian f te
-                           in (i , j', e)
-              UpArrow   -> let i' = i-1
-                               le = lesserChar `indexStream` i'
-                               e  = insertElement $ getMedian f le
-                           in (i', j , e)
-              DiagArrow -> let i' = i-1
-                               j' = j-1
-                               te = longerChar `indexStream` j'
-                               le = lesserChar `indexStream` i'
-                               e  = alignElement (getMedian f le) $ getMedian f te
-                           in (i', j', e)
+            (row', col', localContext) =
+                case directionArrow of
+                  LeftArrow -> let j' = j-1
+                                   te = longerChar `indexStream` j'
+                                   e  = deleteElement $ getMedian f te
+                               in (i , j', e)
+                  UpArrow   -> let i' = i-1
+                                   le = lesserChar `indexStream` i'
+                                   e  = insertElement $ getMedian f le
+                               in (i', j , e)
+                  DiagArrow -> let i' = i-1
+                                   j' = j-1
+                                   te = longerChar `indexStream` j'
+                                   le = lesserChar `indexStream` i'
+                                   e  = alignElement (getMedian f le) $ getMedian f te
+                               in (i', j', e)
+        in previousSequence `snoc` localContext

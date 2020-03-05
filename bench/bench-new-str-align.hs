@@ -230,7 +230,7 @@ measureUnboxedFullAlignment
      )
 measureUnboxedFullAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
   where
-    align (x,y) = unboxedFullMatrixDO x y discreteMetricPairwiseLogic
+    align = uncurry (unboxedFullMatrixDO discreteMetricPairwiseLogic)
     label = fold ["ful-", toString a, "-X-", toString b]
 
 
@@ -242,7 +242,7 @@ measureUnboxedSwappingAlignment
      )
 measureUnboxedSwappingAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
   where
-    align (x,y) = unboxedSwappingDO x y discreteMetricPairwiseLogic
+    align = uncurry (unboxedSwappingDO discreteMetricPairwiseLogic)
     label = fold ["swp-", toString a, "-X-", toString b]
 
 
@@ -254,7 +254,7 @@ measureUnboxedUkkonenAlignment
      )
 measureUnboxedUkkonenAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
   where
-    align (x,y) = unboxedUkkonenDO x y discreteMetricPairwiseLogic
+    align = uncurry (unboxedUkkonenDO discreteMetricPairwiseLogic)
     label = fold ["ukn-", toString a, "-X-", toString b]
 
 
