@@ -374,6 +374,7 @@ library data-structures
     binary                          >= 0.6       && < 1.0,
     binary-instances                >= 1         && < 2.0,
     bv-little:{bv-little,instances} >= 1.2       && < 2.0,
+    concurrent-hashtable            >= 0.1.8     && < 2.0,
     -- >=0.5.8 Required for Data.Map.restrictKeys
     containers                      >= 0.5.8     && < 1.0,
     data-default                    >= 0.5.2     && < 0.8,
