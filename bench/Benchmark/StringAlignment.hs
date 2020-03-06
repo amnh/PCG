@@ -54,7 +54,7 @@ import           System.Directory
 import           System.FilePath
 
 
-benchStringAlignment :: ((DynamicCharacterMetadataDec DynamicCharacterElement, DynamicCharacter, DynamicCharacter) -> Bool) -> IO ()
+benchStringAlignment :: ((DynamicCharacterMetadataDec AmbiguityGroup, DynamicCharacter, DynamicCharacter) -> Bool) -> IO ()
 benchStringAlignment f = do
     points <- force <$> gatherBenchmarkData f
     guard . not $ null points
@@ -74,7 +74,7 @@ inputDirectories = ("bench/strings/" <>) <$> NE.fromList
 
 
 measureStringAlignment
-  :: (DynamicCharacterMetadataDec DynamicCharacterElement, DynamicCharacter, DynamicCharacter)
+  :: (DynamicCharacterMetadataDec AmbiguityGroup, DynamicCharacter, DynamicCharacter)
   -> Benchmark
 measureStringAlignment (metadata, lhs, rhs) =
     bench label $ nf (uncurry metric) (lhs, rhs)
@@ -84,8 +84,8 @@ measureStringAlignment (metadata, lhs, rhs) =
 
 
 gatherBenchmarkData
-  :: ((DynamicCharacterMetadataDec DynamicCharacterElement, DynamicCharacter, DynamicCharacter) -> Bool)
-  -> IO [(DynamicCharacterMetadataDec DynamicCharacterElement, DynamicCharacter, DynamicCharacter)]
+  :: ((DynamicCharacterMetadataDec AmbiguityGroup, DynamicCharacter, DynamicCharacter) -> Bool)
+  -> IO [(DynamicCharacterMetadataDec AmbiguityGroup, DynamicCharacter, DynamicCharacter)]
 gatherBenchmarkData f = do
     res <- buildSequences
     case res of
@@ -96,7 +96,7 @@ gatherBenchmarkData f = do
           xs -> pure xs
 
 
-buildSequences :: IO (Either String (Vector (DynamicCharacterMetadataDec DynamicCharacterElement, DynamicCharacter, DynamicCharacter)))
+buildSequences :: IO (Either String (Vector (DynamicCharacterMetadataDec AmbiguityGroup, DynamicCharacter, DynamicCharacter)))
 buildSequences = do
     inputResult <- liftIO . runValidationT $
                        traverse (readPartialInput <=< liftIO . gatherInputFiles) inputDirectories
@@ -123,7 +123,7 @@ buildSequences = do
         f _ = ([(mempty, 0)], Just "Right", [])
 
 
-extractVector :: CharacterResult -> Vector (DynamicCharacterMetadataDec DynamicCharacterElement, DynamicCharacter, DynamicCharacter)
+extractVector :: CharacterResult -> Vector (DynamicCharacterMetadataDec AmbiguityGroup, DynamicCharacter, DynamicCharacter)
 extractVector s =
     let pdag    = extractSolution s
         metaSeq = columnMetadata pdag

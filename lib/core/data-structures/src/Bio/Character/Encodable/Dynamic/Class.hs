@@ -78,14 +78,14 @@ class EncodableDynamicCharacterElement e where
 
     getContext    :: e -> AlignmentContext
 
-    getMedian     :: (Subcomponent e -> Subcomponent e -> Subcomponent e) -> e -> Subcomponent e
+    getMedian     :: e -> Subcomponent e
 
     gapElement    :: Word -> e
 
-    insertElement :: (Subcomponent e) -> e
+    insertElement :: (Subcomponent e) -> (Subcomponent e) -> e
 
-    deleteElement :: (Subcomponent e) -> e
+    deleteElement :: (Subcomponent e) -> (Subcomponent e) -> e
 
-    alignElement  :: (Subcomponent e) -> (Subcomponent e) -> e
+    alignElement  :: (Subcomponent e) -> (Subcomponent e) -> (Subcomponent e) -> e
 
     swapContext   :: e -> e

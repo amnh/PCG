@@ -38,6 +38,7 @@ import           Data.List              (delete)
 import           Data.List.NonEmpty     (NonEmpty(..))
 import qualified Data.List.NonEmpty     as NE
 import           Data.Map               (Map)
+import           Data.MetricRepresentation
 import           Data.MonoTraversable
 import           Data.String            (fromString)
 import           Prelude                hiding (lookup)
@@ -81,14 +82,28 @@ instance Monad m => Serial m NucleotideBase where
       where
         validSpace   = fold
                      [ pure . gapElement . symbolCount $ head validMedians
-                     , deleteElement <$> validMedians
-                     , insertElement <$> validMedians
-                     ,  alignElement <$> validMedians <*> validMedians
+                     , buildElem deleteElement <$> validMedians
+                     , buildElem insertElement <$> validMedians
+                     , unionElem  alignElement <$> validMedians <*> validMedians
                      ]
         validMedians = fmap (encodeElement alphabet . NE.fromList) $ [] `delete` powerSet (toList alphabet)
+        gap = getGapElement $ head validMedians
         powerSet :: [a] -> [[a]]
         powerSet []     = [[]]
         powerSet (x:xs) = [x:ps | ps <- powerSet xs] <> powerSet xs
+
+        buildElem
+          :: (AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
+          -> AmbiguityGroup
+          -> DynamicCharacterElement
+        buildElem f x   = f (fst $ discreteMetricPairwiseLogic gap x) x
+
+        unionElem
+          :: (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
+          -> AmbiguityGroup
+          -> AmbiguityGroup
+          -> DynamicCharacterElement
+        unionElem f x y = f (fst $ discreteMetricPairwiseLogic x y) x y
 
 
 alphabet :: Alphabet String

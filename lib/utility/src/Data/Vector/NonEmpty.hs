@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
@@ -164,7 +165,9 @@ singleton = NEV . V.singleton
 -- Construct a 'Vector' from a non-empty structure.
 {-# INLINE fromNonEmpty #-}
 fromNonEmpty :: Foldable1 f => f a -> Vector a
-fromNonEmpty = NEV . V.fromList . NE.toList . toNonEmpty
+fromNonEmpty xs = 
+    let !n = length xs
+    in  NEV . V.fromListN n . NE.toList $ toNonEmpty xs
 
 
 -- |
@@ -223,8 +226,6 @@ unsafeFromVector :: V.Vector a -> Vector a
 unsafeFromVector v
   | V.null v  = error "NonEmpty.unsafeFromVector: empty vector"
   | otherwise = NEV v
-
-
 
 
 -- | /O(n)/

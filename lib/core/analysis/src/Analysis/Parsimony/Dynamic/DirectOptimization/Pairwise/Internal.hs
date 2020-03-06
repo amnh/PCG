@@ -348,12 +348,10 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
     {-# INLINE (!?) #-}
     (!?) m k = fromMaybe (infinity, DiagArrow) $ k `lookup` m
 
-    f x y = fst $ overlapFunction x y
-
     gap                   = gapOfStream topChar
-    gapGroup              = getMedian f gap
-    topElement            = getMedian f . fromMaybe gap $  topChar `lookupStream` (col - 1)
-    leftElement           = getMedian f . fromMaybe gap $ leftChar `lookupStream` (row - 1)
+    gapGroup              = getMedian gap
+    topElement            = getMedian . fromMaybe gap $  topChar `lookupStream` (col - 1)
+    leftElement           = getMedian . fromMaybe gap $ leftChar `lookupStream` (row - 1)
     (leftwardValue, _)    = memo !? (row    , col - 1)
     (diagonalValue, _)    = memo !? (row - 1, col - 1)
     (  upwardValue, _)    = memo !? (row - 1, col    )
@@ -484,7 +482,7 @@ traceback overlapFunction alignMatrix longerChar lesserChar = (finalCost, alignm
 
     col = olength longerChar
     row = olength lesserChar
---    gap = gapOfStream longerChar
+    gap = getMedian $ gapOfStream longerChar
 
     go p@(i, j)
       | p == (0,0) = mempty
@@ -497,18 +495,18 @@ traceback overlapFunction alignMatrix longerChar lesserChar = (finalCost, alignm
         (row', col', localContext) =
             case directionArrow of
               LeftArrow -> let j' = j-1
-                               te = longerChar `indexStream` j'
-                               e  = deleteElement $ getMedian f te
+                               te = getMedian $ longerChar `indexStream` j'
+                               e  = deleteElement (f gap te) te
                            in (i , j', e)
               UpArrow   -> let i' = i-1
-                               le = lesserChar `indexStream` i'
-                               e  = insertElement $ getMedian f le
+                               le = getMedian $ lesserChar `indexStream` i'
+                               e  = insertElement (f le gap) le
                            in (i', j , e)
               DiagArrow -> let i' = i-1
                                j' = j-1
-                               te = longerChar `indexStream` j'
-                               le = lesserChar `indexStream` i'
-                               e  = alignElement (getMedian f le) $ getMedian f te
+                               te = getMedian $ longerChar `indexStream` j'
+                               le = getMedian $ lesserChar `indexStream` i'
+                               e  = alignElement (f le te) le te
                            in (i', j', e)
 
 

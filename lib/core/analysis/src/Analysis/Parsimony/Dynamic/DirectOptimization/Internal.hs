@@ -230,9 +230,9 @@ disambiguateElement
   => (Subcomponent e -> Subcomponent e -> Subcomponent e)
   -> e
   -> e
-disambiguateElement f x = alignElement val val
+disambiguateElement f x = alignElement val val val
   where
-    med = getMedian f x
+    med = getMedian x
     idx = min (finiteBitSize med - 1) $ countLeadingZeros med
     zed = med `xor` med
     val = zed `setBit` idx
