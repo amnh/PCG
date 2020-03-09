@@ -13,18 +13,15 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ApplicativeDo    #-}
-{-# LANGUAGE BangPatterns     #-}
-{-# LANGUAGE ConstraintKinds  #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
-
+{-# LANGUAGE ApplicativeDo      #-}
+{-# LANGUAGE BangPatterns       #-}
 {-# LANGUAGE ConstraintKinds    #-}
 {-# LANGUAGE DeriveFoldable     #-}
 {-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE TypeFamilies       #-}
+{-# LANGUAGE UnboxedTuples      #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonen
   ( unboxedUkkonenDO
@@ -181,7 +178,7 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs matrixBuilder lon
 
     ukkonenUntilOptimal offset = matrixBuilder offset >>= considerRecursing offset
 
-    considerRecursing offset (alignmentCost, dirMatrix)
+    considerRecursing offset ~(alignmentCost, dirMatrix)
       | threshold <= alignmentCost = ukkonenUntilOptimal $ 2 * offset
       | otherwise                  = Just (offset, alignmentCost, dirMatrix)
       where
@@ -208,7 +205,7 @@ buildDirectionMatrix med cost longerTop lesserLeft o
     longerLen   = olength longerTop
     lesserLen   = olength lesserLeft
     rows        = olength lesserLeft + 1
-    cols        = quasiDiagonalWidth + (2 * offset)
+    cols        = quasiDiagonalWidth + (offset `shiftL` 1) -- Multiply by 2
     quasiDiagonalWidth = differenceInLength + 1
       where
         differenceInLength = longerLen - lesserLen
@@ -235,9 +232,9 @@ buildDirectionMatrix med cost longerTop lesserLeft o
       -- how to compute the first and last cells of the row.
       let writeRow firstCell lastCell i =
             -- Precomute some values that will be used for the whole row
-            let (prev, curr)
-                  | odd i     = (vOne, vTwo)
-                  | otherwise = (vTwo, vOne)
+            let (# prev, curr #)
+                  | odd i     = (# vOne, vTwo #)
+                  | otherwise = (# vTwo, vOne #)
                 start = max 0 $ offset - i
                 stop  = (cols - 1) - max 0 (offset - ((rows - 1) - i))
                 leftElement = getMedian med . fromMaybe gap $ lesserLeft `lookupStream` (i - 1)
@@ -365,10 +362,10 @@ directOptimization
   -> s
   -> Maybe (Word, s)
 directOptimization overlapλ matrixFunction char1 char2 =
-    let (swapped, longerChar, shorterChar)       = measureCharacters char1 char2
+    let (swapped, longerChar, shorterChar) = measureCharacters char1 char2
     in  case matrixFunction longerChar shorterChar of
           Nothing -> Nothing
-          Just (offset, alignmentCost, traversalMatrix) ->
+          Just ~(offset, alignmentCost, traversalMatrix) ->
             let alignmentContext = traceback overlapλ offset traversalMatrix longerChar shorterChar
                 alignment        = (alignmentCost, transformation alignmentContext)
                 transformation

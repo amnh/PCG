@@ -2303,7 +2303,6 @@ benchmark bench-new-str-align
     exitcode-stdio-1.0
 
   ghc-options:
-    -threaded
     -rtsopts
     -with-rtsopts=-T
 
