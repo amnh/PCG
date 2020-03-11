@@ -63,8 +63,6 @@ import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
 import           TextShow                              (TextShow (showb)) --, toString)
 
-import Debug.Trace
-
 
 -- |
 -- Represents an encoded dynamic character, consisting of one or more static
@@ -157,7 +155,7 @@ instance ExportableElements DynamicCharacter where
         fromValue  = fromNumber charWidth
         charWidth  = reimportableElementWidthElements riCharElems
         inputElems = reimportableCharacterElements    riCharElems --  :: ![(CUInt, CUInt, CUInt)]
-        f (x,y,z) = 
+        f (x,y,z)  = 
             let x' = fromValue x
                 y' = fromValue y
                 z' = fromValue z

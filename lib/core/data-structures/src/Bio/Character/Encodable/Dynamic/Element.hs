@@ -59,8 +59,6 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()
 import           TextShow                              (TextShow (showb), toString)
 
-import Debug.Trace
-
 
 -- |
 -- Represents a single element of a dynamic character, which holds two

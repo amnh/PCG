@@ -21,17 +21,18 @@
 
 module Test.Custom.NucleotideSequence
   ( NucleotideBase(..)
+  , NucleotideBasePair(..)
   , NucleotideSequence(..)
   ) where
 
 import           Bio.Character.Encodable
 import           Bio.Character.Encodable.Dynamic
 import           Bio.Character.Encodable.Dynamic.Element
+import           Control.Arrow          ((***), (&&&))
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import           Data.Bits
-import           Data.BitMatrix
-import qualified Data.Bimap                            as B                                            
+import qualified Data.Bimap                            as B
 import           Data.Foldable
 import           Data.Key
 import           Data.List              (delete)
@@ -42,16 +43,18 @@ import           Data.MetricRepresentation
 import           Data.MonoTraversable
 import           Data.String            (fromString)
 import           Prelude                hiding (lookup)
-import           Test.QuickCheck        (Arbitrary(..), Gen, suchThat, vectorOf)
+import           Test.QuickCheck        (Arbitrary(..))
 import           Test.SmallCheck.Series hiding (NonEmpty)
-
-import Debug.Trace
 
 
 -- |
 -- Represents an arbitrary, non-empty ambiguity group which may include gaps.
 newtype NucleotideBase = NB DynamicCharacterElement
+    deriving newtype (Eq, Ord)
 
+
+newtype NucleotideBasePair = NBP (NucleotideBase, NucleotideBase)
+    deriving newtype (Eq, Ord)
 
 -- |
 -- Represents an arbitrary, non-empty sequence of nucleotide bases that may be
@@ -66,9 +69,11 @@ instance Arbitrary NucleotideSequence where
 
 instance Show NucleotideSequence where
 
-    show (NS x) = showDNA x
+    show (NS x) = fold ["(",shownDNA,",",shownContext,")"]
       where
-        showDNA = foldMap renderBase . otoList
+        (shownDNA, shownContext) = (fold *** fold) . unzip
+                                 $ (grabMedian &&& id) . renderBase <$> otoList x
+        grabMedian = pure . head . tail
 
 
 instance Show NucleotideBase where
@@ -76,34 +81,56 @@ instance Show NucleotideBase where
     show (NB x) = renderBase x
 
 
+instance Show NucleotideBasePair where
+
+    show (NBP (NB x, NB y)) = fold ["(",renderBase x,",", renderBase y, ")"]
+
+
 instance Monad m => Serial m NucleotideBase where
 
-    series = generate $ const (NB <$> validSpace)
+    series = generate $ const (NB <$> validNucleotideElements)
+
+
+instance Monad m => Serial m NucleotideBasePair where
+
+    series = generate $ const validPairs
       where
-        validSpace   = fold
-                     [ pure . gapElement . symbolCount $ head validMedians
-                     , buildElem deleteElement <$> validMedians
-                     , buildElem insertElement <$> validMedians
-                     , unionElem  alignElement <$> validMedians <*> validMedians
+        validPairs = [ NBP (NB x, NB y)
+                     | x <- validNucleotideElements
+                     , y <- validNucleotideElements
+                     , x <= y
                      ]
-        validMedians = fmap (encodeElement alphabet . NE.fromList) $ [] `delete` powerSet (toList alphabet)
-        gap = getGapElement $ head validMedians
-        powerSet :: [a] -> [[a]]
-        powerSet []     = [[]]
-        powerSet (x:xs) = [x:ps | ps <- powerSet xs] <> powerSet xs
 
-        buildElem
-          :: (AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
-          -> AmbiguityGroup
-          -> DynamicCharacterElement
-        buildElem f x   = f (fst $ discreteMetricPairwiseLogic gap x) x
 
-        unionElem
-          :: (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
-          -> AmbiguityGroup
-          -> AmbiguityGroup
-          -> DynamicCharacterElement
-        unionElem f x y = f (fst $ discreteMetricPairwiseLogic x y) x y
+validNucleotideElements :: [DynamicCharacterElement]
+validNucleotideElements = fold
+   [ pure . gapElement . symbolCount $ head validMedians
+   , buildElem deleteElement <$> validMedians
+   , buildElem insertElement <$> validMedians
+   , [ unionElem alignElement x y | x <- validMedians, y <- validMedians, x <= y ]
+   ]
+  where
+    gap = getGapElement $ head validMedians
+
+    validMedians = fmap (encodeElement alphabet . NE.fromList) $
+                     [] `delete` powerSet (toList alphabet)
+
+    powerSet :: [a] -> [[a]]
+    powerSet []     = [[]]
+    powerSet (x:xs) = [x:ps | ps <- powerSet xs] <> powerSet xs
+
+    buildElem
+      :: (AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
+      -> AmbiguityGroup
+      -> DynamicCharacterElement
+    buildElem f x   = f (fst $ discreteMetricPairwiseLogic gap x) x
+
+    unionElem
+      :: (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
+      -> AmbiguityGroup
+      -> AmbiguityGroup
+      -> DynamicCharacterElement
+    unionElem f x y = f (fst $ discreteMetricPairwiseLogic x y) x y
 
 
 alphabet :: Alphabet String
@@ -115,20 +142,25 @@ renderBase x =
     let dnaIUPAC     = convertBimap iupacToDna
         convertBimap :: B.Bimap (NonEmpty String) (NonEmpty String) -> Map (NonEmpty String) Char
         convertBimap = fmap (head . NE.head) . B.toMapR . B.mapR (fmap fromString)
-        encoding     = case getContext x of
-                         Gapping   -> bit . fromEnum $ symbolCount x - 1
-                         Deletion  -> let v = getRight x in v .|. getGapElement v
-                         Insertion -> let v = getLeft  x in v .|. getGapElement v
-                         Alignment -> let l = getLeft  x
-                                          r = getRight x
-                                          m | l == r = l
-                                            | popCount (l .&. r) > 0 = l .&. r
-                                            | otherwise = l .|. r
-                                      in  m
-    in case decodeElement alphabet encoding `lookup` dnaIUPAC of
-         Just v  -> [v]
-         Nothing -> error $ unlines
-                      [ "Could not find key for:"
-                      , show encoding
-                      , show $ decodeElement alphabet encoding
-                      ]
+        decodeBase v = decodeElement alphabet v `lookup` dnaIUPAC
+        errorMsg   v = error $ unlines [ "Could not find key for:", show v, show $ decodeElement alphabet v ]
+        (pref, median, lVal, rVal) =
+          case getContext x of
+            Gapping   -> let g = bit . fromEnum $ symbolCount x - 1 in ('G', g, g, g)
+            Deletion  -> let v = getRight x in ('D', v .|. getGapElement v, getGapElement v, v)
+            Insertion -> let v = getLeft  x in ('I', v .|. getGapElement v, v, getGapElement v)
+            Alignment -> let l = getLeft  x
+                             r = getRight x
+                             m | l == r = l
+                               | popCount (l .&. r) > 0 = l .&. r
+                               | otherwise = l .|. r
+                         in  ('A', m, l, r)
+    in  case decodeBase median of
+          Nothing ->  errorMsg median
+          Just a  ->
+            case decodeBase lVal of
+              Nothing ->  errorMsg lVal
+              Just b  ->
+                case decodeBase rVal of
+                  Nothing ->  errorMsg rVal
+                  Just c  -> [pref,a,b,c]

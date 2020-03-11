@@ -1,4 +1,6 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
 
 module Benchmark.StringAlignment
   ( benchStringAlignment
@@ -54,7 +56,9 @@ import           System.Directory
 import           System.FilePath
 
 
-benchStringAlignment :: ((DynamicCharacterMetadataDec AmbiguityGroup, DynamicCharacter, DynamicCharacter) -> Bool) -> IO ()
+benchStringAlignment
+  :: ((DynamicCharacterMetadataDec AmbiguityGroup, DynamicCharacter, DynamicCharacter) -> Bool)
+  -> IO ()
 benchStringAlignment f = do
     points <- force <$> gatherBenchmarkData f
     guard . not $ null points

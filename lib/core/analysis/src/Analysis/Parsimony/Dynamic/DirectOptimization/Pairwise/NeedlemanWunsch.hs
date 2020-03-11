@@ -84,11 +84,9 @@ naiveDOMemo char1 char2 tcm = directOptimization char1 char2 tcm createNeedleman
 {-# INLINE createNeedlemanWunchMatrix #-}
 {-# SPECIALISE createNeedlemanWunchMatrix :: DynamicCharacter -> DynamicCharacter -> OverlapFunction AmbiguityGroup -> NeedlemanWunchMatrix #-}
 createNeedlemanWunchMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Subcomponent (Element s)) -> NeedlemanWunchMatrix
---createNeedlemanWunchMatrix topChar leftChar overlapFunction = trace renderedMatrix result
 createNeedlemanWunchMatrix topChar leftChar overlapFunction = result
   where
     result             = matrix rows cols generatingFunction
     rows               = olength leftChar + 1
     cols               = olength topChar  + 1
     generatingFunction = needlemanWunschDefinition topChar leftChar overlapFunction result
---    renderedMatrix     = renderCostMatrix topChar leftChar result

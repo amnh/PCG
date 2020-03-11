@@ -77,10 +77,7 @@ instance Lookup UkkonenMethodMatrix where
 {-# INLINE ukkonenDO #-}
 {-# SPECIALISE ukkonenDO :: DynamicCharacter -> DynamicCharacter -> OverlapFunction AmbiguityGroup -> (Word, DynamicCharacter) #-}
 ukkonenDO
-  :: ( Bits (Subcomponent (Element s))
-     , DOCharConstraint s
-     , EncodedAmbiguityGroupContainer (Subcomponent (Element s))
-     )
+  :: DOCharConstraint s
   => s
   -> s
   -> OverlapFunction (Subcomponent (Element s))
@@ -90,7 +87,9 @@ ukkonenDO char1 char2 overlapFunction
   | otherwise               = directOptimization char1 char2 overlapFunction $ createUkkonenMethodMatrix coefficient
   where
     (_, longer, lesser) = measureCharacters char1 char2
-
+    
+    -- /O(1)/
+    --
     -- If the longer character is 50% larger than the shorter character, then
     -- there is no point in using the barriers. Rather, we fill the full matrix
     -- immediately.
@@ -133,8 +132,8 @@ ukkonenDO char1 char2 overlapFunction
         gap            = getMedian $ gapOfStream char1
         alphabetSize   = fromEnum $ symbolCount gap
         nonGapElements = [ 0 .. alphabetSize - 2 ]
-        indelCost i    =  min (snd (overlapFunction (bit i)  gap    ))
-                              (snd (overlapFunction  gap    (bit i) ))
+        indelCost i    = min (snd (overlapFunction (bit i)  gap    ))
+                             (snd (overlapFunction  gap    (bit i) ))
 
 
 -- |
@@ -178,21 +177,23 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
 
     -- /O(n + m)/
     --
-    -- If one or more of the aligned character elements contained a gap, diagonal directions in the matrix
-    -- have an "indel" cost. 'gapsPresentInInputs' is necessary in order to decrement the threshold value
-    -- to account for this. This was not
-    -- described in Ukkonen's original paper, as the inputs were assumed not to
-    -- contain any gaps.
+    -- If one or more of the aligned character elements contained a gap, diagonal
+    -- directions in the matrix have an "indel" cost. 'gapsPresentInInputs' is
+    -- necessary in order to decrement the threshold value to account for this.
+    -- This was not described in Ukkonen's original paper, as the inputs were assumed
+    -- not to contain any gaps.
     gapsPresentInInputs = longerGaps + lesserGaps
       where
         longerGaps = countGaps longerTop
         lesserGaps = countGaps lesserLeft
-        countGaps  = length . filter (\x -> isDelete x || isInsert x) . otoList
+        countGaps  = length . filter (hasGap . getMedian) . otoList
+        hasGap b   = popCount (b .&. gap) > 0
+        med x y    = fst $ overlapFunction x y
+        gap = getMedian $ gapOfStream longerTop
 
     ukkonenUntilOptimal offset
       | threshold <= alignmentCost = ukkonenUntilOptimal $ 2 * offset
-      | otherwise                   = ukkonenMatrix
---      | otherwise                   = trace (renderedBounds <> renderedMatrix) ukkonenMatrix
+      | otherwise                  = ukkonenMatrix
       where
         ukkonenMatrix      = Ribbon.generate rows cols generatingFunction $ toEnum offset
         generatingFunction = needlemanWunschDefinition longerTop lesserLeft overlapFunction ukkonenMatrix
@@ -200,6 +201,7 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
         alignmentCost      = unsafeToFinite cost
         computedValue      = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
         threshold          = toEnum $ max 0 computedValue -- The threshold value must be non-negative
+
 {--
         renderedMatrix = renderCostMatrix longerTop lesserLeft ukkonenMatrix
 
@@ -208,7 +210,7 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
             , "Input Gaps : " <> show gapsPresentInInputs
             , "Offset     : " <> show offset
             , "Coefficient: " <> show coefficient
-            , "Threshold : " <> show threshold
+            , "Threshold  : " <> show threshold
             , "Total Cost : " <> show alignmentCost
             ]
 --}

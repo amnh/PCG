@@ -60,9 +60,9 @@ common ffi-buildinfo
 common ghc-flags
 
   ghc-options:
-    -debug
-    -rtsopts          
-    -g                    
+--    -debug
+--    -rtsopts          
+--    -g                    
     -- Optimization flags
     -O2
     -fexcess-precision
@@ -105,10 +105,7 @@ common ghc-flags
     -Wunused-matches
     -Wwrong-do-bind
 
--- Global deviations from Haskell98
 common language-specs
-
-  default-language: Haskell2010
 
   -- Always use MonadFail(fail), not Monad(fail)
   other-extensions:
@@ -121,6 +118,8 @@ library alphabet
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   visibility: public
 
@@ -146,7 +145,6 @@ library alphabet
   -- Apparently this is needed to compile with profiling, which is really stupid.
   -- It should only be in the modules which use TemplateHaskell, not all modules.
   -- I consider this a temporary hack to get things to compile with profiling.
-  -- TODO: remove this in the future when cabal gets it's act together.
   other-extensions: TemplateHaskell
   
   exposed-modules:
@@ -169,6 +167,8 @@ library analysis
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   visibility: private
 
   hs-source-dirs:
@@ -190,6 +190,7 @@ library analysis
     foldl                    >= 1.3.2     && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.18      && < 5.0,
+    matrices                 >= 0.5       && < 1.0,            
     mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
@@ -224,6 +225,9 @@ library analysis
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedFullMatrix
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonen
 
 
 -- Data-types for defining and interacting with phylogenetic components.
@@ -238,6 +242,8 @@ library core
 
   import:
     language-specs
+
+  default-language: Haskell2010
 
   visibility: public
 
@@ -313,6 +319,8 @@ library data-normalization
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   visibility: public
         
   hs-source-dirs:
@@ -357,6 +365,8 @@ library data-structures
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   visibility: private
 
@@ -518,6 +528,8 @@ library data-unification
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   visibility: public
   
   hs-source-dirs:
@@ -570,6 +582,8 @@ library evaluation
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   visibility: public
 
   hs-source-dirs:
@@ -607,6 +621,8 @@ library exportable
     ghc-flags,
     language-specs,
 
+  default-language: Haskell2010
+
   visibility: private
 
   hs-source-dirs:
@@ -638,6 +654,8 @@ library file-parsers
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   visibility: public
 
@@ -720,6 +738,8 @@ library file-source
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   visibility: public
 
   hs-source-dirs:
@@ -771,6 +791,8 @@ library graph
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   visibility: public
 
@@ -830,6 +852,8 @@ library language
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   visibility: public
 
   hs-source-dirs:
@@ -876,6 +900,8 @@ library serialize
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   visibility: private
 
   hs-source-dirs:
@@ -913,6 +939,8 @@ library tcm
     ghc-flags,
     language-specs,
 
+  default-language: Haskell2010
+
   visibility: private
 
   hs-source-dirs:
@@ -949,8 +977,11 @@ library tcm
 library tcm-memo
 
   import:
+    ffi-buildinfo,
     ghc-flags,
     language-specs,
+
+  default-language: Haskell2010
 
   visibility: private
 
@@ -1009,6 +1040,8 @@ library utility
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   visibility: private
 
@@ -1093,6 +1126,8 @@ library validation-transformer
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   visibility: public
 
   hs-source-dirs:
@@ -1118,6 +1153,8 @@ executable pcg
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:
     Main.hs
@@ -1212,6 +1249,8 @@ executable 2d-do-comparison
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   main-is:
     2d-do-comparison.hs
 
@@ -1224,7 +1263,10 @@ executable 2d-do-comparison
     tcm-memo,
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 2.0,
+    mono-traversable         >= 1.0       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
+    tasty                    >= 1.2       && < 2.0,
+    tasty-quickcheck         >= 0.9       && < 1.0,
 
 
 executable 3d-do-comparison
@@ -1232,6 +1274,8 @@ executable 3d-do-comparison
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:
     3d-do-comparison.hs
@@ -1255,6 +1299,8 @@ executable affine-safety
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   main-is:
     affine-safety.hs
 
@@ -1275,6 +1321,8 @@ executable fasta-differ
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:
     fasta-differ.hs
@@ -1299,6 +1347,8 @@ executable file-tests
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:
     FileTests.hs
@@ -1335,6 +1385,8 @@ executable generate-data-set
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   main-is:
     generate-data-set.hs
 
@@ -1364,6 +1416,8 @@ executable generate-random-sequence
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:
     generate-random-sequence.hs
@@ -1396,6 +1450,8 @@ executable generate-tcm
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   main-is:
     generate-tcm.hs
 
@@ -1420,6 +1476,8 @@ executable graphviz-examples
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:
     graphviz-examples.hs
@@ -1446,6 +1504,8 @@ executable newick-resolver
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:
     newick-resolver.hs
@@ -1505,6 +1565,8 @@ executable ukkonen-do-comparison
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   main-is:
     ukkonen-do-comparison.hs
 
@@ -1526,6 +1588,8 @@ executable use-the-memoized-ffi
     ghc-flags,
     language-specs,
 
+  default-language: Haskell2010
+
   main-is:
     Main.hs
 
@@ -1545,6 +1609,8 @@ test-suite integration-tests
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:
     IntegrationTests.hs
@@ -1595,6 +1661,8 @@ test-suite test-suite-alphabet
   main-is:
     TestSuite.hs
 
+  default-language: Haskell2010
+
   type:
     exitcode-stdio-1.0
 
@@ -1623,6 +1691,8 @@ test-suite test-suite-analysis
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:
     TestSuite.hs
@@ -1662,6 +1732,8 @@ test-suite test-suite-data-structures
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:
     TestSuite.hs
@@ -1707,6 +1779,8 @@ test-suite test-suite-evaluation
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1744,6 +1818,8 @@ test-suite test-suite-file-parsers
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:          
     TestSuite.hs
@@ -1818,6 +1894,8 @@ test-suite test-suite-graph
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1854,6 +1932,8 @@ test-suite test-suite-tcm
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1888,6 +1968,8 @@ test-suite test-suite-utility
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:          
     TestSuite.hs
@@ -1930,6 +2012,8 @@ test-suite test-suite-validation-transformer
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1966,6 +2050,8 @@ benchmark bench-file-parsers-space
     ghc-flags,
     language-specs
          
+  default-language: Haskell2010
+
   main-is:
     Space.hs
 
@@ -2011,6 +2097,8 @@ benchmark bench-file-parsers-time
     ghc-flags,
     language-specs
          
+  default-language: Haskell2010
+
   main-is:
     Time.hs
 
@@ -2056,6 +2144,8 @@ benchmark bench-graph
     ghc-flags,
     language-specs
 
+  default-language: Haskell2010
+
   main-is:          
     Benchmarks.hs
 
@@ -2086,11 +2176,13 @@ benchmark bench-string-alignment
     ghc-flags,
     language-specs
 
-  type:
-    exitcode-stdio-1.0
+  default-language: Haskell2010
 
   main-is:
     bench-string-alignment.hs
+
+  type:
+    exitcode-stdio-1.0
 
   ghc-options:
     -threaded
@@ -2143,11 +2235,13 @@ benchmark bench-string-alignment-small
     ghc-flags,
     language-specs
 
-  type:
-    exitcode-stdio-1.0
+  default-language: Haskell2010
 
   main-is:
     bench-string-alignment-small.hs
+
+  type:
+    exitcode-stdio-1.0
 
   ghc-options:
     -threaded
@@ -2194,11 +2288,68 @@ benchmark bench-string-alignment-small
     PCG.Command.Read.ReadCommandError
             
 
+benchmark bench-new-str-align
+
+  import:
+    ghc-flags,
+    language-specs
+
+  default-language: Haskell2010
+
+  main-is:
+    bench-new-str-align.hs
+
+  type:
+    exitcode-stdio-1.0
+
+  ghc-options:
+    -rtsopts
+    -with-rtsopts=-T
+
+  build-depends:
+    alphabet,
+    core,
+    data-normalization,
+    data-unification,
+    evaluation,
+    file-parsers,
+    file-source,
+    language,
+    tcm-memo,
+    utility,
+    validation-transformer,
+    base                     >= 4.11      && < 5.0,
+    bench-show               >= 0.3       && < 1.0,            
+    containers               >= 0.5.8     && < 1.0,
+    criterion                >= 1.5       && < 2.0,
+    deepseq                  >= 1.4       && < 2.0,
+    directory                >= 1.3       && < 1.4,
+    filepath                 >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.17      && < 5.0,
+    megaparsec               >= 8.0       && < 9.0,
+    mono-traversable         >= 1.0       && < 2.0,
+    parallel                 >= 3.2       && < 4.0,
+    semigroupoids            >= 5.2.1     && < 5.4,
+    split                    >= 0.2       && < 1.0,            
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1       && < 1.0,
+    text-show                >= 3.8.1     && < 4.0,
+    validation               >= 1.1       && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
+    weigh                    >= 0.0.16    && < 1.0,            
+
+  hs-source-dirs:
+    bench
+
+
 benchmark bench-utility
 
   import:
     ghc-flags,
     language-specs
+
+  default-language: Haskell2010
 
   main-is:          
     Benchmarks.hs

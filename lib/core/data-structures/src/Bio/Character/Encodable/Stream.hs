@@ -64,7 +64,6 @@ class ( Element b ~ Bool
       , EncodedAmbiguityGroupContainer b
       , FiniteBits b
       , MonoFoldable b
---      , Num b -- Required for bit twiddling hacks
       ) => EncodableStreamElement b where
 
     decodeElement :: Eq a => Alphabet a -> b -> NonEmpty a
@@ -103,8 +102,7 @@ class ( MonoFoldable s
 --    gapOfStream = getGapElement . headEx
 
 
-class ( --EncodableStreamElement (Element s)
-        MonoFoldable s
+class ( MonoFoldable s
       , MonoFunctor  s
       ) => DecodableStream s where
 

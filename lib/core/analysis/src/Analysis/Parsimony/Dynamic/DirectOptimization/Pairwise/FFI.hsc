@@ -46,7 +46,7 @@ import Foreign.C.Types
 import Prelude   hiding (sequence, tail)
 import System.IO.Unsafe (unsafePerformIO)
 
-import Debug.Trace
+--import Debug.Trace
 
 
 #include "c_alignment_interface.h"
@@ -307,13 +307,13 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 
 {--
         !_ <- trace ("Ungapped Char: " <> show     resultingUngapped) $ pure ()
---}
-{-
+
         !_ <- trace ("\n Len: " <> show (length resultingAlignedChar1)) $ pure ()
         !_ <- trace ("  Gapped Char: " <> show       resultingGapped) $ pure ()
         !_ <- trace (" Aligned LHS : " <> show resultingAlignedChar1) $ pure ()
         !_ <- trace (" Aligned RHS : " <> show resultingAlignedChar2) $ pure ()
--}
+--}
+
 --        !_ <- trace  " > Done with FFI Alignment\n" $ pure ()
 
         -- NOTE: We swapped resultingAlignedChar1 & resultingAlignedChar2

@@ -14,6 +14,7 @@
 
 module Bio.Character.Encodable
   ( AmbiguityGroup()
+  , AlignmentContext(..)
   , ContinuousCharacter()
   , DecodableStream(..)
   , DynamicCharacter(..)

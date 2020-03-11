@@ -21,18 +21,12 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
 
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-{-
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
--}
 import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.List                                              (intercalate)
 import           Data.List.NonEmpty                                     (NonEmpty (..))
 import           Data.MonoTraversable
-import           Data.TCM.Dense
+-- import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
@@ -40,13 +34,18 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck
 import qualified Test.Tasty.SmallCheck                                  as SC
 
+-- import Debug.Trace
+
 
 testSuite :: TestTree
 testSuite = testGroup "Pairwise alignment tests"
     [ testSuiteNaiveDO
     , testSuiteMemoizedDO
     , testSuiteUkkonnenDO
-    , testSuiteForeignDO
+--    , testSuiteForeignDO
+    , testSuiteUnboxedFullMatrixDO
+    , testSuiteUnboxedFullSwappingDO
+    , testSuiteUnboxedUkkonenDO
     , constistentImplementation
     ]
 
@@ -63,25 +62,25 @@ constistentImplementation = testGroup "All implementations return same states"
 consistentResults :: String -> (Word -> Word -> Word) -> TestTree
 consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll checkConsistency
   where
-    dense  = genDenseMatrix metric
+--    dense  = genDenseMatrix metric
     memoed = getMedianAndCost2D (genMemoMatrix metric)
     median x y = fst $ memoed x y
     f :: DynamicCharacterElement -> DynamicCharacter
     f = constructDynamic . (:|[])
 
-    checkConsistency :: (NucleotideBase, NucleotideBase) -> Either String String
-    checkConsistency p@(NB x, NB y)  
-      | naiveResult == memoedResult && naiveResult == foreignResult = Right $ show p
+    checkConsistency :: NucleotideBasePair -> Either String String
+    checkConsistency (NBP p@(NB x, NB y))
+      | naiveResult == memoedResult = Right $ show p
       | otherwise = Left errorMessage
       where
         naiveResult   = naiveDO           (f x) (f y) metric
         memoedResult  = naiveDOMemo       (f x) (f y) memoed
-        foreignResult = foreignPairwiseDO (f x) (f y) dense
+--        foreignResult = foreignPairwiseDO (f x) (f y) dense
         errorMessage  = unlines
                    [ ""
                    , unwords [ "Naive:  ", showResult median   naiveResult, show   naiveResult ]
                    , unwords [ "Memoed: ", showResult median  memoedResult, show  memoedResult ]
-                   , unwords [ "Foreign:", showResult median foreignResult, show foreignResult ]
+--                   , unwords [ "Foreign:", showResult median foreignResult, show foreignResult ]
                    ]
 
 
@@ -121,6 +120,45 @@ testSuiteMemoizedDO = testGroup "Memoized DO"
     ]
 
 
+testSuiteUnboxedFullMatrixDO :: TestTree
+testSuiteUnboxedFullMatrixDO = testGroup "Unboxed Full Matrix DO"
+    [ isValidPairwiseAlignment "Unboxed Full Matrix DO over discrete metric"
+       $ \x y -> unboxedFullMatrixDO x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
+    , isValidPairwiseAlignment "Unboxed Full Matrix DO over L1 norm"
+       $ \x y -> unboxedFullMatrixDO x y (getMedianAndCost2D (genMemoMatrix l1Norm))
+    , isValidPairwiseAlignment "Unboxed Full Matrix DO over prefer substitution metric (1:2)"
+       $ \x y -> unboxedFullMatrixDO x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+    , isValidPairwiseAlignment "Unboxed Full Matrix DO over prefer insertion/deletion metric (2:1)"
+       $ \x y -> unboxedFullMatrixDO x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+    ]
+
+
+testSuiteUnboxedFullSwappingDO :: TestTree
+testSuiteUnboxedFullSwappingDO = testGroup "Unboxed Swapping Vectors DO"
+    [ isValidPairwiseAlignment "Unboxed Swapping Vectors DO over discrete metric"
+       $ \x y -> unboxedSwappingDO x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
+    , isValidPairwiseAlignment "Unboxed Swapping Vectors DO over L1 norm"
+       $ \x y -> unboxedSwappingDO x y (getMedianAndCost2D (genMemoMatrix l1Norm))
+    , isValidPairwiseAlignment "Unboxed Swapping Vectors DO over prefer substitution metric (1:2)"
+       $ \x y -> unboxedSwappingDO x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+    , isValidPairwiseAlignment "Unboxed Swapping Vectors DO over prefer insertion/deletion metric (2:1)"
+       $ \x y -> unboxedSwappingDO x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+    ]
+
+
+testSuiteUnboxedUkkonenDO :: TestTree
+testSuiteUnboxedUkkonenDO = testGroup "Unboxed Ukkonen DO"
+    [ isValidPairwiseAlignment "Unboxed Ukkonen DO over discrete metric"
+       $ \x y -> unboxedUkkonenDO x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
+    , isValidPairwiseAlignment "Unboxed Ukkonen DO over L1 norm"
+       $ \x y -> unboxedUkkonenDO x y (getMedianAndCost2D (genMemoMatrix l1Norm))
+    , isValidPairwiseAlignment "Unboxed Ukkonen DO over prefer substitution metric (1:2)"
+       $ \x y -> unboxedUkkonenDO x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+    , isValidPairwiseAlignment "Unboxed Ukkonen DO over prefer insertion/deletion metric (2:1)"
+       $ \x y -> unboxedUkkonenDO x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+    ]
+
+
 testSuiteUkkonnenDO :: TestTree
 testSuiteUkkonnenDO = testGroup "Ukkonnen DO"
     [ isValidPairwiseAlignment "Ukkonnen DO over discrete metric"
@@ -134,6 +172,7 @@ testSuiteUkkonnenDO = testGroup "Ukkonnen DO"
     ]
 
 
+{-
 testSuiteForeignDO :: TestTree
 testSuiteForeignDO = testGroup "Foreign C DO"
     [ isValidPairwiseAlignment "Foreign C DO over discrete metric"
@@ -145,6 +184,7 @@ testSuiteForeignDO = testGroup "Foreign C DO"
     , isValidPairwiseAlignment "Foreign C DO over prefer insertion/deletion metric (2:1)"
        $ \x y -> foreignPairwiseDO x y (genDenseMatrix preferGapMetric)
     ]
+-}
 
 
 {-
@@ -220,9 +260,10 @@ isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
 -}
 
 
+{-
 genDenseMatrix :: (Word -> Word -> Word) -> DenseTransitionCostMatrix
 genDenseMatrix = generateDenseTransitionCostMatrix 0  5
-
+-}
 
 genMemoMatrix :: (Word -> Word -> Word) -> MemoizedCostMatrix
 genMemoMatrix  = generateMemoizedTransitionCostMatrix 5

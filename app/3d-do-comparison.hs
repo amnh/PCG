@@ -3,6 +3,7 @@
 
 module Main (main) where
 
+{-
 import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Encodable
 import           Control.DeepSeq
@@ -15,7 +16,7 @@ import           Data.TCM.Memoized
 import           System.Environment                            (getArgs)
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
-
+-}
 
 main :: IO ()
 main = pure ()
