@@ -10,6 +10,7 @@
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE RecordWildCards            #-}
 
 
 module Data.Graph.Indices where
@@ -194,8 +195,60 @@ data EdgeIndex = EdgeIndex
   deriving stock (Eq, Ord, Show, Generic)
   deriving anyclass (NFData)
 
+class HasEdgeSource s a | s -> a where
+  _edgeSource :: Lens' s a
+
+instance HasEdgeSource EdgeIndex TaggedIndex where
+  _edgeSource = lens edgeSource (\e s -> e { edgeSource = s})
+
+class HasEdgeTarget s a | s -> a where
+  _edgeTarget :: Lens' s a
+
+instance HasEdgeTarget EdgeIndex TaggedIndex where
+  _edgeTarget = lens edgeTarget (\e s -> e { edgeTarget = s})
 
 -- Adapted from the Hashable library
 instance Hashable EdgeIndex where
   hash (EdgeIndex src tgt)  = hash src `hashWithSalt` tgt
   hashWithSalt = defaultHashWithSalt
+
+
+data DirEdgeIndex = DirEdgeIndex
+  { edgeIndex    :: EdgeIndex
+  , reversedEdge :: Bool
+  }
+  deriving stock (Eq, Ord, Show, Generic)
+  deriving anyclass (NFData)
+
+
+class HasEdgeIndex s a | s -> a where
+  _edgeIndex :: Lens' s a
+
+instance HasEdgeIndex DirEdgeIndex EdgeIndex where
+  _edgeIndex =  lens edgeIndex (\e s -> e { edgeIndex = s})
+
+instance HasEdgeSource DirEdgeIndex TaggedIndex where
+  _edgeSource = _edgeIndex . _edgeSource
+
+instance HasEdgeTarget DirEdgeIndex TaggedIndex where
+  _edgeTarget = _edgeIndex . _edgeTarget
+
+-- |
+-- This function flips the source and target indices but
+-- remembers the original incidence relation.
+flipDirEdgeIndex :: DirEdgeIndex -> DirEdgeIndex
+flipDirEdgeIndex DirEdgeIndex{..} = DirEdgeIndex newEdgeIndex (not reversedEdge)
+  where
+    newEdgeIndex = EdgeIndex { edgeSource = edgeTarget edgeIndex
+                             , edgeTarget = edgeSource edgeIndex
+                             }
+
+
+-- |
+-- This function re-orients a directed edge index to have the implied orientation.
+dirToEdgeIndex :: DirEdgeIndex -> EdgeIndex
+dirToEdgeIndex dir@(DirEdgeIndex edgeInds flipped) =
+  if flipped
+    then edgeIndex (flipDirEdgeIndex dir)
+    else edgeInds
+           
