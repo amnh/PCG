@@ -6,6 +6,9 @@
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE PatternSynonyms     #-}
+{-# LANGUAGE KindSignatures      #-}
+
+
 
 module Data.Graph.Postorder.DynamicTraversalFoci where
 
@@ -33,6 +36,10 @@ import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Foldable (toList)
+import Data.Kind
+
+
+
 
 --      (i)
 --       |
@@ -57,22 +64,24 @@ data EdgeNetworkMapFull edgeData =
     , rightChildEdge :: !(TaggedIndex :!: edgeData)  -- (n) -> (k)
     }
 
-type NodeArrangement = EdgeNetworkMapFull ()
-
-pattern NodeArrangement :: TaggedIndex -> TaggedIndex -> TaggedIndex -> EdgeNetworkMapFull ()
-pattern NodeArrangement p l r <- EdgeNetworkMapFull (p :!: _) (l :!: _) (r :!: _)
-  where
-    NodeArrangement p l r = EdgeNetworkMapFull (p :!: ()) (l :!: ()) (r :!: ())
+data NodeArrangement = NodeArrangement
+  { nodeParentEdge     :: DirEdgeIndex
+  , nodeLeftChildEdge  :: DirEdgeIndex
+  , nodeRightChildEdge :: DirEdgeIndex
+  }
 
 
 _parentEdge :: Lens' NodeArrangement TaggedIndex
-_parentEdge = lens (view _left . parentEdge) (\g l -> g { parentEdge = l :!: ()})
+_parentEdge = undefined
+--  lens (view _left . parentEdge) (\g l -> g { parentEdge = l :!: ()})
 
 _leftChildEdge :: Lens' NodeArrangement TaggedIndex
-_leftChildEdge = lens (view _left . leftChildEdge) (\g l -> g { leftChildEdge = l :!: ()})
+_leftChildEdge = undefined
+  -- lens (view _left . leftChildEdge) (\g l -> g { leftChildEdge = l :!: ()})
 
 _rightChildEdge :: Lens' NodeArrangement TaggedIndex
-_rightChildEdge = lens (view _left . rightChildEdge) (\g l -> g { rightChildEdge = l :!: ()})
+_rightChildEdge = undefined
+  --lens (view _left . rightChildEdge) (\g l -> g { rightChildEdge = l :!: ()})
 
 
 lookupEdge :: forall edgeData . TaggedIndex -> EdgeNetworkMapFull edgeData -> Maybe edgeData
@@ -130,6 +139,9 @@ type GraphEdgeMapping block =
     (EdgeNetworkMapFull (ResolutionCache (CharacterSequence block)))
     (EdgeNetworkMap     (ResolutionCache (CharacterSequence block)))
     ()
+
+graphEdgeLookup :: GraphEdgeMapping block -> EdgeIndex -> ResolutionCache (CharacterSequence block)
+graphEdgeLookup edge graphEdge = undefined
 
 emptyEdgeMapping :: GraphEdgeMapping block
 emptyEdgeMapping =
@@ -251,31 +263,99 @@ assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
             , rootGen    = recRootFn
             } = MemoGen{..}
             where
-            rootGen = const (Right NoEdgeMapData)
-            leafGen = const ()
+            rootGen    = const (Right NoEdgeMapData)
+            leafGen    = const ()
             networkGen = undefined
-            treeGen = undefined
+            treeGen    = undefined
             
             directedEdgeDatum = undefined
       in
         undefined
 
 deriveDirectedEdgeDatum
-  :: forall block meta c e . (HasMetadataSequence c (MetadataSequence block meta))
-  => Graph
+  :: forall block subBlock meta c e
+  . ( HasMetadataSequence c (MetadataSequence block meta)
+    , BlockBin block
+    , BlockBin subBlock
+    , HasSequenceCost block
+    )
+  => Lens' block subBlock
+  -> Lens' (LeafBin block) (LeafBin subBlock)
+  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)  
+  -> Graph
        (ResolutionCacheM Identity)
        c e
        (CharacterSequence block)
        (CharacterSequence (LeafBin block))
+  -> GraphEdgeMapping block
   -> TaggedIndex
   -> [TaggedIndex]
   -> NodeArrangement
   -> [(EdgeIndex, ResolutionCache (CharacterSequence block))]
-deriveDirectedEdgeDatum graph nodeInd parNodes (NodeArrangement p l r) =
-  [(EdgeIndex p nodeInd, subTreeResolutions)]
+deriveDirectedEdgeDatum
+  _subBlock _subLeaf _subMeta
+  graph contextNodeDatum nodeInd parNodes (NodeArrangement p l r) = undefined
+--  [(EdgeIndex p nodeInd, subTreeResolutions)]
   where
     meta = view (_cachedData . _metadataSequence) graph
-    subTreeResolutions | p `elem` parNodes = getResolutionCache meta nodeInd graph
+ -- Get the edge indices with their original graph orientation.
+    leftGraphEdge  = dirToEdgeIndex l
+    leftIndex      = view _edgeTarget leftGraphEdge
+    rightGraphEdge = dirToEdgeIndex r
+    rightIndex     = view _edgeTarget rightGraphEdge
+
+    lhsMemo = contextNodeDatum `graphEdgeLookup` leftGraphEdge
+    rhsMemo = contextNodeDatum `graphEdgeLookup` rightGraphEdge
+    lhsContext = filterResolutionEdges (Set.singleton leftGraphEdge ) lhsMemo
+    rhsContext = filterResolutionEdges (Set.singleton rightGraphEdge)  rhsMemo
+
+    localResolution = virtualParentResolution _subBlock _subMeta meta
+    toResCache (x : xs) = view (from _resolutionCache) (x :| xs)
+
+    leftChildResInfo  = (leftIndex  , lhsMemo)
+    rightChildResInfo = (rightIndex , rhsMemo)
+    subTreeResolutions
+     -- In the case where the parent edge is not flipped
+     -- then this is the orientation from the original graph
+     -- and so we simply get the already computed resolution.
+      | (not . reversedEdge $ p) = getResolutionCache meta nodeInd graph
+      | otherwise =
+        case (isUnrootedNetworkEdge l, isUnrootedNetworkEdge r) of
+          (False, False) ->
+            if (not . isUnrootedNetworkEdge $ p)
+            then
+              localResolution leftChildResInfo rightChildResInfo
+            else
+              case (lhsContext, rhsContext) of
+                ([]      , []      ) -> error "deriveDirectedEdgeDatum: to do"
+                (xs@(x:_), []      ) -> toResCache xs
+                ([]      , ys@(y:_)) -> toResCache ys
+                (xs      , ys      )
+                  -> localResolution (leftIndex, toResCache xs) (rightIndex, toResCache ys)
+          (False, True) ->
+            case lhsContext of
+              [] -> rhsMemo
+              xs ->
+                let
+                  lhsMemo' = toResCache xs
+                in
+                  lhsMemo' <> localResolution (leftIndex, lhsMemo') (rightIndex, rhsMemo)
+                
+          (True, False) ->
+            case rhsContext of
+              [] -> lhsMemo
+              xs ->
+                let
+                  rhsMemo' = toResCache xs
+                in
+                  rhsMemo' <> localResolution (leftIndex, lhsMemo) (rightIndex, rhsMemo')
+          (True, True) ->
+            case (lhsContext, rhsContext) of
+              (  [],   [])         -> error $ "deriveDirectedEdgeDatum: to do Network"
+              (xs@(x:_),   [])     -> toResCache xs
+              (  [], ys@(y:_))     -> toResCache ys
+              (xs@(x:_), ys@(y:_)) -> toResCache (xs <> ys)
+
     
 
 
@@ -288,18 +368,33 @@ getUnrootedEdgeParent nodeIndex graph
 getNodeContext :: TaggedIndex -> Graph f c e n t -> Maybe NodeArrangement
 getNodeContext = undefined
      
-  
+
+-- |
+-- This function gets all of the node arrangements from a directed node arrangement:
+--      (i)
+--       |
+--       v
+--      (n)
+--     /   \
+--    V     V
+--   (j)   (k)
+--
+-- For this purpose we keep track of the original relationships between the source and target.
+--
 allNodeArrangements :: NodeArrangement -> NonEmpty NodeArrangement
 allNodeArrangements arrange@(NodeArrangement p l r)
-  = arrange :| [(NodeArrangement l r p), (NodeArrangement r p l)]
+  =    arrange
+  :| [ NodeArrangement (flipDirEdgeIndex l) r (flipDirEdgeIndex p)
+     , NodeArrangement (flipDirEdgeIndex r) (flipDirEdgeIndex p) l
+     ]
   
 
 
-filterEdges
+filterResolutionEdges
   :: Set EdgeIndex
   -> ResolutionCache (CharacterSequence block)
   -> [Resolution (CharacterSequence block)]
-filterEdges edges = runIdentity . filterResolution hasEdge
+filterResolutionEdges edges = runIdentity . filterResolution hasEdge
   where
     hasEdge :: Resolution (CharacterSequence block) -> Bool
     hasEdge res =
@@ -369,6 +464,17 @@ getRootAdjacentEdgeSet graph = edgeSet
 -- has muiltiple parents.
 isNetworkEdge :: EdgeIndex -> Bool
 isNetworkEdge EdgeIndex{..} = getTag edgeTarget == NetworkTag
+
+
+isUnrootedNetworkEdge :: DirEdgeIndex -> Bool
+isUnrootedNetworkEdge DirEdgeIndex{..} =
+  let
+    EdgeIndex{..} = edgeIndex
+  in
+  if reversedEdge
+    then getTag edgeSource == NetworkTag
+    else getTag edgeTarget == NetworkTag
+    
 
 
 unsafeLookup :: (Lookup f, Show (Key f)) => f a -> Key f -> a
