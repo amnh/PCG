@@ -37,6 +37,7 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.Foldable (toList)
 import Data.Kind
+import Data.Graph.TopologyRepresentation
 
 
 
@@ -120,7 +121,7 @@ type EdgeNetworkMap edgeData = Either (EdgeNetworkMapFull edgeData) (EdgeNetwork
 
 
 
-type Topology = ()
+type Topology = TopologyRepresentation EdgeIndex
   -- to do: incorporate topology
 
 type NonExactCharacterMapping = HashMap Topology NonExactCharacterTraversals
