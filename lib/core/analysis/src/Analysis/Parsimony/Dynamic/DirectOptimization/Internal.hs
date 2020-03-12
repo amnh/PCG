@@ -73,7 +73,7 @@ selectDynamicMetric
   -> c
   -> (Word, c)
 selectDynamicMetric meta =
-    unboxedUkkonenDO $ meta ^. pairwiseTransitionCostMatrix
+    unboxedUkkonenSwappingDO $ meta ^. pairwiseTransitionCostMatrix
 
 
 -- |
@@ -169,7 +169,7 @@ initializeRoot
 initializeRoot meta =
     extendPostorderToDirectOptimization
       <$> id
-      <*> lexicallyDisambiguate meta . (^. alignmentContext)
+      <*> lexicallyDisambiguate . (^. alignmentContext)
       <*> (^. alignmentContext)
 
 
@@ -185,14 +185,9 @@ lexicallyDisambiguate
      , ExportableBuffer (Subcomponent (Element c))
      , Ranged (Subcomponent (Element c))
      )
-  => DynamicCharacterMetadataDec (Subcomponent (Element c))
+  => c
   -> c
-  -> c
-lexicallyDisambiguate meta =
-  let pTCM :: Subcomponent (Element c) -> Subcomponent (Element c) -> (Subcomponent (Element c), Word)
-      pTCM  = meta ^. pairwiseTransitionCostMatrix
-      f x y = fst $ pTCM x y 
-  in  omap (disambiguateElement f)
+lexicallyDisambiguate = omap disambiguateElement
 
 
 -- |
@@ -201,10 +196,9 @@ disambiguateElement
   :: ( EncodableDynamicCharacterElement e
      , FiniteBits (Subcomponent e)
      )
-  => (Subcomponent e -> Subcomponent e -> Subcomponent e)
+  => e
   -> e
-  -> e
-disambiguateElement f x = alignElement val val val
+disambiguateElement x = alignElement val val val
   where
     med = getMedian x
     idx = min (finiteBitSize med - 1) $ countLeadingZeros med
@@ -242,7 +236,7 @@ updateFromParent _pairwiseAlignment meta decorationDirection parentDecoration = 
     (cia, single)
       | isMissing cac = (pia, parentDecoration ^. singleDisambiguation)
       | otherwise     = let x = deriveImpliedAlignment pia pac cac
-                        in  (x, lexicallyDisambiguate meta x)
+                        in  (x, lexicallyDisambiguate x)
 
 
 {-# INLINEABLE deriveImpliedAlignment #-}

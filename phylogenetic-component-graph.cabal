@@ -228,7 +228,8 @@ library analysis
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedFullMatrix
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
-    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonen
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFullSpace            
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenSwapping
 
 
 -- Data-types for defining and interacting with phylogenetic components.

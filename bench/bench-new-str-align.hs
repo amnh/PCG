@@ -189,7 +189,7 @@ measurements
          -> (Word, DynamicCharacter), (DynamicCharacter, DynamicCharacter)
        )
      ]
-measurements = [ measureUnboxedUkkonenAlignment
+measurements = [ measureUnboxedUkkonenSwappingAlignment
                , measureOldAlignment
                , measureUnboxedFullAlignment
                , measureUnboxedSwappingAlignment
@@ -246,15 +246,15 @@ measureUnboxedSwappingAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs)
     label = fold ["swp-", toString a, "-X-", toString b]
 
 
-measureUnboxedUkkonenAlignment
+measureUnboxedUkkonenSwappingAlignment
   :: ((ShortText, DynamicCharacter), (ShortText, DynamicCharacter))
   -> ( String
      , (DynamicCharacter, DynamicCharacter) -> (Word, DynamicCharacter)
      , (DynamicCharacter, DynamicCharacter)
      )
-measureUnboxedUkkonenAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
+measureUnboxedUkkonenSwappingAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
   where
-    align = uncurry (unboxedUkkonenDO discreteMetricPairwiseLogic)
+    align = uncurry (unboxedUkkonenSwappingDO discreteMetricPairwiseLogic)
     label = fold ["ukn-", toString a, "-X-", toString b]
 
 

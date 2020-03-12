@@ -23,8 +23,8 @@
 {-# LANGUAGE TypeFamilies       #-}
 {-# LANGUAGE UnboxedTuples      #-}
 
-module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonen
-  ( unboxedUkkonenDO
+module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFullSpace
+  ( unboxedUkkonenFullSpaceDO
   ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, handleMissingCharacter, measureCharacters)
@@ -49,16 +49,16 @@ import qualified Data.Vector.Unboxed.Mutable as V
 -- character with gaps included, the aligned version of the first input character,
 -- and the aligned version of the second input character. The process for this
 -- algorithm is to generate a traversal matrix, then perform a traceback.
-{-# SCC unboxedUkkonenDO #-}
-{-# INLINE unboxedUkkonenDO #-}
-{-# SPECIALISE unboxedUkkonenDO :: OverlapFunction AmbiguityGroup -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
-unboxedUkkonenDO
+{-# SCC unboxedUkkonenFullSpaceDO #-}
+{-# INLINE unboxedUkkonenFullSpaceDO #-}
+{-# SPECIALISE unboxedUkkonenFullSpaceDO :: OverlapFunction AmbiguityGroup -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
+unboxedUkkonenFullSpaceDO
   :: DOCharConstraint s
   => OverlapFunction (Subcomponent (Element s))
   -> s
   -> s
   -> (Word, s)
-unboxedUkkonenDO overlapFunction char1 char2
+unboxedUkkonenFullSpaceDO overlapFunction char1 char2
   | noGainFromUkkonenMethod = buildFullMatrix
   | otherwise               =
     case directOptimization overlapFunction buildPartialMatrixMaybe char1 char2 of

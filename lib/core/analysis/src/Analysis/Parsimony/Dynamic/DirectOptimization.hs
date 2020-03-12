@@ -32,7 +32,8 @@ module Analysis.Parsimony.Dynamic.DirectOptimization
   , ukkonenDO
   , unboxedFullMatrixDO
   , unboxedSwappingDO
-  , unboxedUkkonenDO
+  , unboxedUkkonenFullSpaceDO
+  , unboxedUkkonenSwappingDO
   ) where
 
 
