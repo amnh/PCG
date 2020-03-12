@@ -44,6 +44,7 @@ import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty                    (NonEmpty (..))
 import           Data.Maybe                            (fromJust)
+import           Data.MetricRepresentation             (discreteMetricPairwiseLogic)
 import           Data.MonoTraversable
 import           Data.Range
 import           GHC.Generics
@@ -51,6 +52,8 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()
 import           TextShow                              (TextShow (showb), toString)
 
+
+{-# SPECIALISE discreteMetricPairwiseLogic :: AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 
 -- |
 -- Represents an ambiguity group of symbols, one atomic component of a DynamicCharacter.

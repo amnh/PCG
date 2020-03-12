@@ -85,6 +85,7 @@ common ghc-flags
     -Wincomplete-patterns
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
+    -Wmissed-specialisations          
     -Wmissing-deriving-strategies          
     -Wmissing-fields
     -Wmissing-home-modules
