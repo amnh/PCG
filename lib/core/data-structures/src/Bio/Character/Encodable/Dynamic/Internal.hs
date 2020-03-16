@@ -127,6 +127,9 @@ instance EncodableStream DynamicCharacter where
             z = fromNumber w (0 :: Word)
         in  DCE (v,z,z)
 
+    indexStream (DC v) i = DCE $ v ! i
+    indexStream (Missing{}) i = error $ "Tried to index an missing character with index " <> show i
+
     lookupStream (Missing{}) _ = Nothing
     lookupStream (DC v) i
       | 0 > i     = Nothing
@@ -141,7 +144,7 @@ instance ExportableElements DynamicCharacter where
       -> Maybe ExportableCharacterElements
 -}
     toExportableElements _ Missing{} = Nothing
-    toExportableElements t dc        = Just ExportableCharacterElements
+    toExportableElements _t dc        = Just ExportableCharacterElements
         { exportedElementCountElements = toEnum $ olength dc
         , exportedElementWidthElements = symbolCount dc
         , exportedCharacterElements    = toNumber . getMedian <$> otoList dc
@@ -228,12 +231,12 @@ instance MonoFoldable DynamicCharacter where
 
 instance MonoFunctor DynamicCharacter where
 
-    omap f dc@(Missing{}) = dc    
+    omap _ dc@(Missing{}) = dc    
     omap f dc@(DC      v) =
       let dces = (splitElement . f . DCE) <$> v
           bits (m,_,_) = finiteBitSize m
       in  case invariantTransformation bits v of
-            Just i  -> DC dces
+            Just _  -> DC dces
             Nothing -> error $ unlines
                [ "The mapping function over the Dynamic Character did not return *all* all elements of equal length."
                , show . occurrences $ bits <$> v
@@ -270,9 +273,9 @@ instance ToXML DynamicCharacter where
 
 arbitraryDynamicCharacterOfWidth :: Word -> Gen DynamicCharacter
 arbitraryDynamicCharacterOfWidth alphabetLen = do
-    characterLen  <- arbitrary `suchThat` (> 0) :: Gen Int
-    let randVal    = arbitraryOfSize alphabetLen :: Gen DynamicCharacterElement
-    bitRows       <- vectorOf characterLen randVal
+    characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
+    let randVal   = arbitraryOfSize alphabetLen :: Gen DynamicCharacterElement
+    bitRows      <- vectorOf characterLen randVal
     pure . DC . force . V.fromNonEmpty . NE.fromList . force $ splitElement <$> bitRows
 
 
@@ -281,7 +284,7 @@ renderDynamicCharacter
   -> (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup)
   -> DynamicCharacter
   -> String
-renderDynamicCharacter alphabet transiton char
+renderDynamicCharacter alphabet _transiton char
   | isMissing char = "<Missing>"
   | otherwise      =
     let shownElems = showStreamElement alphabet . getMedian <$> otoList char

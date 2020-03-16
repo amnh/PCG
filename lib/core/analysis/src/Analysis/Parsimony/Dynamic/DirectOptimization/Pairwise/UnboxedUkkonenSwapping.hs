@@ -68,13 +68,12 @@ unboxedUkkonenSwappingDO overlapFunction char1 char2
     (_, longer, lesser) = measureCharacters char1 char2
 
     gap = getMedian $ gapOfStream char1
-    med  x y = fst $ overlapFunction x y
     cost x y = snd $ overlapFunction x y
     
     buildFullMatrix = unboxedSwappingDO overlapFunction char1 char2
 
     buildPartialMatrixMaybe = createUkkonenMethodMatrix coefficient gapsPresentInInputs $
-                                  buildDirectionMatrix med cost longer lesser
+                                  buildDirectionMatrix cost longer lesser
 
     -- /O(1)/
     --
@@ -189,13 +188,12 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs matrixBuilder lon
 {-# SCC buildDirectionMatrix #-}
 buildDirectionMatrix
   :: DOCharConstraint s
-  => (Subcomponent (Element s) -> Subcomponent (Element s) -> Subcomponent (Element s))
-  -> (Subcomponent (Element s) -> Subcomponent (Element s) -> Word)
+  => (Subcomponent (Element s) -> Subcomponent (Element s) -> Word)
   -> s
   -> s
   -> Word
   -> Maybe (Word, Matrix Direction)
-buildDirectionMatrix med cost longerTop lesserLeft o
+buildDirectionMatrix cost longerTop lesserLeft o
   | cols <= longerLen + 1 = Just fullMatrix
   | otherwise             = Nothing
   where
@@ -225,7 +223,7 @@ buildDirectionMatrix med cost longerTop lesserLeft o
       ---------------------------------------
       
       -- Write to a single cell of the current vector and directional matrix simultaneously
-      let write v !p@(~(_,!j)) ~(!c, !d) = V.write v j c *> M.unsafeWrite mDir p d
+      let write v !p@(~(_,!j)) ~(!c, !d) = V.unsafeWrite v j c *> M.unsafeWrite mDir p d
 
       -- Define how to compute values to an entire row of the Ukkonen matrix
       -- Takes parameterized functions which describe

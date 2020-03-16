@@ -188,8 +188,7 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
         lesserGaps = countGaps lesserLeft
         countGaps  = length . filter (hasGap . getMedian) . otoList
         hasGap b   = popCount (b .&. gap) > 0
-        med x y    = fst $ overlapFunction x y
-        gap = getMedian $ gapOfStream longerTop
+        gap        = getMedian $ gapOfStream longerTop
 
     ukkonenUntilOptimal offset
       | threshold <= alignmentCost = ukkonenUntilOptimal $ 2 * offset

@@ -88,20 +88,22 @@ gatherContexts lhs rhs = (contextRendering, contextSameness)
     contextRendering = renderContexts (NS lhs) (NS rhs) contexts
 
     contexts =
-        [ ("Old Full"    ,        memoizeDOResult)
-        , ("Old Ukkonen" ,     ukkonenOldDOResult)
-        , ("Unboxed Full",        unboxedDOResult)
-        , ("Unboxed Swapping",   swappingDOResult)
-        , ("Unboxed Ukkonen",  ukkonenNewDOResult)
+        [ ("Old Full"            ,        memoizeDOResult)
+        , ("Old Ukkonen"         ,     ukkonenOldDOResult)
+        , ("Unboxed Full"        ,        unboxedDOResult)
+        , ("Unboxed Swapping"    ,   swappingDOResult)
+        , ("Unboxed Ukkonen Swap",  ukkonenSwapDOResult)
+        , ("Unboxed Ukkonen Full",  ukkonenFullDOResult)
         ]
 
---    naiveDOResult      = naiveDO             lhs rhs costStructure
---    foreignDOResult    = foreignPairwiseDO   lhs rhs denseMatrixValue
-    memoizeDOResult    = naiveDOMemo         lhs rhs tcm
-    ukkonenOldDOResult = ukkonenDO           lhs rhs tcm
-    unboxedDOResult    = unboxedFullMatrixDO lhs rhs tcm
-    swappingDOResult   = unboxedSwappingDO   lhs rhs tcm
-    ukkonenNewDOResult = unboxedUkkonenDO    lhs rhs tcm
+--    naiveDOResult       = naiveDO             lhs rhs costStructure
+--    foreignDOResult     = foreignPairwiseDO   lhs rhs denseMatrixValue
+    memoizeDOResult     = naiveDOMemo               lhs rhs tcm
+    ukkonenOldDOResult  = ukkonenDO                 lhs rhs tcm
+    unboxedDOResult     = unboxedFullMatrixDO       tcm lhs rhs
+    swappingDOResult    = unboxedSwappingDO         tcm lhs rhs
+    ukkonenSwapDOResult = unboxedUkkonenSwappingDO  tcm lhs rhs
+    ukkonenFullDOResult = unboxedUkkonenFullSpaceDO tcm lhs rhs
 
 
 sameAlignment :: (Foldable t, MonoFoldable s, Eq c, Eq s) => t (c, s) -> Bool

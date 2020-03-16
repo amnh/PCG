@@ -47,7 +47,6 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Data.Bits
 import           Data.BitVector.LittleEndian
-import           Data.Coerce
 import           Data.Foldable
 import           Data.Hashable
 import           Data.MonoTraversable
@@ -125,13 +124,13 @@ instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
 
 instance EncodableDynamicCharacterElement DynamicCharacterElement where
   
-    isGap    (DCE ~(m,l,r)) =      isZeroVector l  &&      isZeroVector r
+    isGap    (DCE ~(_,l,r)) =      isZeroVector l  &&      isZeroVector r
 
-    isInsert (DCE ~(m,l,r)) =      isZeroVector l  && not (isZeroVector r)
+    isInsert (DCE ~(_,l,r)) =      isZeroVector l  && not (isZeroVector r)
 
-    isDelete (DCE ~(m,l,r)) = not (isZeroVector l) &&     (isZeroVector r)
+    isDelete (DCE ~(_,l,r)) = not (isZeroVector l) &&     (isZeroVector r)
 
-    isAlign  (DCE ~(m,l,r)) = not (isZeroVector l) && not (isZeroVector r)
+    isAlign  (DCE ~(_,l,r)) = not (isZeroVector l) && not (isZeroVector r)
     
     gapElement w                = let !z = fromNumber w (0 :: Word)
                                   in  DCE (bit . fromEnum $ w - 1, z, z)
@@ -219,16 +218,17 @@ instance TextShow DynamicCharacterElement where
 arbitraryOfSize :: Word -> Gen DynamicCharacterElement
 arbitraryOfSize alphabetLen = do
     tag <- choose (0, 9) :: Gen Word
-    let gapped = gapElement alphabetLen
-    let gap    = getMedian gapped 
-    let eGen   = fromNumber alphabetLen <$> choose (1 :: Integer, 2 ^ alphabetLen - 1)
-    let buildElem f v   = let v'  = AG v
-                              med = fst $ discreteMetricPairwiseLogic gap v'
-                          in  f med v'
-    let unionElem f x y = let x'  = AG x
-                              y'  = AG y
-                              med = fst $ discreteMetricPairwiseLogic x' y'
-                          in  f med x' y'    
+    let gapped  = gapElement alphabetLen
+    let gap     = getMedian gapped
+    let med x y = fst (discreteMetricPairwiseLogic x y :: (AmbiguityGroup, Word))
+    let eGen    = fromNumber alphabetLen <$> choose (1 :: Integer, 2 ^ alphabetLen - 1)
+    let buildElem f v   = let v' = AG v
+                              m  = med gap v'
+                          in  f m v'
+    let unionElem f x y = let x' = AG x
+                              y' = AG y
+                              m  = med x' y'
+                          in  f m x' y'    
     let delGen =         buildElem deleteElement <$> eGen
     let insGen =         buildElem insertElement <$> eGen
     let alnGen = liftA2 (unionElem alignElement) eGen eGen

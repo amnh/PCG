@@ -365,7 +365,7 @@ needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
                                     ]
 
 
-{--
+{--}
 -- |
 -- Serializes an alignment matrix to a 'String'. Uses input characters for row
 -- and column labelings.
@@ -454,7 +454,7 @@ renderCostMatrix lhs rhs mtx = unlines
     pad n e = replicate (n - len) ' ' <> e <> " "
       where
         len = length e
---}
+{--}
 
 
 -- |
@@ -470,6 +470,8 @@ renderCostMatrix lhs rhs mtx = unlines
 {-# INLINE traceback #-}
 -- {-# SPECIALISE traceback :: (Indexable f, Key f ~ (Int, Int)) => f (Cost, Direction, DynamicCharacterElement) -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) #-}
 traceback :: ( DOCharConstraint s
+--             , Foldable f
+--             , Functor f
              , Indexable f
              , Key f ~ (Int, Int)
              )
@@ -478,6 +480,7 @@ traceback :: ( DOCharConstraint s
           -> s
           -> s
           -> (Word, s)
+--traceback _ alignMatrix longerChar lesserChar | olength longerChar == 8 && olength lesserChar == 7 && trace (renderCostMatrix longerChar lesserChar alignMatrix) False = undefined
 traceback overlapFunction alignMatrix longerChar lesserChar = (finalCost, alignmentContext)
   where
     f x y = fst $ overlapFunction x y

@@ -111,6 +111,8 @@ validNucleotideElements = fold
    ]
   where
     gap = getGapElement $ head validMedians
+    
+    med x y = fst (discreteMetricPairwiseLogic x y :: (AmbiguityGroup, Word))
 
     validMedians = fmap (encodeElement alphabet . NE.fromList) $
                      [] `delete` powerSet (toList alphabet)
@@ -123,14 +125,14 @@ validNucleotideElements = fold
       :: (AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
       -> AmbiguityGroup
       -> DynamicCharacterElement
-    buildElem f x   = f (fst $ discreteMetricPairwiseLogic gap x) x
+    buildElem f x   = f (med gap x) x
 
     unionElem
       :: (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
       -> AmbiguityGroup
       -> AmbiguityGroup
       -> DynamicCharacterElement
-    unionElem f x y = f (fst $ discreteMetricPairwiseLogic x y) x y
+    unionElem f x y = f (med x y) x y
 
 
 alphabet :: Alphabet String
