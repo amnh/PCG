@@ -36,12 +36,9 @@ module Bio.Sequence.Block
   , toMissingCharacters
   , hexFold
   , hexmap
-  , hexTranspose
   , hexZipMeta
   , hexZipWith
-  , hexZipWith3
   , hexZipWithMeta
-  , hexZip2WithMeta
   ) where
 
 import Bio.Character.Decoration.Continuous

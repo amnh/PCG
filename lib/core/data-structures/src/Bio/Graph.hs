@@ -32,7 +32,6 @@ module Bio.Graph
   , HasPhylogeneticForest(..)
   , PhylogeneticFreeDAG(..)
   , PhylogeneticDAG(..)
-  , PhylogeneticDAGish(..)
   , PhylogeneticForest(..)
   , PhylogeneticSolution(..)
   , PreorderDecorationDAG
@@ -62,17 +61,7 @@ module Bio.Graph
   , preorderSequence
   , renderSummary
   , reifiedSolution
-  , rootCosts
   , setEdgeSequences
-  -- * Mapping over networks
-  , edgePreorderMap
-  , edgePostorderMap
-  , edgePreorderFold
-  , edgePostorderFold
-  , nodePreorderMap
-  , nodePostorderMap
-  , nodePreorderFold
-  , nodePostorderFold
   -- * Substitution functions
   , getNamedContext
   , substituteDAGs

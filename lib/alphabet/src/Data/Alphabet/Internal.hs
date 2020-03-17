@@ -252,7 +252,6 @@ instance TextShow a => TextShow (Alphabet a) where
         ]
 
 
--- | (✔)
 instance (Show a) => ToXML (Alphabet a) where
 
     toXML alphabet = xmlElement "Alphabet" [] [ Left ("Symbols", show alphabet)]

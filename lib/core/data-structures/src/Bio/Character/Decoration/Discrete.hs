@@ -68,27 +68,22 @@ instance TextShow c => TextShow (DiscreteDecoration c) where
     showb = showb . (^. discreteCharacter)
 
 
--- | (✔)
 instance HasDiscreteCharacter (DiscreteDecoration c) c where
 
     discreteCharacter = lens discreteDecorationCharacter (\e x -> e { discreteDecorationCharacter = x })
 
 
--- | (✔)
 instance HasIntervalCharacter (DiscreteDecoration c) c where
 
     intervalCharacter = discreteCharacter
 
 
--- | (✔)
 instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (DiscreteDecoration c) c where
 
 
--- | (✔)
 instance EncodableStaticCharacter c => DiscreteCharacterDecoration (DiscreteDecoration c) c where
 
 
--- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (DiscreteDecoration c) c where
 
     toDiscreteCharacterDecoration g symbolSet =
@@ -97,7 +92,6 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Discre
         }
 
 
--- | (✔)
 instance (Show c) => ToXML (DiscreteDecoration c) where
 
     toXML decoration = xmlElement "Discrete_character_decoration" attributes contents
@@ -108,7 +102,6 @@ instance (Show c) => ToXML (DiscreteDecoration c) where
                          ]
 
 
--- | (✔)
 instance {-# OVERLAPPABLE #-} (HasDiscreteCharacter s c, PossiblyMissingCharacter c) => PossiblyMissingCharacter s where
 
     isMissing = isMissing . (^. discreteCharacter)

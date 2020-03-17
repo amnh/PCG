@@ -23,11 +23,9 @@ module Data.TCM.Memoized.Types
   , calculateBufferLength
   , coerceEnum
   -- * Constructors
-  , constructCharacter
   , constructElement
   , constructEmptyElement
   -- * Destructors 
-  , destructCharacter
   , destructElement
   ) where
 
@@ -91,17 +89,6 @@ instance Show MemoizedCostMatrix where
     show = const "(MemoizedCostMatrix ?)"
 
 
-{--
--- | (✔)
-instance Arbitrary CULong where
-
-    arbitrary = do
-        num <- arbitrary :: Gen Integer
-        pure $ fromIntegral num
---}
-
-
--- | (✔)
 instance Arbitrary CDynamicChar where
 
     arbitrary = do
@@ -130,29 +117,6 @@ instance NFData MemoizedCostMatrix where
     rnf (MemoizedCostMatrix !_) = ()
 
 
-{-
--- | (✔)
-instance Show CDynamicChar where
-    show (CDynamicChar alphSize dcLen numElems dChar) =
-       mconcat
-         ["alphabetSize:  "
-         , show intAlphSize
-         , "\ndynCharLen: "
-         , show intLen
-         , "\nbuffer length: "
-         , show bufferLength
-         , "\ndynChar:    "
-         , show $ unsafePerformIO printedArr
-         ]
-        where
-            bufferLength = fromEnum numElems
-            intAlphSize  = fromEnum alphSize
-            intLen       = fromEnum dcLen
-            printedArr   = show <$> peekArray bufferLength dChar
-
--}
-
-
 instance Storable CDynamicChar where
 
     sizeOf    _ = (#size struct dynChar_t) -- #size is a built-in that works with arrays, as are #peek and #poke, below
@@ -178,7 +142,6 @@ instance Storable CDynamicChar where
         (#poke struct dynChar_t, dynChar   ) ptr seqVal
 
 
--- | (✔)
 instance Storable DCElement where
 
     sizeOf    _ = (#size struct dcElement_t)
@@ -196,52 +159,6 @@ instance Storable DCElement where
     poke ptr (DCElement alphLen element) = do
         (#poke struct dcElement_t, alphSize) ptr alphLen
         (#poke struct dcElement_t, element ) ptr element
-
-
-{-
-instance Storable MemoizedCostMatrix where
-
-    sizeOf    _ = (#size void*) -- #size is a built-in that works with arrays, as are #peek and #poke, below
-
-    alignment _ = alignment (undefined :: CBufferUnit)
-
-    peek _ptr   = undefined
-
-    poke _ptr   = undefined
--}
-
-
-
-{-
--- TODO: For now we only allocate 2d matrices. 3d will come later.
--- |
--- Create and allocate cost matrix.
--- The first argument, TCM, is only for non-ambiguous nucleotides, and it used to
--- generate the entire cost matrix, which includes ambiguous elements. TCM is
--- row-major, with each row being the left character element. It is therefore
--- indexed not by powers of two, but by cardinal integer.
-foreign import ccall unsafe "costMatrixWrapper matrixInit"
-    initializeMemoizedCMfn_c :: CSize
-                             -> Ptr CUInt
-                             -> IO (StablePtr ForeignVoid)
-
-
-foreign import ccall unsafe "costMatrix getCostAndMedian2D"
-    getCostAndMedian2D_c :: Ptr DCElement
-                         -> Ptr DCElement
-                         -> Ptr DCElement
-                         -> StablePtr ForeignVoid
-                         -> IO CUInt
-
-
-foreign import ccall unsafe "costMatrix getCostAndMedian3D"
-    getCostAndMedian3D_c :: Ptr DCElement
-                         -> Ptr DCElement
-                         -> Ptr DCElement
-                         -> Ptr DCElement
-                         -> StablePtr ForeignVoid
-                         -> IO CUInt
--}
 
 
 -- |
@@ -262,28 +179,6 @@ calculateBufferLength count width = coerceEnum $ q + if r == 0 then 0 else 1
 -- values.
 coerceEnum :: (Enum a, Enum b) => a -> b
 coerceEnum = toEnum . fromEnum
-
-
--- |
--- /O(n)/ where @n@ is the length of the dynamic character.
---
--- Malloc and populate a pointer to an exportable representation of the
--- 'Exportable' value. The supplied value is assumed to be a dynamic character
--- and the result is a pointer to a C representation of a dynamic character.
---
--- Call 'destructCharacter' to free the resulting pointer.
-constructCharacter :: Exportable s => s -> IO (Ptr CDynamicChar)
-constructCharacter exChar = do
-    valueBuffer <- newArray $ exportedBufferChunks exportableBuffer
-    charPointer <- malloc :: IO (Ptr CDynamicChar)
-    let charValue = CDynamicChar (coerceEnum width) (coerceEnum count) bufLen valueBuffer
-    !_ <- poke charPointer charValue
-    pure charPointer
-  where
-    count  = exportedElementCountSequence exportableBuffer
-    width  = exportedElementWidthSequence exportableBuffer
-    bufLen = calculateBufferLength count width
-    exportableBuffer = toExportableBuffer exChar
 
 
 -- |
@@ -329,20 +224,10 @@ constructEmptyElement alphabetSize = do
 -- |
 -- /O(1)/
 --
--- Free's a character allocated by a call to 'constructCharacter'.
-destructCharacter :: Ptr CDynamicChar -> IO ()
-destructCharacter p = do
-    !e <- peek p
-    !_ <- free (dynChar e)
-    free p
-
-
--- |
--- /O(1)/
---
 -- Free's a character allocated by a call to 'constructElement' or 'constructEmptyElement'.
 destructElement :: Ptr DCElement -> IO ()
 destructElement p = do
     !e <- peek p
     !_ <- free (characterElement e)
     free p
+

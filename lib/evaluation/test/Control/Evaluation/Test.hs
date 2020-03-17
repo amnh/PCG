@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Control.Evaluation.Test
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Tests for the Evaluation type.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ExplicitForAll      #-}
 {-# LANGUAGE FlexibleContexts    #-}
@@ -34,11 +48,14 @@ import Test.Tasty.QuickCheck    hiding ((=/=))
 -- This alias exists for brevity in type signatures
 type W = Word
 
+
 -- |
 -- This alias exists for brevity in type signatures
 type M = Maybe
 
 
+-- |
+-- Test suite for the 'EvaluationT' data-type.
 testSuite :: TestTree
 testSuite = testGroup "Computational Evaluation Monad"
     [ notificationLaws

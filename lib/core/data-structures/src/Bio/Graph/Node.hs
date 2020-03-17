@@ -33,9 +33,7 @@ module Bio.Graph.Node
   , singletonEdgeSet
   , singletonNewickSerialization
   , singletonSubtreeLeafSet
-  , pNode2
   ) where
 
 
--- import Bio.Graph.Node.Class
 import Bio.Graph.Node.Internal

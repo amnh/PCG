@@ -43,13 +43,11 @@ data NetworkInformation
   , _rootNode              :: Int
   }
 
-emptyNetworkInfo :: NetworkInformation
-emptyNetworkInfo = NetworkInformation mempty mempty mempty 0
-
-
 
 instance Show NetworkInformation where
-  show = const "[Network Information]"
+
+    show = const "[Network Information]"
+
 
 -- |
 -- This function takes valid Networks n0 and n1 and forms the network:
@@ -140,23 +138,6 @@ makeDoublyBranchedNetwork n0 n1 n2 = makeBranchedNetwork n2 n0n1Branched
   where
     n0n1Branched = makeBranchedNetwork n0 n1
 
-makeDoublyBranchedNetworkWithInfo
-  ::  forall d n . (Monoid d, Monoid n)
-  =>   ReferenceDAG d () n   -- ^ n0
-  ->   ReferenceDAG d () n   -- ^ n1
-  ->   ReferenceDAG d () n   -- ^ n2
-  -> ( ReferenceDAG d () n
-     , NetworkInformation
-     , NetworkInformation
-     , NetworkInformation
-     , Int
-     )
-makeDoublyBranchedNetworkWithInfo n0 n1 n2 = (network, n0NetInfo, n1NetInfo, n2NetInfo, xIndex)
-  where
- -- the index of the root of the non1 branch
-    xIndex = length n0 + length n1 + length n2
-    (n0n1Branched, n0NetInfo, n1NetInfo) = makeBranchedNetworkWithInfo n0 n1
-    (network     , n2NetInfo, _        ) = makeBranchedNetworkWithInfo n2 n0n1Branched
 
 -- |
 -- This function takes valid networks n0, n1, n2 and n3 and forms the network:
@@ -292,17 +273,6 @@ makeBranchedNetworkWithNetworkEventWithInfo  n0 n1 n2 n3
     n0Nodes        = length referencesN0
     n0n1Nodes      = n0Nodes   + length referencesN1'
     n0n1n2Nodes    = n0n1Nodes + length referencesN2'
-
-
-makeBranchedNetworkWithNetworkEvent
-  ::  forall d n . (Monoid d, Monoid n)
-  => ReferenceDAG d () n   -- ^ n0
-  -> ReferenceDAG d () n   -- ^ n1
-  -> ReferenceDAG d () n   -- ^ n2
-  -> ReferenceDAG d () n   -- ^ n3
-  -> ReferenceDAG d () n
-makeBranchedNetworkWithNetworkEvent n0 n1 n2 n3
-  = (^. _1) $ makeBranchedNetworkWithNetworkEventWithInfo n0 n1 n2 n3
 
 
 -- |

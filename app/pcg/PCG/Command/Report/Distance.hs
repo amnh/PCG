@@ -35,6 +35,7 @@ import           Bio.Graph.Node
 import           Bio.Sequence
 import           Control.Lens
 import           Data.Coerce
+import           Data.Foldable
 import           Data.List                           (intersperse)
 import qualified Data.List.NonEmpty                  as NonEmpty
 import           Data.Matrix.Unboxed                 (Matrix)
@@ -114,4 +115,4 @@ distanceMatrixCSV l meta = Text.unlines $ rowNames : rows
 -- A function which intercalates a monoid value between each of the entries
 -- in a list.
 intercalateM :: Monoid m => m -> [m] -> m
-intercalateM xs xss = mconcat (intersperse xs xss)
+intercalateM xs = fold . intersperse xs

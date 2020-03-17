@@ -229,6 +229,33 @@ library analysis
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
 
 
+library character-name
+
+  import:
+    ghc-flags,
+    language-specs
+
+  visibility: public
+
+  hs-source-dirs:
+    lib/character-name/src
+
+  build-depends:
+    file-source,
+    base                     >= 4.11      && < 5.0,
+    containers               >= 0.5.8     && < 1.0,
+    deepseq                  >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    mtl                      >= 2.0       && < 3.0,
+    mono-traversable         >= 1.0       && < 2.0,
+    text-short               >= 0.1.3     && < 1.0,
+    text-show                >= 3.8.1     && < 4.0,
+    text-show-instances      >= 3.8       && < 4.0,
+
+  exposed-modules:
+    Data.CharacterName
+
+
 -- Data-types for defining and interacting with phylogenetic components.
    
 -- Exposes core data-types for constructing, mutating, and scoring phylogenetic
@@ -271,7 +298,6 @@ library core
     Bio.Character.Encodable,
     Bio.Character.Encodable.Continuous,
     Bio.Metadata,
-    Bio.Metadata.CharacterName,
     Bio.Metadata.Continuous,
     Bio.Metadata.Discrete,
     Bio.Metadata.DiscreteWithTCM,
@@ -369,6 +395,7 @@ library data-structures
 
   build-depends:
     alphabet,
+    character-name,
     evaluation,
     exportable,
     file-source,
@@ -404,7 +431,7 @@ library data-structures
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
     text-show                >= 3.8.1     && < 4.0,
-    text-show-instances      >= 3.0       && < 4.0,
+    text-show-instances      >= 3.8       && < 4.0,
     unordered-containers     >= 0.2.9     && < 1.0,
     -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
@@ -427,7 +454,6 @@ library data-structures
     Bio.Character.Encodable
     Bio.Character.Encodable.Continuous
     Bio.Metadata
-    Bio.Metadata.CharacterName
     Bio.Metadata.Continuous
     Bio.Metadata.Discrete
     Bio.Metadata.DiscreteWithTCM
@@ -494,7 +520,6 @@ library data-structures
     Bio.Graph.BinaryRenderingTree
     Bio.Graph.Forest
     Bio.Graph.Node.Internal
-    Bio.Graph.PhylogeneticDAG.Class
     Bio.Graph.PhylogeneticDAG.Internal
     Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
     Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
@@ -526,6 +551,7 @@ library data-unification
     lib/data-unification/src
 
   build-depends:
+    character-name,
     core,
     data-normalization,
     file-source,
@@ -547,6 +573,7 @@ library data-unification
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
     text-show                >= 3.8.1     && < 4.0,
+    text-show-instances      >= 3.8       && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
@@ -796,7 +823,7 @@ library graph
     text                     >= 1.2       && < 2.0,
     semigroupoids            >= 5.2.1     && < 5.4,
     text-show                >= 3.0       && < 4.0,
-    text-show-instances      >= 3.0       && < 4.0,
+    text-show-instances      >= 3.8       && < 4.0,
     -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
     vector-builder           >= 0.3.7.2   && < 0.4,
@@ -892,7 +919,6 @@ library serialize
     xml                      >= 1.3.14    && < 1.4,
 
   exposed-modules:
-    Data.Text.Short.Custom
     TextShow.Custom
     Text.Newick.Class
     Text.XML
@@ -1044,7 +1070,7 @@ library utility
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
     text-show                >= 3.8.1     && < 4.0,
-    text-show-instances      >= 3.0       && < 4.0,
+    text-show-instances      >= 3.8       && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
     validation               >= 1.1       && < 2.0,
     -- >=0.12.0.2 required for compatibility with "compact regions"
@@ -1131,6 +1157,7 @@ executable pcg
 
   build-depends:
     alphabet,
+    character-name,
     evaluation,
     core,
     data-normalization,

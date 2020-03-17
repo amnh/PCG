@@ -79,10 +79,14 @@ runStreamParser parser fp = parse parser sourceFileName
     sourceFileName = takeFileName $ otoList fp
 
 
+-- |
+-- Strip out all "naked gap" elements from dynamic characters in the 'PartialInputData' values.
 removeGaps :: Functor f => f PartialInputData -> f PartialInputData
 removeGaps = fmap removeGapsFromDynamicCharactersNotMarkedAsAligned
 
 
+-- |
+-- Read from disk and parse the contents of a 'FileSpecification'.
 parseSpecifiedFile :: FileSpecification -> ValidationT ReadCommandError IO (NonEmpty PartialInputData)
 parseSpecifiedFile      AnnotatedFile          {} = error "Annotated file specification is not implemented"
 parseSpecifiedFile      ChromosomeFile         {} = error "Chromosome file specification is not implemented"
@@ -154,6 +158,8 @@ parseSpecifiedContent
 parseSpecifiedContent parse'' (SpecContent fs) = ValidationT . pure $ traverse (parse'' . dataFile) fs
 
 
+-- |
+-- Read from disk and parse the TCM content, then assign the TCM to each 'PartialInputData'.
 parseAndSetTCM
   :: Functor f
   => FileSource
@@ -195,6 +201,11 @@ parseCustomAlphabet dataFileSources tcmPath = getSpecifiedContent spec
                                  <|>      fastaStreamConverter Fasta.AminoAcid x)
 
 
+-- |
+-- Read from diask and parse the contents of the 'ileSource'.
+--
+-- Intelligently use the file's extension to decide which parser to try first.
+-- If the first choice parser fails, try all other known parsers.
 progressiveParse :: FileSource -> ValidationT ReadCommandError IO PartialInputData
 progressiveParse inputPath = do
     SpecContent (fc:|_) <- getSpecifiedContent (UnspecifiedFile $ inputPath:|[])
