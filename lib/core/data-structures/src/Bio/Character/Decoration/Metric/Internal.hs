@@ -78,15 +78,12 @@ data  SankoffOptimizationDecoration c
 type StateContributionList = [Word]
 
 
--- | (✔)
 instance EncodableStaticCharacter c => DiscreteCharacterDecoration (MetricDecorationInitial c) c where
 
 
--- | (✔)
 instance EncodableStaticCharacter c => DiscreteCharacterDecoration (SankoffOptimizationDecoration c) c where
 
 
--- | (✔)
 instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (SankoffOptimizationDecoration c) c where
 
     extendDiscreteToSankoff _subDecoration costVector prelimExtras finalExtras inputBeta childMinStates cost newMedian leaf =
@@ -103,85 +100,70 @@ instance EncodableStaticCharacter c => DiscreteExtensionSankoffDecoration (Sanko
         }
 
 
--- | (✔)
 instance HasBeta (SankoffOptimizationDecoration c) [ExtendedNatural] where
 
     beta = lens sankoffBeta (\e x -> e { sankoffBeta = x })
 
 
--- | (✔)
 instance HasCharacterCost (SankoffOptimizationDecoration c) Word where
 
     characterCost = lens sankoffMinCost (\e x -> e { sankoffMinCost = x })
 
 
--- | (✔)
 instance HasCharacterCostVector (SankoffOptimizationDecoration c) [ExtendedNatural] where
 
     characterCostVector = lens sankoffMinCostVector (\e x -> e { sankoffMinCostVector = x })
 
 
--- | (✔)
 instance HasDiscreteCharacter (MetricDecorationInitial c) c where
 
     discreteCharacter = lens metricDecorationInitialCharacter (\e x -> e { metricDecorationInitialCharacter = x })
 
 
--- | (✔)
 instance HasDiscreteCharacter (SankoffOptimizationDecoration c) c where
 
     discreteCharacter = lens sankoffCharacterField (\e x -> e { sankoffCharacterField = x })
 
 
--- | (✔)
 instance HasFinalExtraCost (SankoffOptimizationDecoration c) [ExtendedNatural] where
 
     finalExtraCost = lens sankoffFinalExtraCosts (\e x -> e { sankoffFinalExtraCosts = x })
 
 
--- | (✔)
 instance HasIsLeaf (SankoffOptimizationDecoration c) Bool where
 
     isLeaf = lens sankoffIsLeaf (\e x -> e { sankoffIsLeaf = x })
 
 
--- | (✔)
 instance HasPreliminaryExtraCost (SankoffOptimizationDecoration c) [ExtendedNatural] where
 
     preliminaryExtraCost = lens sankoffPreliminaryExtraCosts (\e x -> e { sankoffPreliminaryExtraCosts = x })
 
 
--- | (✔)
 instance HasStateMinTuple (SankoffOptimizationDecoration c) ([StateContributionList], [StateContributionList]) where
 
     minStateTuple = lens sankoffMinStateTuple (\e x -> e { sankoffMinStateTuple = x })
 
 
--- | (✔)
 instance EncodableStaticCharacter c => MetricCharacterDecoration (MetricDecorationInitial c) c where
 
 
--- | (✔)
 instance EncodableStaticCharacter c => MetricCharacterDecoration (SankoffOptimizationDecoration c) c where
 
 
--- | (✔)
 instance EncodableStaticCharacter c => SankoffDecoration (SankoffOptimizationDecoration c) c where
 
 
--- | (✔)
 instance Show c => Show (SankoffOptimizationDecoration c) where
 
     show x = show $ x ^. discreteCharacter
 
 
--- | (✔)
 instance TextShow c => TextShow (SankoffOptimizationDecoration c) where
 
     showb x = showb $ x ^. discreteCharacter
 
 
--- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (MetricDecorationInitial c) c where
 
     toDiscreteCharacterDecoration g symbolSet =
@@ -190,7 +172,6 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (Metric
         }
 
 
--- | (✔)
 instance ToXML (SankoffOptimizationDecoration c) where
 
     toXML metricDecoration = xmlElement "Sankoff_optimization_decoration" attributes contents

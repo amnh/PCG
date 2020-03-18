@@ -74,6 +74,8 @@ instance Lookup UkkonenMethodMatrix where
 -- Compute the alignment of two dynamic characters and the median states by
 -- using Ukkonen's string edit distance algorthim to improve space and time
 -- complexity.
+{-# INLINE ukkonenDO #-}
+{-# SPECIALISE ukkonenDO :: DynamicCharacter -> DynamicCharacter -> OverlapFunction DynamicCharacterElement -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) #-}
 ukkonenDO
   :: DOCharConstraint s
   => s
@@ -142,6 +144,8 @@ ukkonenDO char1 char2 overlapFunction
 -- paper. This is to handle input elements that contain a gap. In Ukkonen's
 -- original description of the algorithm, there was a subtle assumption that
 -- input did not contain any gap symbols.
+{-# INLINE createUkkonenMethodMatrix #-}
+{-# SPECIALISE createUkkonenMethodMatrix :: Word -> DynamicCharacter -> DynamicCharacter -> OverlapFunction DynamicCharacterElement -> UkkonenMethodMatrix (Cost, Direction, DynamicCharacterElement) #-}
 createUkkonenMethodMatrix
   :: DOCharConstraint s
   => Word                        -- ^ Coefficient value, representing the /minimum/ transition cost from a state to gap

@@ -23,12 +23,10 @@ module Data.TCM
   , generate
     -- * Indexing
   , (!)
-  , (!?)
     -- * Queries
   , size
     -- * Specialization Utility
   , diagnoseTcm
-  , reduceTcm
   ) where
 
 import Data.TCM.Internal

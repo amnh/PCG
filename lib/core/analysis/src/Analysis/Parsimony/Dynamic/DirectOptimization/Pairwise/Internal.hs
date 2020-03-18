@@ -208,6 +208,8 @@ instance Show Direction where
 -- parameterized by an 'OverlapFunction'.
 --
 -- Reused internally by different implementations.
+{-# INLINE directOptimization #-}
+-- {-# SPECIALISE directOptimization :: MatrixConstraint m => DynamicCharacter -> DynamicCharacter -> OverlapFunction DynamicCharacterElement -> MatrixFunction m DynamicCharacter -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) #-}
 directOptimization
   :: ( DOCharConstraint s
      , MatrixConstraint m
@@ -234,6 +236,8 @@ directOptimization char1 char2 overlapFunction matrixFunction =
 -- Strips the gap elements from the supplied character.
 --
 -- If the character contains /only/ gaps, a missing character is returned.
+{-# INLINE filterGaps #-}
+{-# SPECIALISE filterGaps ::  DynamicCharacter -> DynamicCharacter #-}
 filterGaps :: EncodableDynamicCharacter s => s -> s
 filterGaps char =
     case filter (/= gap) $ otoList char of
@@ -247,6 +251,8 @@ filterGaps char =
 -- A generalized function to handle missing dynamic characters.
 --
 -- Intended to be reused by multiple, differing implementations.
+{-# INLINE handleMissingCharacter #-}
+{-# SPECIALISE handleMissingCharacter :: DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) #-}
 handleMissingCharacter
   :: PossiblyMissingCharacter s
   => s
@@ -266,6 +272,8 @@ handleMissingCharacter lhs rhs v =
 -- As `handleMissingCharacter`, but with three inputs.
 --
 -- For use in FFI 3D calls to C.
+{-# INLINE handleMissingCharacterThreeway #-}
+{-# SPECIALISE handleMissingCharacterThreeway :: (DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter)) -> DynamicCharacter -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) #-}
 handleMissingCharacterThreeway
   :: PossiblyMissingCharacter s
   => (s -> s -> (Word, s, s, s, s)) -- fn takes two inputs, gives back cost, ungapped, gapped, two alignments
@@ -303,6 +311,8 @@ handleMissingCharacterThreeway f a b c v =
 -- character as longer.
 --
 -- Handles equality of inputs by /not/ swapping.
+{-# INLINE measureCharacters #-}
+{-# SPECIALISE measureCharacters :: DynamicCharacter -> DynamicCharacter -> (Bool, DynamicCharacter, DynamicCharacter) #-}
 measureCharacters :: (MonoFoldable s, Ord (Element s)) => s -> s -> (Bool, s, s)
 measureCharacters lhs rhs
   | lhsOrdering == LT = ( True, rhs, lhs)
@@ -317,6 +327,8 @@ measureCharacters lhs rhs
 -- |
 -- Internal generator function for the matrices based on the Needleman-Wunsch
 -- definition described in their paper.
+{-# INLINE needlemanWunschDefinition #-}
+-- {-# SPECIALISE needlemanWunschDefinition :: (Indexable f, Key f ~ (Int, Int)) => DynamicCharacter -> DynamicCharacter -> OverlapFunction DynamicCharacterElement -> f (Cost, Direction, DynamicCharacterElement) -> (Int, Int) -> (Cost, Direction, DynamicCharacterElement) #-}
 needlemanWunschDefinition
   :: ( DOCharConstraint s
      , Indexable f
@@ -445,6 +457,8 @@ renderCostMatrix lhs rhs mtx = unlines
 -- but returns three alignments: the left character, the right character, and the
 -- parent. The child alignments *should* be biased toward the shorter of the two
 -- dynamic characters.
+{-# INLINE traceback #-}
+-- {-# SPECIALISE traceback :: (Indexable f, Key f ~ (Int, Int)) => f (Cost, Direction, DynamicCharacterElement) -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) #-}
 traceback :: ( DOCharConstraint s
              , Indexable f
              , Key f ~ (Int, Int)
@@ -492,6 +506,8 @@ traceback alignMatrix longerChar lesserChar = (finalCost, ungapped, medians, lon
               DiagArrow -> (i - 1, j - 1, longerChar `indexStream` (j - 1), lesserChar `indexStream` (i - 1))
 
 
+{-# INLINE getMinimalCostDirection #-}
+{-# SPECIALISE getMinimalCostDirection :: (Cost, DynamicCharacterElement) -> (Cost, DynamicCharacterElement) -> (Cost, DynamicCharacterElement) -> (Cost, DynamicCharacterElement, Direction) #-}
 getMinimalCostDirection :: (EncodableStreamElement e, Ord c) => (c, e) -> (c, e) -> (c, e) -> (c, e, Direction)
 getMinimalCostDirection (diagCost, diagChar) (rightCost, rightChar) (downCost,  downChar) =
     minimumBy (comparing (\(c,_,d) -> (c,d)))

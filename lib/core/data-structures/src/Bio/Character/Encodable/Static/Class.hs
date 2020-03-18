@@ -40,7 +40,7 @@ class ( EncodableStreamElement c
       , PossiblyMissingCharacter c
       ) => EncodableStaticCharacter c where
 
-    encodeStatic :: (Eq a, IsString a) => Alphabet a -> AmbiguityGroup a -> c
+    encodeStatic :: (Ord a, IsString a) => Alphabet a -> AmbiguityGroup a -> c
     encodeStatic = encodeElement
 
     emptyStatic :: c -> c

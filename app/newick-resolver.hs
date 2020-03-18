@@ -50,7 +50,7 @@ main = do
         appendSemicolon = (<> ";")
         getLabel = fromJust . newickLabel
         renderBinaryTree = appendSemicolon . renderNewickString . fmap getLabel
-        renderAllResolutions = fmap (foldMap (<>"\n") . fmap renderBinaryTree . unfoldr descendants)
+        renderAllResolutions = fmap (foldMap ((<> "\n") . renderBinaryTree) . unfoldr descendants)
         nicelyPrintAllResolutions = mapM_ putStrLn . fold1
 
 

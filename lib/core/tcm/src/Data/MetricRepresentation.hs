@@ -60,12 +60,17 @@ data  MetricRepresentation a
     deriving anyclass (NFData)
 
 
+-- |
+-- Extract the "symbol change matrix" from a 'MetricRepresentation'.
 retreiveSCM :: MetricRepresentation a -> Word -> Word -> Word
 retreiveSCM (ExplicitLayout tcm _) = \i j -> toEnum . fromEnum $ tcm TCM.! (i,j)
 retreiveSCM DiscreteMetric         = \i j -> if i == j then 0 else 1
 retreiveSCM LinearNorm             = \i j -> max i j - min i j
 
 
+-- |
+-- Extract the "transition cost matrix" from a 'MetricRepresentation',
+-- using the elimination function.
 retreivePairwiseTCM
   :: ( Bits c
      , Bound c ~ Word
@@ -81,6 +86,9 @@ retreivePairwiseTCM _ DiscreteMetric       = discreteMetricPairwiseLogic
 retreivePairwiseTCM _ LinearNorm           = firstLinearNormPairwiseLogic
 
 
+-- |
+-- Extract the threeway "transition cost matrix" from a 'MetricRepresentation',
+-- using the elimination function.
 retreiveThreewayTCM
   :: ( Bits c
      , Bound c ~ Word
@@ -97,6 +105,8 @@ retreiveThreewayTCM _ DiscreteMetric       =  discreteMetricThreewayLogic
 retreiveThreewayTCM _ LinearNorm           = firstLinearNormThreewayLogic
 
 
+-- |
+-- Definition of the discrete metric.
 discreteMetricPairwiseLogic
   :: ( Bits a
      , Num b
@@ -138,6 +148,8 @@ discreteMetricThreewayLogic x y z
     joinIntersection = (x .&. y) .|. (x .&. z) .|. (y .&. z)
 
 
+-- |
+-- Definition of the L1 norm metric.
 firstLinearNormPairwiseLogic
   :: forall a b c
   .  ( Ord (Bound a)

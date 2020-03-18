@@ -19,14 +19,12 @@
 module Analysis.Clustering.Hierarchical where
 
 import           AI.Clustering.Hierarchical
-import           Analysis.Clustering.Metric
+import           Analysis.Distance
 import           Bio.Graph.Constructions
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Sequence
 import           Control.Lens
-import           Data.Coerce
-import           Data.DList                 (DList)
 import           Data.Monoid                (Sum (..))
 import           Data.NodeLabel
 import           Data.Vector
@@ -67,15 +65,6 @@ clusterLeaves meta leaves opt = dendro
       hclust opt leafSetVector distance
 
 
-clusterShuffle
-  :: (Applicative f, Foldable f)
-  => MetadataSequence m
-  -> LeafSet (DecoratedCharacterNode f)
-  -> Linkage
-  -> LeafSet (DecoratedCharacterNode f)
-clusterShuffle meta leaves = coerce . dendroToVector . clusterLeaves meta leaves
-
-
 clusterIntoGroups
   :: (Applicative f, Foldable f)
   => MetadataSequence m
@@ -99,12 +88,6 @@ clusterIntoCuts meta leaves link =
     cutCluster dendro
   where
     dendro = clusterLeaves meta leaves link
-
-
-dendroToList :: Dendrogram a -> DList a
-dendroToList = \case
-  Leaf a -> pure a
-  Branch _ _ l r -> dendroToList l <> dendroToList r
 
 
 dendroToVector

@@ -58,7 +58,6 @@ instance Show MemoizedCostMatrix where
 
 {-
 {--
--- | (✔)
 instance Arbitrary CULong where
 
     arbitrary = do
@@ -67,7 +66,6 @@ instance Arbitrary CULong where
 --}
 
 
--- | (✔)
 instance Arbitrary CDynamicChar where
 
     arbitrary = do
@@ -98,7 +96,6 @@ instance NFData MemoizedCostMatrix where
 
 
 {-
--- | (✔)
 instance Show CDynamicChar where
     show (CDynamicChar alphSize dcLen numElems dChar) =
        mconcat
@@ -145,7 +142,6 @@ instance Storable CDynamicChar where
         (#poke struct dynChar_t, dynChar   ) ptr seqVal
 
 
--- | (✔)
 instance Storable DCElement where
 
     sizeOf    _ = (#size struct dcElement_t)

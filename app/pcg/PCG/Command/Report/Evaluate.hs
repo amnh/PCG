@@ -20,6 +20,7 @@ import Data.List.NonEmpty             (NonEmpty (..))
 import Data.String                    (IsString (fromString))
 import Data.Validation
 import PCG.Command.Report
+import PCG.Command.Report.Distance
 import PCG.Command.Report.GraphViz
 import PCG.Command.Report.Metadata
 import Prelude                        hiding (appendFile, writeFile)
@@ -72,13 +73,18 @@ generateOutput
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data     {} -> SingleStream . streamText $ either showtl showtl g
-    XML      {} -> SingleStream . streamText $ either showtl (fromString . ppTopElement . toXML) g
-    DotFile  {} -> SingleStream . streamText $ generateDotFile g'
-    Metadata {} -> either
-                     (const $ ErrorCase "No metadata in topological solution")
-                     (SingleStream . streamText . outputMetadata)
-                     g
+    Data     {}       -> SingleStream . streamText $ either showtl showtl g
+    XML      {}       -> SingleStream . streamText $ either showtl (fromString . ppTopElement . toXML) g
+    DotFile  {}       -> SingleStream . streamText $ generateDotFile g'
+    Metadata {}       -> either
+                           (const $ ErrorCase "No metadata in topological solution")
+                           (SingleStream . streamText . outputMetadata)
+                           g
+    DistanceMatrix {} -> either
+                           (const $ ErrorCase "No distance matrix in topological solution")
+                           (SingleStream . streamText . outputDistanceMatrix)
+                           g
+
     _           -> ErrorCase "Unrecognized 'report' command"
   where
     g = getCompact g'

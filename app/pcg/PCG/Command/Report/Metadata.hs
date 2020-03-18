@@ -23,15 +23,14 @@ module PCG.Command.Report.Metadata
   ) where
 
 import Bio.Graph
-import Bio.Graph.PhylogeneticDAG
 import Bio.Metadata
-import Bio.Metadata.CharacterName
 import Bio.Sequence.Metadata
-import Control.Lens.Operators     ((^.))
+import Control.Lens.Operators ((^.))
+import Data.CharacterName
 import Data.FileSource
-import Data.Text.Lazy             (Text)
+import Data.Text.Lazy         (Text)
 import Data.Text.Short
-import Prelude                    hiding (filter)
+import Prelude                hiding (filter)
 import TextShow
 import TextShow.Custom
 

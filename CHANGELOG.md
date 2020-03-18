@@ -7,12 +7,16 @@ Releases are available [on GitHub][2].
 
 ## _0.2.1_ - Unreleased Changes
 
-* Updated to GHC-8.8.1
+* Updated to GHC-8.8.2
 * Updated to Cabal-3.0
 * Updated to Cabal's multiple libraries functionality for sub-libraries
 * Updated Travis CI build script
-* Added greedy network search command
+* Added greedy network search to the BUILD command
+* Added Wagner distance to the BUILD command option
+* Added distance CSV output to the REPORT command
 * Added sting alignment benchmarking suite
+* Enhanced alphabet data-type to support sorted alphabets whenever possible
+* Improved efficiency of character encoding
 * Improved efficiency of median state calculations
 * Corrected defect regarding syntany prefixes in FASTC parser
 * Reduced memory usage and pressure when normalizing and unifying inputs

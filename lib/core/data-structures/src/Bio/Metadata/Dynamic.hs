@@ -28,11 +28,9 @@ module Bio.Metadata.Dynamic
     , TraversalTopology
     , dynamicMetadata
     , dynamicMetadataFromTCM
-    , dynamicMetadataWithTCM
     , maybeConstructDenseTransitionCostMatrix
     , overlap
     , overlap2
-    , overlap3
     ) where
 
 import Bio.Metadata.Dynamic.Class    hiding (DenseTransitionCostMatrix)
