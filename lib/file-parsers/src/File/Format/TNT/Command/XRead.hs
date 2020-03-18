@@ -13,6 +13,7 @@
 -- specified as contiguous segments of character types.
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE ApplicativeDo      #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE TypeFamilies       #-}
@@ -24,7 +25,6 @@ module File.Format.TNT.Command.XRead
   , proteinSequence
   , xreadHeader
   ) where
-
 
 import           Data.Bifunctor           (second)
 import           Data.Bits
@@ -305,55 +305,12 @@ segmentTerminal :: (MonadParsec e s m, Token s ~ Char) => m ()
 segmentTerminal = whitespaceInline *> endOfLine <* whitespace
 
 
-{-
--- |
--- Takes a 'zeroBits' bit value, a 'Foldable' structure of 'Char's to represent
--- the ordered alphabet and a 'Traversable' structure of 'Char's to be bit
--- encoded. Constructs a bit value with a bit set for each 'Char' in the
--- 'Traversable' structure where the index of the set bit in the bit value is
--- equal to the index of where the 'Char' first occurred in the ordered alphabet
--- 'Foldable' structure.
---
--- ==== __Examples__
---
--- Basic usage:
---
--- >>> toBits (zeroBits :: Word8) "Example" "alex"
--- 102
-toBits :: (Bits b, Foldable f, Traversable t) => b -> f Char -> t Char -> b
-toBits b xs = foldr (.|.) b . fmap setFlag
-  where
-    setFlag    = bit . (`getIndex` xs)
-    getIndex e = fromJust . snd . foldl f (0,Nothing)
-      where
-        f a@(i,m) x
-          | isJust m  = a
-          | e == x    = (i  ,Just i )
-          | otherwise = (i+1,Nothing)
-
-
--- |
--- Represents a sequence segement tag specification identified by the
--- parameter combinator.
-tagIdentifier :: (MonadParsec e s m, Token s ~ Char) => m a -> m ()
-tagIdentifier c = symbol (char '&') *> symbol (withinBraces c) $> ()
--}
-
-
 -- |
 -- Represents the parameter combinator within braces.
 withinBraces :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 withinBraces = between (f '[') (f ']')
   where
     f c = char c <* whitespaceInline
-
-
-{-
--- |
--- An append efficient datastructure containing 'TntCharacter's.
--- Used to efficiently concatenat many interleaved taxon sequence segments.
-type TntCharacterSegment = DList TntCharacter
--}
 
 
 -- |

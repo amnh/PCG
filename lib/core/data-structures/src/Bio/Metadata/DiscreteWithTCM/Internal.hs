@@ -30,17 +30,16 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   , HasCharacterName(..)
   , HasCharacterWeight(..)
   , discreteMetadataFromTCM
-  , discreteMetadataWithTCM
   ) where
 
 import Bio.Character.Exportable
-import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
+import Data.CharacterName
 import Data.FileSource
 import Data.List                          (intercalate)
 import Data.MetricRepresentation
@@ -69,104 +68,35 @@ foreignPointerData x =
     _                  -> Nothing
 
 
-{-
-data RepresentedTCM a where
-  Disc :: Discrete -> RepresentedTCM Discrete
-  Explicit :: TCM -> MemoizedCostMatrix -> RepresentedTCM Explicit
--}
-
-
-{-
-retreiveTCM
-  :: ( Bits c
-     , Bound c ~ Word
-     , Exportable c
-     , Ranged c
-     )
-  => RepresentedTCM
-  -> c
-  -> c
-  -> (c, Word)
-retreiveTCM (ExplicitLayout _ memo) = getMedianAndCost2D memo
-retreiveTCM DiscreteMetric          = discreteMetricLogic
-retreiveTCM LinearNorm              = linearNormLogic
-
-
-retreiveSCM :: RepresentedTCM -> Word -> Word -> Word
-retreiveSCM (ExplicitLayout tcm _) = \i j -> toEnum . fromEnum $ tcm TCM.! (i,j)
-retreiveSCM DiscreteMetric         = \i j -> if i == j then 0 else 1
-retreiveSCM LinearNorm             = \i j -> max i j - min i j
-
-
-discreteMetricLogic :: (Bits a, Num b) => a -> a -> (a, b)
-discreteMetricLogic lhs rhs
-  | popCount intersect > 0 = (intersect, 0)
-  | otherwise              = (  unioned, 1)
-  where
-    unioned   = lhs .|. rhs
-    intersect = lhs .&. rhs
-
-
-linearNormLogic
-  :: ( Ord (Bound a)
-     , Ranged a
-     , Ranged b
-     , Ranged c
-     , Bound b ~ Bound a
-     , Bound c ~ Bound a
-     )
-  => a -> b -> (c, Bound a)
-linearNormLogic lhs rhs = (fromRange newInterval, cost)
-  where
-    lhs' = toRange lhs
-    rhs' = toRange rhs
-
-    newInterval
-      | isOverlapping = lhs' `intersection`   rhs'
-      | otherwise     = lhs' `smallestClosed` rhs'
-    isOverlapping     = lhs' `intersects`     rhs'
-
-    cost
-      | isOverlapping = 0
-      | otherwise     = upperBound newInterval - lowerBound newInterval
--}
-
-
--- | (✔)
 instance DiscreteCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = discreteData
 
 
--- | (✔)
 instance HasCharacterAlphabet (DiscreteWithTCMCharacterMetadataDec c) (Alphabet String) where
 
     characterAlphabet = lens (\e -> discreteData e ^. characterAlphabet)
                       $ \e x -> e { discreteData = discreteData e & characterAlphabet .~ x }
 
 
--- | (✔)
 instance GeneralCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata =  extractGeneralCharacterMetadata . discreteData
 
 
--- | (✔)
 instance HasCharacterName (DiscreteWithTCMCharacterMetadataDec c) CharacterName where
 
     characterName = lens (\e -> discreteData e ^. characterName)
                   $ \e x -> e { discreteData = discreteData e & characterName .~ x }
 
 
--- | (✔)
 instance HasCharacterWeight (DiscreteWithTCMCharacterMetadataDec c) Double where
 
     characterWeight = lens (\e -> discreteData e ^. characterWeight)
                     $ \e x -> e { discreteData = discreteData e & characterWeight .~ x }
 
--- | (✔)
 instance HasTcmSourceFile (DiscreteWithTCMCharacterMetadataDec c) FileSource where
 
     _tcmSourceFile = lens (\s -> discreteData s ^. _tcmSourceFile)
@@ -251,17 +181,3 @@ discreteMetadataFromTCM name weight alpha tcmSource tcm =
     coefficient     = fromIntegral $ factoredWeight diagnosis
     sigma  i j      = toEnum . fromEnum $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)
     memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) sigma
-
-
--- |
--- Construct a concrete typed 'DiscreteWithTCMCharacterMetadataDec' value from the supplied inputs.
-discreteMetadataWithTCM
-  :: CharacterName
-  -> Double
-  -> Alphabet String
-  -> FileSource
-  -> (Word -> Word -> Word)
-  -> DiscreteWithTCMCharacterMetadataDec c
-discreteMetadataWithTCM name weight alpha tcmSource scm = discreteMetadataFromTCM name weight alpha tcmSource tcm
-  where
-    tcm = generate (length alpha) (uncurry scm)

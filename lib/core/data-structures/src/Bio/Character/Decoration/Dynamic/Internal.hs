@@ -306,8 +306,8 @@ instance Show d => ToXML (DynamicDecorationDirectOptimization d) where
     toXML decoration = xmlElement "Dynamic_DO_pre-order_decoration_result" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Character_cost"           , show $ decoration ^. characterCost      )
-                         , Left ("Local_cost"               , show $ decoration ^. characterLocalCost )
+            contents   = [ Left ("Character_cost"           , show $ decoration ^. characterCost     )
+                         , Left ("Local_cost"               , show $ decoration ^. characterLocalCost)
                          , Left ("Alignment_Context"        , show $ decoration ^. alignmentContext  )
                          , Left ("Implied_Alignemnt"        , show $ decoration ^. alignmentContext  )
                          ]
@@ -320,7 +320,7 @@ instance Show d => ToXML (DynamicDecorationDirectOptimizationPostorderResult d) 
             attributes = []
             contents   = [ Left ("Character_cost"           , show $ decoration ^. characterCost      )
                          , Left ("Local_cost"               , show $ decoration ^. characterLocalCost )
-                         , Left ("Alignment_Context"        , show $ decoration ^. alignmentContext  )
+                         , Left ("Alignment_Context"        , show $ decoration ^. alignmentContext   )
                          ]
 
 

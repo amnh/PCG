@@ -21,11 +21,9 @@
 
 module Data.EdgeLength
   ( EdgeLength()
-  , fromDouble
   , fromDoubleMay
   , fromRationalMay
   ) where
-
 
 import Control.Applicative (liftA2)
 import Control.DeepSeq
@@ -83,13 +81,6 @@ instance TextShow EdgeLength where
 
     showb (C  Nothing) = "{?}"
     showb (C (Just x)) = "{" <> showb (getSum x) <> "}"
-
-
--- |
--- Construct an 'EdgeLength' from a 'Double' value.
-{-# INLINE fromDouble #-}
-fromDouble :: Double -> EdgeLength
-fromDouble = C . Just . Sum . toRational
 
 
 -- |

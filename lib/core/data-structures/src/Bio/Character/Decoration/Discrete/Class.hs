@@ -31,13 +31,11 @@ class HasDiscreteCharacter s a | s -> a where
     {-# MINIMAL discreteCharacter #-}
 
 
--- | (✔)
 class ( HasDiscreteCharacter s a
       , EncodableStaticCharacter a
       ) => DiscreteCharacterDecoration s a | s -> a where
 
 
--- | (✔)
 class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a | s -> a where
 
     toDiscreteCharacterDecoration :: (x -> a) -> x -> s

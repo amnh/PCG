@@ -24,11 +24,10 @@ module Bio.Metadata.General.Internal
   , generalMetadata
   ) where
 
-
-import Bio.Metadata.CharacterName
 import Bio.Metadata.General.Class
 import Control.DeepSeq
 import Control.Lens
+import Data.CharacterName
 import GHC.Generics
 import Text.XML.Class
 
@@ -54,20 +53,17 @@ class ( HasCharacterName   s CharacterName
     extractGeneralCharacterMetadata :: s -> GeneralCharacterMetadataDec
 
 
--- | (✔)
 instance GeneralCharacterMetadata GeneralCharacterMetadataDec where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = id
 
 
--- | (✔)
 instance HasCharacterName GeneralCharacterMetadataDec CharacterName where
 
     characterName = lens name $ \e x -> e { name = x }
 
 
--- | (✔)
 instance HasCharacterWeight GeneralCharacterMetadataDec Double where
 
     characterWeight = lens weight $ \e x -> e { weight = x }

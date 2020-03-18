@@ -290,8 +290,7 @@ hasE2IncidentNetworkNode =
             ]
 
 
-
-
+{-
 -- Edge added: (b,e) -> (g, k)
 -- Problem: The edge (b,e) is ancestral to (g,k) and so this is not allowed
 src2NetworkPairAncestralToE1Network :: Network
@@ -327,6 +326,7 @@ src2NetworkPairAncestralToE1Network =
                              , ("newTgt", " (tgt2)"  )
                              ]
             ]
+-}
 
 
 -- Edge added: (g,k) -> (a, c)

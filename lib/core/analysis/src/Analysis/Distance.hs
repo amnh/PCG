@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.Clustering.Metric
+-- Module      :  Analysis.Distance
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -18,8 +18,10 @@
 
 {-# LANGUAGE NoMonoLocalBinds    #-}
 
-module Analysis.Clustering.Metric
+
+module Analysis.Distance
   ( characterSequenceDistance
+  , characterDistanceMatrix
   ) where
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization
@@ -32,9 +34,13 @@ import           Bio.Sequence
 import qualified Bio.Sequence.Block                            as Blk
 import           Control.Applicative
 import           Control.Lens
+import           Control.Parallel.Strategies                   (parMap, rpar)
 import           Data.Foldable
+import           Data.Matrix.Unboxed                           (Matrix)
+import qualified Data.Matrix.Unboxed                           as Matrix
 import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.Vector                                   hiding (length)
 import           Numeric.Extended.Real
 
 
@@ -53,8 +59,29 @@ characterSequenceDistance
   -> CharacterSequence (f u) (f v) (f  w) (f x) (f y) (f z)
   -> CharacterSequence (f u) (f v) (f  w) (f x) (f y) (f z)
   -> Sum Double
-characterSequenceDistance =
-  foldZipWithMeta blockDistance
+characterSequenceDistance = foldZipWithMeta blockDistance
+
+
+characterDistanceMatrix
+  :: forall f u v w x y z m .
+  ( (HasIntervalCharacter u ContinuousCharacter )
+  , (HasDiscreteCharacter v StaticCharacter       )
+  , (HasDiscreteCharacter w StaticCharacter       )
+  , (HasDiscreteCharacter x StaticCharacter       )
+  , (HasDiscreteCharacter y StaticCharacter       )
+  , (DirectOptimizationPostorderDecoration z DynamicCharacter)
+  , Applicative f
+  , Foldable f
+  )
+  => Vector (CharacterSequence (f u) (f v) (f w) (f x) (f y) (f z))
+  -> MetadataSequence m
+  -> Matrix Double
+characterDistanceMatrix leaves meta =
+  let numLeaves = length leaves
+      distFn (i,j)  =  getSum $ characterSequenceDistance meta (leaves ! i) (leaves ! j)
+      matrixEntries :: [Double]
+      matrixEntries = parMap rpar distFn [(i,j) | i <- [0..(numLeaves - 1)], j <- [0..(numLeaves - 1)]]
+  in  Matrix.fromList (numLeaves, numLeaves) matrixEntries
 
 
 blockDistance
@@ -109,8 +136,8 @@ dynamicCharacterDistance
      , Show (Element c)
      )
   => m -> f d -> f d -> Sum Double
-dynamicCharacterDistance meta c1 c2
-  = foldMap (Sum . (weight *) . fromIntegral) $ liftA2 (dynamicCharacterDistance' meta) c1 c2
+dynamicCharacterDistance meta c1 c2 = foldMap (Sum . (weight *) . fromIntegral) $
+                                        liftA2 (dynamicCharacterDistance' meta) c1 c2
   where
     weight = meta ^. characterWeight
 

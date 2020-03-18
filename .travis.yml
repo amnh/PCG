@@ -25,7 +25,7 @@ matrix:
   include:
 
     # Cabal
-    - ghc: 8.8.1
+    - ghc: 8.8.3
 #      addons:
 #        apt:
 #          sources:
@@ -34,7 +34,7 @@ matrix:
 #          - cabal-install-3.0
 
     # Stack
-#    - ghc: 8.8.1
+#    - ghc: 8.8.3
 #      env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
 
 

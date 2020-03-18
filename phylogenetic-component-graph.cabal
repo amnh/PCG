@@ -17,12 +17,15 @@ description:        Phylogenetic Componet Graph provides a library for
                     searches. Said scripts can be evaluated by the provided pcg
                     program to perform a phylogenetic search on an input dataset.
 
+tested-with:
+    GHC == 8.8.3
+
 extra-source-files:
     AUTHORS.md
     CHANGELOG.md
     FUNDING.md
     README.md
-    
+
         
 -- Group of buildinfo specifications to correctly build and link to the C & C++:
 -- FFI code.
@@ -140,6 +143,7 @@ library alphabet
     QuickCheck               >= 2.12      && < 3.0,
     semigroupoids            >= 5.2.1     && < 5.4,
     semigroups               >= 0.18      && < 1.0,
+    text-short               >= 0.1.3     && < 1.0,
     text-show                >= 3.8.1     && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
 
@@ -195,6 +199,7 @@ library analysis
     monad-loops              >= 0.4       && < 1.0,
     mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
+    parallel                 >= 3.2       && < 4.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
     text-show                >= 3.8.1     && < 4.0,
@@ -207,6 +212,7 @@ library analysis
   exposed-modules:
     Analysis.Clustering
     Analysis.Clustering.Hierarchical
+    Analysis.Distance
     Analysis.Parsimony.Additive
     Analysis.Parsimony.Dynamic.DirectOptimization
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
@@ -216,7 +222,6 @@ library analysis
     Analysis.TotalEdgeCost
 
   other-modules:
-    Analysis.Clustering.Metric
     Analysis.Parsimony.Additive.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Internal
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
@@ -231,6 +236,33 @@ library analysis
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFullSpace            
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenSwapping
+
+
+library character-name
+
+  import:
+    ghc-flags,
+    language-specs
+
+  visibility: public
+
+  hs-source-dirs:
+    lib/character-name/src
+
+  build-depends:
+    file-source,
+    base                     >= 4.11      && < 5.0,
+    containers               >= 0.5.8     && < 1.0,
+    deepseq                  >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    mtl                      >= 2.0       && < 3.0,
+    mono-traversable         >= 1.0       && < 2.0,
+    text-short               >= 0.1.3     && < 1.0,
+    text-show                >= 3.8.1     && < 4.0,
+    text-show-instances      >= 3.8       && < 4.0,
+
+  exposed-modules:
+    Data.CharacterName
 
 
 -- Data-types for defining and interacting with phylogenetic components.
@@ -257,6 +289,7 @@ library core
 
   reexported-modules:
     Analysis.Clustering,
+    Analysis.Distance,
     Analysis.Parsimony.Additive,
     Analysis.Parsimony.Dynamic.DirectOptimization,
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise,
@@ -276,7 +309,6 @@ library core
     Bio.Character.Encodable,
     Bio.Character.Encodable.Continuous,
     Bio.Metadata,
-    Bio.Metadata.CharacterName,
     Bio.Metadata.Continuous,
     Bio.Metadata.Discrete,
     Bio.Metadata.DiscreteWithTCM,
@@ -378,6 +410,7 @@ library data-structures
 
   build-depends:
     alphabet,
+    character-name,
     evaluation,
     exportable,
     file-source,
@@ -413,7 +446,7 @@ library data-structures
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
     text-show                >= 3.8.1     && < 4.0,
-    text-show-instances      >= 3.0       && < 4.0,
+    text-show-instances      >= 3.8       && < 4.0,
     unordered-containers     >= 0.2.9     && < 1.0,
     -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
@@ -436,7 +469,6 @@ library data-structures
     Bio.Character.Encodable
     Bio.Character.Encodable.Continuous
     Bio.Metadata
-    Bio.Metadata.CharacterName
     Bio.Metadata.Continuous
     Bio.Metadata.Discrete
     Bio.Metadata.DiscreteWithTCM
@@ -505,7 +537,6 @@ library data-structures
     Bio.Graph.BinaryRenderingTree
     Bio.Graph.Forest
     Bio.Graph.Node.Internal
-    Bio.Graph.PhylogeneticDAG.Class
     Bio.Graph.PhylogeneticDAG.Internal
     Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
     Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
@@ -539,6 +570,7 @@ library data-unification
     lib/data-unification/src
 
   build-depends:
+    character-name,
     core,
     data-normalization,
     file-source,
@@ -560,6 +592,7 @@ library data-unification
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
     text-show                >= 3.8.1     && < 4.0,
+    text-show-instances      >= 3.8       && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
@@ -820,7 +853,7 @@ library graph
     text                     >= 1.2       && < 2.0,
     semigroupoids            >= 5.2.1     && < 5.4,
     text-show                >= 3.0       && < 4.0,
-    text-show-instances      >= 3.0       && < 4.0,
+    text-show-instances      >= 3.8       && < 4.0,
     -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
     vector-builder           >= 0.3.7.2   && < 0.4,
@@ -920,7 +953,6 @@ library serialize
     xml                      >= 1.3.14    && < 1.4,
 
   exposed-modules:
-    Data.Text.Short.Custom
     TextShow.Custom
     Text.Newick.Class
     Text.XML
@@ -1079,7 +1111,7 @@ library utility
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
     text-show                >= 3.8.1     && < 4.0,
-    text-show-instances      >= 3.0       && < 4.0,
+    text-show-instances      >= 3.8       && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
     validation               >= 1.1       && < 2.0,
     -- >=0.12.0.2 required for compatibility with "compact regions"
@@ -1170,6 +1202,7 @@ executable pcg
 
   build-depends:
     alphabet,
+    character-name,
     evaluation,
     core,
     data-normalization,
@@ -1196,6 +1229,7 @@ executable pcg
     integer-gmp              >= 1.0       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.17      && < 5.0,
+    matrices                 >= 0.5       && < 0.6,
     megaparsec               >= 8.0       && < 9.0,
     mmark                    >= 0.0.7.2   && < 1.0,
     modern-uri               >= 0.3       && < 1.0,
@@ -1234,6 +1268,7 @@ executable pcg
     PCG.Command.Read.InputStreams
     PCG.Command.Read.ParseStreams
     PCG.Command.Read.ReadCommandError
+    PCG.Command.Report.Distance
     PCG.Command.Report.Evaluate
     PCG.Command.Report.GraphViz
     PCG.Command.Report.Metadata

@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE BangPatterns       #-}
+{-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveGeneric      #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE OverloadedStrings  #-}
@@ -48,7 +49,8 @@ import TextShow                    (TextShow (showb), singleton, unlinesB, unwor
 -}
 data  BitMatrix
     = BitMatrix {-# UNPACK #-} !Int {-# UNPACK #-} !BitVector
-    deriving stock (Eq, Generic)
+    deriving anyclass (NFData)
+    deriving stock    (Eq, Generic)
 
 
 instance Hashable BitMatrix where
@@ -137,7 +139,6 @@ instance MonoFoldable BitMatrix where
         n = toEnum c
 
 
--- | (✔)
 instance MonoFunctor BitMatrix where
 
     omap f bm =
@@ -148,7 +149,6 @@ instance MonoFunctor BitMatrix where
         rows' = f <$> rows bm
 
 
--- | (✔)
 instance MonoTraversable BitMatrix where
 
     otraverse f = fmap correction . traverse f . rows
@@ -159,11 +159,6 @@ instance MonoTraversable BitMatrix where
             Nothing -> error "The mapping function over the bit matrix did not return *all* bit vectors of equal length."
 
 
--- | (✔)
-instance NFData BitMatrix
-
-
--- | (✔)
 instance Ord BitMatrix where
 
   compare lhs rhs =
@@ -175,7 +170,6 @@ instance Ord BitMatrix where
        v  -> v
 
 
--- | (✔)
 instance Show BitMatrix where
 
     show bm = headerLine <> matrixLines
@@ -190,7 +184,6 @@ instance Show BitMatrix where
                     , "\n"
                     ]
 
--- | (✔)
 instance TextShow BitMatrix where
 
     showb bm = headerLine <> matrixLines

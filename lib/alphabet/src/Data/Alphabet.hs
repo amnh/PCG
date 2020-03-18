@@ -41,9 +41,12 @@ module Data.Alphabet
   -- * Construction
   , fromSymbols
   , fromSymbolsWithStateNames
+  , fromSymbolsWithStateNamesAndTCM
+  , fromSymbolsWithTCM
   -- * Querries
   , alphabetStateNames
   , alphabetSymbols
+  , getSubsetIndex
   , gapSymbol
   -- * Truncation
   , truncateAtSymbol

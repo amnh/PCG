@@ -17,7 +17,7 @@
 
 module Analysis.Clustering.Test
   ( testSuite
-  , example
+--  , example
   ) where
 
 
@@ -37,6 +37,7 @@ testSuite = testGroup "Clustering Tests"
     ]
 
 
+{-
 example :: IO ()
 example =
   do
@@ -50,6 +51,7 @@ example =
 
     myDendro :: Dendrogram Double
     myDendro = hclust Average inputs dist
+-}
 
 
 hierarchicalClusteringProperties :: TestTree

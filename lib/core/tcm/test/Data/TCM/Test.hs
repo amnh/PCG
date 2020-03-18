@@ -32,10 +32,13 @@ testExampleCases = testGroup "Example Cases for Data.TCM"
     [ documentationCases
     ]
 
+
 -- Generate cases for TcmStructure diagnosis
+
 
 structureType :: TCM -> TCMStructure
 structureType = tcmStructure . diagnoseTcm
+
 
 diagnoseTcmCases :: TestTree
 diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"

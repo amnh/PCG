@@ -2,6 +2,9 @@ allow-newer:
   base
   polyparse
 
+package *
+  ghc-options: -fwrite-ide-info
+
 packages: .
 
-with-compiler: ghc-8.8.1
+with-compiler: ghc-8.8.3

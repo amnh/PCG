@@ -22,12 +22,12 @@
 
 module Data.NodeLabel
   ( NodeLabel(NL)
-  , isEmpty
   , nodeLabel
   , nodeLabelString
   , nodeLabelToString
+  , nodeLabelToLazyText
+  , nodeLabelToStrictText
   ) where
-
 
 import           Control.DeepSeq
 import           Data.Binary
@@ -38,8 +38,10 @@ import           Data.MonoTraversable
 import           Data.String          (IsString)
 import           Data.Text.Short      as TS
 import           GHC.Generics
-import           TextShow             (TextShow (showb))
-import qualified TextShow             as Show
+import           TextShow                (TextShow)
+import           TextShow.Data.ShortText ()
+import qualified Data.Text            as Strict
+import qualified Data.Text.Lazy       as Lazy
 
 
 -- |
@@ -58,33 +60,10 @@ import qualified TextShow             as Show
 newtype NodeLabel = NL {getNodeLabel :: ShortText}
     deriving stock    (Data, Eq, Generic, Ord, Show, Typeable)
     deriving anyclass (NFData)
-    deriving newtype  (IsString, Monoid, Semigroup)
+    deriving newtype  (IsString, Monoid, Semigroup, TextShow)
 
 
 type instance Element NodeLabel = Char
-
-
--- |
--- Constructor for a 'NodeLabel'
-nodeLabel :: ShortText -> NodeLabel
-{-# INLINE nodeLabel #-}
-nodeLabel = coerce
-
--- |
--- Construct a 'NodeLabel' from a 'String'
-nodeLabelString :: String -> NodeLabel
-{-# INLINE nodeLabelString #-}
-nodeLabelString = coerce . fromString
-
--- |
--- Check if a NodeLabel is empty.
-isEmpty :: NodeLabel -> Bool
-isEmpty = coerce TS.null
-
--- |
--- Converts a NodeLabel to a string.
-nodeLabelToString :: NodeLabel -> String
-nodeLabelToString = coerce TS.toString
 
 
 instance Default NodeLabel where
@@ -132,9 +111,30 @@ instance MonoFunctor NodeLabel where
 
 
 -- |
--- Prints the underlying textual representation of a `NodeLabel`.
-instance TextShow NodeLabel where
+-- Constructor for a 'NodeLabel'
+nodeLabel :: ShortText -> NodeLabel
+{-# INLINE nodeLabel #-}
+nodeLabel = coerce
 
-    -- TODO: When text-show-instances is updated to have an instance
-    --        for ShortText then use that instead.
-    showb = Show.fromString . TS.toString . getNodeLabel
+
+-- |
+-- Construct a 'NodeLabel' from a 'String'
+nodeLabelString :: String -> NodeLabel
+{-# INLINE nodeLabelString #-}
+nodeLabelString = coerce . fromString
+
+
+-- |
+-- Converts a NodeLabel to a string.
+nodeLabelToString :: NodeLabel -> String
+nodeLabelToString = coerce TS.toString
+
+
+nodeLabelToStrictText :: NodeLabel -> Strict.Text
+nodeLabelToStrictText = coerce TS.toText
+
+
+nodeLabelToLazyText :: NodeLabel -> Lazy.Text
+nodeLabelToLazyText = Lazy.fromStrict . nodeLabelToStrictText
+
+

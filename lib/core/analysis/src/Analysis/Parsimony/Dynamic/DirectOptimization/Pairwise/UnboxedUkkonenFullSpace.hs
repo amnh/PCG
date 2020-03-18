@@ -185,6 +185,8 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs cost longerTop le
               | otherwise = minimumIndelCost * (quasiDiagonalWidth + offset - gapsPresentInInputs)
         pure $ threshold <= alignmentCost
       
+    finalMatrix = undefined
+{-    
     finalMatrix = runST $ do
         matrices  <- buildInitialBandedMatrix cost longerTop lesserLeft startOffset
         offsetRef <- newSTRef startOffset
@@ -197,7 +199,7 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs cost longerTop le
         c <- M.unsafeRead mCost (lesserLen, longerLen)
         m <- unsafeFreeze mDir
         pure (c, m)
-
+-}
                
 {-# SCC buildInitialBandedMatrix #-}
 buildInitialBandedMatrix
@@ -229,7 +231,7 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
       where
         differenceInLength = longerLen - lesserLen
 
-    fullMatrix = do
+    fullMatrix = runST $ do
       
       ---------------------------------------
       -- Allocate required space           --
@@ -257,8 +259,8 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
               (r,c) = M.dim m
       
       -- Write to a single cell of the current vector and directional matrix simultaneously
---      let write !p ~(!c, !d) = M.unsafeWrite mCost p c *> M.unsafeWrite mDir p d
-      let write !p ~(!c, !d) = mWrite mCost p c *> mWrite mDir p d
+      let write !p ~(!c, !d) = M.unsafeWrite mCost p c *> M.unsafeWrite mDir p d
+--      let write !p ~(!c, !d) = mWrite mCost p c *> mWrite mDir p d
 
       -- Define how to compute the first cell of the first "offest" rows.
       -- We need to ensure that there are only Up Arrow values in the directional matrix.
@@ -376,12 +378,13 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
 
 --      c <- M.unsafeRead mCost (rows - 1, cols - 1)
 --      pure (mCost, mDir)
-      dm <- unsafeFreeze mDir
       cm <- unsafeFreeze mCost
-      trace (renderMatricies offset cm m) pure (c, m)
+      dm <- unsafeFreeze mDir
+--      trace (renderMatricies offset cm m) pure (c, m)
       pure (o, cm, dm)
 
 
+{-
 {-# SCC expandBandedMatrix #-}
 expandBandedMatrix
   :: DOCharConstraint a
@@ -555,7 +558,7 @@ expandBandedMatrix cost longerTop lesserLeft (mCost, mDir) o = updateBand
       -- Loop through the remaining rows.
       for_ --((\x -> trace' ("1st section " <> show x) x)
              [1 .. rows - 1] writeRow
-
+-}
 
 
 directOptimization

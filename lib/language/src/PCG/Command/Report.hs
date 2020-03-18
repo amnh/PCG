@@ -44,6 +44,7 @@ data  ReportCommand
 data  OutputFormat
     = CrossReferences ![FilePath]
     | Data
+    | DistanceMatrix
     | DotFile
     | DynamicTable
     | ImpliedAlignmentCharacters
@@ -83,12 +84,13 @@ reportCommandSpecification = command "report" . argList $ ReportCommand <$> outp
 
 
 outputFormat :: Ap SyntacticArgument OutputFormat
-outputFormat = choiceFrom [ dataFormat, dotFormat, xmlFormat, metadataFormat ]
+outputFormat = choiceFrom [ dataFormat, dotFormat, xmlFormat, metadataFormat, distanceMatrix]
   where
     dataFormat     = value "data" $> Data
     xmlFormat      = value "xml"  $> XML
     dotFormat      = choiceFrom [value "dot", value "graphviz"]  $> DotFile
     metadataFormat = choiceFrom [value "metadata", value "crossreferences"] $> Metadata
+    distanceMatrix = value "distance" $> DistanceMatrix
 
 
 outputTarget :: Ap SyntacticArgument OutputTarget

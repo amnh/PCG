@@ -29,7 +29,6 @@ module Bio.Metadata
   , DiscreteWithTcmCharacterMetadata()
   , DiscreteWithTCMCharacterMetadataDec()
   , discreteMetadataFromTCM
-  , discreteMetadataWithTCM
   -- * Dynamic Character Metadata
   , DenseTransitionCostMatrix
   , DynamicCharacterMetadata(..)
@@ -39,7 +38,8 @@ module Bio.Metadata
   , TraversalFocusEdge
   , TraversalTopology
   , dynamicMetadata
-  , dynamicMetadataWithSCM
+  , dynamicMetadataFromTCM
+  , maybeConstructDenseTransitionCostMatrix
   -- * Lens fields
   , GetSparseTransitionCostMatrix(..)
   , GetSymbolChangeMatrix(..)

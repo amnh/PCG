@@ -55,6 +55,7 @@ import           TextShow                              (TextShow (showb), toStri
 
 {-# SPECIALISE discreteMetricPairwiseLogic :: AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 
+
 -- |
 -- Represents an ambiguity group of symbols, one atomic component of a DynamicCharacter.
 --

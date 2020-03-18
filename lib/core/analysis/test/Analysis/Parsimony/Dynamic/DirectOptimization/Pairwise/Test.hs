@@ -45,7 +45,7 @@ testSuite = testGroup "Pairwise alignment tests"
 --    , testSuiteForeignDO
     , testSuiteUnboxedFullMatrixDO
     , testSuiteUnboxedFullSwappingDO
-    , testSuiteUnboxedUkkonenDO
+    , testSuiteUnboxedUkkonenSwapDO
     , constistentImplementation
     ]
 
@@ -123,39 +123,39 @@ testSuiteMemoizedDO = testGroup "Memoized DO"
 testSuiteUnboxedFullMatrixDO :: TestTree
 testSuiteUnboxedFullMatrixDO = testGroup "Unboxed Full Matrix DO"
     [ isValidPairwiseAlignment "Unboxed Full Matrix DO over discrete metric"
-       $ \x y -> unboxedFullMatrixDO x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
+       $ unboxedFullMatrixDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
     , isValidPairwiseAlignment "Unboxed Full Matrix DO over L1 norm"
-       $ \x y -> unboxedFullMatrixDO x y (getMedianAndCost2D (genMemoMatrix l1Norm))
+       $ unboxedFullMatrixDO (getMedianAndCost2D (genMemoMatrix l1Norm))
     , isValidPairwiseAlignment "Unboxed Full Matrix DO over prefer substitution metric (1:2)"
-       $ \x y -> unboxedFullMatrixDO x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+       $ unboxedFullMatrixDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
     , isValidPairwiseAlignment "Unboxed Full Matrix DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> unboxedFullMatrixDO x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+       $ unboxedFullMatrixDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
     ]
 
 
 testSuiteUnboxedFullSwappingDO :: TestTree
 testSuiteUnboxedFullSwappingDO = testGroup "Unboxed Swapping Vectors DO"
     [ isValidPairwiseAlignment "Unboxed Swapping Vectors DO over discrete metric"
-       $ \x y -> unboxedSwappingDO x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
+       $ unboxedSwappingDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
     , isValidPairwiseAlignment "Unboxed Swapping Vectors DO over L1 norm"
-       $ \x y -> unboxedSwappingDO x y (getMedianAndCost2D (genMemoMatrix l1Norm))
+       $ unboxedSwappingDO (getMedianAndCost2D (genMemoMatrix l1Norm))
     , isValidPairwiseAlignment "Unboxed Swapping Vectors DO over prefer substitution metric (1:2)"
-       $ \x y -> unboxedSwappingDO x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+       $ unboxedSwappingDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
     , isValidPairwiseAlignment "Unboxed Swapping Vectors DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> unboxedSwappingDO x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+       $ unboxedSwappingDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
     ]
 
 
-testSuiteUnboxedUkkonenDO :: TestTree
-testSuiteUnboxedUkkonenDO = testGroup "Unboxed Ukkonen DO"
+testSuiteUnboxedUkkonenSwapDO :: TestTree
+testSuiteUnboxedUkkonenSwapDO = testGroup "Unboxed Ukkonen DO"
     [ isValidPairwiseAlignment "Unboxed Ukkonen DO over discrete metric"
-       $ \x y -> unboxedUkkonenDO x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
+       $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
     , isValidPairwiseAlignment "Unboxed Ukkonen DO over L1 norm"
-       $ \x y -> unboxedUkkonenDO x y (getMedianAndCost2D (genMemoMatrix l1Norm))
+       $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix l1Norm))
     , isValidPairwiseAlignment "Unboxed Ukkonen DO over prefer substitution metric (1:2)"
-       $ \x y -> unboxedUkkonenDO x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+       $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
     , isValidPairwiseAlignment "Unboxed Ukkonen DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> unboxedUkkonenDO x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+       $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
     ]
 
 
