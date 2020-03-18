@@ -34,10 +34,10 @@ import Data.FileSource
 import Data.Foldable
 import Data.List.NonEmpty     (NonEmpty)
 import Data.Text.Short
-import Data.Text.Short.Custom ()
 import GHC.Generics           (Generic)
 import TextShow
 import TextShow.Custom
+import TextShow.Data.ShortText ()
 
 
 -- |

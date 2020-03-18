@@ -35,18 +35,13 @@ module Bio.Sequence.Block.Character
   , continuousSingleton
   , discreteSingleton
   , dynamicSingleton
-  , nonExistantBlock
   -- * Transformations
   , hexmap
-  , hexTranspose
   , hexZipMeta
   , hexZipWith
-  , hexZipWith3
   , hexZipWithMeta
-  , hexZip2WithMeta
   , toMissingCharacters
   ) where
-
 
 import           Bio.Character.Encodable
 import           Bio.Metadata.Continuous
@@ -68,7 +63,6 @@ import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import qualified Data.Text                    as T (Text, lines, unlines)
 import           Data.Vector                  (Vector)
-import qualified Data.Vector                  as V
 import           Data.Vector.Instances        ()
 import           GHC.Generics
 import           Text.XML
@@ -324,8 +318,7 @@ instance ( TextShow u
         niceRendering = T.unlines . fmap (T.unlines . fmap ("  " <>) . T.lines . showt) . toList
 
 
--- | (✔)
-instance ( ToXML u -- This is NOT a redundant constraint.
+instance ( ToXML u
          , ToXML v
          , ToXML w
          , ToXML y
@@ -361,18 +354,6 @@ finalizeCharacterBlock =
     )
 
 
-
-
--- |
--- Creates a representation for a non-existent character block.
---
--- This is used when a character block does not exist on a node for a given
--- network content.
-{-# INLINE nonExistantBlock #-}
-nonExistantBlock :: CharacterBlock u v w x y z
-nonExistantBlock = BlockDoesNotExist
-
-
 -- |
 -- Perform a six way map over the polymorphic types.
 hexmap
@@ -393,35 +374,6 @@ hexmap f1 f2 f3 f4 f5 f6 = CB . (
       <*> (parmap rpar f5 . (^.   nonMetricBin))
       <*> (parmap rpar f6 . (^.     dynamicBin))
     )
-
-
--- |
--- Performs a 2D transform on the 'Traversable' structure of 'CharacterBlock'
--- values.
---
--- Assumes that the 'CharacterBlock' values in the 'Traversable' structure are of
--- equal length. If this assumtion is violated, the result will be truncated.
-hexTranspose
-  :: Traversable t
-  => t (CharacterBlock u v w x y z)
-  -> CharacterBlock (t u) (t v) (t w) (t x) (t y) (t z)
-hexTranspose = CB . (
-    Block
-      <$> transposition (^.  continuousBin)
-      <*> transposition (^. nonAdditiveBin)
-      <*> transposition (^.    additiveBin)
-      <*> transposition (^.      metricBin)
-      <*> transposition (^.   nonMetricBin)
-      <*> transposition (^.     dynamicBin)
-    )
-  where
-    transposition f xs =
-        case toList listOfVectors of
-          [] -> mempty
-          ys -> V.generate (length ys) g
-      where
-        g i = (V.! i) <$> listOfVectors
-        listOfVectors = fmap f xs
 
 
 -- |
@@ -448,34 +400,6 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB
       , _metricBin      = parZipWith rpar f4 (lhs ^.      metricBin) (rhs ^.      metricBin)
       , _nonMetricBin   = parZipWith rpar f5 (lhs ^.   nonMetricBin) (rhs ^.   nonMetricBin)
       , _dynamicBin     = parZipWith rpar f6 (lhs ^.     dynamicBin) (rhs ^.     dynamicBin)
-      }
-
-
--- |
--- Performs a zip over the two character blocks. Uses the input functions to zip
--- the different character types in the character block.
---
--- Assumes that the 'CharacterBlock' values have the same number of each character
--- type. If this assumtion is violated, the result will be truncated.
-hexZipWith3
-  :: (u -> u' -> u'' -> u''')
-  -> (v -> v' -> v'' -> v''')
-  -> (w -> w' -> w'' -> w''')
-  -> (x -> x' -> x'' -> x''')
-  -> (y -> y' -> y'' -> y''')
-  -> (z -> z' -> z'' -> z''')
-  -> CharacterBlock u    v    w    x    y    z
-  -> CharacterBlock u'   v'   w'   x'   y'   z'
-  -> CharacterBlock u''  v''  w''  x''  y''  z''
-  -> CharacterBlock u''' v''' w''' x''' y''' z'''
-hexZipWith3 f1 f2 f3 f4 f5 f6 a b c = CB
-    Block
-      { _continuousBin  = parZipWith3 rpar f1 (a ^.  continuousBin) (b ^.  continuousBin) (c ^.  continuousBin)
-      , _nonAdditiveBin = parZipWith3 rpar f2 (a ^. nonAdditiveBin) (b ^. nonAdditiveBin) (c ^. nonAdditiveBin)
-      , _additiveBin    = parZipWith3 rpar f3 (a ^.    additiveBin) (b ^.    additiveBin) (c ^.    additiveBin)
-      , _metricBin      = parZipWith3 rpar f4 (a ^.      metricBin) (b ^.      metricBin) (c ^.      metricBin)
-      , _nonMetricBin   = parZipWith3 rpar f5 (a ^.   nonMetricBin) (b ^.   nonMetricBin) (c ^.   nonMetricBin)
-      , _dynamicBin     = parZipWith3 rpar f6 (a ^.     dynamicBin) (b ^.     dynamicBin) (c ^.     dynamicBin)
       }
 
 
@@ -537,59 +461,6 @@ hexZipMeta f1 f2 f3 f4 f5 f6 meta charBlock = CB
       , _dynamicBin
           = parZipWith rpar f6 (meta ^.     dynamicBin) (charBlock ^.     dynamicBin)
       }
-
-
--- |
--- Performs a zip over the two character blocks. Uses the input functions to zip
--- the different character types in the character block.
---
--- Assumes that the 'CharacterBlock' values have the same number of each character
--- type. If this assumtion is violated, the result will be truncated.
-hexZip2WithMeta
-  :: (ContinuousCharacterMetadataDec                         -> u -> u' -> u'')
-  -> (DiscreteCharacterMetadataDec                           -> v -> v' -> v'')
-  -> (DiscreteCharacterMetadataDec                           -> w -> w' -> w'')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> x -> x' -> x'')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> y -> y' -> y'')
-  -> (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> z -> z' -> z'')
-  -> MetadataBlock m
-  -> CharacterBlock u   v   w   x   y   z
-  -> CharacterBlock u'  v'  w'  x'  y'  z'
-  -> CharacterBlock u'' v'' w'' x'' y'' z''
-hexZip2WithMeta f1 f2 f3 f4 f5 f6 meta charBlock1 charBlock2 = CB
-    Block
-      { _continuousBin
-          = parZipWith3 rpar f1
-            (meta ^.  continuousBin)
-            (charBlock1 ^.  continuousBin)
-            (charBlock2 ^.  continuousBin)
-      , _nonAdditiveBin
-          = parZipWith3 rpar f2
-            (meta ^. nonAdditiveBin)
-            (charBlock1 ^. nonAdditiveBin)
-            (charBlock2 ^. nonAdditiveBin)
-      , _additiveBin
-          = parZipWith3 rpar f3
-            (meta ^.    additiveBin)
-            (charBlock1 ^.    additiveBin)
-            (charBlock2 ^.    additiveBin)
-      , _metricBin
-          = parZipWith3 rpar f4
-            (meta ^.      metricBin)
-            (charBlock1 ^.      metricBin)
-            (charBlock2 ^.      metricBin)
-      , _nonMetricBin
-          = parZipWith3 rpar f5
-            (meta ^.   nonMetricBin)
-            (charBlock1 ^.   nonMetricBin)
-            (charBlock2 ^.   nonMetricBin)
-      , _dynamicBin
-          = parZipWith3 rpar f6
-            (meta ^.     dynamicBin)
-            (charBlock1 ^.     dynamicBin)
-            (charBlock2 ^.     dynamicBin)
-      }
-
 
 
 -- |

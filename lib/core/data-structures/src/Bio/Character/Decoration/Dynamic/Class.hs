@@ -60,11 +60,9 @@ newtype AverageLength = AL NonNegativeAverage
   deriving newtype (Semigroup)
 
 
--- | (✔)
 instance NFData AverageLength
 
 
--- | (✔)
 instance Show AverageLength where
 
     show (AL x) = show x

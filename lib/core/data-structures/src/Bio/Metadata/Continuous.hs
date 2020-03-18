@@ -26,12 +26,11 @@ module Bio.Metadata.Continuous
   , continuousMetadata
   ) where
 
-
-import Bio.Metadata.CharacterName
 import Bio.Metadata.General
 import Bio.Metadata.Metric
 import Control.DeepSeq
 import Control.Lens
+import Data.CharacterName
 import Data.MetricRepresentation
 import Data.Range
 import GHC.Generics               hiding (to)
@@ -44,28 +43,22 @@ newtype ContinuousCharacterMetadataDec = CCM GeneralCharacterMetadataDec
   deriving stock (Generic, Show)
 
 
--- | (✔)
 instance GeneralCharacterMetadata ContinuousCharacterMetadataDec where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata (CCM x) = x
 
--- | (✔)
 instance forall c d . (Ranged c, Bound c ~ d, Ord d) =>
   GetPairwiseTransitionCostMatrix ContinuousCharacterMetadataDec c d where
 
     pairwiseTransitionCostMatrix = to $ const (firstLinearNormPairwiseLogic @c @c @c)
 
 
-
-
--- | (✔)
 instance HasCharacterName ContinuousCharacterMetadataDec CharacterName where
 
     characterName = lens (\(CCM e) -> e ^. characterName) $ \(CCM e) x -> CCM (e & characterName .~ x)
 
 
--- | (✔)
 instance HasCharacterWeight ContinuousCharacterMetadataDec Double where
 
     characterWeight = lens (\(CCM e) -> e ^. characterWeight) $ \(CCM e) x -> CCM (e & characterWeight .~ x)

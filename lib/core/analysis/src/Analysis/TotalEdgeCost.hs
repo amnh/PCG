@@ -14,7 +14,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 
-module Analysis.TotalEdgeCost
+module Analysis.TotalEdgeCost () where
+{-
   ( totalEdgeCosts
   ) where
 
@@ -40,8 +41,6 @@ import           Data.MonoTraversable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import           Prelude                                       hiding (zipWith)
-
---import Debug.Trace
 
 
 -- |
@@ -114,4 +113,4 @@ totalEdgeCosts (PDAG2 dag meta) = {-- toNonEmpty . --} applyWeights $ foldlWithK
                     , "The child index was: " <> show i
                     , "The child references where: " <> show (IM.keys . (^. _childRefs) $ refVec ! i)
                     ]
-
+-}

@@ -33,9 +33,9 @@ import           Bio.Graph.BinaryRenderingTree
 import           Bio.Graph.Component
 import           Bio.Graph.LeafSet
 import           Bio.Graph.Node.Context
-import           Control.Arrow                 ((&&&), (***))
+import           Control.Arrow                 ((***))
 import           Control.DeepSeq
-import           Control.Lens                  as Lens (Lens, Lens', lens, to, (&))
+import           Control.Lens                  as Lens (Lens, Lens', lens, to)
 import           Control.Lens.Fold             (Fold, folding)
 import           Control.Lens.Operators        ((%~), (.~), (^.))
 import           Control.Monad.State.Lazy
@@ -321,7 +321,6 @@ instance HasReferenceVector (ReferenceDAG d e n) (ReferenceDAG d e' n') (Vector 
     _references = lens references (\r v -> r {references = v})
 
 
--- | (✔)
 instance Bifunctor (ReferenceDAG d) where
 
     bimap f g dag =
@@ -334,25 +333,20 @@ instance Bifunctor (ReferenceDAG d) where
         h (IndexData node parentRefs' childRefs') = IndexData (g node) parentRefs' $ f <$> childRefs'
 
 
--- | (✔)
 instance Binary d => Binary (GraphData d)
 
 
--- | (✔)
 instance (Binary e, Binary n) => Binary (IndexData e n)
 
 
--- | (✔)
 instance (Binary d, Binary e, Binary n) => Binary (ReferenceDAG d e n)
 
 
--- | (✔)
 instance Foldable (ReferenceDAG d e) where
 
     foldMap f = foldMap (f . nodeDecoration) . references
 
 
--- | (✔)
 instance FoldableWithKey (ReferenceDAG d e) where
 
     {-# INLINE foldrWithKey #-}
@@ -362,7 +356,6 @@ instance FoldableWithKey (ReferenceDAG d e) where
     foldlWithKey f e = V.ifoldl' (\a i -> f a i . nodeDecoration) e . references
 
 
--- | (✔)
 instance Functor (ReferenceDAG d e) where
 
     fmap f dag =
@@ -375,7 +368,6 @@ instance Functor (ReferenceDAG d e) where
         g (IndexData node parentRefs' childRefs') = IndexData (f node) parentRefs' childRefs'
 
 
--- | (✔)
 instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
 
     leafSet = Lens.to getter
@@ -387,7 +379,6 @@ instance HasLeafSet (ReferenceDAG d e n) (LeafSet n) where
                 | otherwise          = mempty
 
 
--- | (✔)
 instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
 
     parents   i dag = fmap toEnum . otoList . parentRefs $ references dag ! fromEnum i
@@ -425,7 +416,6 @@ instance PhylogeneticComponent (ReferenceDAG d e n) NodeRef e n where
     networkResolutions = pure
 
 
--- | (✔)
 instance PhylogeneticNetwork (ReferenceDAG d e n) NodeRef e n where
 
     root = toEnum . NE.head . rootRefs
@@ -433,13 +423,11 @@ instance PhylogeneticNetwork (ReferenceDAG d e n) NodeRef e n where
     treeResolutions = pure
 
 
--- | (✔)
 instance PhylogeneticTree (ReferenceDAG d e n) NodeRef e n where
 
     parent i dag = fmap toEnum . headMay . otoList . parentRefs $ references dag ! fromEnum i
 
 
--- | (✔)
 instance TextShow n => PrintDot (ReferenceDAG d e n) where
 
     unqtDot       = unqtDot . uncurry mkGraph . getDotContext 0 0
@@ -451,7 +439,6 @@ instance TextShow n => PrintDot (ReferenceDAG d e n) where
     listToDot     = toDot   . uncurry mkGraph . bimap fold fold . unzip . fmap (getDotContext 0 0)
 
 
--- | (✔)
 instance Show (GraphData m) where
 
     show x = unlines
@@ -462,13 +449,11 @@ instance Show (GraphData m) where
         ]
 
 
--- | (✔)
 instance (TextShow d, TextShow n) => Show (ReferenceDAG d e n) where
 
     show = toString . showb
 
 
--- | (✔)
 instance TextShow d => TextShow (GraphData d) where
 
     showb x = unlinesB
@@ -479,7 +464,6 @@ instance TextShow d => TextShow (GraphData d) where
         ]
 
 
--- | (✔)
 instance (TextShow d, TextShow n) => TextShow (ReferenceDAG d e n) where
 
     showb dag = TextShow.intercalateB "\n"
@@ -491,7 +475,6 @@ instance (TextShow d, TextShow n) => TextShow (ReferenceDAG d e n) where
         , showb $ graphData dag
         ]
 
--- | (✔)
 instance Semigroup d => Semigroup (GraphData d) where
   (<>)
     (GraphData dagCost1 networkEdgeCost1 rootingCost1 totalBlockCost1 graphMetadata1)
@@ -503,7 +486,6 @@ instance Semigroup d => Semigroup (GraphData d) where
           (totalBlockCost1  + totalBlockCost2 )
           (graphMetadata1  <> graphMetadata2  )
 
--- | (✔)
 instance Monoid d => Monoid (GraphData d) where
   mempty = GraphData
              { dagCost         = 0
@@ -513,7 +495,6 @@ instance Monoid d => Monoid (GraphData d) where
              , graphMetadata   = mempty
              }
 
--- | (✔)
 instance TextShow n => ToNewick (ReferenceDAG d e n) where
 
     toNewick refDag = T.concat [ newickString, "[", showt cost, "]" ]
@@ -545,7 +526,6 @@ instance TextShow n => ToNewick (ReferenceDAG d e n) where
             shownLabel = showt $ nodeDecoration node
 
 
--- | (✔)
 instance ToXML (GraphData m) where
 
     toXML gData = xmlElement "Graph_data" attrs contents
@@ -558,13 +538,11 @@ instance ToXML (GraphData m) where
                        ]
 
 
--- | (✔)
 instance Show n => ToXML (IndexData e n) where
 
    toXML indexData = toXML . show $ nodeDecoration indexData
 
 
--- | (✔)
 instance (TextShow n, ToXML n) => ToXML (ReferenceDAG d e n) where
 
     toXML dag = xmlElement "Directed_acyclic_graph" [] [newick, meta, vect]
@@ -586,25 +564,6 @@ referenceEdgeSet = foldMapWithKey f . references
 
 
 -- |
--- Produces a set of directed references representing all /tree/ edges in the DAG.
--- Omits /network/ edges in the DAG. The resulting 'EdgeSet' may not be connected.
---
--- Equivalent to:
---
--- > referenceEdgeSet dag `difference` referenceNetworkEdgeSet dag
---
--- The following will always hold:
---
--- > null (referenceTreeEdgeSet dag `intersection` referenceTreeEdgeSet dag)
-referenceTreeEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
-referenceTreeEdgeSet dag = foldMapWithKey f refs
-  where
-    refs = references dag
-    f i = foldMap (\e -> singletonEdgeSet (i,e)) . filter childHasOnlyOneParent . IM.keys . childRefs
-    childHasOnlyOneParent = isSingleton . otoList . parentRefs . (refs !)
-
-
--- |
 -- Produces a set of directed references representing all /Network/ edges in the DAG.
 -- Omits /tree/ edges in the DAG. The resulting 'EdgeSet' *will not* be connected.
 --
@@ -621,24 +580,6 @@ referenceNetworkEdgeSet dag = foldMapWithKey f refs
     refs = references dag
     f i = foldMap (\e -> singletonEdgeSet (i,e)) . filter childHasMoreThanOneParent . IM.keys . childRefs
     childHasMoreThanOneParent = not . isSingleton . otoList . parentRefs . (refs !)
-
-
--- |
--- Produces a set of undirected references representing all undirected edges that
--- have root edges in the DAG, if the root(s) were removed an to create an
--- undirected network. Omits all edges in the undirected network representation
--- of the DAG that are not specified as a root of the DAG. The resulting 'EdgeSet'
--- (unless of trivial cardinality) *will not* be connected.
-undirectedRootEdgeSet :: ReferenceDAG d e n -> EdgeSet (Int, Int)
-undirectedRootEdgeSet dag = foldMap f $ rootRefs dag
-  where
-    refs = references dag
-    f i  = makeRootEdge i . IM.keys . childRefs $ refs ! i
-    makeRootEdge r kids =
-        case kids of
-          []    -> mempty
-          [x]   -> singletonEdgeSet (r,x)
-          x:y:_ -> singletonEdgeSet (x,y)
 
 
 -- |
@@ -780,17 +721,6 @@ defaultGraphMetadata :: forall m d . Monoid m => GraphData d -> GraphData m
 {-# INLINE defaultGraphMetadata #-}
 defaultGraphMetadata = _graphMetadata .~ mempty
 
--- |
-
-zeroGraphMetadataWith :: v -> GraphData v
-zeroGraphMetadataWith v =
-  GraphData
-  { dagCost         = 0
-  , networkEdgeCost = 0
-  , rootingCost     = 0
-  , totalBlockCost  = 0
-  , graphMetadata   = v
-  }
 
 -- |
 -- Overwrite the current graph metadata with a default value.
@@ -1060,60 +990,6 @@ getNodeType e =
       (1,2) -> TreeNode
       (2,1) -> NetworkNode
       (p,c) -> error $ "Incoherently constructed graph when determining NodeClassification: parents " <> show p <> " children " <> show c
-
-
--- |
--- Use the supplied transformation to fold the Node values of the DAG into a
--- 'Monoid' result. The fold is *loosely* ordered from *a* root node toward the
--- leaves.
-nodeFoldMap :: Monoid m => (n -> m) -> ReferenceDAG d e n -> m
-nodeFoldMap f = foldMap f . fmap nodeDecoration . references
-
-
--- |
--- Applies a traversal logic function over a 'ReferenceDAG' in a /post-order/ manner.
---
--- The logic function takes a current node decoration and
--- a list of child node decorations with the logic function already applied,
--- and returns the new decoration for the current node.
-nodePostOrder :: (n -> [n'] -> n') -> ReferenceDAG d e n -> ReferenceDAG d e n'
-nodePostOrder f dag = ReferenceDAG <$> const newReferences <*> rootRefs <*> graphData $ dag
-  where
-    dagSize       = length $ references dag
-    newReferences = V.generate dagSize h
-      where
-        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
-    memo = V.generate dagSize h
-      where
-        h i = f datum $ (memo !) <$> childIndices
-          where
-            datum        = nodeDecoration node
-            node         = references dag ! i
-            childIndices = IM.keys $ childRefs node
-
-
--- |
--- Applies a traversal logic function over a 'ReferenceDAG' in a /pre-order/ manner.
---
--- The logic function takes a current node decoration and
--- a list of parent node decorations with the logic function already applied,
--- and returns the new decoration for the current node.
-nodePreOrder :: (n -> [(Word, n')] -> n') -> ReferenceDAG d e n -> ReferenceDAG d e n'
-nodePreOrder f dag = ReferenceDAG <$> const newReferences <*> rootRefs <*> graphData $ dag
-  where
-    dagSize       = length $ references dag
-    newReferences = V.generate dagSize h
-      where
-        h i = IndexData <$> const (memo ! i) <*> parentRefs <*> childRefs $ references dag ! i
-    memo = V.generate dagSize h
-      where
-        h i = f datum $ (childPosition &&& (memo !)) <$> parentIndices
-          where
-            node            = references dag ! i
-            datum           = nodeDecoration node
-            parentIndices   = otoList $ parentRefs node
-            -- In sparsely connected graphs (like ours) this will be effectively constant.
-            childPosition j = toEnum . length . takeWhile (/=i) . IM.keys . childRefs $ references dag ! j
 
 
 -- |
@@ -1411,33 +1287,6 @@ getChildContext refs ind = otoChildContext . IM.keysSet $ (refs ! ind) ^. _child
 getParentContext :: forall e n . Vector (IndexData e n) -> Int -> ParentContext Int
 {-# INLINE getParentContext #-}
 getParentContext refs ind = otoParentContext $ (refs ! ind) ^. _parentRefs
-
-
-
-
-mapRefDAG
-  :: forall d e n e' n'
-  .  (e -> e')  -- ^ update edge decoration
-  -> (n -> n')  -- ^ update leaf nodes
-  -> (n -> n')  -- ^ update internal nodes
-  -> ReferenceDAG d e n
-  -> ReferenceDAG d e' n'
-{-# INLINE mapRefDAG #-}
-mapRefDAG eFn lFn iFn refDAG =
-    refDAG & _references %~ updateRefs
-  where
-    updateRefs :: Vector (IndexData e n) -> Vector (IndexData e' n')
-    {-# INLINE updateRefs #-}
-    updateRefs = fmap updateIndexData
-
-    updateIndexData :: IndexData e n -> IndexData e' n'
-    {-# INLINE updateIndexData #-}
-    updateIndexData ind =
-      if null . childRefs $ ind
-        then ind & _nodeDecoration %~ lFn
-                 & _childRefs      .~ mempty
-        else ind & _nodeDecoration %~ iFn
-                 & _childRefs      %~ fmap eFn
 
 
 trivialRefDAG :: IndexData e n ->  IndexData e n -> ReferenceDAG () e n

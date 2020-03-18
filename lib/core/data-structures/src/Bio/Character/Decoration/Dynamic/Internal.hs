@@ -220,6 +220,7 @@ instance HasAlignmentContext (DynamicDecorationDirectOptimizationPostorderResult
 instance (EncodableDynamicCharacter d, ExportableBuffer (Subcomponent (Element d))) => PostorderExtensionDirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
 
     extendPostorderToDirectOptimization subDecoration single ia =
+
         DynamicDecorationDirectOptimization
         { dynamicDecorationDirectOptimizationCharacterCost            = subDecoration ^. characterCost
         , dynamicDecorationDirectOptimizationCharacterLocalCost       = subDecoration ^. characterLocalCost
@@ -240,19 +241,6 @@ instance (EncodableStream d, TextShow d) => Show (DynamicDecorationDirectOptimiz
     show = toString . showb 
 
 
-instance ( EncodableStreamElement (Element d)
-         , MonoFoldable d
-         , PossiblyMissingCharacter d
-         , Show (Element d)
-         ) => Show (DynamicDecorationInitial d) where
-
-    show dec
-      | isMissing character = "<Missing>"
-      | otherwise           = ofoldMap show character
-      where
-        character = dec ^. encoded
-
-
 instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOptimization d) where
 
     showb dec = unlinesB . (shownCost:) $ f <$> pairs
@@ -266,7 +254,6 @@ instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOpt
             , ("Alignemnt Context    : ", alignmentContext    )
             , ("Implied Alignment    : ", impliedAlignment    )
             ]
-
 
 instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOptimizationPostorderResult d) where
 
@@ -282,6 +269,18 @@ instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOpt
 
 
 instance (EncodableDynamicCharacter d, ExportableBuffer (Subcomponent (Element d))) => SimpleDynamicDecoration (DynamicDecorationDirectOptimization d) d where
+
+instance ( EncodableStreamElement (Element d)
+         , MonoFoldable d
+         , PossiblyMissingCharacter d
+         , Show (Element d)
+         ) => Show (DynamicDecorationInitial d) where
+
+    show dec
+      | isMissing character = "<Missing>"
+      | otherwise           = ofoldMap show character
+      where
+        character = dec ^. encoded
 
 
 instance (EncodableDynamicCharacter d, ExportableBuffer (Subcomponent (Element d))) => SimpleDynamicDecoration (DynamicDecorationDirectOptimizationPostorderResult d) d where

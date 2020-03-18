@@ -23,9 +23,7 @@ module PCG.Command.Build
   , ClusterOption(..)
   , ClusterSplit(..)
   , buildCommandSpecification
-  , clusterSplit
   ) where
-
 
 import Control.Applicative.Free (Ap)
 import Data.Functor             (($>))
@@ -76,11 +74,6 @@ data ClusterOption = ClusterOption !ClusterLabel !ClusterSplit
 
 
 -- |
--- Get the number of clusters from a 'ClusterOption'.
-clusterSplit :: ClusterOption -> ClusterSplit
-clusterSplit (ClusterOption _ s) = s
-
--- |
 -- Defines the semantics of interpreting a valid \"BUILD\" command from the PCG
 -- scripting language syntax.
 buildCommandSpecification :: CommandSpecification BuildCommand
@@ -128,13 +121,7 @@ clusterLabelType =
 
 
 clusterSplitType :: Ap SyntacticArgument ClusterSplit
-clusterSplitType =
-    choiceFrom
-      [ groupCluster
-      , cutCluster
-      ]
-      `withDefault`
-        ClusterCut 0.7
+clusterSplitType = choiceFrom [ groupCluster, cutCluster ] `withDefault` ClusterCut 0.7
   where
     groupCluster = argId "group" $ ClusterGroup <$> int
     cutCluster   = argId "cut"   $ ClusterCut   <$> real `withDefault` 0.7

@@ -24,7 +24,6 @@ module Data.FileSource.OutputStreamError
   ( OutputStreamError()
   , makeFileInUseOnWrite
   , makeFileNoWritePermissions
-  , makeFileUnwritable
   , makePathDoesNotExist
   , makeNotEnoughSpace
   ) where
@@ -57,8 +56,7 @@ newtype OutputStreamError = OutputStreamError (NonEmpty OutputStreamErrorMessage
 
 
 data  OutputStreamErrorMessage
-    = FileUnwritable   {-# UNPACK #-} !FileSource
-    | FileAlreadyInUse {-# UNPACK #-} !FileSource
+    = FileAlreadyInUse {-# UNPACK #-} !FileSource
     | PathDoesNotExist {-# UNPACK #-} !FileSource
     | NoPermissions    {-# UNPACK #-} !FileSource
     | NotEnoughSpace   {-# UNPACK #-} !FileSource
@@ -74,20 +72,13 @@ instance Semigroup OutputStreamError where
 instance TextShow OutputStreamError where
 
     showb (OutputStreamError errors) = unlinesB $ catMaybes
-        [ unwritableMessage
-        , lockedFilesMessage
+        [ lockedFilesMessage
         , missingPathMessage
         , badPermissionMessage
         , noSpaceMessage
         ]
       where
-        (unwritables, lockedFiles, missingPaths, badPermissions, noSpaceErrors) = partitionOutputStreamErrorMessages $ toList errors
-
-        unwritableMessage =
-          case unwritables of
-            []  -> Nothing
-            [x] -> Just $ "The file path" <> showb x <> " was not writable"
-            xs  -> Just $ "The following files were not writable: \n" <> unlinesB (showb <$> xs)
+        (lockedFiles, missingPaths, badPermissions, noSpaceErrors) = partitionOutputStreamErrorMessages $ toList errors
 
         lockedFilesMessage =
           case lockedFiles of
@@ -119,20 +110,17 @@ instance TextShow OutputStreamError where
              ,[OutputStreamErrorMessage]
              ,[OutputStreamErrorMessage]
              ,[OutputStreamErrorMessage]
-             ,[OutputStreamErrorMessage]
              )
-        partitionOutputStreamErrorMessages = foldr f ([],[],[],[],[])
+        partitionOutputStreamErrorMessages = foldr f ([],[],[],[])
           where
-            f e@FileUnwritable  {} (u,v,x,y,z) = (e:u,   v,   x,   y,   z)
-            f e@FileAlreadyInUse{} (u,v,x,y,z) = (  u, e:v,   x,   y,   z)
-            f e@PathDoesNotExist{} (u,v,x,y,z) = (  u,   v, e:x,   y,   z)
-            f e@NoPermissions   {} (u,v,x,y,z) = (  u,   v,   x, e:y,   z)
-            f e@NotEnoughSpace  {} (u,v,x,y,z) = (  u,   v,   x,   y, e:z)
+            f e@FileAlreadyInUse{} (v,x,y,z) = (e:v,   x,   y,   z)
+            f e@PathDoesNotExist{} (v,x,y,z) = (  v, e:x,   y,   z)
+            f e@NoPermissions   {} (v,x,y,z) = (  v,   x, e:y,   z)
+            f e@NotEnoughSpace  {} (v,x,y,z) = (  v,   x,   y, e:z)
 
 
 instance TextShow OutputStreamErrorMessage where
 
-    showb (FileUnwritable   path) = "'" <> showb path <> "'"
     showb (FileAlreadyInUse path) = "'" <> showb path <> "'"
     showb (PathDoesNotExist path) = "'" <> showb path <> "'"
     showb (NoPermissions    path) = "'" <> showb path <> "'"
@@ -149,12 +137,6 @@ makeFileInUseOnWrite = OutputStreamError . pure . FileAlreadyInUse
 -- Remark that the file permissions do not allow output data to be written to the file.
 makeFileNoWritePermissions :: FileSource -> OutputStreamError
 makeFileNoWritePermissions = OutputStreamError . pure . NoPermissions
-
-
--- |
--- Remark that the file is not writable for some reason.
-makeFileUnwritable :: FileSource -> OutputStreamError
-makeFileUnwritable = OutputStreamError . pure . FileUnwritable
 
 
 -- |

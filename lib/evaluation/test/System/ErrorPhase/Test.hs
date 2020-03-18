@@ -1,9 +1,22 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  System.ErrorPhase.Test
+-- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Tests for the 'ErrorPhase' type.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ExplicitForAll      #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
-
 
 module System.ErrorPhase.Test
   ( testSuite
@@ -15,6 +28,8 @@ import Test.Tasty            (TestTree, testGroup)
 import Test.Tasty.QuickCheck hiding ((=/=))
 
 
+-- |
+-- Test suite for the 'EvaluationT' data-type.
 testSuite :: TestTree
 testSuite = testGroup "ErrorPhase type"
     [ equalityLaws       @ErrorPhase

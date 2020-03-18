@@ -342,7 +342,6 @@ newtype TntProteinCharacter = TntPro Word32
     deriving newtype (Bits, Eq, FiniteBits, Ord)
 
 
--- | (✔)
 instance Show TntCharacter where
 
     show (Continuous x) = show x
@@ -351,7 +350,6 @@ instance Show TntCharacter where
     show (Protein    x) = show x
 
 
--- | (✔)
 instance Show TntDiscreteCharacter where
   show x =
     case x `lookup` serializeStateDiscrete of
@@ -361,12 +359,10 @@ instance Show TntDiscreteCharacter where
       str = (serializeStateDiscrete !) <$> bitsToFlags x
 
 
--- | (✔)
 instance Show TntDnaCharacter where
   show x = [serializeStateDna ! x]
 
 
--- | (✔)
 instance Show TntProteinCharacter where
   show x =
     case x `lookup` serializeStateProtein of

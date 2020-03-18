@@ -70,13 +70,11 @@ class HasNormalizedCharacters a where
     getNormalizedCharacters :: a -> NormalizedCharacters
 
 
--- | (✔)
 instance HasNormalizedCharacters (DotGraph GraphID) where
 
     getNormalizedCharacters = const mempty
 
 
--- | (✔)
 instance HasNormalizedCharacters FastaParseResult where
 
     getNormalizedCharacters = foldMap f
@@ -88,7 +86,6 @@ instance HasNormalizedCharacters FastaParseResult where
         convertChar = parsedDynamicCharacterFromShortText . fromString . pure
 
 
--- | (✔)
 instance HasNormalizedCharacters FastcParseResult where
 
     getNormalizedCharacters = foldMap f
@@ -96,19 +93,16 @@ instance HasNormalizedCharacters FastcParseResult where
         f (FastcSequence label symbols) = M.singleton label $ convertCharacterSequenceLikeFASTA symbols
 
 
--- | (✔)
 instance HasNormalizedCharacters TaxonSequenceMap where
 
     getNormalizedCharacters = fmap convertCharacterSequenceLikeFASTA
 
 
--- | (✔)
 instance HasNormalizedCharacters (NonEmpty NewickForest) where
 
     getNormalizedCharacters = const mempty
 
 
--- | (✔)
 instance HasNormalizedCharacters Nexus where
 
     getNormalizedCharacters (Nexus (seqMap, metadataVector) _) =
@@ -145,7 +139,6 @@ instance HasNormalizedCharacters Nexus where
 
 
 
--- | (✔)
 instance HasNormalizedCharacters TntResult where
 
     getNormalizedCharacters Left {} = mempty
@@ -164,13 +157,11 @@ instance HasNormalizedCharacters TntResult where
           x:xs -> mergeMaps $ buildMapFromSeqs <$> (x:|xs)
 
 
--- | (✔)
 instance HasNormalizedCharacters TCM where
 
     getNormalizedCharacters = const mempty
 
 
--- | (✔)
 instance HasNormalizedCharacters VertexEdgeRoot where
 
     getNormalizedCharacters = const mempty

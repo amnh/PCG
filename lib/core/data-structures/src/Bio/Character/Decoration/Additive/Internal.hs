@@ -61,63 +61,51 @@ data  AdditivePostorderDecoration a
     deriving stock (Generic)
 
 
--- | (✔)
 instance HasIntervalCharacter (AdditivePostorderDecoration a) a where
 
     intervalCharacter = discreteCharacter
 
 
--- | (✔)
 instance HasDiscreteCharacter (AdditivePostorderDecoration a) a where
 
     discreteCharacter = lens additiveCharacterField (\e x -> e { additiveCharacterField = x })
 
 
--- | (✔)
 instance HasIsLeaf (AdditivePostorderDecoration a) Bool where
 
     isLeaf = lens additiveIsLeaf (\e x -> e { additiveIsLeaf = x })
 
 
--- | (✔)
 instance (Finite (Bound a) ~ c) => HasCharacterCost (AdditivePostorderDecoration a) c where
 
     characterCost = lens additiveCost (\e x -> e { additiveCost = x })
 
 
--- | (✔)
 instance (Bound a ~ c) => HasPreliminaryInterval (AdditivePostorderDecoration a) (Range c) where
 
     preliminaryInterval = lens additivePreliminaryInterval (\e x -> e { additivePreliminaryInterval = x })
 
 
--- | (✔)
 instance (Bound a ~ c) => HasChildPrelimIntervals (AdditivePostorderDecoration a) (Range c, Range c) where
 
     childPrelimIntervals = lens additiveChildPrelimIntervals (\e x -> e { additiveChildPrelimIntervals = x })
 
 
--- | (✔)
 instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditivePostorderDecoration a) a where
 
 
--- | (✔)
 instance (NFData a, NFData (Finite (Bound a)), NFData (Range (Bound a))) => NFData (AdditiveOptimizationDecoration a)
 
 
--- | (✔)
 instance (NFData a, NFData (Finite (Bound a)), NFData (Range (Bound a))) => NFData (AdditivePostorderDecoration a)
 
 
--- | (✔)
 instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (AdditivePostorderDecoration c) c where
 
 
--- | (✔)
 instance RangedCharacterDecoration (AdditivePostorderDecoration c) c => RangedPostorderDecoration (AdditivePostorderDecoration c) c where
 
 
--- | (✔)
 instance RangedPostorderDecoration (AdditivePostorderDecoration a) a => RangedExtensionPostorder (AdditivePostorderDecoration a) a where
 
     extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal =
@@ -131,7 +119,6 @@ instance RangedPostorderDecoration (AdditivePostorderDecoration a) a => RangedEx
         }
 
 
--- | (✔)
 instance
   ( EncodableStreamElement c
   , Show c
@@ -149,7 +136,6 @@ instance
         , "Final       Interval : " <> show (c ^. finalInterval       )
         ]
 
--- | (✔)
 instance
   ( EncodableStreamElement c
   , TextShow c
@@ -168,14 +154,12 @@ instance
         ]
 
 
--- | (✔)
 instance HasIntervalCharacter (AdditiveOptimizationDecoration a) a where
 
     {-# INLINE intervalCharacter #-}
     intervalCharacter = discreteCharacter
 
 
--- | (✔)
 instance HasDiscreteCharacter (AdditiveOptimizationDecoration a) a where
 
     {-# INLINE discreteCharacter #-}
@@ -185,7 +169,6 @@ instance HasDiscreteCharacter (AdditiveOptimizationDecoration a) a where
         setter e x = e { postorderDecoration = postorderDecoration e & discreteCharacter .~ x }
 
 
--- | (✔)
 instance HasIsLeaf (AdditiveOptimizationDecoration a) Bool where
 
     isLeaf = lens getter setter
@@ -194,7 +177,6 @@ instance HasIsLeaf (AdditiveOptimizationDecoration a) Bool where
          setter e x = e { postorderDecoration = postorderDecoration e & isLeaf .~ x }
 
 
--- | (✔)
 instance (Finite (Bound a) ~ c) => HasCharacterCost (AdditiveOptimizationDecoration a) c where
 
     characterCost = lens getter setter
@@ -203,7 +185,6 @@ instance (Finite (Bound a) ~ c) => HasCharacterCost (AdditiveOptimizationDecorat
          setter e x = e { postorderDecoration = postorderDecoration e & characterCost .~ x }
 
 
--- | (✔)
 instance (Bound a ~ c) => HasPreliminaryInterval (AdditiveOptimizationDecoration a) (Range c) where
 
     preliminaryInterval = lens getter setter
@@ -212,7 +193,6 @@ instance (Bound a ~ c) => HasPreliminaryInterval (AdditiveOptimizationDecoration
          setter e x = e { postorderDecoration = postorderDecoration e & preliminaryInterval .~ x }
 
 
--- | (✔)
 instance (Bound a ~ c) => HasChildPrelimIntervals (AdditiveOptimizationDecoration a) (Range c, Range c) where
 
     childPrelimIntervals = lens getter setter
@@ -221,31 +201,25 @@ instance (Bound a ~ c) => HasChildPrelimIntervals (AdditiveOptimizationDecoratio
          setter e x = e { postorderDecoration = postorderDecoration e & childPrelimIntervals .~ x }
 
 
--- | (✔)
 instance (Bound a ~ c) => HasFinalInterval (AdditiveOptimizationDecoration a) (Range c) where
 
     finalInterval = lens additiveFinalInterval $ \e x -> e { additiveFinalInterval = x }
 
 
--- | (✔)
 instance EncodableStaticCharacter a => DiscreteCharacterDecoration (AdditiveOptimizationDecoration a) a where
 
 
--- | (✔)
 instance (Ranged c, ExtendedNumber (Bound c), Num (Finite (Bound c)), Num (Bound c), Ord (Bound c)) => RangedCharacterDecoration (AdditiveOptimizationDecoration c) c where
 
 
--- | (✔)
 instance RangedCharacterDecoration (AdditiveOptimizationDecoration c) c => RangedPostorderDecoration (AdditiveOptimizationDecoration c) c where
 
 
--- | (✔)
 instance ( RangedCharacterDecoration (AdditiveOptimizationDecoration c) c
          , HasFinalInterval (AdditiveOptimizationDecoration c) (Range (Bound c))
          ) => RangedDecorationOptimization (AdditiveOptimizationDecoration c) c where
 
 
--- | (✔)
 instance ( RangedDecorationOptimization (AdditiveOptimizationDecoration a) a
          , RangedPostorderDecoration    (AdditiveOptimizationDecoration a) a
          ) => RangedExtensionPreorder   (AdditiveOptimizationDecoration a) a where
@@ -267,7 +241,6 @@ instance ( RangedDecorationOptimization (AdditiveOptimizationDecoration a) a
             }
 
 
--- | (✔)
 instance
   ( EncodableStreamElement c
   , Show c
@@ -284,7 +257,6 @@ instance
         , "Child       Intervals: " <> show (additiveChildPrelimIntervals c)
         ]
 
--- | (✔)
 instance
   ( EncodableStreamElement c
   , TextShow c
@@ -302,7 +274,6 @@ instance
         ]
 
 
--- | (✔)
 instance
     ( Show c
     , Show (Finite (Bound c))
@@ -320,7 +291,6 @@ instance
                          ]
 
 
--- | (✔)
 instance
     ( Show c
     , Show (Finite (Bound c))

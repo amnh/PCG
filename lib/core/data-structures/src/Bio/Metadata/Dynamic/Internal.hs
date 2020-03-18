@@ -35,16 +35,14 @@ module Bio.Metadata.Dynamic.Internal
   , TraversalFocusEdge
   , TraversalTopology
   , dynamicMetadata
-  , dynamicMetadataWithSCM
+  , dynamicMetadataFromTCM
+  , maybeConstructDenseTransitionCostMatrix
   , overlap
   , overlap2
-  , overlap3
   ) where
-
 
 import           Bio.Character.Encodable
 import           Bio.Character.Exportable
-import           Bio.Metadata.CharacterName
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic.Class   hiding (DenseTransitionCostMatrix)
@@ -53,6 +51,7 @@ import           Control.Lens                 hiding (Fold)
 import           Control.Monad.State.Strict
 import           Data.Alphabet
 import           Data.Bits
+import           Data.CharacterName
 import           Data.FileSource
 import           Data.Foldable
 import           Data.Functor                 (($>))
@@ -87,15 +86,6 @@ type TraversalFocus     = (TraversalFocusEdge, TraversalTopology)
 -- |
 -- Represents a collection of paired rooting edges and unrooted topologies.
 type TraversalFoci      = NonEmpty TraversalFocus
-
-
-{-
--- |
--- A generalized function representation: the "overlap" between dynamic character
--- elements, supplying the corresponding median and cost to align the two
--- characters.
-type PairwiseTransitionCostMatrix e = e -> e -> (e, Word)
--}
 
 
 -- |
@@ -272,18 +262,20 @@ dynamicMetadataFromTCM = dynamicMetadata
 
 
 -- |
--- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
-dynamicMetadataWithSCM
-  :: CharacterName
-  -> Double
-  -> Alphabet String
-  -> FileSource
-  -> (Word -> Word -> Word)
-  -> DynamicCharacterMetadataDec c
-dynamicMetadataWithSCM name weight alpha tcmSource scm =
-    dynamicMetadataFromTCM name weight alpha tcmSource tcm
+-- /O(n^3)/ Constructs 2D & 3D dense TCMs.
+--
+-- Conditionally construct a 'DenseTransitionCostMatrix'. If the alphabet size is
+-- too large, a @Nothing@ value will be returned. Otherwise the dense TCM is
+-- constructed strictly at the time the function in invoked.
+--
+-- Currentlty returns a @Just@ value for alphabet sizes in the range @[2..8]@.
+maybeConstructDenseTransitionCostMatrix :: Alphabet a -> (Word -> Word -> Word) -> Maybe DenseTransitionCostMatrix
+maybeConstructDenseTransitionCostMatrix alpha sigma = force f
   where
-    tcm = generate (length alpha) (uncurry scm)
+    f | len > 8   = Nothing
+      | otherwise = Just $ generateDenseTransitionCostMatrix 0 len sigma
+      where
+        len = toEnum $ length alpha
 
 
 -- |
@@ -382,16 +374,4 @@ overlap2
   -> e
   -> (e, Word)
 overlap2 sigma char1 char2 = overlap sigma $ char1 :| [char2]
-
-
-{-# INLINE overlap3 #-}
-{-# SPECIALISE overlap3 :: (Word -> Word -> Word) -> AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
-overlap3
-  :: (FiniteBits e {- , Show e -})
-  => (Word -> Word -> Word)
-  -> e
-  -> e
-  -> e
-  -> (e, Word)
-overlap3 sigma char1 char2 char3 = overlap sigma $ char1 :| [char2, char3]
 

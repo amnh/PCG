@@ -35,7 +35,6 @@ import           Bio.Character.Encodable
 import           Bio.Graph
 import           Bio.Graph.Node
 import qualified Bio.Graph.ReferenceDAG              as DAG
-import           Bio.Metadata.CharacterName          hiding (sourceFile)
 import           Bio.Metadata.Continuous             (continuousMetadata)
 import           Bio.Metadata.DiscreteWithTCM        (discreteMetadataFromTCM)
 import           Bio.Metadata.Dynamic                (dynamicMetadata)
@@ -49,6 +48,7 @@ import           Control.Lens                        (over)
 import           Control.Monad.State.Strict
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
+import           Data.CharacterName                  hiding (sourceFile)
 import           Data.Coerce                         (coerce)
 import           Data.Default
 import           Data.FileSource
@@ -78,9 +78,6 @@ import           Data.Unification.Error
 import           Data.Unification.InputData
 import           Data.Validation
 import           Prelude                             hiding (lookup)
-
-
---type FileSource = ShortText
 
 
 type PartiallyUnififedCharacterSequence  a = (CharacterName, NormalizedCharacter, NormalizedMetadata, FileSource, a)

@@ -32,17 +32,14 @@ newtype NonMetricDecorationInitial c
     }
 
 
--- | (✔)
 instance HasDiscreteCharacter (NonMetricDecorationInitial c) c where
 
     discreteCharacter = lens nonMetricDecorationInitialCharacter (\e x -> e { nonMetricDecorationInitialCharacter = x })
 
 
--- | (✔)
 instance EncodableStaticCharacter c => DiscreteCharacterDecoration (NonMetricDecorationInitial c) c where
 
 
--- | (✔)
 instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (NonMetricDecorationInitial c) c where
 
     toDiscreteCharacterDecoration g symbolSet =
@@ -51,5 +48,4 @@ instance EncodableStaticCharacter c => SimpleDiscreteCharacterDecoration (NonMet
         }
 
 
--- | (✔)
 instance EncodableStaticCharacter c => NonMetricCharacterDecoration (NonMetricDecorationInitial c) c where
