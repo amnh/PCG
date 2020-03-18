@@ -28,13 +28,8 @@ allow-newer:
 source-repository-package
   type: git
   location: https://github.com/haskell/cabal
-  tag: 787b1f22739d950f70617ecd0e0fc39353408b87
+  tag: 3642d2dbe53272329febd4c1cdc0e7475fca691f
   subdir: Cabal
-
-source-repository-package
-  type: git
-  location: https://github.com/ekmett/lens
-  tag: 12768f14b1112d4f4f1036861197e0610c325853
 
 source-repository-package
   type: git
