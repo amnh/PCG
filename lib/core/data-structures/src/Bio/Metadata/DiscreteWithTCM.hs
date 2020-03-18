@@ -22,7 +22,6 @@ module Bio.Metadata.DiscreteWithTCM
     , GetPairwiseTransitionCostMatrix(..)
     , GetSparseTransitionCostMatrix(..)
     , discreteMetadataFromTCM
-    , discreteMetadataWithTCM
     ) where
 
 import Bio.Metadata.DiscreteWithTCM.Class

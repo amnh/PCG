@@ -17,8 +17,8 @@ module Text.Newick.Class where
 
 import Data.Text
 
-
--- | (✔)
+-- |
+-- Render a type to a "Newick string."
 class ToNewick a where
 
     toNewick :: a -> Text

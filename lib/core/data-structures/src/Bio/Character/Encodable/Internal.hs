@@ -47,7 +47,6 @@ class PossiblyMissingCharacter c where
     isMissing :: c -> Bool
 
 
--- | (✔)
 instance PossiblyMissingCharacter c => PossiblyMissingCharacter (Maybe c) where
 
     toMissing = fmap toMissing

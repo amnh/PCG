@@ -216,7 +216,6 @@ instance MonoLookup FileSource where
     olookup k fs = TS.indexMaybe (toShortText fs) (fromEnum k)
 
 
--- | (✔)
 instance MonoTraversable FileSource where
 
     {-# INLINE otraverse #-}

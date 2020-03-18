@@ -28,8 +28,6 @@ module Bio.Metadata.Discrete.Internal
   , discreteMetadata
   ) where
 
-
-import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete.Class
 import Bio.Metadata.General
 import Bio.Metadata.Metric
@@ -37,6 +35,7 @@ import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
+import Data.CharacterName
 import Data.FileSource
 import Data.List                   (intercalate)
 import Data.MetricRepresentation
@@ -84,46 +83,39 @@ instance Show DiscreteCharacterMetadataDec where
       ]
 
 
--- | (✔)
 instance DiscreteCharacterMetadata DiscreteCharacterMetadataDec where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = id
 
 
--- | (✔)
 instance GeneralCharacterMetadata DiscreteCharacterMetadataDec where
 
     {-# INLINE extractGeneralCharacterMetadata #-}
     extractGeneralCharacterMetadata = generalData
 
--- | (✔)
 instance (Bits c, Num b) =>
   GetPairwiseTransitionCostMatrix DiscreteCharacterMetadataDec c b where
 
     pairwiseTransitionCostMatrix = to $ const discreteMetricPairwiseLogic
 
 
--- | (✔)
 instance HasCharacterAlphabet DiscreteCharacterMetadataDec (Alphabet String) where
 
     characterAlphabet = lens alphabet $ \e x -> e { alphabet = x }
 
 
--- | (✔)
 instance HasCharacterName DiscreteCharacterMetadataDec CharacterName where
 
     characterName = lens (\e -> generalData e ^. characterName)
                   $ \e x -> e { generalData = generalData e & characterName .~ x }
 
 
--- | (✔)
 instance HasCharacterWeight DiscreteCharacterMetadataDec Double where
 
     characterWeight = lens (\e -> generalData e ^. characterWeight)
                     $ \e x -> e { generalData = generalData e & characterWeight .~ x }
 
--- | (✔)
 instance HasTcmSourceFile DiscreteCharacterMetadataDec FileSource where
 
     _tcmSourceFile = lens tcmSourceFile $ \d s -> d { tcmSourceFile = s }

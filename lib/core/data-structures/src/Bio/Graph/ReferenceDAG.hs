@@ -16,9 +16,6 @@ module Bio.Graph.ReferenceDAG
   , IndexData(..)
   , GraphData(..)
   , NodeRef()
-  , nodeFoldMap
-  , nodePostOrder
-  , nodePreOrder
   -- * Lenses
   , HasNodeDecoration(..)
   , HasParentRefs(..)
@@ -41,9 +38,7 @@ module Bio.Graph.ReferenceDAG
   -- * Edgeset query
   , candidateNetworkEdges
   , referenceEdgeSet
-  , referenceTreeEdgeSet
   , referenceNetworkEdgeSet
-  , undirectedRootEdgeSet
   -- * Edgeset manipulation
   , connectEdge
   , invadeEdge
