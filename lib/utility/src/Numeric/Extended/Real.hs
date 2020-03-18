@@ -60,7 +60,9 @@ instance Arbitrary ExtendedReal where
         -- We generate the 'infinity' value 1 in 20 times.
         weightForInfinity = (1, 20) :: (Int, Int)
 
+
 instance Binary ExtendedReal
+
 
 instance Bounded ExtendedReal where
 
@@ -183,10 +185,6 @@ nan :: Double
 nan = 0 / 0
 
 
-epsilon :: ExtendedReal
-epsilon = Cost 2.2204460492503131e-16
-
-
 -- |
 -- This function finds the sum of costs treating any negative costs as zero.
 addPositive :: ExtendedReal -> ExtendedReal -> ExtendedReal
@@ -208,8 +206,10 @@ infix 4 ~==
 --
 (~==) :: ExtendedReal -> ExtendedReal -> Bool
 (~==) lhs rhs =
-    case lhs `compare` rhs  of
-      EQ -> True
-      LT -> lhs + epsilon >= rhs
-      GT -> lhs - epsilon <= rhs
+  let epsilon :: ExtendedReal
+      epsilon = Cost 2.2204460492503131e-16
+  in  case lhs `compare` rhs  of
+        EQ -> True
+        LT -> lhs + epsilon >= rhs
+        GT -> lhs - epsilon <= rhs
 

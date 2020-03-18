@@ -93,13 +93,11 @@ class HasNormalizedTopology a where
     getNormalizedTopology :: a -> NormalizedForestSet
 
 
--- | (✔)
 instance Hashable GraphID where
 
    hashWithSalt salt = hashWithSalt salt . show -- Stupid hash technique, should be fine
 
 
--- | (✔)
 instance HasNormalizedTopology (DotGraph GraphID) where
 
     getNormalizedTopology dot = Just . pure . PhylogeneticForest . pure $ unfoldDAG f seed
@@ -121,37 +119,31 @@ instance HasNormalizedTopology (DotGraph GraphID) where
               | otherwise = Nothing
 
 
--- | (✔)
 instance HasNormalizedTopology FastaParseResult where
 
     getNormalizedTopology = const Nothing
 
 
--- | (✔)
 instance HasNormalizedTopology FastcParseResult where
 
     getNormalizedTopology = const Nothing
 
 
--- | (✔)
 instance HasNormalizedTopology TaxonSequenceMap where
 
     getNormalizedTopology = const Nothing
 
 
--- | (✔)
 instance HasNormalizedTopology TCM where
 
     getNormalizedTopology = const Nothing
 
 
--- | (✔)
 instance HasNormalizedTopology Nexus where
 
     getNormalizedTopology (Nexus _ forest) = getNormalizedTopology =<< nonEmpty forest
 
 
--- | (✔)
 instance HasNormalizedTopology (NonEmpty NewickForest) where
 
     getNormalizedTopology = Just . fmap (PhylogeneticForest . fmap (coerceTree . relationMap . enumerate))
@@ -211,7 +203,6 @@ instance HasNormalizedTopology (NonEmpty NewickForest) where
                 f (NE x _ y _) = (fromRationalMay y,x)
 
 
--- | (✔)
 instance HasNormalizedTopology TntResult where
   getNormalizedTopology input = fmap pure $
         case input of
@@ -258,7 +249,6 @@ instance HasNormalizedTopology TntResult where
               Prefix s -> nodeLabel . fromString $ s
 
 
--- | (✔)
 instance HasNormalizedTopology VER.VertexEdgeRoot where
 
     getNormalizedTopology (VER vs es rs) =

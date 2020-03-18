@@ -51,9 +51,6 @@ data  NetworkContext
     deriving anyclass (NFData)
 
 
-getNetworkContextParents :: NetworkContext -> IntSet
-getNetworkContextParents NetworkContext{..} = IS.fromList [netParent1, netParent2]
-
 -- |
 -- This computes, in a nodal context, the set of ancestral
 -- Network contexts from the parent edge sets and current node data.
@@ -96,6 +93,7 @@ ancestralEdgeSetContextFn ancestralEdgeSets (currInd, nodeDatum) =
   where
     parRefs        = nodeDatum ^. _parentRefs
     currentEdgeSet = makeParentEdgeSet currInd parRefs
+
 
 -- |
 -- This computes, in a nodal context, the set of ancestral
@@ -185,31 +183,6 @@ descendantNetworkEdgesContextFn descendantNetworkNodes parentContext (currInd, _
       -> networkNodes1 <> networkNodes2
 
 
-
--- |
--- This computes, in a nodal context, the set of ancestral
--- nodes which are incident to a root node set. It does this
--- via a 'traversal with state' passing a boolean value of
--- whether a node is a root node.
-ancestralRootIncidentNodesContextFn
-  :: ParentContext (IntSet,Bool)  -- ^ parent root node set and state information
-  -> (Int, IndexData e n)         -- ^ Current node data
-  -> (IntSet, Bool)               -- ^ Current node edge sets
-ancestralRootIncidentNodesContextFn ancestralRootNodes (currInd, _) =
-  case ancestralRootNodes of
-    NoParent
-      -> (mempty, True)
-    OneParent (parAncestralSet, incidentToRoot)
-      -> if incidentToRoot
-           then (IS.singleton currInd, False)
-           else (parAncestralSet, False)
-    TwoParents
-      (parAncestralSet1, incidentToRoot1)
-      (parAncestralSet2, incidentToRoot2)
-        -> if incidentToRoot1 && incidentToRoot2
-             then (IS.singleton currInd <> parAncestralSet1 <> parAncestralSet2, False)
-             else (parAncestralSet1 <> parAncestralSet2, False)
-
 -- |
 -- Generate a vector of graph data for finding the candidate network edges in a memoized
 -- fashion.
@@ -241,10 +214,8 @@ tabulateNetworkInformation dag =
     lengthRefs = length $ dag ^. _references
 
 
-
-
-
 data RootStatus = IncludeRoot | ExcludeRoot
+
 
 -- |
 -- Find all candidate network edges in a DAG.
@@ -260,7 +231,7 @@ candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
     networkNodes       = gatherDescendantNetworkNodes rootIndices networkInformation
     networkContexts    = gatherAncestralNetworkContexts leafInds networkInformation
 
-  -- This vector contains all the information needed for the various edge
+ -- This vector contains all the information needed for the various edge
  -- compatibility criteria.
     networkInformation = tabulateNetworkInformation dag
 
@@ -332,7 +303,6 @@ candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
                     getAncestralNodes
                     e1SrcAncestralNetworkContexts
 
---
             in
                 -- First check if the two edges are from the same parent to short circuit
               -- faster in this case.
@@ -424,7 +394,6 @@ candidateNetworkEdges :: ReferenceDAG d e n -> Set ((Int, Int), (Int,Int))
 candidateNetworkEdges = candidateNetworkEdges' ExcludeRoot
 
 
-
 -- |
 -- Helper function to get all descendent network nodes from an `IntSet` of nodes.
 gatherDescendantNetworkNodes
@@ -434,6 +403,7 @@ gatherDescendantNetworkNodes
 gatherDescendantNetworkNodes inds vect
   = ofoldMap (\ind -> (^. _2) $ vect ! ind) inds
 
+
 -- |
 -- Helper function to get all descendent network contexts from an `IntSet` of nodes.
 gatherAncestralNetworkContexts
@@ -442,7 +412,6 @@ gatherAncestralNetworkContexts
   -> Set NetworkContext                    -- ^ All descendant network nodes
 gatherAncestralNetworkContexts inds vect
   = ofoldMap (\ind -> (^. _4) $ vect ! ind) inds
-
 
 
 -- |

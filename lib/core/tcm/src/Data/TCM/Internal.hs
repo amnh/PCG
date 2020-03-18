@@ -23,14 +23,12 @@ module Data.TCM.Internal
   , TCMDiagnosis(..)
   , TCMStructure(..)
   , (!)
-  , (!?)
   , diagnoseTcm
   , generate
   , size
   , fromList
   , fromCols
   , fromRows
-  , reduceTcm
   ) where
 
 import           Control.Arrow        ((***))
@@ -38,7 +36,6 @@ import           Control.DeepSeq
 import           Data.Binary
 import           Data.Data
 import           Data.Foldable
-import           Data.IntSet          (IntSet)
 import           Data.List            (transpose)
 import           Data.List.Utility    (equalityOf, occurrences)
 import           Data.Map             (delete, findMax, keys)
@@ -275,7 +272,6 @@ instance Show TCM where
             pad   = (padSpacing - length shown) `replicate` ' '
 
 
--- | (✔)
 instance ToXML TCM where
 
     toXML x = xmlElement "TCM" attrs contents
@@ -285,38 +281,12 @@ instance ToXML TCM where
 
 
 -- |
--- /O(n^2)/
---
--- Removes the supplied columns/rows from the TCM.
-reduceTcm :: IntSet -> TCM -> TCM
-reduceTcm missingSymbolIndicies tcm = generate reducedDimension genFunction
-  where
-    indices = otoList missingSymbolIndicies
-    reducedDimension  = size tcm - olength missingSymbolIndicies
-    genFunction (i,j) = tcm ! (i', j')
-      where
-        i' = i + iOffset
-        j' = j + jOffset
-        iOffset = length $ filter (<=i) indices
-        jOffset = length $ filter (<=j) indices
-
-
--- |
 -- /O(1)/
 --
 -- Indexing without bounds checking.
 {-# INLINE (!) #-}
 (!) :: Enum i => TCM -> (i, i) -> Word32
 (!) (TCM n v) (i,j) = v `V.unsafeIndex` (fromEnum i * n + fromEnum j)
-
-
--- |
--- /O(1)/
---
--- Safe indexing.
-{-# INLINE (!?) #-}
-(!?) :: Enum i => TCM -> (i, i) -> Maybe Word32
-(!?) (TCM n v) (i,j) = v V.!? (fromEnum i * n + fromEnum j)
 
 
 -- |
@@ -357,7 +327,6 @@ fromList xs
   | dimension < 2 = error "fromList: A singleton structure was supplied. Cannot construct a TCM with dimension of 1, must have dimension of 2 or greater."
   | otherwise     = fromListUnsafe xs
   where
---    resultVector  = V.fromList $ coerce <$> toList xs
     len           = length xs
     dimension     = floor $ sqrt (fromIntegral len :: Double)
     notSquareList = square dimension /= len
@@ -718,46 +687,3 @@ tcmPoints3D :: TCM -> [(Int, Int, Int)]
 tcmPoints3D tcm = [(i,k,j) | i <- range, j <- range, i < j, k <- range, j < k ]
   where
     range = [0 .. size tcm - 1]
-
-
-{-
--- Modified greeatest common divisor algorithm applied to rational numbers.
-gcd' :: Rational -> Rational -> Maybe Rational
-gcd' x y
-  | result < 1 = Nothing
-  | otherwise  = Just result
-  where
-    result = gcd'' (abs x) (abs y)
-    gcd'' a 0  = a
-    gcd'' a b
-      | a < b     = gcd'' b  a
-      | otherwise = gcd'' b (a `op` b)
-    m `op` n = r * n
-      where
-       q = m / n
-       p = numerator q `rem` denominator q
-       r = p % denominator q
-
--- This allows for jagged "matries"
-matrixGCD :: (Foldable t, Foldable t', Real a) => t (t' a) -> Maybe Rational
-matrixGCD structure =
-  case rowGCD <$> toList structure of
-    [] -> Nothing
-    xs -> foldl1 coalesce xs
-  where
-    rowGCD = streamProcessRow . fmap toRational . toList
-      where
-        streamProcessRow []       = Nothing
-        streamProcessRow [x]      = Just x
-        streamProcessRow [x,y]    = gcd' x y
-        streamProcessRow (x:y:xs) = streamProcessRow' (gcd' x y) (y:xs)
-
-        streamProcessRow' z [x,y]    = coalesce z $ gcd' x y
-        streamProcessRow' z (x:y:xs) = streamProcessRow' acc (y:xs)
-          where
-            acc = coalesce z $ gcd' x y
-
-    coalesce        _  Nothing = Nothing
-    coalesce  Nothing        _ = Nothing
-    coalesce (Just m) (Just n) = gcd' m n
-       -}

@@ -49,7 +49,6 @@ class HasLeafSet s a | s -> a where
     leafSet :: Getter s a
 
 
--- | (✔)
 instance Eq n => Semigroup (LeafSet n) where
 
     (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ (<>) lhs rhs

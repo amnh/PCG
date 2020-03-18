@@ -66,7 +66,6 @@ newtype AverageLength = AL NonNegativeAverage
   deriving newtype (Binary, NFData, Semigroup)
 
 
--- | (✔)
 instance Show AverageLength where
 
     show (AL x) = show x
@@ -96,7 +95,6 @@ class ( HasCharacterCost        s Word
       , HasRightAlignment       s a
       , SimpleDynamicDecoration s a
       , Exportable (Element a)
---      , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Element a)) MemoizedCostMatrix
       ) => DirectOptimizationPostorderDecoration s a | s -> a where
 
 
@@ -251,7 +249,6 @@ class HasAverageLength s a | s -> a where
 
     averageLength :: Lens' s a
     {-# MINIMAL averageLength #-}
-
 
 
 -- |

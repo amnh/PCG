@@ -19,6 +19,7 @@ import Data.List.NonEmpty             (NonEmpty (..))
 import Data.String                    (IsString (fromString))
 import Data.Validation
 import PCG.Command.Report
+import PCG.Command.Report.Distance
 import PCG.Command.Report.GraphViz
 import PCG.Command.Report.Metadata
 import Prelude                        hiding (appendFile, writeFile)
@@ -79,6 +80,10 @@ generateOutput g format =
                        (SingleStream . streamText . outputMetadata)
                        g
       _           -> ErrorCase "Unrecognized 'report' command"
+    DistanceMatrix {} -> either
+                           (const $ ErrorCase "No distance matrix in topological solution")
+                           (SingleStream . streamText . outputDistanceMatrix)
+                           g
 
 
 {--

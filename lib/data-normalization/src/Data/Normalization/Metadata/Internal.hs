@@ -25,6 +25,8 @@ module Data.Normalization.Metadata.Internal
   ( NormalizedMetadata(..)
   , developAlphabets
   , makeEncodeInfo
+  , getMetadataFromInputSymbolsAndTCM
+  , getMetadataFromInputSymbolsStatesAndTCM
   , genAdditive
   , genFitch
   ) where
@@ -33,10 +35,14 @@ import           Control.DeepSeq
 import           Data.Alphabet
 import           Data.Data
 import           Data.Foldable
+import           Data.Key
 import           Data.List.Utility            (transpose)
+import           Data.Matrix.NotStupid        (Matrix)
 import           Data.Normalization.Character
 import           Data.Semigroup.Foldable      (Foldable1 (..))
-import           Data.TCM                     (TCM, TCMStructure (..))
+import           Data.String                  (IsString)
+import           Data.TCM                     (TCM, TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
+import qualified Data.TCM                     as TCM
 import           Data.Text.Short              (ShortText)
 import           Data.Vector.NonEmpty         (Vector)
 import qualified Data.Vector.NonEmpty         as VNE
@@ -88,13 +94,39 @@ makeEncodeInfo = Just . fmap makeOneInfo . developAlphabets
 makeOneInfo :: Alphabet ShortText -> NormalizedMetadata
 makeOneInfo alph =
     NormalizedMetadata
-    { alphabet      = alph
+    { alphabet      = sortedAlphabet
     , characterName = ""
     , weight        = 1
     , parsedTCM     = Nothing
     , isDynamic     = True
     , isIgnored     = False
     }
+  where
+    (sortedAlphabet, _, _, _) = getMetadataFromInputSymbolsAndTCM alph (undefined :: Matrix Word)
+
+
+getMetadataFromInputSymbolsAndTCM :: (IsString a, FoldableWithKey t, Ord a, Real b) => t a -> Matrix b -> (Alphabet a, Double, TCM, TCMStructure)
+getMetadataFromInputSymbolsAndTCM symbols mat = (alphabet', fromRational rationalWeight * fromIntegral coefficient, resultTCM, structure)
+  where
+    (alphabet', permMat) = fromSymbolsWithTCM symbols mat
+    (rationalWeight, unfactoredTCM) = TCM.fromList $ toList permMat
+    (coefficient, resultTCM, structure) =
+        let r@(c,_,t) = (,,) <$> factoredWeight <*> factoredTcm <*> tcmStructure $ diagnoseTcm unfactoredTCM
+        in  if t /= Additive
+            then r
+            else (c, snd . TCM.fromList $ toList permMat, t)
+
+
+getMetadataFromInputSymbolsStatesAndTCM :: (IsString a, FoldableWithKey t, Ord a, Real b) => t (a, a) -> Matrix b -> (Alphabet a, Double, TCM, TCMStructure)
+getMetadataFromInputSymbolsStatesAndTCM symbols mat = (alphabet', fromRational rationalWeight * fromIntegral coefficient, resultTCM, structure)
+  where
+    (alphabet', permMat) = fromSymbolsWithStateNamesAndTCM symbols mat
+    (rationalWeight, unfactoredTCM) = TCM.fromList $ toList permMat
+    (coefficient, resultTCM, structure) =
+        let r@(c,_,t) = (,,) <$> factoredWeight <*> factoredTcm <*> tcmStructure $ diagnoseTcm unfactoredTCM
+        in  if t /= Additive
+            then r
+            else (c, snd . TCM.fromList $ toList permMat, t)
 
 
 -- |
@@ -107,4 +139,3 @@ genAdditive (i,j) = max i j - min i j
 -- Generate the discrete metric function.
 genFitch :: (Int, Int) -> Int
 genFitch    (i,j) = if i == j then 0 else 1
-

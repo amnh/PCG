@@ -135,7 +135,6 @@ instance MonoFoldable BitMatrix where
         n = toEnum c
 
 
--- | (✔)
 instance MonoFunctor BitMatrix where
 
     omap f bm =
@@ -146,7 +145,6 @@ instance MonoFunctor BitMatrix where
         rows' = f <$> rows bm
 
 
--- | (✔)
 instance MonoTraversable BitMatrix where
 
     otraverse f = fmap correction . traverse f . rows
@@ -157,7 +155,6 @@ instance MonoTraversable BitMatrix where
             Nothing -> error "The mapping function over the bit matrix did not return *all* bit vectors of equal length."
 
 
--- | (✔)
 instance Ord BitMatrix where
 
   compare lhs rhs =
@@ -169,7 +166,6 @@ instance Ord BitMatrix where
        v  -> v
 
 
--- | (✔)
 instance Show BitMatrix where
 
     show bm = headerLine <> matrixLines
@@ -184,7 +180,6 @@ instance Show BitMatrix where
                     , "\n"
                     ]
 
--- | (✔)
 instance TextShow BitMatrix where
 
     showb bm = headerLine <> matrixLines

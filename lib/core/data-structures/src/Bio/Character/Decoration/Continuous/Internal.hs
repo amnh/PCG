@@ -99,7 +99,6 @@ lensCPostD f g = lens (getterCPostD f) (setterCPostD g)
 type instance Bound (ContinuousDecorationInitial c) = Bound c
 
 
--- | (✔)
 instance (Binary a, Binary (Finite (Bound a)), Binary (Range (Bound a))) => Binary (ContinuousOptimizationDecoration a)
 
 
@@ -107,25 +106,21 @@ instance (Binary a, Binary (Finite (Bound a)), Binary (Range (Bound a))) => Bina
 instance (Binary a, Binary (Finite (Bound a)), Binary (Range (Bound a))) => Binary (ContinuousPostorderDecoration a)
 
 
--- | (✔)
 instance (Finite (Bound a) ~ c) => HasCharacterCost (ContinuousOptimizationDecoration a) c where
 
     characterCost = lensCOptD characterCost characterCost
 
 
--- | (✔)
 instance (Finite (Bound a) ~ c) => HasCharacterCost (ContinuousPostorderDecoration a) c where
 
     characterCost = lensCPostD characterCost characterCost
 
 
--- | (✔)
 instance (Bound a ~ c) => HasChildPrelimIntervals (ContinuousOptimizationDecoration a) (Range c, Range c) where
 
     childPrelimIntervals = lensCOptD childPrelimIntervals childPrelimIntervals
 
 
--- | (✔)
 instance (Bound a ~ c) => HasChildPrelimIntervals (ContinuousPostorderDecoration a) (Range c, Range c) where
 
     childPrelimIntervals = lensCPostD childPrelimIntervals childPrelimIntervals
@@ -140,50 +135,42 @@ instance HasDiscreteCharacter (ContinuousOptimizationDecoration a) a where
 {--}
 
 
--- | (✔)
 instance (Bound a ~ c) => HasFinalInterval (ContinuousOptimizationDecoration a) (Range c) where
 
     finalInterval = lensCOptD finalInterval finalInterval
 
 
--- | (✔)
 instance HasIntervalCharacter (ContinuousDecorationInitial c) c where
 
     intervalCharacter = lens continuousDecorationInitialCharacter
                       $ \e x -> e { continuousDecorationInitialCharacter = x }
 
 
--- | (✔)
 instance HasIntervalCharacter (ContinuousOptimizationDecoration a) a where
 
     intervalCharacter = lensCOptD intervalCharacter intervalCharacter
 
 
--- | (✔)
 instance HasIntervalCharacter (ContinuousPostorderDecoration a) a where
 
     intervalCharacter = lensCPostD intervalCharacter intervalCharacter
 
 
--- | (✔)
 instance HasIsLeaf (ContinuousOptimizationDecoration a) Bool where
 
     isLeaf = lensCOptD isLeaf isLeaf
 
 
--- | (✔)
 instance HasIsLeaf (ContinuousPostorderDecoration a) Bool where
 
     isLeaf = lensCPostD isLeaf isLeaf
 
 
--- | (✔)
 instance (Bound a ~ c) => HasPreliminaryInterval (ContinuousOptimizationDecoration a) (Range c) where
 
     preliminaryInterval = lensCOptD preliminaryInterval preliminaryInterval
 
 
--- | (✔)
 instance (Bound a ~ c) => HasPreliminaryInterval (ContinuousPostorderDecoration a) (Range c) where
 
     preliminaryInterval = lensCPostD preliminaryInterval preliminaryInterval
@@ -198,7 +185,6 @@ instance (NFData c, NFData (Finite (Bound c)), NFData (Range (Bound c))) => NFDa
 instance (NFData c, NFData (Finite (Bound c)), NFData (Range (Bound c))) => NFData (ContinuousPostorderDecoration c)
 
 
--- | (✔)
 instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousDecorationInitial c) where
 
     isMissing = isMissing . (^. intervalCharacter)
@@ -206,7 +192,6 @@ instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousDecor
     toMissing x = x & intervalCharacter %~ toMissing
 
 
--- | (✔)
 instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousPostorderDecoration c) where
 
     isMissing = isMissing . (^. intervalCharacter)
@@ -214,7 +199,6 @@ instance PossiblyMissingCharacter c => PossiblyMissingCharacter (ContinuousPosto
     toMissing x = x & intervalCharacter %~ toMissing
 
 
--- | (✔)
 instance ( Ranged c
          , ExtendedNumber (Bound c)
          , Num (Finite (Bound c))
@@ -223,7 +207,6 @@ instance ( Ranged c
          ) => RangedCharacterDecoration (ContinuousDecorationInitial c) c where
 
 
--- | (✔)
 instance ( Ranged c
          , ExtendedNumber (Bound c)
          , Num (Finite (Bound c))
@@ -232,13 +215,11 @@ instance ( Ranged c
          ) => RangedCharacterDecoration (ContinuousOptimizationDecoration c) c where
 
 
--- | (✔)
 instance ( RangedCharacterDecoration (ContinuousOptimizationDecoration c) c
          , HasFinalInterval (ContinuousOptimizationDecoration c) (Range (Bound c))
          ) => RangedDecorationOptimization (ContinuousOptimizationDecoration c) c where
 
 
--- | (✔)
 instance ( Ranged c
          , ExtendedNumber (Bound c)
          , Num (Finite (Bound c))
@@ -247,7 +228,6 @@ instance ( Ranged c
          ) => RangedCharacterDecoration (ContinuousPostorderDecoration c) c where
 
 
--- | (✔)
 instance ( -- DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
            RangedPostorderDecoration   (ContinuousPostorderDecoration a) a
          , RangedCharacterDecoration   (AdditivePostorderDecoration a) a
@@ -259,7 +239,6 @@ instance ( -- DiscreteCharacterMetadata   (ContinuousPostorderDecoration a)
         CPostD $ extendRangedToPostorder subDecoration cost prelimInterval childMedianTup isLeafVal
 
 
--- | (✔)
 instance ( -- DiscreteCharacterMetadata    (ContinuousOptimizationDecoration a)
            RangedDecorationOptimization (ContinuousOptimizationDecoration a) a
          , RangedCharacterDecoration    (AdditiveOptimizationDecoration   a) a
@@ -271,26 +250,21 @@ instance ( -- DiscreteCharacterMetadata    (ContinuousOptimizationDecoration a)
         COptD $ extendRangedToPreorder subDecoration intervalValue
 
 
--- | (✔)
 instance RangedCharacterDecoration (ContinuousOptimizationDecoration c) c => RangedPostorderDecoration (ContinuousOptimizationDecoration c) c where
 
 
--- | (✔)
 instance RangedCharacterDecoration (ContinuousPostorderDecoration c) c => RangedPostorderDecoration (ContinuousPostorderDecoration c) c where
 
 
--- | (✔)
 instance Show c => Show (ContinuousDecorationInitial c) where
 
     show = show . (^. intervalCharacter)
 
--- | (✔)
 instance TextShow c => TextShow (ContinuousDecorationInitial c) where
 
     showb = showb . (^. intervalCharacter)
 
 
--- | (✔)
 instance
     ( Show c
     , Show (Bound c)
@@ -307,7 +281,6 @@ instance
         , "Final       Interval : " <> show (c ^. finalInterval)
         ]
 
--- | (✔)
 instance
     ( TextShow c
     , TextShow (Bound c)
@@ -325,7 +298,6 @@ instance
         ]
 
 
--- | (✔)
 instance
     ( Show c
     , Show (Finite (Bound c))
@@ -340,7 +312,6 @@ instance
         , "Child       Intervals: " <> show (c ^. childPrelimIntervals)
         ]
 
--- | (✔)
 instance
     ( TextShow c
     , TextShow (Finite (Bound c))

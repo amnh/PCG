@@ -53,7 +53,6 @@ data  FitchOptimizationDecoration f
     deriving anyclass (Binary, NFData)
 
 
--- | (✔)
 instance (Bits c, Show c) => Show (FitchOptimizationDecoration c) where
 
     show c = unlines
@@ -66,7 +65,6 @@ instance (Bits c, Show c) => Show (FitchOptimizationDecoration c) where
           | x == zeroBits = "<Empty Character>"
           | otherwise     = show x
 
--- | (✔)
 instance (Bits c, TextShow c) => TextShow (FitchOptimizationDecoration c) where
 
     showb c = unlinesB
@@ -80,55 +78,45 @@ instance (Bits c, TextShow c) => TextShow (FitchOptimizationDecoration c) where
           | otherwise     = showb x
 
 
--- | (✔)
 instance HasDiscreteCharacter (FitchOptimizationDecoration f) f where
 
     discreteCharacter = lens fitchCharacterField (\e x -> e { fitchCharacterField = x })
 
 
--- | (✔)
 instance HasIsLeaf (FitchOptimizationDecoration f) Bool where
 
     isLeaf = lens fitchIsLeaf (\e x -> e { fitchIsLeaf = x })
 
 
--- | (✔)
 instance HasCharacterCost (FitchOptimizationDecoration f) Word where
 
     characterCost = lens fitchMinCost (\e x -> e { fitchMinCost = x })
 
 
--- | (✔)
 instance HasPreliminaryMedian (FitchOptimizationDecoration f) f where
 
     preliminaryMedian = lens fitchPreliminaryMedian (\e x -> e { fitchPreliminaryMedian = x })
 
 
--- | (✔)
 instance HasChildMedians (FitchOptimizationDecoration f) ( f, f ) where
 
     childMedians = lens fitchChildMedians (\e x -> e { fitchChildMedians = x })
 
 
--- | (✔)
 instance HasFinalMedian (FitchOptimizationDecoration f) f where
 
     finalMedian = lens fitchFinalMedian (\e x -> e { fitchFinalMedian = x })
 
 
--- | (✔)
 instance EncodableStaticCharacter f => DiscreteCharacterDecoration (FitchOptimizationDecoration f) f where
 
 
--- | (✔)
 instance EncodableStaticCharacter f => FitchCharacterDecoration (FitchOptimizationDecoration f) f where
 
 
--- | (✔)
 instance EncodableStaticCharacter f => FitchDecoration (FitchOptimizationDecoration f) f where
 
 
--- | (✔)
 instance EncodableStaticCharacter f => DiscreteExtensionFitchDecoration (FitchOptimizationDecoration f) f where
 
     extendDiscreteToFitch subDecoration cost prelimMedian finMedian childMedianTup isLeafVal =
@@ -143,7 +131,6 @@ instance EncodableStaticCharacter f => DiscreteExtensionFitchDecoration (FitchOp
         }
 
 
--- | (✔)
 instance (Show f) => ToXML (FitchOptimizationDecoration f) where
 
     toXML decoration = xmlElement "Fitch_decoration" attributes contents

@@ -48,8 +48,6 @@ module Bio.Graph.Constructions
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
   , extractReferenceDAG
-  , convertToFinalCharacterSequence
-  , convertFromFinalCharacterSequence
   ) where
 
 import Bio.Character
@@ -68,10 +66,8 @@ import Control.Evaluation
 import Control.Lens.Combinators            (mapped)
 import Control.Lens.Operators              ((%~), (.~), (^.))
 import Data.Coerce                         (coerce)
---import Data.Compact
 import Data.EdgeLength
 import Data.Function                       ((&))
-import Data.Functor.Identity               (Identity (..))
 import Data.Kind
 import Data.List.NonEmpty
 import Data.NodeLabel
@@ -129,25 +125,16 @@ type DecoratedCharacterNode (f :: Type -> Type) =
     )
     NodeLabel
 
--- |
--- Removes the Identity wrappers from a 'DecoratedCharacterNode'.
-convertToFinalCharacterSequence
-  :: DecoratedCharacterNode Identity-> FinalCharacterNode
-convertToFinalCharacterSequence = coerce
-
--- |
--- Adds in Identity wrappers to a 'FinalCharacterNode'.
-convertFromFinalCharacterSequence
-  :: FinalCharacterNode -> DecoratedCharacterNode Identity
-convertFromFinalCharacterSequence = coerce
 
 -- |
 -- A context type for global settings during evaluation
 type GlobalSettings = ()
 
+
 -- |
 -- A solution that contains only topological /and/ character information.
 type CharacterResult = PhylogeneticSolution CharacterDAG
+
 
 -- |
 -- Simple monad transformer stack for evaluating a phylogenetic search.

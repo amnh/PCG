@@ -47,7 +47,6 @@ module Bio.Graph.Node.Internal
   , singletonEdgeSet
   , singletonNewickSerialization
   , singletonSubtreeLeafSet
-  , pNode2
   ) where
 
 
@@ -504,12 +503,6 @@ addNetworkEdgeToTopology e x r
   = r &    _resolutionMetadata . _topologyRepresentation
       %~  (isolatedNetworkEdgeContext e x <>)
         -- prepend network edge to topologyRepresentation
-
-
--- |
--- A safe constructor of a 'PhylogeneticNode'.
-pNode2 :: n -> ResolutionCache s -> PhylogeneticNode s n
-pNode2 = flip PNode2
 
 
 -- |

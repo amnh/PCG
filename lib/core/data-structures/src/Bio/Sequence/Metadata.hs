@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -28,13 +29,11 @@ module Bio.Sequence.Metadata
   , dynamicToMetadataBlock
   -- * Construction / Decomposition
   , fromNonEmpty
-  , unfoldr
   , hexFoldMap
   -- * Mutation
   , setAllFoci
   , setFoci
   ) where
-
 
 import           Bio.Character.Encodable
 import           Bio.Metadata.Continuous
@@ -64,8 +63,9 @@ import           Text.XML
 -- Blocks are optimized atomically with resepect to network resolutions.
 newtype MetadataSequence m
     = MetaSeq (Vector (MetadataBlock m))
-    deriving stock   (Generic, Show)
-    deriving newtype (Binary)
+    deriving anyclass (NFData)
+    deriving stock    (Generic, Show)
+    deriving newtype  (Binary)
 
 
 type instance Element (MetadataSequence m) = MetadataBlock m
@@ -122,10 +122,6 @@ instance MonoTraversable (MetadataSequence m) where
     omapM = otraverse
 
 
-instance (NFData m) => NFData (MetadataSequence m)
-
-
--- | (✔)
 instance ToXML (MetadataSequence m) where
 
     toXML = collapseElemList "Metadata_sequence" [] . toBlocks
@@ -141,24 +137,6 @@ fromNonEmpty
   => f (MetadataBlock m)
   -> MetadataSequence m
 fromNonEmpty = MetaSeq . V.fromNonEmpty
-
-
--- |
--- /O(n)/
---
--- Construct a 'MetadataSequence' by repeatedly applying the generator function
--- to a seed. The generator function always yields the next element and either
--- @ Just @ the new seed or 'Nothing' if there are no more elements to be
--- generated.
---
--- > unfoldr (\n -> (n, if n == 0 then Nothing else Just (n-1))) 10
--- >  = <10,9,8,7,6,5,4,3,2,1>
-{-# INLINE unfoldr #-}
-unfoldr
-  :: (b -> (MetadataBlock m, Maybe b))
-  -> b
-  -> MetadataSequence m
-unfoldr f = MetaSeq . V.unfoldr f
 
 
 -- |

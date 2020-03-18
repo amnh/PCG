@@ -29,12 +29,10 @@ module Bio.Sequence.Block.Internal
   , HasMetricBin(..)
   , HasNonMetricBin(..)
   , HasDynamicBin(..)
-  , blockParWithStrat
   ) where
 
 import           Control.DeepSeq
 import           Control.Lens
-import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Binary
 import           Data.Foldable
@@ -301,7 +299,7 @@ instance ( TextShow u
         niceRendering = T.unlines . fmap (T.unlines . fmap ("  " <>) . T.lines . showt) . toList
 
 
-instance ( ToXML u -- This is NOT a redundant constraint.
+instance ( ToXML u
          , ToXML v
          , ToXML w
          , ToXML y
@@ -318,19 +316,3 @@ instance ( ToXML u -- This is NOT a redundant constraint.
                          , Right . collapseElemList "Metric_character_block"       [] $ _nonMetricBin   block
                          , Right . collapseElemList "Dynamic_character_block"      [] $ _dynamicBin        block
                          ]
-
-
--- |
--- This function takes a `Strategy` for (polymorphically) computing a vector
--- and returns a strategy for computing a Block.
-blockParWithStrat :: (forall a . Strategy (Vector a)) -> Strategy (Block u v w x y z)
-{-# INLINE blockParWithStrat #-}
-blockParWithStrat strat (Block u v w x y z) =
-  do
-    u' <- strat u
-    v' <- strat v
-    w' <- strat w
-    x' <- strat x
-    y' <- strat y
-    z' <- strat z
-    pure (Block u' v' w' x' y' z')

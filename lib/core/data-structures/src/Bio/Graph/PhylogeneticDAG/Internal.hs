@@ -46,7 +46,6 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , HasMinimalNetworkContext(..)
   , HasVirtualNodeMapping(..)
   , setDefaultMetadata
-  , zeroPhylogeneticGraphData
   ) where
 
 
@@ -230,7 +229,6 @@ instance HasColumnMetadata
     _columnMetadata = lens columnMetadata (\p c -> p {columnMetadata = c})
 
 
--- | (✔)
 instance HasLeafSet (PhylogeneticDAG m e n u v w x y z) (LeafSet (PhylogeneticNode (CharacterSequence u v w x y z) n)) where
 
     leafSet = Lens.to getter
@@ -241,7 +239,6 @@ instance HasLeafSet (PhylogeneticDAG m e n u v w x y z) (LeafSet (PhylogeneticNo
             getter (PDAG2 e _) =  e ^. leafSet
 
 
--- | (✔)
 instance TextShow n => PrintDot (PhylogeneticDAG m e n u v w x y z) where
 
     unqtDot       = unqtDot . discardCharacters
@@ -272,7 +269,6 @@ instance Semigroup (PostorderContextualData t) where
         }
 
 
--- | (✔)
 instance ( TextShow e
          , TextShow n
          , TextShow u
@@ -286,7 +282,6 @@ instance ( TextShow e
     show = toString . showb
 
 
--- | (✔)
 instance ( TextShow e
          , TextShow n
          , TextShow u
@@ -302,7 +297,6 @@ instance ( TextShow e
         f i (PNode n sek) = fold [ "Node {", showb i, "}:\n\n", unlinesB [showb n, showb sek] ]
 
 
--- | (✔)
 instance ( HasBlockCost u v w x y z
          , TextShow m
          , TextShow e
@@ -318,13 +312,11 @@ instance ( HasBlockCost u v w x y z
     show = toString . showb
 
 
--- | (✔)
 instance TextShow n => ToNewick (PhylogeneticDAG m e n u v w x y z) where
 
     toNewick = toNewick . discardCharacters
 
 
--- | (✔)
 instance TextShow t => TextShow (PostorderContextualData t) where
 
     showb (PostorderContextualData virtual contextual minimal) = unlinesB
@@ -334,7 +326,6 @@ instance TextShow t => TextShow (PostorderContextualData t) where
         ]
 
 
--- | (✔)
 instance ( HasBlockCost u v w x y z
          , TextShow m
          , TextShow e
@@ -357,7 +348,6 @@ instance ( HasBlockCost u v w x y z
 
 
 
--- | (✔)
 instance ( TextShow n
          , TextShow u
          , TextShow v
@@ -373,19 +363,6 @@ instance ( TextShow n
          ) => ToXML (PhylogeneticDAG m e n u v w x y z)  where
 
     toXML (PDAG2 refDag _) = toXML refDag
-
-
-defaultPostorderContextualData :: PostorderContextualData t
-defaultPostorderContextualData =
-  PostorderContextualData
-    { virtualNodeMapping    = mempty
-    , contextualNodeDatum   = mempty
-    , minimalNetworkContext = Nothing
-    }
-
-
-zeroPhylogeneticGraphData :: GraphData (PostorderContextualData t)
-zeroPhylogeneticGraphData = zeroGraphMetadataWith defaultPostorderContextualData
 
 
 -- |
@@ -661,8 +638,6 @@ renderSummary pdag@(PDAG2 dag _) = unlinesB
 
 renderMetadata :: TextShow m => MetadataSequence m -> Builder
 renderMetadata = unlinesB . fmap (showb . (^. blockMetadata)) . toList . (^. blockSequence)
-
-
 
 
 -- |

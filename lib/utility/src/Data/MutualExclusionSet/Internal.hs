@@ -72,11 +72,10 @@ data  MutualExclusionSet a
     , includedFullMap :: !(Map a (Set a))
     , excludedFullMap :: !(Map a (Set a))
     }
-    deriving anyclass (Binary)
+    deriving anyclass (Binary, NFData)
     deriving stock    (Generic)
 
 
--- | (✔)
 instance (Arbitrary a, Ord a) => Arbitrary (MutualExclusionSet a) where
 
     arbitrary = do
@@ -93,13 +92,11 @@ instance (Arbitrary a, Ord a) => Arbitrary (MutualExclusionSet a) where
         pure $ unsafeFromList tuples
 
 
--- | (✔)
 instance Eq a => Eq (MutualExclusionSet a) where
 
     (MES _ _ a b) == (MES _ _ c d) = a == c && b == d
 
 
--- | (✔)
 instance Eq1 MutualExclusionSet where
 
     liftEq eq (MES _ _ a b) (MES _ _ c d) = and
@@ -166,7 +163,6 @@ instance Foldable MutualExclusionSet where
     toList      = M.keys . includedElemMap
 
 
--- | (✔)
 instance Hashable a => Hashable (MutualExclusionSet a) where
 
     hashWithSalt salt (MES _ _ inc exc) = foldl' hashWithSalt (foldl' hashWithSalt salt (f inc)) $ f exc
@@ -174,7 +170,6 @@ instance Hashable a => Hashable (MutualExclusionSet a) where
         f = toList . fmap toList
 
 
--- | (✔)
 instance Ord a => Monoid (MutualExclusionSet a) where
 
     mappend = (<>)
@@ -185,11 +180,6 @@ instance Ord a => Monoid (MutualExclusionSet a) where
     mempty  = MES mempty mempty mempty mempty
 
 
--- | (✔)
-instance NFData a => NFData (MutualExclusionSet a)
-
-
--- | (✔)
 instance Ord a => Ord (MutualExclusionSet a) where
 
     x `compare` y =
@@ -198,7 +188,6 @@ instance Ord a => Ord (MutualExclusionSet a) where
           v  -> v
 
 
--- | (✔)
 instance Ord1 MutualExclusionSet where
 
     liftCompare cmp (MES _ _ a b) (MES _ _ c d) =
@@ -207,7 +196,6 @@ instance Ord1 MutualExclusionSet where
           v  -> v
 
 
--- | (✔)
 instance Ord a => Semigroup (MutualExclusionSet a) where
 
     -- | Alias for 'merge'
@@ -220,7 +208,6 @@ instance Ord a => Semigroup (MutualExclusionSet a) where
     sconcat = mergeMany
 
 
--- | (✔)
 instance Show a => Show (MutualExclusionSet a) where
 
     show = ("MutualExclusionSet " <>) . show . S.toAscList . mutuallyExclusivePairs

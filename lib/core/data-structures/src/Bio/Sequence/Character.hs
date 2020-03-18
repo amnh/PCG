@@ -29,7 +29,6 @@ module Bio.Sequence.Character
   ( CharacterSequence()
   , HasBlockCost
   , fromNonEmpty
-  , unfoldr
   ) where
 
 import           Bio.Sequence.Block      (CharacterBlock, HasBlockCost)
@@ -136,7 +135,6 @@ instance MonoTraversable (CharacterSequence u v w x y z) where
     omapM = otraverse
 
 
--- | (✔)
 instance ( Show u
          , Show v
          , Show w
@@ -159,11 +157,9 @@ instance ( Show u
         indent = unlines . fmap ("  "<>) . lines
 
 
--- | (✔)
 instance ( ToXML u
          , ToXML v
          , ToXML w
---         , ToXML x
          , ToXML y
          , ToXML z
          ) => ToXML (CharacterSequence u v w x y z) where
@@ -181,24 +177,6 @@ fromNonEmpty
   => f (CharacterBlock u v w x y z)
   -> CharacterSequence u v w x y z
 fromNonEmpty = CharSeq . V.fromNonEmpty
-
-
--- |
--- /O(n)/
---
--- Construct a 'CharacterSequence' by repeatedly applying the generator function
--- to a seed. The generator function always yields the next element and either
--- @ Just @ the new seed or 'Nothing' if there are no more elements to be
--- generated.
---
--- > unfoldr (\n -> (n, if n == 0 then Nothing else Just (n-1))) 10
--- >  = <10,9,8,7,6,5,4,3,2,1>
-{-# INLINE unfoldr #-}
-unfoldr
-  :: (b -> (CharacterBlock u v w x y z, Maybe b))
-  -> b
-  -> CharacterSequence u v w x y z
-unfoldr f = CharSeq . V.unfoldr f
 
 
 {-# INLINE fromBlocks #-}

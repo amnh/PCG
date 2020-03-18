@@ -32,10 +32,13 @@ testExampleCases = testGroup "Example Cases for Data.TCM"
     [ documentationCases
     ]
 
+
 -- Generate cases for TcmStructure diagnosis
+
 
 structureType :: TCM -> TCMStructure
 structureType = tcmStructure . diagnoseTcm
+
 
 diagnoseTcmCases :: TestTree
 diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
@@ -81,7 +84,9 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
                                   -- └─┬ Ensure matrix is at least 3 x 3 as k = 2 case is both
                                   --   └ additive and nonadditive.
 
+
 -- Generate cases for TCMDiagnosis factoring
+
 
 factoringDiagnosisCases :: TestTree
 factoringDiagnosisCases = testGroup "Example cases for factoredTcm and factoredWeight"

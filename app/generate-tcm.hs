@@ -237,6 +237,6 @@ defineLeveshtein alphabet = mat
                                            else minimum
                                                   [ z ! (a-1, b  ) + 1
                                                   , z ! (a  , b-1) + 1
-                                                  , z ! (a-1, b-1) + if x !! a /= y !! b then 1 else 0
+                                                  , z ! (a-1, b-1) + if x ! a /= y ! b then 1 else 0
                                                   ]
                          in  toEnum $ z ! (m-1, n-1)

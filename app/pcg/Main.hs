@@ -44,6 +44,8 @@ import Text.Megaparsec                (ParseErrorBundle, Parsec, errorBundlePret
 -- Initiates phylogenetic search when valid command line options are supplied.
 main :: IO ()
 main = do
+     hSetEncoding stdout utf8
+     hSetEncoding stderr utf8
      handleNoInput
      opts <- force <$> parseCommandLineOptions
      let  _verbosity = verbosity opts

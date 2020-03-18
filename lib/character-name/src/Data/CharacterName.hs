@@ -45,7 +45,7 @@
 {-# LANGUAGE UnboxedSums        #-}
 
 
-module Bio.Metadata.CharacterName
+module Data.CharacterName
   ( CharacterName()
   -- * Construction
   , assignCharacterNames
@@ -66,14 +66,13 @@ import Data.Key                 (lookup)
 import Data.String
 import Data.Text.Short          (ShortText, isPrefixOf, uncons)
 import qualified Data.Text.Short as TS
--- TODO: Remove when text-show-instances is updated
-import Data.Text.Short.Custom   ()
 import Data.Traversable
 import Data.MonoTraversable
 import GHC.Generics             (Generic)
 import Prelude                  hiding (lookup)
 import TextShow                 (TextShow (showb, showbList), toString)
 import TextShow.Data.List       (showbListWith)
+import TextShow.Data.ShortText  ()
 
 
 -- |
@@ -232,6 +231,8 @@ makeCharacterNames :: Traversable t => t (FileSource, Maybe ShortText) -> t Char
 makeCharacterNames = (`evalState` mempty) . traverse (uncurry assignName)
 
 
+-- |
+-- Assign character names to elements of a container using the provided assignment function.
 assignCharacterNames
   :: ( Traversable f
      , Traversable g
@@ -274,27 +275,3 @@ assignName path may =
                  case path `lookup` seenMap of
                    Nothing -> Default path 0
                    Just i  -> Default path i
-
-
-{-
-assignCharacterNames
-  :: ( Traversable f
-     , Traversable t
-     )
-  => f (FilePath, t (Maybe ShortText, a))
-  -> f (t (CharacterName, a))
-assignCharacterNames = (`evalState` mempty) . traverse f
-  where
-    f (path, struct) = traverse (g path) struct
-
-    g path (may, val) =
-      case may of
-        Just name | validName name -> pure (UserDefined path name, val)
-        _ -> do
-          seenMap <- get
-          modify $ incMap path
-          pure $
-              case path `lookup` seenMap of
-                Nothing -> (Default path 0, val)
-                Just i  -> (Default path i, val)
--}

@@ -60,6 +60,7 @@ import           Data.List.Utility                     (invariantTransformation,
 import           Data.Maybe                            (fromJust)
 import           Data.MonoTraversable
 import           Data.Range
+import qualified Data.Set                              as Set
 import           Data.String                           (fromString)
 import           Data.Vector                           (Vector)
 import           GHC.Generics
@@ -195,7 +196,9 @@ instance EncodableStreamElement DynamicCharacterElement where
     -- The head element of the list is the most significant bit when calling fromBits.
     -- We need the first element of the alphabet to correspond to the least significant bit.
     -- Hence foldl, don't try foldMap or toList & fmap without careful thought.
-    encodeElement alphabet ambiguity = DCE . fromBits $ (`elem` ambiguity) <$> toList alphabet
+    encodeElement alphabet =
+      let size = toEnum $ length alphabet
+      in  DCE . fromNumber size . getSubsetIndex alphabet . Set.fromList . toList
 
 
 instance Enum DynamicCharacterElement where
