@@ -46,6 +46,7 @@ testSuite = testGroup "Pairwise alignment tests"
     , testSuiteUnboxedFullMatrixDO
     , testSuiteUnboxedFullSwappingDO
     , testSuiteUnboxedUkkonenSwapDO
+    , testSuiteUnboxedUkkonenFullDO
     , constistentImplementation
     ]
 
@@ -147,15 +148,28 @@ testSuiteUnboxedFullSwappingDO = testGroup "Unboxed Swapping Vectors DO"
 
 
 testSuiteUnboxedUkkonenSwapDO :: TestTree
-testSuiteUnboxedUkkonenSwapDO = testGroup "Unboxed Ukkonen DO"
-    [ isValidPairwiseAlignment "Unboxed Ukkonen DO over discrete metric"
+testSuiteUnboxedUkkonenSwapDO = testGroup "Unboxed Ukkonen (Swapping) DO"
+    [ isValidPairwiseAlignment "Unboxed Ukkonen (Swapping) DO over discrete metric"
        $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
-    , isValidPairwiseAlignment "Unboxed Ukkonen DO over L1 norm"
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Swapping) DO over L1 norm"
        $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix l1Norm))
-    , isValidPairwiseAlignment "Unboxed Ukkonen DO over prefer substitution metric (1:2)"
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Swapping) DO over prefer substitution metric (1:2)"
        $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
-    , isValidPairwiseAlignment "Unboxed Ukkonen DO over prefer insertion/deletion metric (2:1)"
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Swapping) DO over prefer insertion/deletion metric (2:1)"
        $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+    ]
+
+
+testSuiteUnboxedUkkonenFullDO :: TestTree
+testSuiteUnboxedUkkonenFullDO = testGroup "Unboxed Ukkonen (Full Space) DO"
+    [ isValidPairwiseAlignment "Unboxed Ukkonen (Full Space) DO over discrete metric"
+       $ unboxedUkkonenFullSpaceDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Full Space) DO over L1 norm"
+       $ unboxedUkkonenFullSpaceDO (getMedianAndCost2D (genMemoMatrix l1Norm))
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Full Space) DO over prefer substitution metric (1:2)"
+       $ unboxedUkkonenFullSpaceDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Full Space) DO over prefer insertion/deletion metric (2:1)"
+       $ unboxedUkkonenFullSpaceDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
     ]
 
 

@@ -13,15 +13,16 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ApplicativeDo      #-}
-{-# LANGUAGE BangPatterns       #-}
-{-# LANGUAGE ConstraintKinds    #-}
-{-# LANGUAGE DeriveFoldable     #-}
-{-# LANGUAGE DeriveFunctor      #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE FlexibleContexts   #-}
-{-# LANGUAGE TypeFamilies       #-}
-{-# LANGUAGE UnboxedTuples      #-}
+{-# LANGUAGE ApplicativeDo       #-}
+{-# LANGUAGE BangPatterns        #-}
+{-# LANGUAGE ConstraintKinds     #-}
+{-# LANGUAGE DeriveFoldable      #-}
+{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE DerivingStrategies  #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE UnboxedTuples       #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFullSpace
   ( unboxedUkkonenFullSpaceDO
@@ -30,23 +31,18 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFull
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, handleMissingCharacter, measureCharacters)
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping (unboxedSwappingDO)
 import           Bio.Character.Encodable
-import           Control.Monad.Loops         (whileM_)
+import           Control.Monad.Loops         (iterateUntilM, whileM_)
 import           Control.Monad.ST
 import           Data.Bits
 import           Data.DList                  (snoc)
 import           Data.Foldable
-import           Data.Key
 import qualified Data.List.NonEmpty          as NE
 import           Data.Matrix.Unboxed         (Matrix, unsafeFreeze, unsafeIndex)
-import qualified Data.Matrix.Unboxed         as MZ
 import           Data.Matrix.Unboxed.Mutable (MMatrix)
 import qualified Data.Matrix.Unboxed.Mutable as M
 import           Data.MonoTraversable
 import           Data.STRef
-import           Data.Vector.Unboxed         (Unbox)
 
---import Debug.Trace
---trace = const id
 
 -- |
 -- Performs a naive direct optimization.
@@ -176,8 +172,8 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs cost longerTop le
       where
         differenceInLength = longerLen - lesserLen
 
-    needToResizeBand matrixRef offsetRef = do
-        mCost         <- fst <$> readSTRef matrixRef
+    needToResizeBand :: forall s. MMatrix s Word -> STRef s Word -> ST s Bool
+    needToResizeBand mCost offsetRef = do
         offset        <- readSTRef offsetRef
         alignmentCost <- M.unsafeRead mCost (lesserLen, longerLen)
         let threshold -- The threshold value must be non-negative
@@ -185,30 +181,28 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs cost longerTop le
               | otherwise = minimumIndelCost * (quasiDiagonalWidth + offset - gapsPresentInInputs)
         pure $ threshold <= alignmentCost
       
-    finalMatrix = undefined
-{-    
     finalMatrix = runST $ do
-        matrices  <- buildInitialBandedMatrix cost longerTop lesserLeft startOffset
+        (mCost, mDir) <- buildInitialBandedMatrix cost longerTop lesserLeft startOffset
         offsetRef <- newSTRef startOffset
-        matrixRef <- newSTRef matrices
-        whileM_ (needToResizeBand matrixRef offsetRef) $ do
-          modifySTRef offsetRef $ (`shiftL` 1) -- Multiply by 2
-          currentOffset <- readSTRef offsetRef
-          expandBandedMatrix cost longerTop lesserLeft m currentOffset
+        whileM_ (needToResizeBand mCost offsetRef) $ do
+          previousOffset <- readSTRef offsetRef
+          let currentOffset = previousOffset `shiftL` 1 -- Multiply by 2
+          writeSTRef offsetRef currentOffset
+          expandBandedMatrix cost longerTop lesserLeft mCost mDir previousOffset currentOffset
 
         c <- M.unsafeRead mCost (lesserLen, longerLen)
         m <- unsafeFreeze mDir
         pure (c, m)
--}
+
                
 {-# SCC buildInitialBandedMatrix #-}
 buildInitialBandedMatrix
-  :: DOCharConstraint a
+  :: forall s a. DOCharConstraint a
   => (Subcomponent (Element a) -> Subcomponent (Element a) -> Word)
   -> a
   -> a
   -> Word
-  -> (Word, Matrix Word, Matrix Direction)
+  -> ST s (MMatrix s Word, MMatrix s Direction)
 buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
   where
     -- Note: "offset" cannot cause "width" to exceed "cols"
@@ -219,19 +213,12 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
     lesserLen   = olength lesserLeft
     rows        = olength lesserLeft + 1
     cols        = olength longerTop  + 1
-    width       = {- (\x -> trace' (unlines [ "input:  " <> show o
-                                         , "offset: " <> show offset
-                                         , "diff:   " <> show quasiDiagonalWidth
-                                         , "width:  " <> show x
-                                         , "rows:   " <> show rows
-                                         , "cols:   " <> show cols
-                                         ]) x) $ -}
-                    quasiDiagonalWidth + (offset `shiftL` 1) -- Multiply by 2
+    width       = quasiDiagonalWidth + (offset `shiftL` 1) -- Multiply by 2
     quasiDiagonalWidth = differenceInLength + 1
       where
         differenceInLength = longerLen - lesserLen
 
-    fullMatrix = runST $ do
+    fullMatrix = do
       
       ---------------------------------------
       -- Allocate required space           --
@@ -244,31 +231,15 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
       -- Define some generalized functions --
       ---------------------------------------
 
-      let mWrite m p@(i,j) v
-            | i < 0 || r <= i = error $ fold [ "Write at point ", show p, " i (", show i, ") is outside the valid range: [0, " <> show (r - 1), "]" ]
-            | j < 0 || c <= j = error $ fold [ "Write at point ", show p, " j (", show j, ") is outside the valid range: [0, " <> show (c - 1), "]" ]
-            | otherwise = M.write m p v
-            where
-              (r,c) = M.dim m
-      
-      let mRead m p@(i,j)
-            | i < 0 || r <= i = error $ fold [ "Read at point ", show p, " i (", show i, ") is outside the valid range: [0, " <> show (r - 1), "]" ]
-            | j < 0 || c <= j = error $ fold [ "Read at point ", show p, " j (", show j, ") is outside the valid range: [0, " <> show (c - 1), "]" ]
-            | otherwise = M.read m p
-            where
-              (r,c) = M.dim m
-      
       -- Write to a single cell of the current vector and directional matrix simultaneously
       let write !p ~(!c, !d) = M.unsafeWrite mCost p c *> M.unsafeWrite mDir p d
---      let write !p ~(!c, !d) = mWrite mCost p c *> mWrite mDir p d
 
       -- Define how to compute the first cell of the first "offest" rows.
       -- We need to ensure that there are only Up Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 1,
       -- since the diagonal and leftward values are "out of bounds."
       let leftColumn _leftElement insertCost i j = {-# SCC leftColumn #-} do
---            firstPrevCost <- M.unsafeRead mCost (i - 1, j)
-            firstPrevCost <- mRead mCost (i - 1, j)
+            firstPrevCost <- M.unsafeRead mCost (i - 1, j)
             pure (insertCost + firstPrevCost, UpArrow)
 
       -- Define how to compute the first cell of the remaining rows.
@@ -278,8 +249,8 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
       let leftBoundary leftElement insertCost i j = {-# SCC leftBoundary #-}
             let topElement = getMedian $ longerTop `indexStream` (j - 1)
                 alignCost  = cost topElement leftElement
-            in  do diagCost <- mRead mCost (i - 1, j - 1)
-                   topCost  <- mRead mCost (i - 1, j    )
+            in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                   topCost  <- M.unsafeRead mCost (i - 1, j    )
                    pure $ minimum
                        [ ( alignCost + diagCost, DiagArrow)
                        , (insertCost +  topCost, UpArrow  )
@@ -293,8 +264,8 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
             let topElement = getMedian $ longerTop `indexStream` (j - 1)
                 deleteCost = cost topElement    gapGroup
                 alignCost  = cost topElement leftElement
-            in  do diagCost <- mRead mCost (i - 1, j - 1)
-                   leftCost <- mRead mCost (i    , j - 1)
+            in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                   leftCost <- M.unsafeRead mCost (i    , j - 1)
                    pure $ minimum
                        [ ( alignCost + diagCost, DiagArrow)
                        , (deleteCost + leftCost, LeftArrow)
@@ -308,12 +279,9 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
             let topElement  = getMedian $ longerTop `indexStream` (j - 1)
             let deleteCost  = cost topElement    gapGroup
             let alignCost   = cost topElement leftElement
---            diagCost <- M.unsafeRead mCost (i - 1, j - 1)
---            topCost  <- M.unsafeRead mCost (i - 1, j    )
---            leftCost <- M.unsafeRead mCost (i    , j - 1)
-            diagCost <- mRead mCost (i - 1, j - 1)
-            topCost  <- mRead mCost (i - 1, j    )
-            leftCost <- mRead mCost (i    , j - 1)
+            diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+            topCost  <- M.unsafeRead mCost (i - 1, j    )
+            leftCost <- M.unsafeRead mCost (i    , j - 1)
             pure $ minimum
                 [ ( alignCost + diagCost, DiagArrow)
                 , (deleteCost + leftCost, LeftArrow)
@@ -333,29 +301,25 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
 
                 lastCell
                   | i <= cols - quasiDiagonalWidth - offset = rightBoundary
---                  | stop < cols-1 = rightBoundary
                   | otherwise = rightColumn
             in  do -- Write to the first cell of the Ukkonen band
                    firstCell leftElement insertCost i start >>= write (i, start)
                    -- Write to the all the intermediary cells of the Ukkonen band
-                   for_ --((\x -> trace' ("for row " <> show i <> " range [" <> show (head x - 1) <> ", " <> show (last x + 1) <> "]") x)
-                             [start + 1 .. stop - 1] $ \j -> {-# SCC internalCell_work #-} do
+                   for_ [start + 1 .. stop - 1] $ \j -> {-# SCC internalCell_work #-}
                      let topElement = getMedian $ longerTop `indexStream` (j - 1) 
-                     let deleteCost = cost topElement    gapGroup
-                     let alignCost  = cost topElement leftElement
---                     diagCost <- M.unsafeRead mCost (i - 1, j - 1)
---                     topCost  <- M.unsafeRead mCost (i - 1, j    )
---                     leftCost <- M.unsafeRead mCost (i    , j - 1)
-                     diagCost <- mRead mCost (i - 1, j - 1)
-                     topCost  <- mRead mCost (i - 1, j    )
-                     leftCost <- mRead mCost (i    , j - 1)
-                     write (i,j) $ minimum
-                         [ ( alignCost + diagCost, DiagArrow)
-                         , (deleteCost + leftCost, LeftArrow)
-                         , (insertCost +  topCost, UpArrow  )
-                         ]
-                   -- Write to the last cell of the Ukkonen band
-                   lastCell leftElement insertCost i stop >>= write (i, stop)
+                         deleteCost = cost topElement    gapGroup
+                         alignCost  = cost topElement leftElement
+                     in  do
+                           diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                           topCost  <- M.unsafeRead mCost (i - 1, j    )
+                           leftCost <- M.unsafeRead mCost (i    , j - 1)
+                           write (i,j) $ minimum
+                               [ ( alignCost + diagCost, DiagArrow)
+                               , (deleteCost + leftCost, LeftArrow)
+                               , (insertCost +  topCost, UpArrow  )
+                               ]
+                           -- Write to the last cell of the Ukkonen band
+                           lastCell leftElement insertCost i stop >>= write (i, stop)
 
       ---------------------------------------
       -- Compute all values of the matrix  --
@@ -365,93 +329,84 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
       write (0, 0) (0, DiagArrow)
 
       -- Write the first row to seed subsequent rows.
-      for_ -- ((\x -> trace' ("for row 0 range [" <> show (head x) <> ", " <> show (last x) <> "]") x)
-              [1 .. min (cols - 1) (width - offset - 1)] $ \j ->
+      for_ [1 .. min (cols - 1) (width - offset - 1)] $ \j ->
         let topElement    = getMedian $ longerTop `indexStream` (j - 1)
             firstCellCost = cost gapGroup topElement
-        in  do firstPrevCost <- mRead mCost (0, j - 1)
+        in  do firstPrevCost <- M.unsafeRead mCost (0, j - 1)
                write (0,j) (firstCellCost + firstPrevCost, LeftArrow)
 
       -- Loop through the remaining rows.
-      for_ --((\x -> trace' ("1st section " <> show x) x)
-             [1 .. rows - 1] writeRow
+      for_ [1 .. rows - 1] writeRow
 
---      c <- M.unsafeRead mCost (rows - 1, cols - 1)
---      pure (mCost, mDir)
-      cm <- unsafeFreeze mCost
-      dm <- unsafeFreeze mDir
---      trace (renderMatricies offset cm m) pure (c, m)
-      pure (o, cm, dm)
+      -- Return the matricies for possible expansion
+      pure (mCost, mDir)
 
 
-{-
 {-# SCC expandBandedMatrix #-}
 expandBandedMatrix
-  :: DOCharConstraint a
+  :: forall s a. DOCharConstraint a
   => (Subcomponent (Element a) -> Subcomponent (Element a) -> Word)
   -> a
   -> a
-  -> (Word, Matrix Word, Matrix Direction)
-  -> (Word, Matrix Word, Matrix Direction)
-expandBandedMatrix cost longerTop lesserLeft (mCost, mDir) o = updateBand
+  -> MMatrix s Word
+  -> MMatrix s Direction
+  -> Word
+  -> Word
+  -> ST s ()
+expandBandedMatrix cost longerTop lesserLeft mCost mDir po co = updateBand
   where
     
     -- Note: "offset" cannot cause "width" to exceed "cols"
-    offset      = let o' = fromEnum o in  min o' $ cols - quasiDiagonalWidth
+    offset      = let o' = fromEnum co in  min o' $ cols - quasiDiagonalWidth
+    prevOffset  = fromEnum po
     gap         = gapOfStream longerTop
     gapGroup    = getMedian gap
     longerLen   = olength longerTop
     lesserLen   = olength lesserLeft
     rows        = olength lesserLeft + 1
     cols        = olength longerTop  + 1
-    width       = {- (\x -> trace' (unlines [ "input:  " <> show o
-                                         , "offset: " <> show offset
-                                         , "diff:   " <> show quasiDiagonalWidth
-                                         , "width:  " <> show x
-                                         , "rows:   " <> show rows
-                                         , "cols:   " <> show cols
-                                         ]) x) $ -}
-                    quasiDiagonalWidth + (offset `shiftL` 1) -- Multiply by 2
+    width       = quasiDiagonalWidth + (offset `shiftL` 1) -- Multiply by 2
     quasiDiagonalWidth = differenceInLength + 1
       where
         differenceInLength = longerLen - lesserLen
 
     updateBand = do
-      
+
       ---------------------------------------
-      -- Allocate required space           --
+      -- Allocate mutable state variables  --
       ---------------------------------------
 
+      headStop  <- newSTRef $ cols
+      tailStart <- newSTRef $ cols
 
       ---------------------------------------
       -- Define some generalized functions --
       ---------------------------------------
 
-      let mWrite m p@(i,j) v
-            | i < 0 || r <= i = error $ fold [ "Write at point ", show p, " i (", show i, ") is outside the valid range: [0, " <> show (r - 1), "]" ]
-            | j < 0 || c <= j = error $ fold [ "Write at point ", show p, " j (", show j, ") is outside the valid range: [0, " <> show (c - 1), "]" ]
-            | otherwise = M.write m p v
-            where
-              (r,c) = M.dim m
-      
-      let mRead m p@(i,j)
-            | i < 0 || r <= i = error $ fold [ "Read at point ", show p, " i (", show i, ") is outside the valid range: [0, " <> show (r - 1), "]" ]
-            | j < 0 || c <= j = error $ fold [ "Read at point ", show p, " j (", show j, ") is outside the valid range: [0, " <> show (c - 1), "]" ]
-            | otherwise = M.read m p
-            where
-              (r,c) = M.dim m
-      
       -- Write to a single cell of the current vector and directional matrix simultaneously
---      let write !p ~(!c, !d) = M.unsafeWrite mCost p c *> M.unsafeWrite mDir p d
-      let write !p ~(!c, !d) = mWrite mCost p c *> mWrite mDir p d
+      let write !p ~(!c, !d) = M.unsafeWrite mCost p c *> M.unsafeWrite mDir p d
 
+      -- Write to an internal cell (not on a boundary) of the matrix.
+      let internalCell leftElement insertCost i j = {-# SCC internalCell_expanding #-}
+            let topElement  = getMedian $ longerTop `indexStream` (j - 1)
+                deleteCost  = cost topElement    gapGroup
+                alignCost   = cost topElement leftElement
+            in do
+                  diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                  topCost  <- M.unsafeRead mCost (i - 1, j    )
+                  leftCost <- M.unsafeRead mCost (i    , j - 1)
+                  pure $ minimum
+                      [ ( alignCost + diagCost, DiagArrow)
+                      , (deleteCost + leftCost, LeftArrow)
+                      , (insertCost +  topCost, UpArrow  )
+                      ]
+      
       -- Define how to compute the first cell of the first "offest" rows.
       -- We need to ensure that there are only Up Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 1,
       -- since the diagonal and leftward values are "out of bounds."
       let leftColumn _leftElement insertCost i j = {-# SCC leftColumn #-} do
---            firstPrevCost <- M.unsafeRead mCost (i - 1, j)
-            firstPrevCost <- mRead mCost (i - 1, j)
+            firstPrevCost <- M.unsafeRead mCost (i - 1, j)
             pure (insertCost + firstPrevCost, UpArrow)
 
       -- Define how to compute the first cell of the remaining rows.
@@ -461,8 +416,8 @@ expandBandedMatrix cost longerTop lesserLeft (mCost, mDir) o = updateBand
       let leftBoundary leftElement insertCost i j = {-# SCC leftBoundary #-}
             let topElement = getMedian $ longerTop `indexStream` (j - 1)
                 alignCost  = cost topElement leftElement
-            in  do diagCost <- mRead mCost (i - 1, j - 1)
-                   topCost  <- mRead mCost (i - 1, j    )
+            in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                   topCost  <- M.unsafeRead mCost (i - 1, j    )
                    pure $ minimum
                        [ ( alignCost + diagCost, DiagArrow)
                        , (insertCost +  topCost, UpArrow  )
@@ -476,38 +431,39 @@ expandBandedMatrix cost longerTop lesserLeft (mCost, mDir) o = updateBand
             let topElement = getMedian $ longerTop `indexStream` (j - 1)
                 deleteCost = cost topElement    gapGroup
                 alignCost  = cost topElement leftElement
-            in  do diagCost <- mRead mCost (i - 1, j - 1)
-                   leftCost <- mRead mCost (i    , j - 1)
+            in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                   leftCost <- M.unsafeRead mCost (i    , j - 1)
                    pure $ minimum
                        [ ( alignCost + diagCost, DiagArrow)
                        , (deleteCost + leftCost, LeftArrow)
                        ]
 
-      -- Define how to compute the last cell of the last "offest" rows.
-      -- We need to ensure that there are no Up Arrow values in the directional matrix.
-      -- We can also reduce the number of comparisons the first row makes from 3 to 2,
-      -- since the upward values are "out of bounds."
-      let rightColumn leftElement insertCost i j = {-# SCC rightColumn #-}  do
-            let topElement  = getMedian $ longerTop `indexStream` (j - 1)
-            let deleteCost  = cost topElement    gapGroup
-            let alignCost   = cost topElement leftElement
---            diagCost <- M.unsafeRead mCost (i - 1, j - 1)
---            topCost  <- M.unsafeRead mCost (i - 1, j    )
---            leftCost <- M.unsafeRead mCost (i    , j - 1)
-            diagCost <- mRead mCost (i - 1, j - 1)
-            topCost  <- mRead mCost (i - 1, j    )
-            leftCost <- mRead mCost (i    , j - 1)
-            pure $ minimum
-                [ ( alignCost + diagCost, DiagArrow)
-                , (deleteCost + leftCost, LeftArrow)
-                , (insertCost +  topCost, UpArrow  )
-                ]
+      let rightColumn = {-# SCC rightColumn #-} internalCell
+      
+      let computeCell leftElement insertCost i j = {-# SCC recomputeCell #-}
+            let topElement = getMedian $ longerTop `indexStream` (j - 1) 
+                deleteCost = cost topElement    gapGroup
+                alignCost  = cost topElement leftElement
+            in do
+                  diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                  topCost  <- M.unsafeRead mCost (i - 1, j    )
+                  leftCost <- M.unsafeRead mCost (i    , j - 1)
+                  oldCost  <- M.unsafeRead mCost (i    , j    )
+                  let e@(c,_) = minimum
+                                  [ ( alignCost + diagCost, DiagArrow)
+                                  , (deleteCost + leftCost, LeftArrow)
+                                  , (insertCost +  topCost, UpArrow  )
+                                  ]
+                  write (i,j) e
+                  pure (c == oldCost, j)
 
       -- Define how to compute values to an entire row of the Ukkonen matrix.
-      let writeRow i =
+      let extendRow i =
             -- Precomute some values that will be used for the whole row
-            let start = max  0         $ i - offset
-                stop  = min (cols - 1) $ i - offset + width - 1
+            let start0 =  max 0          $ i - offset
+                start3 =  min (cols - 1) $ i + width - offset - prevOffset
+                goUpTo = (max 0          $ i - prevOffset) - 1
+                stop   =  min (cols - 1) $ i + width - offset - 1
                 leftElement = getMedian $ lesserLeft `indexStream` (i - 1)
                 insertCost  = cost gapGroup leftElement
                 firstCell
@@ -516,49 +472,55 @@ expandBandedMatrix cost longerTop lesserLeft (mCost, mDir) o = updateBand
 
                 lastCell
                   | i <= cols - quasiDiagonalWidth - offset = rightBoundary
---                  | stop < cols-1 = rightBoundary
                   | otherwise = rightColumn
-            in  do -- Write to the first cell of the Ukkonen band
-                   firstCell leftElement insertCost i start >>= write (i, start)
-                   -- Write to the all the intermediary cells of the Ukkonen band
-                   for_ --((\x -> trace' ("for row " <> show i <> " range [" <> show (head x - 1) <> ", " <> show (last x + 1) <> "]") x)
-                             [start + 1 .. stop - 1] $ \j -> {-# SCC internalCell_work #-} do
-                     let topElement = getMedian $ longerTop `indexStream` (j - 1) 
-                     let deleteCost = cost topElement    gapGroup
-                     let alignCost  = cost topElement leftElement
---                     diagCost <- M.unsafeRead mCost (i - 1, j - 1)
---                     topCost  <- M.unsafeRead mCost (i - 1, j    )
---                     leftCost <- M.unsafeRead mCost (i    , j - 1)
-                     diagCost <- mRead mCost (i - 1, j - 1)
-                     topCost  <- mRead mCost (i - 1, j    )
-                     leftCost <- mRead mCost (i    , j - 1)
-                     write (i,j) $ minimum
-                         [ ( alignCost + diagCost, DiagArrow)
-                         , (deleteCost + leftCost, LeftArrow)
-                         , (insertCost +  topCost, UpArrow  )
-                         ]
-                   -- Write to the last cell of the Ukkonen band
-                   lastCell leftElement insertCost i stop >>= write (i, stop)
+
+                continueRecomputing (changed, j) = changed || j >= stop - 1
+                computeCell' ~(_,j) = computeCell leftElement insertCost i j
+                internalCell' j = internalCell leftElement insertCost i j >>= write (i,j)
+                recomputeUntilSame j = snd <$> iterateUntilM continueRecomputing computeCell' (False, j)
+            in  do -- Get the starts from the previous iteration
+                   start1 <- readSTRef headStop
+                   start2 <- readSTRef tailStart
+
+                   -- Conditionally write to the first cell of the Ukkonen band
+                   if   i > prevOffset
+                   then firstCell leftElement insertCost i start0 >>= write (i, start0)
+                   else pure ()
+
+                   for_ [start0+1 .. goUpTo] internalCell'
+                   leadStop  <- if goUpTo < start0
+                                then pure start1
+                                else recomputeUntilSame $ goUpTo+1
+                   headStop' <- if   leadStop >= start1
+                                then pure leadStop
+                                else recomputeUntilSame start1
+                   tailStop' <- recomputeUntilSame start2
+                   for_ [max (tailStop'+1) start3 .. stop-1] internalCell'
+
+                   -- Conditionally write to the last cell of the Ukkonen band
+                   if   tailStop' <= stop - 1
+                   then lastCell leftElement insertCost i stop >>= write (i, stop)
+                   else pure ()
+
+                   -- Update references for the next row
+                   writeSTRef headStop  headStop'
+                   writeSTRef tailStart $ if tailStop' /= start2 then tailStop' else start3
 
       ---------------------------------------
       -- Compute all values of the matrix  --
       ---------------------------------------
 
-      -- Write to the origin to seed the first row.
-      write (0, 0) (0, DiagArrow)
-
-      -- Write the first row to seed subsequent rows.
-      for_ -- ((\x -> trace' ("for row 0 range [" <> show (head x) <> ", " <> show (last x) <> "]") x)
-              [1 .. min (cols - 1) (width - offset - 1)] $ \j ->
+      let start = quasiDiagonalWidth + prevOffset
+      -- Extend the first row to seed subsequent rows.
+      for_ [start .. min (cols - 1) (width - offset - 1)] $ \j ->
         let topElement    = getMedian $ longerTop `indexStream` (j - 1)
             firstCellCost = cost gapGroup topElement
-        in  do firstPrevCost <- mRead mCost (0, j - 1)
+        in  do firstPrevCost <- M.unsafeRead mCost (0, j - 1)
                write (0,j) (firstCellCost + firstPrevCost, LeftArrow)
+      writeSTRef tailStart start
 
       -- Loop through the remaining rows.
-      for_ --((\x -> trace' ("1st section " <> show x) x)
-             [1 .. rows - 1] writeRow
--}
+      for_ [1 .. rows - 1] extendRow
 
 
 directOptimization
@@ -602,7 +564,6 @@ traceback overlapFunction alignMatrix longerChar lesserChar = alignmentContext
     startPoint = (rows - 1, cols - 1)
 
     go !p@(~(!i, !j))
---      | trace (show p) False = undefined
       | p == (0,0) = mempty
       | i < 0 = error $ "i is out of range: " <> show i
       | j < 0 = error $ "j is out of range: " <> show j
@@ -629,35 +590,3 @@ traceback overlapFunction alignMatrix longerChar lesserChar = alignmentContext
                                in (# i', j', e #)
 
         in  previousSequence `snoc` localContext
-
-
-renderMatricies :: (Show a, Show b, Unbox a, Unbox b) => Int -> Matrix a -> Matrix b -> String
-renderMatricies offset mDir mCost = foldMapWithKey f $ MZ.toLists (MZ.zip mCost mDir)
-  where
-    (r,c) = MZ.dim mDir
-    diff  = c - r + 1
-
-    f i = (<>"\n") . foldMapWithKey (g i)
-    g i j (a,b)
-      | i <= offset && j >= i + diff + offset = ""
-      | i  > offset && j  < i - offset        = "    "
-      | i  > offset && j >= i + diff + offset = ""
-      | otherwise = " " <> showp b <> show a
-
-    showp x =
-        let s = show x
-            p = 1
-        in  replicate (p - length s) ' ' <> s
-
-
-{--
-renderMatrix :: (Show a, V.Unbox a) => Word -> Matrix a -> String
-renderMatrix o mDir = unlines [ x, y ]
-  where
-    offset    = fromEnum o
-    (r,c)     = dim mDir
-    x         = unlines $ foldMap (\a -> " " <> show a) <$> toLists mDir
-    y         = foldMapWithKey (\i -> (<>"\n") . (grabPad i <>) . foldMap (\a -> " " <> show a) . grabRow i) $ toLists mDir
-    grabRow i = take (c - (max 0 (offset - (r - 1 - i)))) . drop (max 0 (offset - i))
-    grabPad i = fold $ replicate (max 0 (i - offset)) "   "
---}

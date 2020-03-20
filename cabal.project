@@ -1,6 +1,8 @@
 allow-newer:
   base
+  ghc-prim
   polyparse
+  template-haskell
 
 package *
   ghc-options: -fwrite-ide-info

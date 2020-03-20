@@ -73,7 +73,7 @@ selectDynamicMetric
   -> c
   -> (Word, c)
 selectDynamicMetric meta =
-    unboxedUkkonenSwappingDO $ meta ^. pairwiseTransitionCostMatrix
+    unboxedUkkonenFullSpaceDO $ meta ^. pairwiseTransitionCostMatrix
 
 
 -- |
