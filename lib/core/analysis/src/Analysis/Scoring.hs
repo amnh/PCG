@@ -18,12 +18,15 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
---{-# LANGUAGE NoMonoLocalBinds      #-}
-
 module Analysis.Scoring
   (
+  -- * Intermediate State
+    PostorderScoringState(..)
   -- * Decoration
-    performDecoration
+  , performDecoration
+  , performFinalizationDecoration
+  , performPostorderDecoration
+  , performPreorderDecoration
   , scoreSolution
   -- * Decoration Removal
   , wipeNode
@@ -36,21 +39,46 @@ import           Analysis.Parsimony.Fitch.Internal
 import           Analysis.Parsimony.Sankoff.Internal
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
+import           Bio.Character.Decoration.Continuous
 import           Bio.Character.Decoration.Dynamic
+import           Bio.Character.Decoration.Fitch
+import           Bio.Character.Decoration.Metric
 import           Bio.Graph
 import           Bio.Graph.Node
 import           Bio.Graph.Node.Context
-import           Bio.Graph.PhylogeneticDAG                     (setDefaultMetadata)
+import           Bio.Graph.PhylogeneticDAG                     (EdgeReference, setDefaultMetadata)
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Sequence
 import           Control.Lens.Operators                        ((%~), (.~), (^.))
 import           Data.Default
 import           Data.EdgeLength
 import           Data.Function                                 ((&))
+import           Data.HashMap.Lazy                             (HashMap)
 import           Data.IntMap                                   (IntMap)
+import           Data.List.NonEmpty                            (NonEmpty)
 import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
+import           Data.Set                                      (Set)
 import           Data.Vector                                   (Vector)
+import qualified Data.Vector.NonEmpty                          as NEV
+
+
+-- |
+-- The context created during a post order traversal that must be preserved for
+-- and consumed by the pre-order traversal.
+data  PostorderScoringState a
+    = PostorderScoringState
+    { unusedNetworkEdges     :: Set EdgeReference
+    , edgeScoringContext     :: NEV.Vector
+                                  ( TraversalTopology
+                                  , Double
+                                  , Double
+                                  , Double
+                                  , Vector (NonEmpty TraversalFocusEdge)
+                                  )
+    , rerootingEdgeMapping   :: HashMap EdgeReference a
+    , rerootingVectorMapping :: Vector (HashMap EdgeReference a)
+    }
 
 
 -- |
@@ -98,7 +126,6 @@ wipeNode wipe =
           | otherwise = Just
 
 
-
 -- |
 -- Take a solution of one or more undecorated trees and assign preliminary and
 -- final states to all nodes.
@@ -113,21 +140,37 @@ performDecoration
      ( DiscreteCharacterDecoration v StaticCharacter
      , DiscreteCharacterDecoration x StaticCharacter
      , DiscreteCharacterDecoration y StaticCharacter
-     , RangedCharacterDecoration u ContinuousCharacter
-     , RangedCharacterDecoration w StaticCharacter
-     , SimpleDynamicDecoration z DynamicCharacter
+     , RangedCharacterDecoration   u ContinuousCharacter
+     , RangedCharacterDecoration   w StaticCharacter
+     , SimpleDynamicDecoration     z DynamicCharacter
      )
   => PhylogeneticDAG m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
   -> FinalDecorationDAG
-performDecoration x =
-    case length . (^. _phylogeneticForest) $ x of
-      1 -> finalizeForSingleNode
-          . performPreorderDecoration
-          . performPostorderDecoration $ x
-      _ ->
-          finalizeEdgeData
-        . performPreorderDecoration
-        . performPostorderDecoration $ x
+performDecoration x = finalResult
+  where
+    (postorderState, postDAG) = performPostorderDecoration x
+    preorderDAG = performPreorderDecoration postorderState postDAG
+    finalResult = performFinalizationDecoration postorderState preorderDAG
+
+
+performFinalizationDecoration
+  :: PostorderScoringState
+       (ResolutionCache
+         (CharacterSequence
+           u
+           v
+           w
+           x
+           y
+           (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+         )
+       )
+  -> PreorderDecorationDAG
+  -> FinalDecorationDAG
+performFinalizationDecoration postorderState preorderDAG =
+    case length $ preorderDAG ^. _phylogeneticForest of
+      1 -> finalizeForSingleNode preorderDAG
+      _ -> finalizeEdgeData      preorderDAG
   where
     finalizeEdgeData :: PreorderDecorationDAG -> FinalDecorationDAG
     finalizeEdgeData = setEdgeSequences
@@ -137,7 +180,7 @@ performDecoration x =
                          sankoffPostorderPairwise
                          sankoffPostorderPairwise
                          adaptiveDirectOptimizationPostorderPairwise
-                         contextualNodeDatum
+                         (rerootingVectorMapping postorderState)
 
     finalizeForSingleNode :: PreorderDecorationDAG -> FinalDecorationDAG
     finalizeForSingleNode (PDAG2 dag meta) = PDAG2 updatedDAG meta
@@ -146,55 +189,58 @@ performDecoration x =
 
         newRefs :: FinalReferenceVector
         newRefs = setEmptyEdgeAnnotation <$> (dag ^. _references)
+
         emptyEdgeAnnotation :: IntMap EdgeAnnotation
         emptyEdgeAnnotation = mempty
 
         setEmptyEdgeAnnotation :: IndexData e n -> IndexData EdgeAnnotation n
         setEmptyEdgeAnnotation indexData = indexData & _childRefs .~ emptyEdgeAnnotation
 
-    performPreorderDecoration
-      :: PostorderDecorationDAG
-           ( TraversalTopology
-           , Double
-           , Double
-           , Double
-           , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
-           )
-      -> PreorderDecorationDAG
-    performPreorderDecoration =
-         preorderFromRooting
-          adaptiveDirectOptimizationPreorder
-          edgeCostMapping
-          contextualNodeDatum
-          minBlockContext
-
-        . preorderSequence
-          (const additivePreorder)
-          (const fitchPreorder   )
-          (const additivePreorder)
-          (const sankoffPreorder )
-          (const sankoffPreorder )
-          (const extractPreNode  )
-      where
-        adaptiveDirectOptimizationPreorder meta decorationPreContext
-          = directOptimizationPreorder pairwiseAlignmentFunction meta decorationPreContext
-            where
-              pairwiseAlignmentFunction = selectDynamicMetric meta
+    adaptiveDirectOptimizationPostorderPairwise meta =
+      let pairwiseAlignmentFunction = selectDynamicMetric meta
+      in  directOptimizationPostorderPairwise pairwiseAlignmentFunction
 
 
-    performPostorderDecoration
-      :: PhylogeneticDAG m EdgeLength n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
-      -> PostorderDecorationDAG
-           ( TraversalTopology
-           , Double
-           , Double
-           , Double
-           , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
-           )
-
-    performPostorderDecoration _ =  postorderResult
-
-    (minBlockContext, postorderResult) = assignPunitiveNetworkEdgeCost post
+performPostorderDecoration
+  :: forall u v w x y z m .
+     ( DiscreteCharacterDecoration v StaticCharacter
+     , DiscreteCharacterDecoration x StaticCharacter
+     , DiscreteCharacterDecoration y StaticCharacter
+     , RangedCharacterDecoration   u ContinuousCharacter
+     , RangedCharacterDecoration   w StaticCharacter
+     , SimpleDynamicDecoration     z DynamicCharacter
+     )
+  => PhylogeneticDAG m {- (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)) -} EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  -> ( PostorderScoringState
+         (ResolutionCache
+            (CharacterSequence
+              (ContinuousPostorderDecoration ContinuousCharacter)
+              (FitchOptimizationDecoration       StaticCharacter)
+              (AdditivePostorderDecoration       StaticCharacter)
+              (SankoffOptimizationDecoration     StaticCharacter)
+              (SankoffOptimizationDecoration     StaticCharacter)
+              (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+            )
+         )
+     , PostorderDecorationDAG
+         ( TraversalTopology
+         , Double
+         , Double
+         , Double
+         , Vector (NE.NonEmpty TraversalFocusEdge)
+         )
+     )
+performPostorderDecoration x = (context, postorderResult)
+  where
+    context =
+        PostorderScoringState
+        { unusedNetworkEdges     = unusedEdges
+        , edgeScoringContext     = minBlockContext
+        , rerootingEdgeMapping   = edgeCostMapping
+        , rerootingVectorMapping = contextualNodeDatum
+        }
+      
+    (unusedEdges, minBlockContext, postorderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
          assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostorder
          . postorderSequence'
@@ -223,6 +269,46 @@ performDecoration x =
       where
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
-    adaptiveDirectOptimizationPostorderPairwise meta = directOptimizationPostorderPairwise pairwiseAlignmentFunction
-      where
-        pairwiseAlignmentFunction = selectDynamicMetric meta
+
+performPreorderDecoration
+  :: PostorderScoringState
+         (ResolutionCache
+            (CharacterSequence
+              (ContinuousPostorderDecoration ContinuousCharacter)
+              (FitchOptimizationDecoration       StaticCharacter)
+              (AdditivePostorderDecoration       StaticCharacter)
+              (SankoffOptimizationDecoration     StaticCharacter)
+              (SankoffOptimizationDecoration     StaticCharacter)
+              (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+            )
+         )
+  -> PostorderDecorationDAG
+       ( TraversalTopology
+       , Double
+       , Double
+       , Double
+       , Data.Vector.Vector (NE.NonEmpty TraversalFocusEdge)
+       )
+  -> PreorderDecorationDAG
+performPreorderDecoration postorderState = dynamicCharacterPreorder . staticCharacterPreorder
+  where
+    dynamicCharacterPreorder =
+        preorderFromRooting
+          adaptiveDirectOptimizationPreorder
+          (rerootingEdgeMapping   postorderState)
+          (rerootingVectorMapping postorderState)
+          (edgeScoringContext     postorderState)
+
+    staticCharacterPreorder =
+        preorderSequence
+          (const additivePreorder)
+          (const fitchPreorder   )
+          (const additivePreorder)
+          (const sankoffPreorder )
+          (const sankoffPreorder )
+          (const extractPreNode  )
+      
+    adaptiveDirectOptimizationPreorder meta decorationPreContext =
+        let pairwiseAlignmentFunction = selectDynamicMetric meta
+        in  directOptimizationPreorder pairwiseAlignmentFunction meta decorationPreContext
+        

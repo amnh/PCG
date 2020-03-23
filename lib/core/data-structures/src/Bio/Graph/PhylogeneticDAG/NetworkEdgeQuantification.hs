@@ -12,14 +12,13 @@
 
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts   #-}
--- We add this because we have some 'realToFrac' calls which are necissary,
+-- We add this because we have some 'realToFrac' calls which are necessary,
 -- but the -Widentities flag from the .cabal file erroneously warns to omit it.
 {-# OPTIONS_GHC -fno-warn-identities #-}
 
 module Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
   ( assignPunitiveNetworkEdgeCost
   ) where
-
 
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
@@ -39,7 +38,7 @@ import           Data.Maybe                         (fromJust)
 import           Data.Ord
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.Set                           (difference)
+import           Data.Set                           (Set, difference)
 import qualified Data.Set                           as S
 import           Data.TopologyRepresentation
 import           Data.Vector                        (Vector)
@@ -98,7 +97,8 @@ assignPunitiveNetworkEdgeCost
      , HasRootCost  u v w x y z
      )
   => PhylogeneticDAG m e n u v w x y z
-  -> ( NEV.Vector
+  -> ( Set (Int, Int)
+     , NEV.Vector
        ( TraversalTopology
        , Double
        , Double
@@ -113,7 +113,7 @@ assignPunitiveNetworkEdgeCost
          , Vector (NonEmpty TraversalFocusEdge)
          ) e n u v w x y z
      )
-assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (dag { graphData = newGraphData }) newMetaSeq)
+assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (unusedEdges, outputContext, PDAG2 (dag { graphData = newGraphData }) newMetaSeq)
   where
     -- First grab all the valid display forests present in the DAG.
     displayForests =
@@ -141,7 +141,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (outputContext, PDAG2 (da
 
     -- With all the requisite information in scope we can now compute the
     -- punitive network edge cost for the DAG.
-    (punitiveCost, splitPunativeCosts) =
+    (punitiveCost, splitPunativeCosts, unusedEdges) =
         calculatePunitiveNetworkEdgeCost
           edgeSetSize
           networkEdgeSet
@@ -283,13 +283,13 @@ calculatePunitiveNetworkEdgeCost
   -> f e                                       -- ^ Complete collection of network edges in the DAG
   -> (TopologyRepresentation e, Double, r)          -- ^ Most-parsimonious display forest context
   -> NEV.Vector (TopologyRepresentation e, Double, r) -- ^ Minimal display forest context for each character block
-  -> (ExtendedReal, NEV.Vector r)
+  -> (ExtendedReal, NEV.Vector r, Set e)
 calculatePunitiveNetworkEdgeCost edgeSetCardinality networkEdgeSet parsimoniousContext minimalContexts
   | not (null extraneousEdges) = -- trace ("Extraneous edges: " <> show extraneousEdges)
                                  -- . trace ("Entire     edges: " <> show entireNetworkEdgeSet)
                                  -- . trace ("Minimal Block edges: " <> show ((\(_,_,x) -> collapseToEdgeSet x) <$> minimalBlockNetworkDisplay)) $
-                                 (infinity, 0 <$ minimalContexts)
-  | otherwise                  = (realToFrac $ sum' punitiveCostPerBlock, punitiveCostPerBlock)
+                                 (infinity, 0 <$ minimalContexts, extraneousEdges)
+  | otherwise                  = (realToFrac $ sum' punitiveCostPerBlock, punitiveCostPerBlock, extraneousEdges)
   where
     -- First we determine if there are extraneous network edges in the DAG.
     --

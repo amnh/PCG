@@ -21,6 +21,7 @@ module Bio.Graph.PhylogeneticDAG
   , HasVirtualNodeMapping(..)
   , HasPhylogeneticForest(..)
   , HasColumnMetadata(..)
+  , EdgeReference
   , assignOptimalDynamicCharacterRootEdges
   , assignPunitiveNetworkEdgeCost
   , generateLocalResolutions
@@ -31,6 +32,7 @@ module Bio.Graph.PhylogeneticDAG
   , setEdgeSequences
   , getDotContextWithBaseAndIndex
   , setDefaultMetadata
+  , pruneEdgeSet
   -- * Substitution functions
   , getNamedContext
   , substituteDAGs

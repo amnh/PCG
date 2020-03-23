@@ -96,6 +96,7 @@ data  ReferenceDAG d e n
     deriving stock    (Generic)
     deriving anyclass (NFData)
 
+
 -- |
 -- A labeled record for each "node" in the graph containing the node decoration,
 -- a set of parent references, and a set of child references with edge decorations.
