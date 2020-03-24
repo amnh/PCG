@@ -1,4 +1,4 @@
-with-compiler: ghc-8.8.1
+with-compiler: ghc-8.8.3
 
 packages: .
   lib/pcg-alphabet
