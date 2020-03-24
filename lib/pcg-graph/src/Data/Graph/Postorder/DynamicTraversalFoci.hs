@@ -35,9 +35,10 @@ import Prelude hiding (lookup)
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Data.Foldable (toList)
+import Data.Foldable (toList, foldl')
 import Data.Kind
 import Data.Graph.TopologyRepresentation
+
 
 
 
@@ -357,7 +358,42 @@ deriveDirectedEdgeDatum
               (  [], ys@(y:_))     -> toResCache ys
               (xs@(x:_), ys@(y:_)) -> toResCache (xs <> ys)
 
-    
+
+-- |
+-- This function takes a mapping from edges to resolutions
+-- and transposes it to be a map from those topologies which
+-- are included in the resolutions to the list of edges which
+-- use the topologies along with the character sequence of
+-- that particular edge.
+transposeDisplayTrees
+  :: forall cs . ()
+  => HashMap EdgeIndex (ResolutionCache cs)
+  -> HashMap NetworkTopology (NonEmpty (EdgeIndex, cs))
+transposeDisplayTrees =
+    foldlWithKey' f mempty
+  where
+  f :: HashMap NetworkTopology (NonEmpty (EdgeIndex, cs))
+    -> EdgeIndex
+    -> ResolutionCache cs
+    -> HashMap NetworkTopology (NonEmpty (EdgeIndex, cs))
+  f outerMapRef rootingEdge = (foldl' g outerMapRef) . view _resolutionCache
+    where
+      g :: HashMap NetworkTopology (NonEmpty (EdgeIndex, cs))
+        -> Resolution cs
+        -> HashMap NetworkTopology (NonEmpty (EdgeIndex, cs))
+      g innerMapRef resolution = HashMap.insertWith (<>) key val innerMapRef
+        where
+          key = view  _topologyRepresentation resolution
+          val = pure (rootingEdge, (view _characterSequence) resolution)
+
+getNonExactBlockCosts
+  :: (Blockbin block, Blockbin subblock)
+  => Lens' block subblock
+  -> 
+  -> block
+  -> 
+
+
 
 
 getUnrootedEdgeParent :: TaggedIndex -> Graph f c e n t -> [TaggedIndex]
