@@ -20,6 +20,7 @@
 
 module Data.Graph.TopologyRepresentation
   ( TopologyRepresentation
+  , NetworkTopology
   -- * Construction
   , isolatedNetworkEdgeContext
   -- * Deconstruct
@@ -41,6 +42,7 @@ import qualified Data.MutualExclusionSet as MES
 import           Data.Set                (Set)
 import           GHC.Generics
 import           TextShow                (TextShow (showb), unwordsB)
+import           Data.Graph.Indices
 
 
 -- |
@@ -51,6 +53,8 @@ newtype TopologyRepresentation a = TR { unwrap :: MutualExclusionSet a }
   deriving stock   (Eq, Generic, Ord)
   deriving newtype (Eq1, Hashable, Monoid, NFData, Ord1, Semigroup)
 
+
+type NetworkTopology = TopologyRepresentation EdgeIndex
 
 instance (Ord a, Show a) => Show (TopologyRepresentation a) where
 
