@@ -63,7 +63,7 @@ data  ResolutionMetadata
     = ResolutionMetadata
     { totalSubtreeCost       :: {-# UNPACK #-} !Double
     , leafSetRepresentation  :: {-# UNPACK #-} !UnionSet
-    , topologyRepresentation :: {-# UNPACK #-} !(TopologyRepresentation (Int :!: Int))
+    , topologyRepresentation :: {-# UNPACK #-} !NetworkTopology
     , subTreeEdgeSet         :: {-# UNPACK #-} !(Set (EdgeIndex))
     , subTreeHash            :: {-# UNPACK #-} !Int
     }
@@ -603,13 +603,13 @@ class HasTopologyRepresentation s a | s -> a where
     _topologyRepresentation :: Lens' s a
 
 
-instance HasTopologyRepresentation ResolutionMetadata (TopologyRepresentation (Int :!: Int)) where
+instance HasTopologyRepresentation ResolutionMetadata (NetworkTopology) where
 
     {-# INLINE _topologyRepresentation #-}
     _topologyRepresentation = lens topologyRepresentation (\r t -> r {topologyRepresentation = t})
 
 
-instance HasTopologyRepresentation (Resolution s) (TopologyRepresentation (Int :!: Int)) where
+instance HasTopologyRepresentation (Resolution s) (NetworkTopology) where
 
     {-# INLINE _topologyRepresentation #-}
     _topologyRepresentation = _resolutionMetadata . _topologyRepresentation
