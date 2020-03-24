@@ -1,4 +1,4 @@
-cabal-version:      2.2
+cabal-version:      2.4
 Category:           Biology
 build-type:         Simple
 name:               pcg-graph
