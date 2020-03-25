@@ -17,6 +17,10 @@ description:        Phylogenetic Componet Graph provides a library for
                     searches. Said scripts can be evaluated by the provided pcg
                     program to perform a phylogenetic search on an input dataset.
 
+tested-with:
+    GHC == 8.8.3
+    GHC == 8.10.1
+
 extra-source-files:
     AUTHORS.md
     CHANGELOG.md
@@ -71,6 +75,10 @@ common ghc-flags
     -Wunused-matches
     -Wwrong-do-bind
 
+  if !impl(ghc >= 8.10)
+    -Wderiving-defaults
+    -Wunused-package
+    
 
 -- Global deviations from Haskell98
 common language-specs

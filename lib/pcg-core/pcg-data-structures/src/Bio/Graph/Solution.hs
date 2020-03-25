@@ -40,7 +40,7 @@ import           Data.GraphViz.Printing    hiding (indent)
 import           Data.GraphViz.Types       hiding (attrs)
 import           Data.GraphViz.Types.Graph
 import           Data.Key
-import           Data.List
+import           Data.List                 (intercalate)
 import           Data.List.NonEmpty        (NonEmpty)
 import qualified Data.List.NonEmpty        as NE
 import           Data.Semigroup.Foldable
