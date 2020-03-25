@@ -19,6 +19,7 @@ description:        Phylogenetic Componet Graph provides a library for
 
 tested-with:
     GHC == 8.8.3
+    GHC == 8.10.1
 
 extra-source-files:
     AUTHORS.md
@@ -105,10 +106,14 @@ common ghc-flags
     -Wunused-matches
     -Wwrong-do-bind
 
+  if impl(ghc >= 8.10)
+    ghc-options:
+      -Wderiving-defaults
+      -Wunused-package
+    
+
 -- Global deviations from Haskell98
 common language-specs
-
-  default-language: Haskell2010
 
   -- Always use MonadFail(fail), not Monad(fail)
   other-extensions:
@@ -122,7 +127,11 @@ library alphabet
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/alphabet/src
@@ -136,13 +145,24 @@ library alphabet
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.19      && < 5.0,
+    megaparsec               >= 8.0       && < 9.0,
+    mmark                    >= 0.0.7.2   && < 1.0,
+    modern-uri               >= 0.3       && < 1.0,
+    mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
     QuickCheck               >= 2.12      && < 3.0,
     semigroupoids            >= 5.2.1     && < 5.4,
     semigroups               >= 0.18      && < 1.0,
+    template-haskell         >= 2.13      && < 3.0,
+    text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
+    th-lift-instances        >= 0.1       && < 1.0,            
     transformers             >= 0.5.6     && < 1.0,
+    validation               >= 1.1       && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
+    xml                      >= 1.3.14    && < 1.4,
 
   -- Apparently this is needed to compile with profiling, which is really stupid.
   -- It should only be in the modules which use TemplateHaskell, not all modules.
@@ -170,7 +190,11 @@ library analysis
     ghc-flags,
     language-specs
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/core/analysis/src
@@ -236,7 +260,11 @@ library character-name
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/character-name/src
@@ -270,7 +298,11 @@ library core
   import:
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   build-depends:
     analysis,
@@ -344,7 +376,11 @@ library data-normalization
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
         
   hs-source-dirs:
     lib/data-normalization/src
@@ -389,7 +425,11 @@ library data-structures
     ghc-flags,
     language-specs
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/core/data-structures/src
@@ -431,10 +471,11 @@ library data-structures
     smallcheck               >= 1.1.5     && < 2.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     text-show-instances      >= 3.8       && < 4.0,
     unordered-containers     >= 0.2.9     && < 1.0,
-    -- >=0.12.0.2 required for compatibility with "compact regions"
+    validation               >= 1.1       && < 2.0,
+    -- >=0.12.0.2 required for compatability with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
     vector-builder           >= 0.3.7     && < 0.4,
     vector-binary-instances  >= 0.2.1.1   && < 0.3,
@@ -546,8 +587,12 @@ library data-unification
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
   
+  default-language:
+    Haskell2010
+
   hs-source-dirs:
     lib/data-unification/src
 
@@ -573,7 +618,7 @@ library data-unification
     semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     text-show-instances      >= 3.8       && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
     validation               >= 1.1       && < 2.0,
@@ -600,7 +645,11 @@ library evaluation
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/evaluation/src
@@ -617,7 +666,7 @@ library evaluation
     semigroupoids            >= 5.2.1     && < 5.4,
     semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
-    text-show                >= 3.8.1     && < 4.0,            
+    text-show                >= 3.8.3     && < 4.0,            
     transformers             >= 0.5.6     && < 1.0,
                 
   exposed-modules:
@@ -637,7 +686,11 @@ library exportable
     ghc-flags,
     language-specs,
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/exportable/src
@@ -668,7 +721,11 @@ library file-parsers
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/file-parsers/src
@@ -749,7 +806,11 @@ library file-source
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/file-source/src
@@ -778,7 +839,7 @@ library file-source
     semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
     -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
@@ -801,7 +862,11 @@ library graph
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/graph/src
@@ -859,7 +924,11 @@ library language
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/language/src
@@ -905,7 +974,11 @@ library serialize
     ghc-flags,
     language-specs
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/serialize/src
@@ -916,7 +989,7 @@ library serialize
     semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     xml                      >= 1.3.14    && < 1.4,
 
   exposed-modules:
@@ -941,7 +1014,11 @@ library tcm
     ghc-flags,
     language-specs,
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/core/tcm/src
@@ -980,7 +1057,11 @@ library tcm-memo
     ghc-flags,
     language-specs,
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/tcm-memo/src
@@ -1038,7 +1119,11 @@ library utility
     ghc-flags,
     language-specs
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/utility/src
@@ -1070,7 +1155,7 @@ library utility
     tasty-hunit              >= 0.10      && < 1.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     text-show-instances      >= 3.8       && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
     validation               >= 1.1       && < 2.0,
@@ -1121,7 +1206,11 @@ library validation-transformer
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/validation-transformer/src
@@ -1146,6 +1235,9 @@ executable pcg
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     Main.hs
@@ -1201,7 +1293,7 @@ executable pcg
     template-haskell         >= 2.13      && < 3.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     th-lift-instances        >= 0.1       && < 1.0,            
     transformers             >= 0.5.5     && < 1.0,
     validation               >= 1.1       && < 2.0,
@@ -1243,6 +1335,9 @@ executable 2d-do-comparison
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     2d-do-comparison.hs
 
@@ -1263,6 +1358,9 @@ executable 3d-do-comparison
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     3d-do-comparison.hs
@@ -1286,6 +1384,9 @@ executable affine-safety
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     affine-safety.hs
 
@@ -1305,6 +1406,9 @@ executable fasta-differ
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     fasta-differ.hs
@@ -1329,6 +1433,9 @@ executable file-tests
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     FileTests.hs
@@ -1365,6 +1472,9 @@ executable generate-data-set
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     generate-data-set.hs
 
@@ -1384,7 +1494,7 @@ executable generate-data-set
     random-shuffle           >= 0.0.4     && < 0.1,
     scientific               >= 0.3.6     && < 0.4,
     text                     >= 1.2       && < 2.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
 
@@ -1394,6 +1504,9 @@ executable generate-random-sequence
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     generate-random-sequence.hs
@@ -1415,7 +1528,7 @@ executable generate-random-sequence
     random                   >= 1.0       && < 2.0,
     scientific               >= 0.3.6     && < 0.4,
     text                     >= 1.2       && < 2.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
 
@@ -1425,6 +1538,9 @@ executable generate-tcm
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     generate-tcm.hs
@@ -1450,6 +1566,9 @@ executable graphviz-examples
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     graphviz-examples.hs
@@ -1477,6 +1596,9 @@ executable newick-resolver
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     newick-resolver.hs
 
@@ -1498,6 +1620,9 @@ executable reduce-fastc
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     reduce-fastc.hs
@@ -1524,7 +1649,7 @@ executable reduce-fastc
     semigroupoids            >= 5.2.1     && < 5.4,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
 
@@ -1534,6 +1659,9 @@ executable ukkonen-do-comparison
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     ukkonen-do-comparison.hs
@@ -1556,6 +1684,9 @@ executable use-the-memoized-ffi
     ghc-flags,
     language-specs,
 
+  default-language:
+    Haskell2010
+
   main-is:
     Main.hs
 
@@ -1575,6 +1706,9 @@ test-suite integration-tests
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     IntegrationTests.hs
@@ -1622,6 +1756,9 @@ test-suite integration-tests
 
 test-suite test-suite-alphabet
 
+  default-language:
+    Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1653,6 +1790,9 @@ test-suite test-suite-analysis
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     TestSuite.hs
@@ -1692,6 +1832,9 @@ test-suite test-suite-data-structures
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     TestSuite.hs
@@ -1737,6 +1880,9 @@ test-suite test-suite-evaluation
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1774,6 +1920,9 @@ test-suite test-suite-file-parsers
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:          
     TestSuite.hs
@@ -1848,6 +1997,9 @@ test-suite test-suite-graph
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1872,17 +2024,14 @@ test-suite test-suite-graph
     Data.Graph.Test
 
 
--- Library for exporting dynamic characters across the FFI
-
--- Exports a type-cless for exporting dynamic characters across the FFI in
--- multiple formats.
-
-
 test-suite test-suite-tcm
 
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     TestSuite.hs
@@ -1918,6 +2067,9 @@ test-suite test-suite-utility
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:          
     TestSuite.hs
@@ -1960,6 +2112,9 @@ test-suite test-suite-validation-transformer
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1976,6 +2131,7 @@ test-suite test-suite-validation-transformer
     validation-transformer,
     base                     >= 4.11      && < 5.0,
     deepseq                  >= 1.4       && < 2.0,
+    lens                     >= 4.19      && < 5.0,
     mtl                      >= 2.0       && < 3.0,
     QuickCheck               >= 2.12      && < 3.0,
     -- required for Data.Semigroup.Foldable.toNonEmpty
@@ -1996,6 +2152,9 @@ benchmark bench-file-parsers-space
     ghc-flags,
     language-specs
          
+  default-language:
+    Haskell2010
+
   main-is:
     Space.hs
 
@@ -2041,6 +2200,9 @@ benchmark bench-file-parsers-time
     ghc-flags,
     language-specs
          
+  default-language:
+    Haskell2010
+
   main-is:
     Time.hs
 
@@ -2086,6 +2248,9 @@ benchmark bench-graph
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:          
     Benchmarks.hs
 
@@ -2115,6 +2280,9 @@ benchmark bench-string-alignment
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   type:
     exitcode-stdio-1.0
@@ -2152,7 +2320,7 @@ benchmark bench-string-alignment
     semigroupoids            >= 5.2.1     && < 5.4,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
 
@@ -2172,6 +2340,9 @@ benchmark bench-string-alignment-small
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   type:
     exitcode-stdio-1.0
@@ -2209,7 +2380,7 @@ benchmark bench-string-alignment-small
     semigroupoids            >= 5.2.1     && < 5.4,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
 
@@ -2229,6 +2400,9 @@ benchmark bench-utility
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:          
     Benchmarks.hs

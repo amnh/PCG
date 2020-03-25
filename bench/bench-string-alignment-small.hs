@@ -5,11 +5,9 @@ module Main
   ) where
 
 import Benchmark.StringAlignment
---import Bio.Metadata.CharacterName
 import Bio.Metadata.Dynamic
 import Control.Lens
---import Data.Char
-import Data.List
+import Data.List (isInfixOf)
 import Data.MonoTraversable
 
 

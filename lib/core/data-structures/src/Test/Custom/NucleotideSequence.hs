@@ -27,7 +27,7 @@ import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import           Data.Bimap             (elems)
 import           Data.Foldable
-import           Data.List
+import           Data.List              (delete)
 import qualified Data.List.NonEmpty     as NE
 import           Test.QuickCheck        hiding (generate)
 import           Test.SmallCheck.Series

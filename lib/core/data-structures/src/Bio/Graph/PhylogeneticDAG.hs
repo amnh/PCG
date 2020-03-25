@@ -44,4 +44,3 @@ import           Bio.Graph.PhylogeneticDAG.NetworkEdgeQuantification
 import           Bio.Graph.PhylogeneticDAG.Postorder
 import           Bio.Graph.PhylogeneticDAG.Preorder
 import           Bio.Graph.PhylogeneticDAG.Substitute
-import           Bio.Graph.ReferenceDAG.Internal
