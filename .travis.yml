@@ -1,17 +1,17 @@
-dist: bionic #Required for GCC >= v5.0
-sudo: true
-
-
+os:       linux
+dist:     bionic
 language: haskell
-cabal: "3.0"
+cabal:   "3.0"
 
 
-git:
-  depth: 5
-
-
-notifications:
-  email: false
+addons:
+  apt:
+    sources:
+    - hvr-ghc
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-9
+    - g++-9
 
 
 cache:
@@ -21,24 +21,15 @@ cache:
     - "$TRAVIS_BUILD_DIR/.stack-work"
 
 
-matrix:
+jobs:
   include:
-
-    # Cabal
     - ghc: 8.8.3
-#      addons:
-#        apt:
-#          sources:
-#          - hvr-ghc
-#          packages:
-#          - cabal-install-3.0
-
-    # Stack
-#    - ghc: 8.8.3
-#      env: STACK_YAML="$TRAVIS_BUILD_DIR/stack.yaml"
+    - ghc: 8.10.1
 
 
 before_install:
+  # Install newest version of GCC we can get. GHC-8.10.1 messes up with old GCC versions.
+  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 90 --slave /usr/bin/g++ g++ /usr/bin/g++-9 --slave /usr/bin/gcov gcov /usr/bin/gcov-9
 
   # Ensure that this directory exists for tool installs
   - mkdir -p /home/travis/.local/bin
@@ -56,25 +47,24 @@ before_install:
 
 
 install:
-  - gcc --version
-  - ghc --version
+  - gcc    --version
+  - g++    --version
+  - ghc    --version
   - hlint  --version
 # - weeder --version
-  - |
-    if [ -z "$STACK_YAML" ]; then
-      cabal --version
-      cabal update
-      cabal configure
-      cabal build --enable-benchmarks --enable-documentation --enable-tests --haddock-all --haddock-hyperlink-source --haddock-internal
-    else
-      # install stack
-      curl -sSL https://get.haskellstack.org/ | sh
-
-      # build project with stack
-      stack --version
-      stack build --fast --system-ghc --bench --test --haddock --haddock-deps --haddock-hyperlink-source --haddock-internal --no-run-benchmarks --no-run-tests --verbosity warn
-    fi
+  - cabal  --version
+  - cabal update
+  - cabal configure --with-compiler=ghc
+  - cabal build --enable-benchmarks --enable-documentation --enable-tests --haddock-all --haddock-hyperlink-source --haddock-internal
 
 
 script:
   - make run-hlint
+
+
+git:
+  depth: 5
+
+
+notifications:
+  email: false
