@@ -369,7 +369,7 @@ generateSubBlockLocalResolutions _subBlock _subMeta meta childResolutionContext 
         subMeta
           = coerce                                    -- convert back to metadata sequence
           . fmap (over _binMetadata (view _subMeta))  -- extract subBlock metadata
-          . view blockSequence                        -- convert to a vector of metadata blocks
+          . view _blockSequence                       -- convert to a vector of metadata blocks
           $ meta
 
         -- Extract the subblock character sequences

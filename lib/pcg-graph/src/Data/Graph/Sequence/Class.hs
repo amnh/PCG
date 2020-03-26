@@ -182,25 +182,25 @@ newtype MetadataSequence block meta = MetadataSequence
 -- |
 -- A class for those types which have a lens onto a `MetadataSequence`.
 class HasMetadataSequence s a | s -> a where
-    _metadataSequence :: Lens' s a
+  _metadataSequence :: Lens' s a
 
 -- |
 -- A 'Iso' for any sort of 'blockSequence'.
 class HasBlocks s a | s -> a where
-    blockSequence :: Iso' s a
+  _blockSequence :: Iso' s a
 
 -- |
 -- The underlying representation of a `MetadataSequence` is a `Vector` of metadata blocks.
 instance HasBlocks (MetadataSequence block m) (Vector (MetadataBlock block m)) where
 
-  blockSequence = iso coerce coerce
+  _blockSequence = iso coerce coerce
 
 -- |
 -- The underlying representation of a `CharacterSequence` is a `Vector` of blocks
 -- which implement the `BlockBin` typeclass.
 instance HasBlocks (CharacterSequence block) (Vector block) where
 
-  blockSequence = iso coerce coerce
+  _blockSequence = iso coerce coerce
 
 
 -- |
@@ -212,10 +212,10 @@ characterLeafInitialise :: (BlockBin block)
   -> CharacterSequence block
 characterLeafInitialise meta charSeq =
   let
-    mSeq = binMetadata <$> view blockSequence  meta
-    cSeq = charSeq ^. blockSequence
+    mSeq = binMetadata <$> view _blockSequence  meta
+    cSeq = charSeq ^. _blockSequence
   in
-    view (from blockSequence) $ Vector.zipWith leafInitialise mSeq cSeq
+    view (from _blockSequence) $ Vector.zipWith leafInitialise mSeq cSeq
 
 -- |
 -- If we have a pair of `CharacterSequence`s then this function performs
@@ -227,25 +227,44 @@ characterBinaryPostorder :: (BlockBin block)
   -> CharacterSequence block
 characterBinaryPostorder meta leftCharSeq rightCharSeq =
   let
-    mSeq      = binMetadata <$> view blockSequence meta
-    leftCSeq  = leftCharSeq  ^. blockSequence
-    rightCSeq = rightCharSeq ^. blockSequence
+    mSeq      = binMetadata <$> view _blockSequence meta
+    leftCSeq  = leftCharSeq  ^. _blockSequence
+    rightCSeq = rightCharSeq ^. _blockSequence
   in
-    view (from blockSequence) $ Vector.zipWith3 binaryPostorder mSeq leftCSeq rightCSeq
+    view (from _blockSequence) $ Vector.zipWith3 binaryPostorder mSeq leftCSeq rightCSeq
 
 
 -- |
--- A typeclass to indicate blocks which have an associated cost.
-class HasBlockCost block where   -- Note (TODO): should this be rolled into blockBin?
+-- A typeclass to indicate blocks which have a associated cost functions.
+class (BlockBin block) => HasBlockCost block where
+  staticCost  :: MetadataBlock block m -> block -> Double
+  dynamicCost :: MetadataBlock block m -> block -> Double
+  rootcost    :: MetadataBlock block m -> block -> Double
+  blockCost   :: MetadataBlock block m -> block -> Double
 
--- Note (TODO): does it make sense ot have this as a typeclass or should it be a function
+
+--class (BlockBin block) => SingleCharacterBlock block charMeta | block -> charMeta where
+--  _characterWeight :: Lens' charMeta Double
+--  _characterCost   :: Lens' block Word
+  
+class HasCharacterCost char cost | char -> cost where
+  _characterCost :: Lens' char cost
+
+class HasCharacterWeight charMeta cost | charMeta -> cost where
+  _characterWeight :: Lens' charMeta cost
+  
+
+
+
+-- Note (TODO): does it make sense to have this as a typeclass or should it be a function
 -- using blockcost above?
 class HasSequenceCost block where
-  sequenceCost
-    :: meta
-    -> charSeq block
-    -> Double
+  sequenceCost :: MetadataSequence block meta -> CharacterSequence block -> Double
+
 
 
 -- Note (TODO): this should probably be rolled into the BlockBin typeclass
 type family FinalDecoration a :: Type
+
+
+
