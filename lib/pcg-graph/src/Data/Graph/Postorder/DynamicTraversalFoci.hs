@@ -21,6 +21,7 @@ import Data.Pair.Strict
 import Control.Lens hiding (index)
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
+import qualified Data.Vector.Generic as GenericVector
 import Control.Applicative
 import Data.Graph.Indices
 import Data.Graph.NodeContext
@@ -28,7 +29,7 @@ import Data.Key
 import Data.Coerce
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NonEmpty
-import Data.Monoid (First(..))
+import Data.Monoid (First(..), Sum(..))
 import Data.Key (lookup)
 import Data.Graph.Memo
 import Prelude hiding (lookup)
@@ -386,12 +387,151 @@ transposeDisplayTrees =
           key = view  _topologyRepresentation resolution
           val = pure (rootingEdge, (view _characterSequence) resolution)
 
-getNonExactBlockCosts
-  :: (Blockbin block, Blockbin subblock)
-  => Lens' block subblock
-  -> 
+data NonExactCharacterCostInfo = NonExactCharacterCostInfo
+  { nonExactCharacterCost   :: !Word
+  , nonExactCharacterWeight :: !Double
+  , traversalEdgeFoci       :: NonEmpty EdgeIndex
+  }
+
+extractFinalCostInfo :: NonExactCharacterCostInfo -> FinalNonExactCostInfo
+extractFinalCostInfo (NonExactCharacterCostInfo cost weight edgeFoci)
+  = FinalNonExactCostInfo cost edgeFoci
+
+data FinalNonExactCostInfo = FinalNonExactCostInfo
+  { finalCharacterCost :: !Word
+  , minimalEdgeFoci    :: NonEmpty EdgeIndex
+  }
+
+data BlockCostInfo = BlockCostInfo
+  { staticBlockCost       :: !Double
+  , nonExactBlockCostInfo :: !(Vector NonExactCharacterCostInfo)
+  }
+
+data FinalBlockCostInfo = FinalBlockCostInfo
+  { totalCharacterCost    :: !Double
+  , finalNonExactCostInfo :: !(Vector FinalNonExactCostInfo)
+  }
+
+
+getBlockCostInfo
+  :: forall block dynBlock m v .
+    ( BlockBin block
+    , HasCharacterCost dynBlock Word
+    , HasCharacterWeight (CharacterMetadata dynBlock) Double
+    , HasBlockCost block
+    )
+  => Lens' block (Vector dynBlock)
+  -> Lens' (MetadataBlock block m) (Vector (CharacterMetadata dynBlock))
+  -> EdgeIndex
+  -> (MetadataBlock block m)
   -> block
-  -> 
+  -> BlockCostInfo
+getBlockCostInfo _subBlock _meta edge meta block = BlockCostInfo{..}
+  where
+    dynBlock          = view _subBlock block
+    dynBlockMeta      = view _meta meta
+
+    getCharCostInfo charMeta dynChar
+      = NonExactCharacterCostInfo
+      { nonExactCharacterCost   = view _characterCost dynChar
+      , nonExactCharacterWeight = view _characterWeight charMeta
+      , traversalEdgeFoci       = pure edge
+      }
+
+    nonExactBlockCostInfo =
+      Vector.zipWith getCharCostInfo dynBlockMeta dynBlock
+
+    staticBlockCost   = staticCost meta block
+
+recomputeCost :: BlockCostInfo -> FinalBlockCostInfo
+recomputeCost BlockCostInfo{..} =
+    FinalBlockCostInfo totalCost (extractFinalCostInfo <$> nonExactBlockCostInfo)
+  where
+    totalCost    = staticBlockCost + minDynCharCost
+
+    getWeightedCost NonExactCharacterCostInfo{..}
+      = Sum (fromIntegral nonExactCharacterCost * nonExactCharacterWeight)
+    minDynCharCost
+      = getSum . foldMap getWeightedCost $ nonExactBlockCostInfo
+
+
+deriveMinimalSequenceForDisplayTree
+  :: forall block dynBlock m v .
+    ( BlockBin block
+    , HasCharacterCost dynBlock Word
+    , HasCharacterWeight (CharacterMetadata dynBlock) Double
+    , HasBlockCost block
+    )
+  => Lens' block (Vector dynBlock)
+  -> Lens' (MetadataBlock block m) (Vector (CharacterMetadata dynBlock))
+  -> (MetadataSequence block m)
+  -> NonEmpty (EdgeIndex, CharacterSequence block)
+  -> NonEmpty (Double, Vector (Word, Double, NonEmpty EdgeIndex))
+deriveMinimalSequenceForDisplayTree _block _meta meta edgeMapping =
+  let
+    seqCost :: NonEmpty (Vector BlockCostInfo)
+    seqCost = (uncurry (getSequenceCostInfo _block _meta meta)) <$> edgeMapping
+
+    minimalBlocks = foldr1 (Vector.zipWith minimizeBlock) seqCost
+
+    final = undefined
+
+    
+    
+  in
+    undefined
+
+
+mergeNonExactCostInfo
+  :: NonExactCharacterCostInfo
+  -> NonExactCharacterCostInfo
+  -> NonExactCharacterCostInfo
+mergeNonExactCostInfo
+  info1@(NonExactCharacterCostInfo staticCost1 weight1 edgeFoci1)
+  info2@(NonExactCharacterCostInfo staticCost2 _       edgeFoci2) =
+  case compare staticCost1 staticCost2 of
+    LT -> info1
+    GT -> info2
+    EQ -> NonExactCharacterCostInfo staticCost1 weight1 (edgeFoci1 <> edgeFoci2)
+
+minimizeBlock
+  :: BlockCostInfo
+  -> BlockCostInfo
+  -> BlockCostInfo
+minimizeBlock b1@(BlockCostInfo static1 dyn1) b2@(BlockCostInfo _ dyn2)
+  = BlockCostInfo static1 (Vector.zipWith mergeNonExactCostInfo dyn1 dyn2)
+    
+
+
+  
+
+  
+getSequenceCostInfo
+  :: forall block dynBlock m v .
+    ( BlockBin block
+    , HasCharacterCost dynBlock Word
+    , HasCharacterWeight (CharacterMetadata dynBlock) Double
+    , HasBlockCost block
+    )
+  => Lens' block (Vector dynBlock)
+  -> Lens' (MetadataBlock block m) (Vector (CharacterMetadata dynBlock))
+  -> (MetadataSequence block m)
+  -> EdgeIndex
+  -> CharacterSequence block
+  -> Vector BlockCostInfo
+getSequenceCostInfo _block _meta metaSeq edge blockSeq =
+    Vector.zipWith
+      (getBlockCostInfo _block _meta edge)
+      (view _blockSequence metaSeq)
+      (view _blockSequence blockSeq)
+
+
+      
+
+  
+    
+
+    
 
 
 
