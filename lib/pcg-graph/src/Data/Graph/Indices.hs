@@ -11,9 +11,34 @@
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RecordWildCards            #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TemplateHaskell            #-}
 
 
-module Data.Graph.Indices where
+module Data.Graph.Indices
+  ( LeafInd(..)
+  , RootInd(..)
+  , EdgeIndex(..)
+  , ChildIndex(..)
+  , ParentIndex(..)
+  , ChildInfo(..)
+  , HasChildIndex(..)
+  , UntaggedIndex(..)
+  , TaggedIndex(..)
+  , IndexType(..)
+  , Tagged(..)
+  , HasIndexType(..)
+  , HasUntaggedIndex(..)
+  , DirEdgeIndex(..)
+  , dirToEdgeIndex
+  , HasEdgeSource(..)
+  , HasEdgeTarget(..)
+  , flipDirEdgeIndex
+  , NetworkInd(..)
+  , toUntagged
+  , childInfo
+  , childInfoTag
+  ) where
 
 import Control.Lens
 import Data.Monoid
@@ -23,6 +48,9 @@ import Data.Hashable
 import Data.Bits
 import           GHC.Generics         (Generic)
 import Control.DeepSeq
+import Data.Vector.Unboxed
+import GHC.Word
+import Data.Vector.Unboxed.Deriving
 
 
 -- To do: put this into pcg-utility
@@ -179,6 +207,20 @@ instance Show IndexType where
       NetworkTag -> "N"
       RootTag    -> "R"
 
+indexTypeToWord8 :: IndexType -> Word8
+indexTypeToWord8 = \case
+  LeafTag    -> 0
+  TreeTag    -> 1
+  NetworkTag -> 2
+  RootTag    -> 3
+
+word8ToIndexType :: Word8 -> IndexType
+word8ToIndexType = \case
+  0 -> LeafTag
+  1 -> TreeTag
+  2 -> NetworkTag
+  _ -> RootTag
+
 
 toUntagged :: (Tagged t) => t -> Pair IndexType UntaggedIndex
 toUntagged ind = getTag ind :!: getIndex ind
@@ -211,7 +253,6 @@ instance HasEdgeTarget EdgeIndex TaggedIndex where
 instance Hashable EdgeIndex where
   hash (EdgeIndex src tgt)  = hash src `hashWithSalt` tgt
   hashWithSalt = defaultHashWithSalt
-
 
 data DirEdgeIndex = DirEdgeIndex
   { edgeIndex    :: EdgeIndex
@@ -251,4 +292,14 @@ dirToEdgeIndex dir@(DirEdgeIndex edgeInds flipped) =
   if flipped
     then edgeIndex (flipDirEdgeIndex dir)
     else edgeInds
-           
+
+
+derivingUnbox "TaggedIndex"
+  [t| TaggedIndex -> (Int, Word8) |]
+  [| \TaggedIndex{..} -> (untaggedIndex, indexTypeToWord8 tag)|]
+  [| \(ind, tagEnum) -> TaggedIndex ind (word8ToIndexType tagEnum) |]
+
+derivingUnbox "EdgeIndex"
+  [t| EdgeIndex -> (TaggedIndex, TaggedIndex) |]
+  [| \EdgeIndex{..} -> (edgeSource,edgeTarget)|]
+  [| \(src, tgt) -> EdgeIndex src tgt |]
