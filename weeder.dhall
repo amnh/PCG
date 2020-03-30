@@ -41,6 +41,13 @@
     , "^File.Format.TNT.*$"
     , "^File.Format.TransitionCostMatrix.*$"
 
+-- Expose analysis top level bindings
+    , "^Analysis.Scoring.performDecoration$"
+    , "^Analysis.Scoring.performFinalizationDecoration$"
+    , "^Analysis.Scoring.performPostorderDecoration$"
+    , "^Analysis.Scoring.performPreorderDecoration$"
+    , "^Analysis.Scoring.scoreSolution$"
+
 -- Ignore the incomplete Graph sub-library
     , "^Data.Graph.*$"
     ]

@@ -23,7 +23,7 @@
 module Data.FileSource.ParseStreamError
   ( ParseStreamError()
   , makeInvalidPrealigned
-  , makeDeserializeErrorInBinaryEncoding
+--  , makeDeserializeErrorInBinaryEncoding
   , makeDeserializeErrorInCompactRegion
   , makeUnparsableFile
   ) where
@@ -157,11 +157,13 @@ makeInvalidPrealigned path =
     ParseStreamError . pure . InvalidPrealigned path . fromList . fmap (fromIntegral . abs) . toList . toNonEmpty
 
 
+{-
 -- |
 -- Remark that the file has could not be deserialized.
 makeDeserializeErrorInBinaryEncoding :: FileSource -> ShortText -> ParseStreamError
 makeDeserializeErrorInBinaryEncoding path =
     ParseStreamError . pure . FileBadDeserialize path BinaryFormat
+-}
 
 
 -- |
