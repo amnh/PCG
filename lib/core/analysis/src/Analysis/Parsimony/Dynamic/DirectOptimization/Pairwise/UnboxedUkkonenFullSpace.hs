@@ -83,9 +83,13 @@ unboxedUkkonenFullSpaceDO overlapFunction char1 char2
     -- initial barrier will be set adjacent to or beyond the lower left and
     -- upper right corners.
     --
-    -- Lastly, a threshold coeffcient is computed as the minimal indel cost from
+    -- Also, a threshold coeffcient is computed as the minimal indel cost from
     -- any symbol in the alphabet to gap. However, if the indel cost for any
     -- symbol is zero, the algorithm will hang, and a naive approach must be taken.
+    --
+    -- Lastly, if the sum of the gaps in both strings is equal to or exceeds the
+    -- length of the longer string, then the threshold criteria will never be met
+    -- by definition.
     --
     -- Do not perform Ukkonen's algorithm if and only if:
     --
@@ -94,12 +98,15 @@ unboxedUkkonenFullSpaceDO overlapFunction char1 char2
     -- > lesserLen <= 4
     --     OR
     -- > coefficient == 0
+    --     OR
+    -- > gapsPresentInInputs >= longerLen
     noGainFromUkkonenMethod =     lesserLen <= 4
                            || 2 * longerLen >= 3 * lesserLen
                            || coefficient == 0
+                           || gapsPresentInInputs >= longerLen
       where
-        longerLen = olength longer
-        lesserLen = olength lesser
+        longerLen = toEnum $ olength longer
+        lesserLen = toEnum $ olength lesser
 
     -- /O(2*(a - 1))/
     --
@@ -175,11 +182,14 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs cost longerTop le
     needToResizeBand :: forall s. MMatrix s Word -> STRef s Word -> ST s Bool
     needToResizeBand mCost offsetRef = do
         offset        <- readSTRef offsetRef
-        alignmentCost <- M.unsafeRead mCost (lesserLen, longerLen)
-        let threshold -- The threshold value must be non-negative
-              | quasiDiagonalWidth + offset <= gapsPresentInInputs = 0
-              | otherwise = minimumIndelCost * (quasiDiagonalWidth + offset - gapsPresentInInputs)
-        pure $ threshold <= alignmentCost
+        if   quasiDiagonalWidth + offset > toEnum longerLen
+        then pure False
+        else do
+                alignmentCost <- M.unsafeRead mCost (lesserLen, longerLen)
+                let threshold -- The threshold value must be non-negative
+                      | quasiDiagonalWidth + offset <= gapsPresentInInputs = 0
+                      | otherwise = minimumIndelCost * (quasiDiagonalWidth + offset - gapsPresentInInputs)
+                pure $ threshold <= alignmentCost
       
     finalMatrix = runST $ do
         (mCost, mDir) <- buildInitialBandedMatrix cost longerTop lesserLeft startOffset
@@ -356,7 +366,7 @@ expandBandedMatrix
 expandBandedMatrix cost longerTop lesserLeft mCost mDir po co = updateBand
   where
     
-    -- Note: "offset" cannot cause "width" to exceed "cols"
+    -- Note: "offset" cannot cause "width + quasiDiagonalWidth" to exceed "2 * cols"
     offset      = let o' = fromEnum co in  min o' $ cols - quasiDiagonalWidth
     prevOffset  = fromEnum po
     gap         = gapOfStream longerTop
@@ -503,7 +513,7 @@ expandBandedMatrix cost longerTop lesserLeft mCost mDir po co = updateBand
                    else pure ()
 
                    -- Update references for the next row
-                   writeSTRef headStop  headStop'
+                   writeSTRef headStop headStop'
                    writeSTRef tailStart $ if tailStop' /= start2 then tailStop' else start3
 
       ---------------------------------------
