@@ -38,6 +38,7 @@ module Data.Graph.Indices
   , toUntagged
   , childInfo
   , childInfoTag
+  , HasEdgeIndex(..)
   ) where
 
 import Control.Lens
