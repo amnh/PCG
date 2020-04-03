@@ -8,9 +8,10 @@
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE DerivingStrategies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveFunctor  #-}
+{-# LANGUAGE DeriveGeneric  #-}
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE GADTs          #-}
 
 module Data.Graph.Sequence.Class where
 
@@ -243,16 +244,19 @@ class (BlockBin block) => HasBlockCost block where
   blockCost   :: MetadataBlock block m -> block -> Double
 
 
---class (BlockBin block) => SingleCharacterBlock block charMeta | block -> charMeta where
---  _characterWeight :: Lens' charMeta Double
---  _characterCost   :: Lens' block Word
-  
 class HasCharacterCost char cost | char -> cost where
   _characterCost :: Lens' char cost
 
 class HasCharacterWeight charMeta cost | charMeta -> cost where
   _characterWeight :: Lens' charMeta cost
-  
+
+class HasTraversalFoci dynMeta traversalFoci | dynMeta -> traversalFoci where
+  _traversalFoci :: Lens' dynMeta traversalFoci
+
+type DynCharacterSubBlock subBlock dynChar =
+  ( subBlock ~ Vector dynChar
+  , CharacterMetadata subBlock ~ Vector (CharacterMetadata dynChar)
+  )
 
 
 
@@ -265,6 +269,3 @@ class HasSequenceCost block where
 
 -- Note (TODO): this should probably be rolled into the BlockBin typeclass
 type family FinalDecoration a :: Type
-
-
-
