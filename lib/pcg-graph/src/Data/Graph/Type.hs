@@ -112,20 +112,18 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 
 
-
-
 --      ┌─────────────┐
 --      │    Types    │
 --      └─────────────┘
 
 -- |
 -- The GraphShape type is for storing data in the same `shape` as our graph.
-data GraphShape i n r t
+data GraphShape tree net root leaf
   = GraphShape
-  { leafData    :: Vector t
-  , treeData    :: Vector i
-  , networkData :: Vector n
-  , rootData    :: Vector r
+  { leafData    :: Vector leaf
+  , treeData    :: Vector tree
+  , networkData :: Vector net
+  , rootData    :: Vector root
   }
 
 type GraphShape' tree leaf = GraphShape tree tree tree leaf
