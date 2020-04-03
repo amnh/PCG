@@ -16,6 +16,7 @@
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE LambdaCase                 #-}
+{-# LANGUAGE GADTs                      #-}
 
 
 module Data.Graph.Postorder.Resolution where
@@ -56,6 +57,8 @@ import           Data.Graph.Type
 import           Data.Coerce
 import           Data.Set (Set)
 import qualified Data.Set as Set
+import qualified Data.Vector as Vector
+import Data.Vector (Vector)
 
 -- |
 -- The metadata of a subtree resolution.
@@ -209,7 +212,7 @@ applySoftwireResolutions currNodeIndex =
            -- The resolutions where we do not include the right child edge
               lhsNetResolutions
                 = updateMetaSingle leftIndex  . fmap PostNetworkContext $ leftCache
-           -- The resolutions where we do not include the right child edge                
+           -- The resolutions where we do not include the right child edge
               rhsNetResolutions
                 = updateMetaSingle rightIndex . fmap PostNetworkContext $ rightCache
            -- This is all possible combinations of resolutions
@@ -231,10 +234,11 @@ applySoftwireResolutions currNodeIndex =
 
 
 virtualParentResolution
-  :: forall block subBlock meta .
+  :: forall block subBlock dynChar meta .
      ( BlockBin block
      , BlockBin subBlock
      , HasSequenceCost block
+     , DynCharacterSubBlock subBlock dynChar
      )
   => Lens' block subBlock
   -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
@@ -256,7 +260,7 @@ virtualParentResolution
 
     virtualRootIndex :: TaggedIndex
     virtualRootIndex = TaggedIndex 0 RootTag
-    
+
     resolutionContext
       = applySoftwireResolutions
           virtualRootIndex $
@@ -280,7 +284,6 @@ virtualParentResolution
         $ resolutionContext
   in
     updatedBlockResolutions
-
 
 generateLocalResolutions
   :: ( BlockBin block
@@ -346,7 +349,7 @@ generateSubBlockLocalResolutions _subBlock _subMeta meta childResolutionContext 
         childResolutionContext
           & _characterSequence .~ newCharacterSequence
           & _totalSubtreeCost  .~ newTotalCost
-    PostNetworkContext netChildCharSequence -> 
+    PostNetworkContext netChildCharSequence ->
       childResolutionContext & _characterSequence .~ netChildCharSequence
       -- Want to propogate what is stored in the network child resolution
       -- to the parent.
@@ -396,7 +399,6 @@ generateSubBlockLocalResolutions _subBlock _subMeta meta childResolutionContext 
           & _totalSubtreeCost  .~ newTotalCost
 
 
-
 getResolutionCache
   :: MetadataSequence block meta
   -> TaggedIndex
@@ -416,7 +418,7 @@ getResolutionCache meta taggedIndex graph =
         nodeInfo = view _nodeData node
       in
         makeLeafResolution untaggedInd nodeInfo
-    RootTag -> 
+    RootTag ->
       let
         node = indexRoot graph (view _untaggedIndex taggedIndex)
         nodeInfo = view _nodeData node
