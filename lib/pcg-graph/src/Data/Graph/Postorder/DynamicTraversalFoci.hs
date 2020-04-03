@@ -1,3 +1,39 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Bio.Graph.PhylogeneticDAG.DynamicCharacterRerooting
+-- Copyright   :  (c) 2015-2020 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+--
+-- This module provides polymorphic traversal re-rooting for any type of
+-- non-exact characters.
+--
+-- The top-level function `assignOptimalDynamicCharacterRootEdges` takes
+-- a lens onto the relevant subBlocks of non-exact character elements, denoted
+-- throughout by the polymorphic variable subBlock, and returns:
+--
+--   * A graph with costs and metadata updated to reflect the choice of traversal
+--     edges for each non-exact character, along with the cost for this chosen traversal
+--     edge.
+--
+--   * A `HashMap` of type : HashMap EdgeIndex (ResolutionCache (CharacterSequence block))
+--     This gives a mapping from each edge in the graph to the resolutions we get
+--     if we re-root and traverse from the chosen edge.
+--
+--   * A `HashMap` of type: HashMap NetworkTopology (Vector FinalBlockCostInfo)
+--     This gives us a mapping from each display tree to the dynamic character
+--     cost information for the chosen tree. The cost information includes
+--     the total character cost for all non-exact characters along with the block-wise
+--     and then character-wise cost for each character within a block and selection
+--     of edges for which this minimal cost is attained.
+--
+-----------------------------------------------------------------------------
+
+
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE TypeOperators       #-}
 {-# LANGUAGE RankNTypes          #-}
@@ -7,6 +43,8 @@
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE PatternSynonyms     #-}
 {-# LANGUAGE KindSignatures      #-}
+{-# LANGUAGE DerivingStrategies  #-}
+{-# LANGUAGE DeriveFunctor       #-}
 
 
 
@@ -21,7 +59,6 @@ import Data.Pair.Strict
 import Control.Lens hiding (index)
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
-import qualified Data.Vector.Generic as GenericVector
 import Control.Applicative
 import Data.Graph.Indices
 import Data.Graph.NodeContext
@@ -30,171 +67,135 @@ import Data.Coerce
 import Data.List.NonEmpty (NonEmpty(..))
 import qualified Data.List.NonEmpty as NonEmpty
 import Data.Monoid (First(..), Sum(..))
-import Data.Key (lookup)
-import Data.Graph.Memo
 import Prelude hiding (lookup)
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Data.Foldable (toList, foldl')
-import Data.Kind
+import Data.Foldable (toList, foldl', fold)
 import Data.Graph.TopologyRepresentation
+import Data.Graph.Memo
+import Control.Arrow ((&&&))
 
 
 
 
 
---      (i)
---       |
---      (n)
---     /   \
---   (j)   (k)
-data EdgeTreeMap edge edgeData = EdgeTreeMap
-  { parentEdgeT     :: !(edge :!: edgeData)  -- (n) -> (i)
-  , leftChildEdgeT  :: !(edge :!: edgeData)  -- (n) -> (j)
-  , rightChildEdgeT :: !(edge :!: edgeData)  -- (n) -> (k)
+-- |
+-- This data type represents a selection of edges
+-- surrounding a node in a re-rooted graph along with
+-- data attached to each chosen edge/node as shown below:
+--
+--                      (p) - parVal
+--                       |
+--                      (n)
+--                     /   \
+--         leftVal - (l)   (r) - rightVal
+--
+data EdgeMapping val = EdgeMapping
+  { parentEdge     :: DirEdgeIndex :!: val
+  , leftChildEdge  :: DirEdgeIndex :!: val
+  , rightChildEdge :: DirEdgeIndex :!: val
   }
-
---      (i)
---       |
---      (n)
---     /   \
---   (j)   (k)
-data EdgeNetworkMapFull edgeData =
-    EdgeNetworkMapFull
-    { parentEdge     :: !(TaggedIndex :!: edgeData)  -- (n) -> (i)
-    , leftChildEdge  :: !(TaggedIndex :!: edgeData)  -- (n) -> (j)
-    , rightChildEdge :: !(TaggedIndex :!: edgeData)  -- (n) -> (k)
-    }
-
-data NodeArrangement = NodeArrangement
-  { nodeParentEdge     :: DirEdgeIndex
-  , nodeLeftChildEdge  :: DirEdgeIndex
-  , nodeRightChildEdge :: DirEdgeIndex
-  }
+  deriving stock (Show, Functor)
 
 
-_parentEdge :: Lens' NodeArrangement TaggedIndex
-_parentEdge = undefined
---  lens (view _left . parentEdge) (\g l -> g { parentEdge = l :!: ()})
-
-_leftChildEdge :: Lens' NodeArrangement TaggedIndex
-_leftChildEdge = undefined
-  -- lens (view _left . leftChildEdge) (\g l -> g { leftChildEdge = l :!: ()})
-
-_rightChildEdge :: Lens' NodeArrangement TaggedIndex
-_rightChildEdge = undefined
-  --lens (view _left . rightChildEdge) (\g l -> g { rightChildEdge = l :!: ()})
 
 
-lookupEdge :: forall edgeData . TaggedIndex -> EdgeNetworkMapFull edgeData -> Maybe edgeData
-lookupEdge index EdgeNetworkMapFull{..} =
+lookupEdge :: forall edgeData . EdgeIndex -> EdgeMapping edgeData -> Maybe edgeData
+lookupEdge edgeInd EdgeMapping{..} =
     getFirst . foldMap f $ [parentEdge, leftChildEdge, rightChildEdge]
   where
-    f :: TaggedIndex :!: edgeData -> First edgeData
-    f (tag :!: edgeData) | tag == index = pure edgeData
-                         | otherwise    = mempty
-
-
---lookupEdge :: forall edgeData . TaggedIndex -> EdgeNetworkMap edgeData -> Maybe edgeData
---lookupEdge index = \case
---  Left edgeMapFull -> lookupEdgeFull index edgeMapFull
---  Right (EdgeNetworkMapSingle (taggedIndex :!: edgeData))
---    -> if index == taggedIndex
---       then pure edgeData
---       else Nothing
-
-
-
---
---
---      (n)
---       |
---       |
---      (c)
---
-data EdgeNetworkMapSingle edgeData =
-    EdgeNetworkMapSingle (TaggedIndex :!: edgeData)  -- (n) -> (c)
-  | NoEdgeMapData
-  deriving Show
-    
-
-type EdgeNetworkMap edgeData = Either (EdgeNetworkMapFull edgeData) (EdgeNetworkMapSingle edgeData)
-
-
-
-type Topology = TopologyRepresentation EdgeIndex
-  -- to do: incorporate topology
-
-type NonExactCharacterMapping = HashMap Topology NonExactCharacterTraversals
-
-type NonExactCharacterTraversals = NonEmpty NonExactCharacterInfo
-
-data NonExactCharacterInfo = NonExactCharacterInfo
-  { cost ::  Double
-  , minimalCostEdges :: Vector (Word :!: NonEmpty EdgeIndex)
-  }
+    f :: DirEdgeIndex :!: edgeData -> First edgeData
+    f (dirEdgeIndex :!: edgeData)
+      | edgeInd == (view _edgeIndex dirEdgeIndex) = pure edgeData
+      | otherwise                                 = mempty
 
 
 type GraphEdgeMapping block =
   GraphShape
-    (EdgeNetworkMapFull (ResolutionCache (CharacterSequence block)))
-    (EdgeNetworkMapFull (ResolutionCache (CharacterSequence block)))
-    (EdgeNetworkMap     (ResolutionCache (CharacterSequence block)))
+    (EdgeMapping (ResolutionCache (CharacterSequence block)))
+    (EdgeMapping (ResolutionCache (CharacterSequence block)))
+    ()
     ()
 
-graphEdgeLookup :: GraphEdgeMapping block -> EdgeIndex -> ResolutionCache (CharacterSequence block)
-graphEdgeLookup edge graphEdge = undefined
+type GraphEdgeMemo block =
+  MemoGen
+    (EdgeMapping (ResolutionCache (CharacterSequence block)))
+    (EdgeMapping (ResolutionCache (CharacterSequence block)))
+    ()
+    ()
 
-emptyEdgeMapping :: GraphEdgeMapping block
-emptyEdgeMapping =
-  GraphShape mempty mempty mempty mempty
+
+
+graphEdgeLookup :: GraphEdgeMemo block -> EdgeIndex -> ResolutionCache (CharacterSequence block)
+graphEdgeLookup = undefined
+  -- edge graphEdge = undefined
+
 
 assignOptimalDynamicCharacterRootEdges
-  :: forall f block subBlock meta c e .
-     ( BlockBin block
-     , BlockBin subBlock
-     , HasSequenceCost subBlock
+  :: forall block subBlock dynChar m c e .
+     ( BlockBin subBlock
+--     , BlockBin block
+--     , HasSequenceCost subBlock
      , HasSequenceCost block
+     , HasBlockCost block
+--     , HasCharacterWeight (CharacterMetadata subBlock) Double
+     , HasCharacterWeight (CharacterMetadata dynChar)          Double
+     , HasCharacterCost dynChar Word
+     , DynCharacterSubBlock subBlock dynChar
+     , HasMetadataSequence c (MetadataSequence block m)
      )
-  => Lens' block subBlock
-  -> Lens' (LeafBin block) (LeafBin subBlock)
+  => Lens' block (Vector dynChar)
+  -> Lens' (LeafBin block) (LeafBin (Vector dynChar))
   -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
-  -> MetadataSequence block meta
+  -> MetadataSequence block m
   -> Graph
        (ResolutionCacheM Identity) c e
        (CharacterSequence block) (CharacterSequence (LeafBin block))
-  -> ( HashMap EdgeIndex (ResolutionCache (CharacterSequence block))
-     , GraphEdgeMapping block
+  -> ( Graph
+        (ResolutionCacheM Identity) c e
+        (CharacterSequence block) (CharacterSequence (LeafBin block))
+     , HashMap EdgeIndex (ResolutionCache (CharacterSequence block))
+     , HashMap NetworkTopology (Vector FinalBlockCostInfo)
      )
 assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
   case numberOfNodes graph of
-    0 -> (mempty, emptyEdgeMapping)
-    1 -> (mempty, emptyEdgeMapping)
+    0 -> (graph, mempty, mempty)
+    1 -> (graph, mempty, mempty)
     2 ->
       let
         rootCache :: ResolutionCache (CharacterSequence block)
         rootCache  = (view _nodeData) . Vector.head $ (view _rootReferences graph)
-        childInd = undefined
+        rootInd, childInd :: TaggedIndex
+        rootInd  = TaggedIndex 0 RootTag
+        childInd = TaggedIndex 0 LeafTag
         edge :: EdgeIndex
-        edge = undefined
-        edgeMap :: EdgeNetworkMap (ResolutionCache (CharacterSequence block))
-        edgeMap = Right $ EdgeNetworkMapSingle (childInd :!: rootCache)
-        mapping = HashMap.fromList [(edge, rootCache)]
-        graphMapping :: GraphEdgeMapping block
-        graphMapping
-          = GraphShape mempty mempty mempty (coerce . Vector.singleton $ edgeMap)
-      in
-        (mapping, graphMapping)
+        edge = EdgeIndex rootInd childInd
 
+        edgeMapping :: HashMap EdgeIndex (ResolutionCache (CharacterSequence block))
+        edgeMapping = HashMap.fromList [(edge, rootCache)]
+
+        topologyMapping :: HashMap NetworkTopology (Vector FinalBlockCostInfo)
+        topologyMapping =
+          displayTreeRerooting _subBlock _subMeta meta edgeMapping
+
+        updatedGraph = undefined
+--          modifyMetadataSequence _subBlock _ _ _
+      in
+        (updatedGraph, edgeMapping, topologyMapping)
 
     _ ->
       let
         unrootedEdges :: Set (Either EdgeIndex (Int :!: EdgeIndex))
         unrootedEdges = getRootAdjacentEdgeSet graph <> getUnrootedEdges graph
 
-        edgeCostMapping :: HashMap EdgeIndex (ResolutionCache (CharacterSequence block))
-        edgeCostMapping = HashMap.fromList . fmap f . Set.toList $ unrootedEdges
+        updatedGraph    = undefined
+        topologyMapping =
+          displayTreeRerooting _subBlock _subMeta meta edgeMapping
+
+
+        edgeMapping :: HashMap EdgeIndex (ResolutionCache (CharacterSequence block))
+        edgeMapping = HashMap.fromList . fmap f . Set.toList $ unrootedEdges
           where
           f :: Either EdgeIndex (Int :!: EdgeIndex)
             -> (EdgeIndex, ResolutionCache (CharacterSequence block))
@@ -204,9 +205,11 @@ assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
             Left nonRootEdge@(EdgeIndex src tgt) ->
               let
                 lhsContext
-                  = (src `lookupTreeNode` contextNodeDatum) >>= (tgt `lookupEdge`)
+                  =   (src `lookupTreeNode` contextNodeDatum)
+                  >>= (nonRootEdge `lookupEdge`)
                 rhsContext
-                  = (tgt `lookupTreeNode` contextNodeDatum) >>= (src `lookupEdge`)
+                  =   (tgt `lookupTreeNode` contextNodeDatum)
+                  >>= (nonRootEdge `lookupEdge`)
                 errorContext = error "to do"
 --                      unlines
 --                    [ "Could not find one or more of the contexts:"
@@ -235,70 +238,135 @@ assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
                     )
                   Nothing         -> error errorContext
 
-          numRootNodes, numNetNodes, numLeafNodes, numTreeNodes :: Int
-          numRootNodes = length (view _rootReferences graph)
-          numNetNodes  = length (view _networkReferences graph)
-          numLeafNodes = length (view _leafReferences graph)
-          numTreeNodes = length (view _treeReferences graph)
-
           contextNodeDatum :: GraphEdgeMapping block
           contextNodeDatum =
             generateMemoGraphShape
               numLeafNodes
               numTreeNodes
               numNetNodes
-              numLeafNodes
-              recursiveContextDatum
+              numRootNodes
+              edgeMapMemo
 
-          recursiveContextDatum
-            :: Endo
-                (MemoGen
-                  (EdgeNetworkMapFull (ResolutionCache (CharacterSequence block)))
-                  (EdgeNetworkMapFull (ResolutionCache (CharacterSequence block)))
-                  (EdgeNetworkMap     (ResolutionCache (CharacterSequence block)))
-                  ()
-                )
-          recursiveContextDatum
-            MemoGen
-            { leafGen    = recLeafFn
-            , treeGen    = recTreeFn
-            , networkGen = recNetworkFn
-            , rootGen    = recRootFn
-            } = MemoGen{..}
-            where
-            rootGen    = const (Right NoEdgeMapData)
-            leafGen    = const ()
-            networkGen = undefined
-            treeGen    = undefined
-            
-            directedEdgeDatum = undefined
+
+          edgeMapMemo :: Endo (GraphEdgeMemo block)
+          edgeMapMemo graphEdgeMemo =
+            let
+              rootEdgeMap = const ()
+              leafEdgeMap = const ()
+
+              netEdgeMap  = internalMap NetworkTag
+              treeEdgeMap = internalMap TreeTag
+              internalMap tag n =
+                let
+                  handleMaybe (Just v) = v
+                  handleMaybe Nothing = error "Couldn't find node arrangement!"
+
+                  tagInd = TaggedIndex n tag
+
+                  nodeArrangement  = getNodeArrangement tagInd graph
+                  nodeArrangements = allNodeArrangements (handleMaybe nodeArrangement)
+
+                in
+                  deriveNodeArrangementEdgeMapping
+                    _subBlock _subLeaf _subMeta graph graphEdgeMemo tagInd nodeArrangements
+            in
+              MemoGen
+                leafEdgeMap
+                treeEdgeMap
+                netEdgeMap
+                rootEdgeMap
+
+          numRootNodes, numNetNodes, numLeafNodes, numTreeNodes :: Int
+          numRootNodes = length (view _rootReferences graph)
+          numNetNodes  = length (view _networkReferences graph)
+          numLeafNodes = length (view _leafReferences graph)
+          numTreeNodes = length (view _treeReferences graph)
       in
-        undefined
+        (updatedGraph, edgeMapping, topologyMapping)
 
-deriveDirectedEdgeDatum
-  :: forall block subBlock meta c e
+-------------------------------
+-- Display tree cost mapping --
+-------------------------------
+
+-- |
+--
+deriveNodeArrangementEdgeMapping
+  :: forall block subBlock dynChar meta c e
   . ( HasMetadataSequence c (MetadataSequence block meta)
     , BlockBin block
     , BlockBin subBlock
     , HasSequenceCost block
+    , DynCharacterSubBlock subBlock dynChar
     )
   => Lens' block subBlock
   -> Lens' (LeafBin block) (LeafBin subBlock)
-  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)  
+  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
   -> Graph
        (ResolutionCacheM Identity)
        c e
        (CharacterSequence block)
        (CharacterSequence (LeafBin block))
-  -> GraphEdgeMapping block
+  -> GraphEdgeMemo block
   -> TaggedIndex
-  -> [TaggedIndex]
+  -> (NodeArrangement, NodeArrangement, NodeArrangement)
+  -> EdgeMapping (ResolutionCache (CharacterSequence block))
+deriveNodeArrangementEdgeMapping
+  _subBlock _subLeaf _subMeta
+  graph contextNodeDatum nodeInd (n1, n2, n3)
+  =
+  let
+    deriveEdge = deriveDirectedEdgeDatum _subBlock _subLeaf _subMeta graph contextNodeDatum nodeInd
+  in
+    EdgeMapping
+      (deriveEdge n1)
+      (deriveEdge n2)
+      (deriveEdge n3)
+
+-- |
+-- This function takes a node arrangement giving a selected node and those edges
+-- surrounding it and returns the parent edge in the arrangement and the resolutions
+-- when the given parent node is selected (see below).
+--
+-- In terms of the following diagram of a node arrangement:
+--
+--      (p)
+--       |
+--      (n)
+--     /   \
+--   (l)   (r)
+--
+-- we return the edge: Edge i n, along with the resolution cache
+-- obtained if we treat nodes l and r as child nodes in the traversal
+-- and perform a local postorder resolution update from the selected
+-- (memoized) resolutions j and k.
+--
+-- Note: In terms of the original graph orientation given by the original
+-- choice of rooting it may be the case that p is not the parent of n
+-- but is only considered so in a given new choice of edge traversal.
+deriveDirectedEdgeDatum
+  :: forall block subBlock dynChar meta c e
+  . ( HasMetadataSequence c (MetadataSequence block meta)
+    , BlockBin block
+    , BlockBin subBlock
+    , HasSequenceCost block
+    , DynCharacterSubBlock subBlock dynChar
+    )
+  => Lens' block subBlock
+  -> Lens' (LeafBin block) (LeafBin subBlock)
+  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
+  -> Graph
+       (ResolutionCacheM Identity)
+       c e
+       (CharacterSequence block)
+       (CharacterSequence (LeafBin block))
+  -> GraphEdgeMemo block
+  -> TaggedIndex
   -> NodeArrangement
-  -> [(EdgeIndex, ResolutionCache (CharacterSequence block))]
+  -> DirEdgeIndex :!: ResolutionCache (CharacterSequence block)
 deriveDirectedEdgeDatum
   _subBlock _subLeaf _subMeta
-  graph contextNodeDatum nodeInd parNodes (NodeArrangement p l r) = undefined
---  [(EdgeIndex p nodeInd, subTreeResolutions)]
+  graph contextNodeDatum nodeInd (NodeArrangement p l r) =
+    p :!: subTreeResolutions
   where
     meta = view (_cachedData . _metadataSequence) graph
  -- Get the edge indices with their original graph orientation.
@@ -314,6 +382,12 @@ deriveDirectedEdgeDatum
 
     localResolution = virtualParentResolution _subBlock _subMeta meta
     toResCache (x : xs) = view (from _resolutionCache) (x :| xs)
+    toResCache _ =
+      error $
+      fold
+      [ "During deriveDirectedEdgeDatum "
+      , "encoutered an empty resolution cache"
+      ]
 
     leftChildResInfo  = (leftIndex  , lhsMemo)
     rightChildResInfo = (rightIndex , rhsMemo)
@@ -330,10 +404,10 @@ deriveDirectedEdgeDatum
               localResolution leftChildResInfo rightChildResInfo
             else
               case (lhsContext, rhsContext) of
-                ([]      , []      ) -> error "deriveDirectedEdgeDatum: to do"
-                (xs@(x:_), []      ) -> toResCache xs
-                ([]      , ys@(y:_)) -> toResCache ys
-                (xs      , ys      )
+                ([], []) -> error "deriveDirectedEdgeDatum: to do"
+                (xs, []) -> toResCache xs
+                ([], ys) -> toResCache ys
+                (xs, ys)
                   -> localResolution (leftIndex, toResCache xs) (rightIndex, toResCache ys)
           (False, True) ->
             case lhsContext of
@@ -343,7 +417,7 @@ deriveDirectedEdgeDatum
                   lhsMemo' = toResCache xs
                 in
                   lhsMemo' <> localResolution (leftIndex, lhsMemo') (rightIndex, rhsMemo)
-                
+
           (True, False) ->
             case rhsContext of
               [] -> lhsMemo
@@ -354,10 +428,10 @@ deriveDirectedEdgeDatum
                   rhsMemo' <> localResolution (leftIndex, lhsMemo) (rightIndex, rhsMemo')
           (True, True) ->
             case (lhsContext, rhsContext) of
-              (  [],   [])         -> error $ "deriveDirectedEdgeDatum: to do Network"
-              (xs@(x:_),   [])     -> toResCache xs
-              (  [], ys@(y:_))     -> toResCache ys
-              (xs@(x:_), ys@(y:_)) -> toResCache (xs <> ys)
+              ([], []) -> error $ "deriveDirectedEdgeDatum: to do Network"
+              (xs, []) -> toResCache xs
+              ([], ys) -> toResCache ys
+              (xs, ys) -> toResCache (xs <> ys)
 
 
 -- |
@@ -387,49 +461,161 @@ transposeDisplayTrees =
           key = view  _topologyRepresentation resolution
           val = pure (rootingEdge, (view _characterSequence) resolution)
 
+
+------------------------------
+-- Traversal Cost Functions --
+------------------------------
+
+
+-- |
+-- This type represents the character cost information of traversing
+-- a non-exact character from a particular edge.
 data NonExactCharacterCostInfo = NonExactCharacterCostInfo
   { nonExactCharacterCost   :: !Word
   , nonExactCharacterWeight :: !Double
   , traversalEdgeFoci       :: NonEmpty EdgeIndex
   }
 
-extractFinalCostInfo :: NonExactCharacterCostInfo -> FinalNonExactCostInfo
-extractFinalCostInfo (NonExactCharacterCostInfo cost weight edgeFoci)
-  = FinalNonExactCostInfo cost edgeFoci
-
+-- |
+-- This type represents the final non-exact character cost
+-- along with the minimal collection of traversal edges for this
+-- particular type.
 data FinalNonExactCostInfo = FinalNonExactCostInfo
   { finalCharacterCost :: !Word
   , minimalEdgeFoci    :: NonEmpty EdgeIndex
   }
 
+-- |
+-- Takes `NonExactCharacterCostInfo` which is minimal for this character
+-- and extracts the non-exact character cost along with the traversal edge
+-- assignment.
+extractFinalCostInfo :: NonExactCharacterCostInfo -> FinalNonExactCostInfo
+extractFinalCostInfo (NonExactCharacterCostInfo cost _ edgeFoci)
+  = FinalNonExactCostInfo cost edgeFoci
+
+-- |
+-- This type collects together the static character costs for an entire block
+-- along with a vector of `NonExactCharacterCostInfo` for each dynamic character
+-- contained within a block.
 data BlockCostInfo = BlockCostInfo
   { staticBlockCost       :: !Double
   , nonExactBlockCostInfo :: !(Vector NonExactCharacterCostInfo)
   }
 
+-- |
+-- This type represents a final assignment of cost and non-exact character
+-- traversal information.
 data FinalBlockCostInfo = FinalBlockCostInfo
   { totalCharacterCost    :: !Double
   , finalNonExactCostInfo :: !(Vector FinalNonExactCostInfo)
   }
 
+getMinimalEdgeFoci :: FinalBlockCostInfo -> Vector (NonEmpty EdgeIndex)
+getMinimalEdgeFoci = (fmap minimalEdgeFoci) . finalNonExactCostInfo
 
-getBlockCostInfo
-  :: forall block dynBlock m v .
-    ( BlockBin block
-    , HasCharacterCost dynBlock Word
-    , HasCharacterWeight (CharacterMetadata dynBlock) Double
+-- |
+-- This function takes a hashmap from edges to resolutions representing those
+-- resolutions we get if this edge is chosen as a traversal edge and returns a
+-- hashmap from network topologes to dynamic block cost information. This represents
+-- the cost and traversal edges for each dynamic character block if this edge is
+-- to be chosen.
+displayTreeRerooting
+    :: forall block subBlock dynChar m .
+    ( HasCharacterCost dynChar Word
+    , HasCharacterWeight (CharacterMetadata dynChar) Double
     , HasBlockCost block
+    , DynCharacterSubBlock subBlock dynChar
     )
-  => Lens' block (Vector dynBlock)
-  -> Lens' (MetadataBlock block m) (Vector (CharacterMetadata dynBlock))
+  => Lens' block subBlock
+  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
+  -> (MetadataSequence block m)
+  -> HashMap EdgeIndex (ResolutionCache (CharacterSequence block))
+  -> HashMap NetworkTopology (Vector FinalBlockCostInfo)
+displayTreeRerooting _block _meta meta =
+  fmap (deriveMinimalSequenceForDisplayTree _block _meta meta)  . transposeDisplayTrees
+
+
+-- |
+-- This function takes a non-empty collection of edges and character sequences.
+-- The character sequence is that which is assigned to the edge if this is chosen
+-- as a traversal edge. This function outputs a `FinalBlockCostInfo` for each
+-- block in the character sequence. These give the minimal traversal edge costs
+-- and the edges which are minimal for each block.
+deriveMinimalSequenceForDisplayTree
+  :: forall block subBlock dynChar m .
+    ( HasCharacterCost dynChar Word
+    , HasCharacterWeight (CharacterMetadata dynChar) Double
+    , HasBlockCost block
+    , DynCharacterSubBlock subBlock dynChar
+    )
+  => Lens' block subBlock
+  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
+  -> (MetadataSequence block m)
+  -> NonEmpty (EdgeIndex, CharacterSequence block)
+  -> Vector FinalBlockCostInfo
+deriveMinimalSequenceForDisplayTree _block _meta meta edgeMapping =
+  let
+    seqCost :: NonEmpty (Vector BlockCostInfo)
+    seqCost = (uncurry (getSequenceCostInfo _block _meta meta)) <$> edgeMapping
+
+    minimalBlocks :: Vector BlockCostInfo
+    minimalBlocks = foldr1 (Vector.zipWith minimizeBlock) seqCost
+
+    finalCostAssignment = fmap recomputeCost minimalBlocks
+  in
+    finalCostAssignment
+
+
+-- |
+-- Take two different `NonExactCharacterCostInfo` assignments and return
+-- the assignment with minimal traversal cost. If both traversal costs
+-- are equal then we merge the minimal traversal edge sets.
+mergeNonExactCostInfo
+  :: NonExactCharacterCostInfo
+  -> NonExactCharacterCostInfo
+  -> NonExactCharacterCostInfo
+mergeNonExactCostInfo
+  info1@(NonExactCharacterCostInfo traversalCost1 weight1 edgeFoci1)
+  info2@(NonExactCharacterCostInfo traversalCost2 _       edgeFoci2) =
+  case compare traversalCost1 traversalCost2 of
+    LT -> info1
+    GT -> info2
+    EQ -> NonExactCharacterCostInfo traversalCost1 weight1 (edgeFoci1 <> edgeFoci2)
+
+
+-- |
+-- This function takes two `BlockCostInfo` assignments and merges the minimal
+-- one character by character using `mergeNonExactCostInfo`.
+minimizeBlock
+  :: BlockCostInfo
+  -> BlockCostInfo
+  -> BlockCostInfo
+minimizeBlock (BlockCostInfo static1 dyn1) (BlockCostInfo _ dyn2)
+  = BlockCostInfo static1 (Vector.zipWith mergeNonExactCostInfo dyn1 dyn2)
+
+
+-- |
+-- This function take a character block containing dynamic characters
+-- and a currently chosen edge and creates the block cost info associated
+-- with traversing from that edge for that particular block.
+getBlockCostInfo
+  :: forall block subBlock dynChar m .
+    ( HasCharacterCost dynChar Word
+    , HasCharacterWeight (CharacterMetadata dynChar) Double
+    , HasBlockCost block
+    , DynCharacterSubBlock subBlock dynChar
+    )
+  => Lens' block subBlock
+  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
   -> EdgeIndex
   -> (MetadataBlock block m)
   -> block
   -> BlockCostInfo
 getBlockCostInfo _subBlock _meta edge meta block = BlockCostInfo{..}
   where
+    binMeta           = view _binMetadata meta
     dynBlock          = view _subBlock block
-    dynBlockMeta      = view _meta meta
+    dynBlockMeta      = view _meta binMeta
 
     getCharCostInfo charMeta dynChar
       = NonExactCharacterCostInfo
@@ -443,6 +629,38 @@ getBlockCostInfo _subBlock _meta edge meta block = BlockCostInfo{..}
 
     staticBlockCost   = staticCost meta block
 
+
+-- |
+-- This function takes a character sequence of blocks which contain
+-- blocks of dynamic characters and returns the `BlockCostInfo` for each
+-- block.
+getSequenceCostInfo
+  :: forall block subBlock dynChar m .
+    ( HasCharacterCost dynChar Word
+    , HasCharacterWeight (CharacterMetadata dynChar) Double
+    , HasBlockCost block
+    , DynCharacterSubBlock subBlock dynChar
+    )
+  => Lens' block subBlock
+  -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
+  -> (MetadataSequence block m)
+  -> EdgeIndex
+  -> CharacterSequence block
+  -> Vector BlockCostInfo
+getSequenceCostInfo _block _meta metaSeq edge blockSeq =
+    Vector.zipWith
+      (getBlockCostInfo _block _meta edge)
+      (view _blockSequence metaSeq)
+      (view _blockSequence blockSeq)
+
+
+
+
+-- |
+-- This function gets the old static character cost
+-- and the cost for each dynamic character with minimal
+-- chosen traversal edges and gives back the final total
+-- cost and dynamic character block information
 recomputeCost :: BlockCostInfo -> FinalBlockCostInfo
 recomputeCost BlockCostInfo{..} =
     FinalBlockCostInfo totalCost (extractFinalCostInfo <$> nonExactBlockCostInfo)
@@ -455,118 +673,87 @@ recomputeCost BlockCostInfo{..} =
       = getSum . foldMap getWeightedCost $ nonExactBlockCostInfo
 
 
-deriveMinimalSequenceForDisplayTree
-  :: forall block dynBlock m v .
-    ( BlockBin block
-    , HasCharacterCost dynBlock Word
-    , HasCharacterWeight (CharacterMetadata dynBlock) Double
-    , HasBlockCost block
-    )
-  => Lens' block (Vector dynBlock)
-  -> Lens' (MetadataBlock block m) (Vector (CharacterMetadata dynBlock))
-  -> (MetadataSequence block m)
-  -> NonEmpty (EdgeIndex, CharacterSequence block)
-  -> NonEmpty (Double, Vector (Word, Double, NonEmpty EdgeIndex))
-deriveMinimalSequenceForDisplayTree _block _meta meta edgeMapping =
-  let
-    seqCost :: NonEmpty (Vector BlockCostInfo)
-    seqCost = (uncurry (getSequenceCostInfo _block _meta meta)) <$> edgeMapping
+----------------------------
+-- Graph update functions --
+----------------------------
 
-    minimalBlocks = foldr1 (Vector.zipWith minimizeBlock) seqCost
-
-    final = undefined
-
-    
-    
-  in
-    undefined
-
-
-mergeNonExactCostInfo
-  :: NonExactCharacterCostInfo
-  -> NonExactCharacterCostInfo
-  -> NonExactCharacterCostInfo
-mergeNonExactCostInfo
-  info1@(NonExactCharacterCostInfo staticCost1 weight1 edgeFoci1)
-  info2@(NonExactCharacterCostInfo staticCost2 _       edgeFoci2) =
-  case compare staticCost1 staticCost2 of
-    LT -> info1
-    GT -> info2
-    EQ -> NonExactCharacterCostInfo staticCost1 weight1 (edgeFoci1 <> edgeFoci2)
-
-minimizeBlock
-  :: BlockCostInfo
-  -> BlockCostInfo
-  -> BlockCostInfo
-minimizeBlock b1@(BlockCostInfo static1 dyn1) b2@(BlockCostInfo _ dyn2)
-  = BlockCostInfo static1 (Vector.zipWith mergeNonExactCostInfo dyn1 dyn2)
-    
-
-
-  
-
-  
-getSequenceCostInfo
-  :: forall block dynBlock m v .
-    ( BlockBin block
-    , HasCharacterCost dynBlock Word
-    , HasCharacterWeight (CharacterMetadata dynBlock) Double
-    , HasBlockCost block
-    )
-  => Lens' block (Vector dynBlock)
-  -> Lens' (MetadataBlock block m) (Vector (CharacterMetadata dynBlock))
-  -> (MetadataSequence block m)
-  -> EdgeIndex
-  -> CharacterSequence block
-  -> Vector BlockCostInfo
-getSequenceCostInfo _block _meta metaSeq edge blockSeq =
-    Vector.zipWith
-      (getBlockCostInfo _block _meta edge)
-      (view _blockSequence metaSeq)
-      (view _blockSequence blockSeq)
-
-
-      
-
-  
-    
-
-    
-
-
-
-
-getUnrootedEdgeParent :: TaggedIndex -> Graph f c e n t -> [TaggedIndex]
-getUnrootedEdgeParent nodeIndex graph
-  | not . hasRootParent nodeIndex $ graph = toList $ getSibling nodeIndex graph
-  | otherwise                             = getParents nodeIndex graph
-
-
-getNodeContext :: TaggedIndex -> Graph f c e n t -> Maybe NodeArrangement
-getNodeContext = undefined
-     
 
 -- |
--- This function gets all of the node arrangements from a directed node arrangement:
---      (i)
---       |
---       v
---      (n)
---     /   \
---    V     V
---   (j)   (k)
---
--- For this purpose we keep track of the original relationships between the source and target.
---
-allNodeArrangements :: NodeArrangement -> NonEmpty NodeArrangement
-allNodeArrangements arrange@(NodeArrangement p l r)
-  =    arrange
-  :| [ NodeArrangement (flipDirEdgeIndex l) r (flipDirEdgeIndex p)
-     , NodeArrangement (flipDirEdgeIndex r) (flipDirEdgeIndex p) l
-     ]
-  
+-- This function takes the topology mapping and uses it to figure out
+-- the non-exact cost for each network topology in the resolutions
+-- of root nodes by looking at the assigned costs that this topology
+-- received when the optimal traversal edge is chosen.
+modifyRootCosts
+  :: forall c e block subBlock dynChar meta .
+  ( DynCharacterSubBlock subBlock dynChar
+  , HasCharacterCost dynChar Word
+  , HasSequenceCost block
+  , HasMetadataSequence c (MetadataSequence block meta)
+  )
+  => Lens' block subBlock
+  -> HashMap NetworkTopology (Vector (FinalBlockCostInfo))
+  -> Graph
+        (ResolutionCacheM Identity) c e
+        (CharacterSequence block) (CharacterSequence (LeafBin block))
+  -> Graph
+        (ResolutionCacheM Identity) c e
+        (CharacterSequence block) (CharacterSequence (LeafBin block))
+modifyRootCosts _subBlock topologyMapping graph =
+  let
+    updateRoots =
+      fmap $                -- over each root node
+        over _nodeData $    -- over the index node data
+          mapResolution     -- over the resolutionCache
+          updateResolution  -- update the resolution
+
+  in
+    over _rootReferences updateRoots $ graph
+  where
+    meta = view (_cachedData . _metadataSequence) graph
+    updateResolution :: Resolution (CharacterSequence block) -> Resolution (CharacterSequence block)
+    updateResolution res =
+        set _totalSubtreeCost  updatedTotalCost
+      . set _characterSequence updatedCharSeq $ res
+      where
+        currCharSeq = view _characterSequence res
+     -- Compute the cost of the updated sequence.
+        updatedTotalCost = sequenceCost meta updatedCharSeq
+
+     -- Here we take the block cost info and update the cost with the
+     -- new traversal cost for each block.
+        updatedCharSeq :: CharacterSequence block
+        updatedCharSeq  =
+          currCharSeq &  -- Treat the character sequence as a vector of blocks
+            over _blockSequence
+              (Vector.zipWith
+                updateCharBlock
+                finalBlockCostInfo)
+
+     -- extract the topology at the root
+        rootTopology = view _topologyRepresentation res
+        finalBlockCostInfo = topologyMapping HashMap.! rootTopology
 
 
+    updateCharBlock :: FinalBlockCostInfo -> block -> block
+    updateCharBlock finalBlockCostInfo =
+      over _subBlock (updateCharSubBlock finalBlockCostInfo)
+
+    updateCharSubBlock :: FinalBlockCostInfo -> subBlock -> subBlock
+    updateCharSubBlock (FinalBlockCostInfo _ dynBlockCostInfo) =
+      Vector.zipWith
+        (\finalCostInfo subBlock ->
+           set _characterCost (finalCharacterCost finalCostInfo) $ subBlock
+        ) dynBlockCostInfo
+
+
+
+----------------------
+-- Helper functions --
+----------------------
+
+-- |
+-- This function removes those resolutions
+-- which contain edges from the given set.
 filterResolutionEdges
   :: Set EdgeIndex
   -> ResolutionCache (CharacterSequence block)
@@ -580,6 +767,102 @@ filterResolutionEdges edges = runIdentity . filterResolution hasEdge
       in
         edges `Set.disjoint` resolutionEdges
 
+                        --------------------------------------
+                        -- Edge Mapping and Node Arrangement--
+                        --------------------------------------
+
+-- |
+-- A `NodeArrangement` is an `EdgeMapping` with no (meaningful) data stored
+-- in each node.
+type NodeArrangement = EdgeMapping ()
+
+{-# COMPLETE NodeArrangement #-}
+pattern NodeArrangement :: DirEdgeIndex -> DirEdgeIndex -> DirEdgeIndex -> NodeArrangement
+pattern NodeArrangement e1 e2 e3 <- EdgeMapping (e1 :!: ()) (e2 :!: ()) (e3 :!: ())  where
+  NodeArrangement e1 e2 e3
+    = EdgeMapping
+        (e1 :!: ())
+        (e2 :!: ())
+        (e3 :!: ())
+
+
+
+
+
+
+_parentEdge :: Lens' NodeArrangement TaggedIndex
+_parentEdge = undefined
+--  lens (view _left . parentEdge) (\g l -> g { parentEdge = l :!: ()})
+
+_leftChildEdge :: Lens' NodeArrangement TaggedIndex
+_leftChildEdge = undefined
+  -- lens (view _left . leftChildEdge) (\g l -> g { leftChildEdge = l :!: ()})
+
+_rightChildEdge :: Lens' NodeArrangement TaggedIndex
+_rightChildEdge = undefined
+  --lens (view _left . rightChildEdge) (\g l -> g { rightChildEdge = l :!: ()})
+
+-- |
+-- This function gets all of the node arrangements from a directed node arrangement:
+--      (i)
+--       |
+--       v
+--      (n)
+--     /   \
+--    V     V
+--   (j)   (k)
+--
+-- For this purpose we keep track of the original relationships between the source and target.
+--
+allNodeArrangements :: NodeArrangement -> (NodeArrangement, NodeArrangement, NodeArrangement)
+allNodeArrangements arrange@(NodeArrangement p l r)
+  =  ( arrange
+     , NodeArrangement (flipDirEdgeIndex l) r (flipDirEdgeIndex p)
+     , NodeArrangement (flipDirEdgeIndex r) (flipDirEdgeIndex p) l
+     )
+
+getNodeArrangement :: TaggedIndex -> Graph f c e n t -> Maybe NodeArrangement
+getNodeArrangement tagInd graph =
+  let
+    untaggedInd = view _untaggedIndex tagInd
+  in
+  case view _indexType tagInd of
+    LeafTag    -> Nothing
+    RootTag    -> Nothing
+    NetworkTag ->
+      let
+        nodeInfo = graph `indexNetwork` untaggedInd
+        childInd             = view _childInds nodeInfo
+        parInd1 :!: parInd2  = view _parentInds nodeInfo
+        leftChildEdge = undefined
+        rightChildEdge = undefined
+        parentEdge = undefined
+      in
+        Just $
+          NodeArrangement
+            parentEdge
+            leftChildEdge
+            rightChildEdge
+    TreeTag    ->
+      let
+        nodeInfo = graph `indexTree` untaggedInd
+        childInds = view _childInds nodeInfo
+        parInd    = view _parentInds nodeInfo
+        leftChildEdge = undefined
+        rightChildEdge = undefined
+        parentEdge = undefined
+      in
+        Just $
+          NodeArrangement
+            parentEdge
+            leftChildEdge
+            rightChildEdge
+
+
+                        --------------------
+                        -- Edge functions --
+                        --------------------
+
 
 -- |
 -- Gives back a vector of all edges we wish to consider as traversal
@@ -589,6 +872,12 @@ getUnrootedEdges
   -> Set (Either EdgeIndex a)
                 -- Note: This is safe as Left is monotonic!
 getUnrootedEdges = Set.mapMonotonic Left . (liftA2 (<>) getNetworkEdgeSet getTreeEdgeSet)
+
+
+getUnrootedEdgeParent :: TaggedIndex -> Graph f c e n t -> [TaggedIndex]
+getUnrootedEdgeParent nodeIndex graph
+  | not . hasRootParent nodeIndex $ graph = toList $ getSibling nodeIndex graph
+  | otherwise                             = getParents nodeIndex graph
 
 
 -- |
@@ -651,15 +940,12 @@ isUnrootedNetworkEdge DirEdgeIndex{..} =
   if reversedEdge
     then getTag edgeSource == NetworkTag
     else getTag edgeTarget == NetworkTag
-    
+
+
+                        -------------
+                        -- Utility --
+                        -------------
 
 
 unsafeLookup :: (Lookup f, Show (Key f)) => f a -> Key f -> a
 unsafeLookup s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s
-  
-
-
-
-
-
-  
