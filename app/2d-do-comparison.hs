@@ -14,7 +14,7 @@ import           Data.List.NonEmpty                            (NonEmpty)
 import qualified Data.List.NonEmpty                            as NE
 import           Data.Maybe
 import           Data.MonoTraversable
---import           Data.TCM.Dense
+import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           System.Environment                            (getArgs)
 import           Test.Custom.NucleotideSequence
@@ -88,22 +88,23 @@ gatherContexts lhs rhs = (contextRendering, contextSameness)
     contextRendering = renderContexts (NS lhs) (NS rhs) contexts
 
     contexts =
-        [ ("Old Full"            ,        memoizeDOResult)
-        , ("Old Ukkonen"         ,     ukkonenOldDOResult)
-        , ("Unboxed Full"        ,        unboxedDOResult)
-        , ("Unboxed Swapping"    ,   swappingDOResult)
-        , ("Unboxed Ukkonen Swap",  ukkonenSwapDOResult)
-        , ("Unboxed Ukkonen Full",  ukkonenFullDOResult)
+        [ ("Using C FFI"         ,     foreignDOResult) 
+        , ("Old Full"            ,     memoizeDOResult)
+        , ("Old Ukkonen"         ,  ukkonenOldDOResult)
+        , ("Unboxed Full"        ,     unboxedDOResult)
+        , ("Unboxed Swapping"    ,    swappingDOResult)
+        , ("Unboxed Ukkonen Swap", ukkonenSwapDOResult)
+        , ("Unboxed Ukkonen Full", ukkonenFullDOResult)
         ]
 
 --    naiveDOResult       = naiveDO             lhs rhs costStructure
---    foreignDOResult     = foreignPairwiseDO   lhs rhs denseMatrixValue
-    memoizeDOResult     = naiveDOMemo               lhs rhs tcm
-    ukkonenOldDOResult  = ukkonenDO                 lhs rhs tcm
-    unboxedDOResult     = unboxedFullMatrixDO       tcm lhs rhs
-    swappingDOResult    = unboxedSwappingDO         tcm lhs rhs
-    ukkonenSwapDOResult = unboxedUkkonenSwappingDO  tcm lhs rhs
-    ukkonenFullDOResult = unboxedUkkonenFullSpaceDO tcm lhs rhs
+    foreignDOResult     = foreignPairwiseDO denseMatrixValue lhs rhs 
+    memoizeDOResult     = naiveDOMemo                    tcm lhs rhs
+    ukkonenOldDOResult  = ukkonenDO                      tcm lhs rhs
+    unboxedDOResult     = unboxedFullMatrixDO            tcm lhs rhs
+    swappingDOResult    = unboxedSwappingDO              tcm lhs rhs
+    ukkonenSwapDOResult = unboxedUkkonenSwappingDO       tcm lhs rhs
+    ukkonenFullDOResult = unboxedUkkonenFullSpaceDO      tcm lhs rhs
 
 
 sameAlignment :: (Foldable t, MonoFoldable s, Eq c, Eq s) => t (c, s) -> Bool
@@ -133,12 +134,14 @@ renderContexts m n xs = unlines . (\x -> [prefix] <> x <> [suffix]) . fmap f $ t
     renderResult (cost, aligned) = unlines
         [ "  Cost     : " <> show cost
         , "  Alignment: " <> renderDynamicCharacter alphabet tcm' aligned
+        , "  Shown Obj: " <> show aligned
         ]
 
     prefix = show (m, n)
     suffix
       | sameAlignment $ snd <$> xs = "[!] Results MATCH"
       | otherwise                  = "[X] Results DO NOT MATCH"
+
 
 alphabet :: Alphabet String
 alphabet = fromSymbols ["A","C","G","T"]
@@ -162,8 +165,8 @@ costStructure i j
   | otherwise = 2
 
 
---denseMatrixValue :: DenseTransitionCostMatrix
---denseMatrixValue = generateDenseTransitionCostMatrix 0  5 costStructure
+denseMatrixValue :: DenseTransitionCostMatrix
+denseMatrixValue = generateDenseTransitionCostMatrix 0  5 costStructure
 
 
 memoMatrixValue :: MemoizedCostMatrix

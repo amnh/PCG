@@ -76,7 +76,6 @@ int align2d( alignIO_t          *inputChar1_aio
 
         alignIOtoDynChar(shortChar, inputChar2_aio, alphabetSize);
         shortIO = inputChar2_aio;
-
     } else {
         alignIOtoDynChar(longChar, inputChar2_aio, alphabetSize);
         longIO = inputChar2_aio;
@@ -170,7 +169,7 @@ int align2d( alignIO_t          *inputChar1_aio
     if (NULL != retShortChar) free(retShortChar);
 
     // Shouldn't have to free the whole structs here because they just pointed into the retChars.
-    if (NULL != longChar) free(longChar);
+    if (NULL !=  longChar) free( longChar);
     if (NULL != shortChar) free(shortChar);
 
     return algnCost;

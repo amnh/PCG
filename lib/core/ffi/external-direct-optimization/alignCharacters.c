@@ -70,8 +70,8 @@
 #include "costMatrix.h"
 #include "debug_constants.h"
 #include "ukkCommon.h"
-// #include "matrices.h"
-// #include "dyn_character.h"
+//#include "matrices.h"
+//#include "dyn_character.h"
 
 #define ALIGN_TO_ALIGN      1
 #define ALIGN_TO_VERTICAL   2
@@ -4416,7 +4416,9 @@ algn_backtrace_2d ( const dyn_character_t *shorterChar
         idx_shorterChar,
         new_item_for_ret_longerChar  = 0,
         new_item_for_ret_shorterChar = 0,
-        shifter                     = 0;
+        shifter                      = 0;
+
+    const char INDEL_GAP = 0;
 
     DIR_MTX_ARROW_t  *beg, *end;
     idx_longerChar  = longerChar->len;
@@ -4478,13 +4480,13 @@ algn_backtrace_2d ( const dyn_character_t *shorterChar
                 idx_longerChar--;
                 new_item_for_ret_longerChar = get_elem(longerChar, idx_longerChar);
                 prepend_an_element(ret_longerChar, new_item_for_ret_longerChar);
-                new_item_for_ret_shorterChar = costMatrix->gap_char;
+                new_item_for_ret_shorterChar = INDEL_GAP;
                 prepend_an_element(ret_shorterChar, new_item_for_ret_shorterChar);
                 end -= l;
             }
             else {
                 assert (*end & INSERT);
-                new_item_for_ret_longerChar = costMatrix->gap_char;
+                new_item_for_ret_longerChar = INDEL_GAP;
                 prepend_an_element(ret_longerChar, new_item_for_ret_longerChar);
                 idx_shorterChar--;
                 new_item_for_ret_shorterChar = get_elem(shorterChar, idx_shorterChar);
@@ -4509,14 +4511,14 @@ algn_backtrace_2d ( const dyn_character_t *shorterChar
                     idx_longerChar--;
                     new_item_for_ret_longerChar = get_elem (longerChar, idx_longerChar);
                     prepend_an_element(ret_longerChar, new_item_for_ret_longerChar);
-                    new_item_for_ret_shorterChar = costMatrix->gap_char;
+                    new_item_for_ret_shorterChar = INDEL_GAP;
                     prepend_an_element(ret_shorterChar, new_item_for_ret_shorterChar);
                     end -= l;
                     shifter = 0;
                 }
                 else {
                     assert (SHIFT_H == shifter);
-                    new_item_for_ret_longerChar = costMatrix->gap_char;
+                    new_item_for_ret_longerChar = INDEL_GAP;
                     prepend_an_element(ret_longerChar, new_item_for_ret_longerChar);
                     idx_shorterChar--;
                     new_item_for_ret_shorterChar = get_elem(shorterChar, idx_shorterChar);
@@ -4533,7 +4535,7 @@ algn_backtrace_2d ( const dyn_character_t *shorterChar
                     idx_longerChar--;
                     new_item_for_ret_longerChar = get_elem (longerChar, idx_longerChar);
                     prepend_an_element(ret_longerChar, new_item_for_ret_longerChar);
-                    new_item_for_ret_shorterChar = costMatrix->gap_char;
+                    new_item_for_ret_shorterChar = 0;
                     prepend_an_element(ret_shorterChar, new_item_for_ret_shorterChar);
                     end -= l;
                 }
@@ -4547,7 +4549,7 @@ algn_backtrace_2d ( const dyn_character_t *shorterChar
                     shifter = SHIFT_H;
                 }
                 else if (SHIFT_H == shifter) {
-                    new_item_for_ret_longerChar = costMatrix->gap_char;
+                    new_item_for_ret_longerChar = INDEL_GAP;
                     prepend_an_element(ret_longerChar, new_item_for_ret_longerChar);
                     idx_shorterChar--;
                     new_item_for_ret_shorterChar = get_elem(shorterChar, idx_shorterChar);
@@ -4571,7 +4573,7 @@ algn_get_median_2d_with_gaps ( dyn_character_t *shorterChar
                              )
 {
     elem_t *char_begin_longerChar, *char_begin_shorterChar;
-    int interim;
+    elem_t interim;
     int i;
     char_begin_longerChar  = longerChar->char_begin;
     char_begin_shorterChar = shorterChar->char_begin;
@@ -4579,7 +4581,14 @@ algn_get_median_2d_with_gaps ( dyn_character_t *shorterChar
     // printf("charLen - 1 of longer: %zu\n", longerChar->len - 1);
 
     for (i = longerChar->len - 1; i >= 0; i--) {
-        interim = cm_get_median_2d (costMatrix, char_begin_longerChar[i], char_begin_shorterChar[i]);
+        elem_t x = char_begin_longerChar[i];
+        elem_t y = char_begin_shorterChar[i];
+        interim = cm_get_median_2d ( costMatrix
+                                   // if we get a 0 value, use the gap_char value instead
+				   // 0 value is used as an "output gap"
+				   , x ? x : costMatrix->gap_char
+				   , y ? y : costMatrix->gap_char
+				   );
         dyn_char_prepend (medianToReturn, interim);
     }
 }
@@ -4600,7 +4609,14 @@ algn_get_median_2d_no_gaps( dyn_character_t *shorterChar
     char_begin_longerChar  = longerChar->char_begin;
     char_begin_shorterChar = shorterChar->char_begin;
     for (i = longerChar->len - 1; i >= 0; i--) {
-        interim = cm_get_median_2d (costMatrix, char_begin_longerChar[i], char_begin_shorterChar[i]);
+        elem_t x = char_begin_longerChar[i];
+        elem_t y = char_begin_shorterChar[i];
+        interim = cm_get_median_2d ( costMatrix
+                                   // if we get a 0 value, use the gap_char value instead
+				   // 0 value is used as an "output gap"
+				   , x ? x : costMatrix->gap_char
+				   , y ? y : costMatrix->gap_char
+				   );
 
         if (interim != costMatrix->gap_char) {
             dyn_char_prepend (sm, interim);

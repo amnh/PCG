@@ -101,7 +101,7 @@ type NeedlemanWunchMatrix = Matrix (Cost, Direction)
 -- |
 -- Constraints on the input dynamic characters that direct optimization requires
 -- to operate.
-type DOCharConstraint s = (EncodableDynamicCharacter s, Ord (Element s), EncodableDynamicCharacterElement (Element s), Show (Element s) {- , Show s, Show (Element s), Integral (Element s) -})
+type DOCharConstraint s = (EncodableDynamicCharacter s, EncodableDynamicCharacterElement (Element s), Ord (Element s), Ord (Subcomponent (Element s)) {- , Show (Element s) , Show s, Show (Element s), Integral (Element s) -})
 
 
 -- |
@@ -112,7 +112,7 @@ type MatrixConstraint m = (Foldable m, Functor m, Indexable m, Key m ~ (Int, Int
 
 -- |
 -- A parameterized function to generate an alignment matrix.
-type MatrixFunction m s = s -> s -> OverlapFunction (Subcomponent (Element s)) -> m (Cost, Direction)
+type MatrixFunction m s = OverlapFunction (Subcomponent (Element s)) -> s -> s -> m (Cost, Direction)
 
 
 -- |
@@ -213,16 +213,16 @@ directOptimization
   :: ( DOCharConstraint s
      , MatrixConstraint m
      )
-  => s
+  => OverlapFunction (Subcomponent (Element s))
   -> s
-  -> OverlapFunction (Subcomponent (Element s))
+  -> s
   -> MatrixFunction m s
   -> (Word, s)
-directOptimization char1 char2 overlapλ matrixFunction =
+directOptimization overlapλ char1 char2 matrixFunction =
     handleMissingCharacter char1 char2 alignment
   where
     (swapped, longerChar, shorterChar) = measureCharacters char1 char2
-    traversalMatrix                    = matrixFunction longerChar shorterChar overlapλ
+    traversalMatrix                    = matrixFunction overlapλ longerChar shorterChar
     (alignmentCost, alignmentContext)  = traceback overlapλ traversalMatrix longerChar shorterChar
     alignment                          = (alignmentCost, transformation alignmentContext)
     transformation
@@ -311,14 +311,19 @@ handleMissingCharacterThreeway f a b c v =
 -- Handles equality of inputs by /not/ swapping.
 {-# INLINE measureCharacters #-}
 {-# SPECIALISE measureCharacters :: DynamicCharacter -> DynamicCharacter -> (Bool, DynamicCharacter, DynamicCharacter) #-}
-measureCharacters :: (MonoFoldable s, Ord (Element s)) => s -> s -> (Bool, s, s)
+measureCharacters
+  :: ( EncodableDynamicCharacterElement (Element s)
+     , MonoFoldable s
+     , Ord (Subcomponent (Element s))
+     ) => s -> s -> (Bool, s, s)
 measureCharacters lhs rhs
   | lhsOrdering == LT = ( True, rhs, lhs)
   | otherwise         = (False, lhs, rhs)
   where
     lhsOrdering =
         case comparing olength lhs rhs of
-          EQ -> otoList lhs `compare` otoList rhs
+          EQ -> let f = fmap getMedian . otoList
+                in  f lhs `compare` f rhs
           x  -> x
 
 
@@ -332,13 +337,13 @@ needlemanWunschDefinition
      , Indexable f
      , Key f ~ (Int, Int)
      )
-  => s
+  => OverlapFunction (Subcomponent (Element s))
   -> s
-  -> OverlapFunction (Subcomponent (Element s))
+  -> s
   -> f (Cost, Direction)
   -> (Int, Int)
   -> (Cost, Direction)
-needlemanWunschDefinition topChar leftChar overlapFunction memo p@(row, col)
+needlemanWunschDefinition overlapFunction topChar leftChar memo p@(row, col)
   | p == (0,0) = (      0, DiagArrow)
   | otherwise  = (minCost,    minDir)
   where

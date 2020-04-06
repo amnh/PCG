@@ -40,6 +40,7 @@ import           Data.Matrix.Unboxed                           (Matrix)
 import qualified Data.Matrix.Unboxed                           as Matrix
 import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.TCM.Dense
 import           Data.Vector                                   hiding (length)
 import           Numeric.Extended.Real
 
@@ -128,12 +129,14 @@ characterDistance f m c1 c2 = fold $
 
 dynamicCharacterDistance
   :: forall m d c f .
-     ( DirectOptimizationPostorderDecoration d c
+     ( Applicative f
+     , DirectOptimizationPostorderDecoration d c
+     , ExportableElements c
+     , Foldable f
+     , GetDenseTransitionCostMatrix m (Maybe DenseTransitionCostMatrix)
      , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
      , HasCharacterWeight m Double
-     , Applicative f
-     , Foldable f
-     , Show (Element c)
+     , Ord (Subcomponent (Element c))
      )
   => m -> f d -> f d -> Sum Double
 dynamicCharacterDistance meta c1 c2 = foldMap (Sum . (weight *) . fromIntegral) $
@@ -145,8 +148,10 @@ dynamicCharacterDistance meta c1 c2 = foldMap (Sum . (weight *) . fromIntegral) 
 dynamicCharacterDistance'
   :: forall m d c
    . ( DirectOptimizationPostorderDecoration d c
+     , ExportableElements c
+     , GetDenseTransitionCostMatrix m (Maybe DenseTransitionCostMatrix)
      , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
-     , Show (Element c)
+     , Ord (Subcomponent (Element c))
      )
   => m -> d -> d -> Word
 dynamicCharacterDistance' meta d1 d2 = (^. _1) $ selectDynamicMetric meta c1 c2

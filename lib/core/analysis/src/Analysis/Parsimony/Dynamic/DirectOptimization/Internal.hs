@@ -42,6 +42,7 @@ import qualified Data.List.NonEmpty                                     as NE
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.Semigroup
+import           Data.TCM.Dense
 import           Data.Word
 import           Prelude                                                hiding (zipWith)
 
@@ -65,15 +66,21 @@ type PairwiseAlignment s = s -> s -> (Word, s)
 -- Select the most appropriate direct optimization metric implementation.
 selectDynamicMetric
   :: ( EncodableDynamicCharacter c
+     , ExportableElements c
+     , GetDenseTransitionCostMatrix dec (Maybe DenseTransitionCostMatrix)
      , GetPairwiseTransitionCostMatrix dec (Subcomponent (Element c)) Word
-     , Show (Element c)
+     , Ord (Subcomponent (Element c))
      )
   => dec
   -> c
   -> c
   -> (Word, c)
 selectDynamicMetric meta =
-    unboxedUkkonenFullSpaceDO $ meta ^. pairwiseTransitionCostMatrix
+    case {-# SCC getDense #-} meta ^. denseTransitionCostMatrix of
+      Just dm -> {-# SCC foreignPairwiseDO #-} foreignPairwiseDO dm
+      Nothing -> let !pTCM = meta ^. pairwiseTransitionCostMatrix
+--                 in  {-# SCC ukkonen #-} ukkonenDO pTCM 
+                 in  {-# SCC unboxedUkkonen #-} unboxedUkkonenFullSpaceDO pTCM
 
 
 -- |

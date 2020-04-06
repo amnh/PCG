@@ -26,7 +26,7 @@ import           Data.Alphabet
 import           Data.List                                              (intercalate)
 import           Data.List.NonEmpty                                     (NonEmpty (..))
 import           Data.MonoTraversable
--- import           Data.TCM.Dense
+import           Data.TCM.Dense
 import           Data.TCM.Memoized
 import           Test.Custom.NucleotideSequence
 import           Test.QuickCheck
@@ -42,7 +42,7 @@ testSuite = testGroup "Pairwise alignment tests"
     [ testSuiteNaiveDO
     , testSuiteMemoizedDO
     , testSuiteUkkonnenDO
---    , testSuiteForeignDO
+    , testSuiteForeignDO
     , testSuiteUnboxedFullMatrixDO
     , testSuiteUnboxedFullSwappingDO
     , testSuiteUnboxedUkkonenSwapDO
@@ -63,7 +63,7 @@ constistentImplementation = testGroup "All implementations return same states"
 consistentResults :: String -> (Word -> Word -> Word) -> TestTree
 consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll checkConsistency
   where
---    dense  = genDenseMatrix metric
+    dense  = genDenseMatrix metric
     memoed = getMedianAndCost2D (genMemoMatrix metric)
     median x y = fst $ memoed x y
     f :: DynamicCharacterElement -> DynamicCharacter
@@ -74,14 +74,14 @@ consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll check
       | naiveResult == memoedResult = Right $ show p
       | otherwise = Left errorMessage
       where
-        naiveResult   = naiveDO           (f x) (f y) metric
-        memoedResult  = naiveDOMemo       (f x) (f y) memoed
---        foreignResult = foreignPairwiseDO (f x) (f y) dense
+        naiveResult   = naiveDO           metric (f x) (f y)
+        memoedResult  = naiveDOMemo       memoed (f x) (f y)
+        foreignResult = foreignPairwiseDO dense  (f x) (f y)
         errorMessage  = unlines
                    [ ""
                    , unwords [ "Naive:  ", showResult median   naiveResult, show   naiveResult ]
                    , unwords [ "Memoed: ", showResult median  memoedResult, show  memoedResult ]
---                   , unwords [ "Foreign:", showResult median foreignResult, show foreignResult ]
+                   , unwords [ "Foreign:", showResult median foreignResult, show foreignResult ]
                    ]
 
 
@@ -98,26 +98,26 @@ showResult transformation (cost, a) = (\x->"("<>x<>")") $ intercalate ","
 testSuiteNaiveDO :: TestTree
 testSuiteNaiveDO = testGroup "Naive DO"
     [ isValidPairwiseAlignment "Naive DO over discrete metric"
-       $ \x y -> naiveDO x y discreteMetric
+       $ naiveDO discreteMetric
     , isValidPairwiseAlignment "Naive DO over L1 norm"
-       $ \x y -> naiveDO x y l1Norm
+       $ naiveDO l1Norm
     , isValidPairwiseAlignment "Naive DO over prefer substitution metric (1:2)"
-       $ \x y -> naiveDO x y preferSubMetric
+       $ naiveDO preferSubMetric
     , isValidPairwiseAlignment "Naive DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> naiveDO x y preferGapMetric
+       $ naiveDO preferGapMetric
     ]
 
 
 testSuiteMemoizedDO :: TestTree
 testSuiteMemoizedDO = testGroup "Memoized DO"
     [ isValidPairwiseAlignment "Memoized DO over discrete metric"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
+       $ naiveDOMemo (getMedianAndCost2D (genMemoMatrix discreteMetric))
     , isValidPairwiseAlignment "Memoized DO over L1 norm"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix l1Norm))
+       $ naiveDOMemo (getMedianAndCost2D (genMemoMatrix l1Norm))
     , isValidPairwiseAlignment "Memoized DO over prefer substitution metric (1:2)"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+       $ naiveDOMemo (getMedianAndCost2D (genMemoMatrix preferSubMetric))
     , isValidPairwiseAlignment "Memoized DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+       $ naiveDOMemo (getMedianAndCost2D (genMemoMatrix preferGapMetric))
     ]
 
 
@@ -176,29 +176,27 @@ testSuiteUnboxedUkkonenFullDO = testGroup "Unboxed Ukkonen (Full Space) DO"
 testSuiteUkkonnenDO :: TestTree
 testSuiteUkkonnenDO = testGroup "Ukkonnen DO"
     [ isValidPairwiseAlignment "Ukkonnen DO over discrete metric"
-       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
+       $ ukkonenDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
     , isValidPairwiseAlignment "Ukkonnen DO over L1 norm"
-       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix l1Norm))
+       $ ukkonenDO (getMedianAndCost2D (genMemoMatrix l1Norm))
     , isValidPairwiseAlignment "Ukkonnen DO over prefer substitution metric (1:2)"
-       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+       $ ukkonenDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
     , isValidPairwiseAlignment "Ukkonnen DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+       $ ukkonenDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
     ]
 
 
-{-
 testSuiteForeignDO :: TestTree
 testSuiteForeignDO = testGroup "Foreign C DO"
     [ isValidPairwiseAlignment "Foreign C DO over discrete metric"
-       $ \x y -> foreignPairwiseDO x y (genDenseMatrix discreteMetric)
+       $ foreignPairwiseDO (genDenseMatrix discreteMetric)
     , isValidPairwiseAlignment "Foreign C DO over L1 norm"
-       $ \x y -> foreignPairwiseDO x y (genDenseMatrix l1Norm)
+       $ foreignPairwiseDO (genDenseMatrix l1Norm)
     , isValidPairwiseAlignment "Foreign C DO over prefer substitution metric (1:2)"
-       $ \x y -> foreignPairwiseDO x y (genDenseMatrix preferSubMetric)
+       $ foreignPairwiseDO (genDenseMatrix preferSubMetric)
     , isValidPairwiseAlignment "Foreign C DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> foreignPairwiseDO x y (genDenseMatrix preferGapMetric)
+       $ foreignPairwiseDO (genDenseMatrix preferGapMetric)
     ]
--}
 
 
 {-
@@ -274,10 +272,9 @@ isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
 -}
 
 
-{-
 genDenseMatrix :: (Word -> Word -> Word) -> DenseTransitionCostMatrix
 genDenseMatrix = generateDenseTransitionCostMatrix 0  5
--}
+
 
 genMemoMatrix :: (Word -> Word -> Word) -> MemoizedCostMatrix
 genMemoMatrix  = generateMemoizedTransitionCostMatrix 5

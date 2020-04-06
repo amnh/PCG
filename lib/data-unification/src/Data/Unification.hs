@@ -37,7 +37,7 @@ import           Bio.Graph.Node
 import qualified Bio.Graph.ReferenceDAG              as DAG
 import           Bio.Metadata.Continuous             (continuousMetadata)
 import           Bio.Metadata.DiscreteWithTCM        (discreteMetadataFromTCM)
-import           Bio.Metadata.Dynamic                (dynamicMetadata)
+import           Bio.Metadata.Dynamic                (dynamicMetadataFromTCM)
 import           Bio.Sequence                        hiding (hexmap)
 import           Bio.Sequence.Block
 import qualified Bio.Sequence.Character              as CS
@@ -402,7 +402,8 @@ buildMetadataBlock = foldMap1 encodeToSingletonMetadata
               $ discreteMetadataFromTCM charName charWeight specifiedAlphabet tcmSource tcm
             NormalizedDynamicCharacter    {} ->
                 MD.dynamicToMetadataBlock
-              $  dynamicMetadata charName charWeight specifiedAlphabet tcmSource tcm
+              $  dynamicMetadataFromTCM charName charWeight specifiedAlphabet tcmSource tcm
+--              $  dynamicMetadata charName charWeight specifiedAlphabet tcmSource tcm
      where
       charWeight        = weight charMeta
       specifiedAlphabet = fmap toString . alphabet $ charMeta

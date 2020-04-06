@@ -144,7 +144,7 @@ instance ExportableElements DynamicCharacter where
       -> Maybe ExportableCharacterElements
 -}
     toExportableElements _ Missing{} = Nothing
-    toExportableElements _t dc        = Just ExportableCharacterElements
+    toExportableElements _t dc         = Just ExportableCharacterElements
         { exportedElementCountElements = toEnum $ olength dc
         , exportedElementWidthElements = symbolCount dc
         , exportedCharacterElements    = toNumber . getMedian <$> otoList dc
@@ -152,17 +152,17 @@ instance ExportableElements DynamicCharacter where
       where
         toNumber = toUnsignedNumber . packAmbiguityGroup
     
-    fromExportableElements riCharElems = DC . force $ V.fromNonEmpty bvs
+    fromExportableElements riCharElems = {-# SCC fromExportableElements #-} DC . force $ V.fromNonEmpty bvs
       where
-        bvs = f <$> NE.fromList inputElems
-        fromValue  = fromNumber charWidth
+        bvs = {-# SCC bvs #-} f <$> NE.fromList inputElems
+        fromValue  = fromNumber charWidth . (toEnum :: Int -> Word) . fromEnum
         charWidth  = reimportableElementWidthElements riCharElems
-        inputElems = reimportableCharacterElements    riCharElems --  :: ![(CUInt, CUInt, CUInt)]
-        f (x,y,z)  = 
+        inputElems = {-# SCC inputElems #-} reimportableCharacterElements    riCharElems --  :: ![(CUInt, CUInt, CUInt)]
+        f (x,y,z)  =
             let x' = fromValue x
                 y' = fromValue y
                 z' = fromValue z
-            in  (x',y',z')
+            in  (x', y', z')
 
 
 instance ExportableBuffer DynamicCharacter where

@@ -38,38 +38,29 @@ import Data.MonoTraversable
 -- and the aligned version of the second input character. The process for this
 -- algorithm is to generate a traversal matrix, then perform a traceback.
 {-# INLINE naiveDO #-}
-{-# SPECIALISE naiveDO :: DynamicCharacter -> DynamicCharacter -> (Word -> Word -> Word) -> (Word, DynamicCharacter) #-}
+{-# SPECIALISE naiveDO :: (Word -> Word -> Word) -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
 naiveDO
   :: ( DOCharConstraint s
      , FiniteBits (Subcomponent (Element s))
      )
-  => s                       -- ^ First  dynamic character
+  => (Word -> Word -> Word)  -- ^ Structure defining the transition costs between character states
+  -> s                       -- ^ First  dynamic character
   -> s                       -- ^ Second dynamic character
-  -> (Word -> Word -> Word)  -- ^ Structure defining the transition costs between character states
-  -> (Word, s)      -- ^ The cost of the alignment
-                                   --
-                                   --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                   --
-                                   --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                   --
-                                   --   The gapped alignment of the /first/ input character when aligned with the second character
-                                   --
-                                   --   The gapped alignment of the /second/ input character when aligned with the first character
-
-naiveDO char1 char2 costStruct = directOptimization char1 char2 (overlap2 costStruct) createNeedlemanWunchMatrix
+  -> (Word, s)               -- ^ The cost and resulting the alignment
+naiveDO costStruct char1 char2 = directOptimization (overlap2 costStruct) char1 char2 createNeedlemanWunchMatrix
 
 
 -- |
 -- The same as 'naiveDO' except that the "cost structure" parameter is assumed to
 -- be a memoized overlap function.
 {-# INLINE naiveDOMemo #-}
-{-# SPECIALISE naiveDOMemo :: DynamicCharacter -> DynamicCharacter -> OverlapFunction AmbiguityGroup -> (Word, DynamicCharacter) #-}
+{-# SPECIALISE naiveDOMemo :: OverlapFunction AmbiguityGroup -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
 naiveDOMemo :: DOCharConstraint s
-            => s
+            => OverlapFunction (Subcomponent (Element s))
             -> s
-            -> OverlapFunction (Subcomponent (Element s))
+            -> s
             -> (Word, s)
-naiveDOMemo char1 char2 tcm = directOptimization char1 char2 tcm createNeedlemanWunchMatrix
+naiveDOMemo tcm char1 char2 = directOptimization tcm char1 char2 createNeedlemanWunchMatrix
 
 
 -- |
@@ -82,11 +73,11 @@ naiveDOMemo char1 char2 tcm = directOptimization char1 char2 tcm createNeedleman
 -- character must be the longer of the two and is the top labeling of the matrix.
 -- Returns a 'NeedlemanWunchMatrix'.
 {-# INLINE createNeedlemanWunchMatrix #-}
-{-# SPECIALISE createNeedlemanWunchMatrix :: DynamicCharacter -> DynamicCharacter -> OverlapFunction AmbiguityGroup -> NeedlemanWunchMatrix #-}
-createNeedlemanWunchMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Subcomponent (Element s)) -> NeedlemanWunchMatrix
-createNeedlemanWunchMatrix topChar leftChar overlapFunction = result
+{-# SPECIALISE createNeedlemanWunchMatrix ::OverlapFunction AmbiguityGroup ->  DynamicCharacter -> DynamicCharacter -> NeedlemanWunchMatrix #-}
+createNeedlemanWunchMatrix :: DOCharConstraint s => OverlapFunction (Subcomponent (Element s)) -> s -> s -> NeedlemanWunchMatrix
+createNeedlemanWunchMatrix overlapFunction topChar leftChar = result
   where
     result             = matrix rows cols generatingFunction
     rows               = olength leftChar + 1
     cols               = olength topChar  + 1
-    generatingFunction = needlemanWunschDefinition topChar leftChar overlapFunction result
+    generatingFunction = needlemanWunschDefinition overlapFunction topChar leftChar result

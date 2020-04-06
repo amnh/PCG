@@ -23,7 +23,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
   ( unboxedSwappingDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, handleMissingCharacter, measureCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, measureCharacters)
 import           Bio.Character.Encodable
 import           Control.Monad.ST
 import           Data.DList                  (snoc)
@@ -125,23 +125,23 @@ buildDirectionMatrix overlapFunction topChar leftChar = fullMatrix
 
 
 directOptimization
-  :: ( DOCharConstraint s
-     )
+  :: DOCharConstraint s
   => OverlapFunction (Subcomponent (Element s))
   -> (OverlapFunction (Subcomponent (Element s)) -> s -> s -> (Word, Matrix Direction))
   -> s
   -> s
   -> (Word, s)
-directOptimization overlapλ matrixFunction char1 char2 =
-    handleMissingCharacter char1 char2 alignment
-  where
-    (swapped, longerChar, shorterChar) = measureCharacters char1 char2
-    (alignmentCost, traversalMatrix)   = matrixFunction overlapλ longerChar shorterChar
-    alignmentContext                   = traceback overlapλ traversalMatrix longerChar shorterChar
-    alignment                          = (alignmentCost, transformation alignmentContext)
-    transformation
-      | swapped   = omap swapContext
-      | otherwise = id
+directOptimization overlapλ matrixFunction char1 char2
+  | isMissing char1 = (0, char2)
+  | isMissing char2 = (0, char1)
+  | otherwise =
+      let  (swapped, longerChar, shorterChar) = measureCharacters char1 char2
+           (alignmentCost, traversalMatrix)   = matrixFunction overlapλ longerChar shorterChar
+           alignmentContext = traceback overlapλ traversalMatrix longerChar shorterChar
+           transformation
+             | swapped   = omap swapContext
+             | otherwise = id
+      in   (alignmentCost, transformation alignmentContext)
 
 
 traceback
@@ -167,10 +167,8 @@ traceback overlapFunction alignMatrix longerChar lesserChar = alignmentContext
     go p@(i, j)
       | p == (0,0) = mempty
       | otherwise  = 
-        let
-            previousSequence = go (row', col')
-
-            directionArrow = unsafeIndex alignMatrix p
+        let previousSequence = go (row', col')
+            directionArrow   = unsafeIndex alignMatrix p
 
             (row', col', localContext) =
                 case directionArrow of

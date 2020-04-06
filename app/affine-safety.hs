@@ -41,7 +41,7 @@ performCounterExampleSearch = do
 counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) = foreignDOResult == foreignDOResult
   where
-    foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
+    foreignDOResult = foreignPairwiseDO denseMatrixValue lhs rhs
 
 
 performImplementationComparison :: String -> String -> IO ()
@@ -50,7 +50,7 @@ performImplementationComparison lhs rhs = do
     putStrLn foreignMessage
   where
     foreignMessage   = renderResult foreignDOResult
-    foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue
+    foreignDOResult  = foreignPairwiseDO denseMatrixValue char1 char2
     char1 = readSequence lhs
     char2 = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]

@@ -207,7 +207,7 @@ measureNaiveAlignment
      )
 measureNaiveAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
   where
-    align (x,y) = naiveDOMemo x y discreteMetricPairwiseLogic
+    align (x,y) = naiveDOMemo discreteMetricPairwiseLogic x y
     label = fold ["bad-", toString a, "-X-", toString b]
 
 
@@ -219,7 +219,7 @@ measureOldAlignment
      )
 measureOldAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
   where
-    align (x,y) = ukkonenDO x y discreteMetricPairwiseLogic
+    align (x,y) = ukkonenDO discreteMetricPairwiseLogic x y
     label = fold ["old-", toString a, "-X-", toString b]
 
 
@@ -279,7 +279,7 @@ measureForeignAlignment
      )
 measureForeignAlignment ((a, lhs), (b, rhs)) = (label, align, (lhs, rhs))
   where
-    align (x,y) = foreignPairwiseDO x y denseMatrixValue
+    align (x,y) = foreignPairwiseDO denseMatrixValue x y
     label = fold ["ffi-", toString a, "-X-", toString b]
 
 

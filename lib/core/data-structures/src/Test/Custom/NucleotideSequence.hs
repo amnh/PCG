@@ -125,7 +125,7 @@ validNucleotideElements = fold
       :: (AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
       -> AmbiguityGroup
       -> DynamicCharacterElement
-    buildElem f x   = f (med gap x) x
+    buildElem f x = f (med gap x) x
 
     unionElem
       :: (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
@@ -149,13 +149,11 @@ renderBase x =
         (pref, median, lVal, rVal) =
           case getContext x of
             Gapping   -> let g = bit . fromEnum $ symbolCount x - 1 in ('G', g, g, g)
-            Deletion  -> let v = getRight x in ('D', v .|. getGapElement v, getGapElement v, v)
-            Insertion -> let v = getLeft  x in ('I', v .|. getGapElement v, v, getGapElement v)
+            Deletion  -> let v = getRight x in ('D', getMedian x, getGapElement v, v)
+            Insertion -> let v = getLeft  x in ('I', getMedian x, v, getGapElement v)
             Alignment -> let l = getLeft  x
                              r = getRight x
-                             m | l == r = l
-                               | popCount (l .&. r) > 0 = l .&. r
-                               | otherwise = l .|. r
+                             m = getMedian x
                          in  ('A', m, l, r)
     in  case decodeBase median of
           Nothing ->  errorMsg median
