@@ -34,102 +34,45 @@
 -----------------------------------------------------------------------------
 
 
-{-# LANGUAGE GADTs               #-}
-{-# LANGUAGE TypeOperators       #-}
-{-# LANGUAGE RankNTypes          #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE DerivingStrategies  #-}
 {-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE GADTs               #-}
+{-# LANGUAGE KindSignatures      #-}
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE PatternSynonyms     #-}
-{-# LANGUAGE KindSignatures      #-}
-{-# LANGUAGE DerivingStrategies  #-}
-{-# LANGUAGE DeriveFunctor       #-}
+{-# LANGUAGE RankNTypes          #-}
+{-# LANGUAGE RecordWildCards     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeOperators       #-}
 
 
 
 module Data.Graph.Postorder.DynamicTraversalFoci where
 
-import Data.HashMap.Lazy (HashMap)
-import qualified Data.HashMap.Lazy as HashMap
-import Data.Graph.Postorder.Resolution
-import Data.Graph.Type
-import Data.Graph.Sequence.Class
-import Data.Pair.Strict
-import Control.Lens hiding (index)
-import Data.Vector (Vector)
-import qualified Data.Vector as Vector
-import Control.Applicative
-import Data.Graph.Indices
-import Data.Graph.NodeContext
-import Data.Key
-import Data.Coerce
-import Data.List.NonEmpty (NonEmpty(..))
-import qualified Data.List.NonEmpty as NonEmpty
-import Data.Monoid (First(..), Sum(..))
-import Prelude hiding (lookup)
-import Data.Maybe (fromMaybe)
-import Data.Set (Set)
-import qualified Data.Set as Set
-import Data.Foldable (toList, foldl', fold)
-import Data.Graph.TopologyRepresentation
-import Data.Graph.Memo
-import Control.Arrow ((&&&))
-
-
-
-
-
--- |
--- This data type represents a selection of edges
--- surrounding a node in a re-rooted graph along with
--- data attached to each chosen edge/node as shown below:
---
---                      (p) - parVal
---                       |
---                      (n)
---                     /   \
---         leftVal - (l)   (r) - rightVal
---
-data EdgeMapping val = EdgeMapping
-  { parentEdge     :: DirEdgeIndex :!: val
-  , leftChildEdge  :: DirEdgeIndex :!: val
-  , rightChildEdge :: DirEdgeIndex :!: val
-  }
-  deriving stock (Show, Functor)
-
-
-
-
-lookupEdge :: forall edgeData . EdgeIndex -> EdgeMapping edgeData -> Maybe edgeData
-lookupEdge edgeInd EdgeMapping{..} =
-    getFirst . foldMap f $ [parentEdge, leftChildEdge, rightChildEdge]
-  where
-    f :: DirEdgeIndex :!: edgeData -> First edgeData
-    f (dirEdgeIndex :!: edgeData)
-      | edgeInd == (view _edgeIndex dirEdgeIndex) = pure edgeData
-      | otherwise                                 = mempty
-
-
-type GraphEdgeMapping block =
-  GraphShape
-    (EdgeMapping (ResolutionCache (CharacterSequence block)))
-    (EdgeMapping (ResolutionCache (CharacterSequence block)))
-    ()
-    ()
-
-type GraphEdgeMemo block =
-  MemoGen
-    (EdgeMapping (ResolutionCache (CharacterSequence block)))
-    (EdgeMapping (ResolutionCache (CharacterSequence block)))
-    ()
-    ()
-
-
-
-graphEdgeLookup :: GraphEdgeMemo block -> EdgeIndex -> ResolutionCache (CharacterSequence block)
-graphEdgeLookup = undefined
-  -- edge graphEdge = undefined
+import           Control.Applicative
+import           Control.Lens                      hiding (index)
+import           Data.Coerce
+import           Data.Foldable                     (fold, foldl', toList)
+import           Data.Graph.Indices
+import           Data.Graph.Memo
+import           Data.Graph.NodeContext
+import           Data.Graph.Postorder.Resolution
+import           Data.Graph.Sequence.Class
+import           Data.Graph.TopologyRepresentation
+import           Data.Graph.Type
+import           Data.HashMap.Lazy                 (HashMap)
+import qualified Data.HashMap.Lazy                 as HashMap
+import           Data.Key
+import           Data.List.NonEmpty                (NonEmpty (..))
+import           Data.Maybe                        (fromMaybe)
+import           Data.Monoid                       (First (..), Sum (..))
+import           Data.Pair.Strict
+import           Data.Set                          (Set)
+import qualified Data.Set                          as Set
+import           Data.Vector                       (Vector)
+import qualified Data.Vector                       as Vector
+import           Prelude                           hiding (lookup)
 
 
 assignOptimalDynamicCharacterRootEdges
@@ -179,8 +122,8 @@ assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
         topologyMapping =
           displayTreeRerooting _subBlock _subMeta meta edgeMapping
 
-        updatedGraph = undefined
---          modifyMetadataSequence _subBlock _ _ _
+        updatedGraph =
+          modifyRootCosts _subBlock topologyMapping graph
       in
         (updatedGraph, edgeMapping, topologyMapping)
 
@@ -188,11 +131,6 @@ assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
       let
         unrootedEdges :: Set (Either EdgeIndex (Int :!: EdgeIndex))
         unrootedEdges = getRootAdjacentEdgeSet graph <> getUnrootedEdges graph
-
-        updatedGraph    = undefined
-        topologyMapping =
-          displayTreeRerooting _subBlock _subMeta meta edgeMapping
-
 
         edgeMapping :: HashMap EdgeIndex (ResolutionCache (CharacterSequence block))
         edgeMapping = HashMap.fromList . fmap f . Set.toList $ unrootedEdges
@@ -241,46 +179,45 @@ assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
           contextNodeDatum :: GraphEdgeMapping block
           contextNodeDatum =
             generateMemoGraphShape
-              numLeafNodes
-              numTreeNodes
-              numNetNodes
-              numRootNodes
+              (length (view _leafReferences graph))
+              (length (view _treeReferences graph))
+              (length (view _networkReferences graph))
+              (length (view _rootReferences graph))
               edgeMapMemo
 
 
           edgeMapMemo :: Endo (GraphEdgeMemo block)
           edgeMapMemo graphEdgeMemo =
-            let
-              rootEdgeMap = const ()
-              leafEdgeMap = const ()
+              let
+                rootEdgeMap = const ()
+                leafEdgeMap = const ()
+                netEdgeMap  = internalMap NetworkTag
+                treeEdgeMap = internalMap TreeTag
 
-              netEdgeMap  = internalMap NetworkTag
-              treeEdgeMap = internalMap TreeTag
-              internalMap tag n =
-                let
-                  handleMaybe (Just v) = v
-                  handleMaybe Nothing = error "Couldn't find node arrangement!"
+                internalMap tag n =
+                  let
+                    handleMaybe (Just v) = v
+                    handleMaybe Nothing  = error "Couldn't find node arrangement."
 
-                  tagInd = TaggedIndex n tag
+                    tagInd = TaggedIndex n tag
 
-                  nodeArrangement  = getNodeArrangement tagInd graph
-                  nodeArrangements = allNodeArrangements (handleMaybe nodeArrangement)
+                    nodeArrangement  = getNodeArrangement tagInd graph
+                    nodeArrangements = allNodeArrangements (handleMaybe nodeArrangement)
 
-                in
-                  deriveNodeArrangementEdgeMapping
-                    _subBlock _subLeaf _subMeta graph graphEdgeMemo tagInd nodeArrangements
-            in
-              MemoGen
-                leafEdgeMap
-                treeEdgeMap
-                netEdgeMap
-                rootEdgeMap
+                  in
+                    deriveNodeArrangementEdgeMapping
+                      _subBlock _subLeaf _subMeta graph graphEdgeMemo tagInd nodeArrangements
+              in
+                MemoGen
+                  leafEdgeMap
+                  treeEdgeMap
+                  netEdgeMap
+                  rootEdgeMap
 
-          numRootNodes, numNetNodes, numLeafNodes, numTreeNodes :: Int
-          numRootNodes = length (view _rootReferences graph)
-          numNetNodes  = length (view _networkReferences graph)
-          numLeafNodes = length (view _leafReferences graph)
-          numTreeNodes = length (view _treeReferences graph)
+
+        topologyMapping = displayTreeRerooting _subBlock _subMeta meta edgeMapping
+
+        updatedGraph = modifyRootCosts _subBlock topologyMapping graph
       in
         (updatedGraph, edgeMapping, topologyMapping)
 
@@ -771,6 +708,31 @@ filterResolutionEdges edges = runIdentity . filterResolution hasEdge
                         -- Edge Mapping and Node Arrangement--
                         --------------------------------------
 
+
+-- |
+-- This data type represents a selection of edges
+-- surrounding a node in a re-rooted graph along with
+-- data attached to each chosen edge/node as shown below:
+--
+--                      (p) - parVal
+--                       |
+--                      (n)
+--                     /   \
+--         leftVal - (l)   (r) - rightVal
+--
+data EdgeMapping val = EdgeMapping
+  { parentEdge     :: DirEdgeIndex :!: val
+  , leftChildEdge  :: DirEdgeIndex :!: val
+  , rightChildEdge :: DirEdgeIndex :!: val
+  }
+  deriving stock (Show, Functor)
+
+
+
+
+
+
+
 -- |
 -- A `NodeArrangement` is an `EdgeMapping` with no (meaningful) data stored
 -- in each node.
@@ -785,22 +747,6 @@ pattern NodeArrangement e1 e2 e3 <- EdgeMapping (e1 :!: ()) (e2 :!: ()) (e3 :!: 
         (e2 :!: ())
         (e3 :!: ())
 
-
-
-
-
-
-_parentEdge :: Lens' NodeArrangement TaggedIndex
-_parentEdge = undefined
---  lens (view _left . parentEdge) (\g l -> g { parentEdge = l :!: ()})
-
-_leftChildEdge :: Lens' NodeArrangement TaggedIndex
-_leftChildEdge = undefined
-  -- lens (view _left . leftChildEdge) (\g l -> g { leftChildEdge = l :!: ()})
-
-_rightChildEdge :: Lens' NodeArrangement TaggedIndex
-_rightChildEdge = undefined
-  --lens (view _left . rightChildEdge) (\g l -> g { rightChildEdge = l :!: ()})
 
 -- |
 -- This function gets all of the node arrangements from a directed node arrangement:
@@ -834,30 +780,92 @@ getNodeArrangement tagInd graph =
         nodeInfo = graph `indexNetwork` untaggedInd
         childInd             = view _childInds nodeInfo
         parInd1 :!: parInd2  = view _parentInds nodeInfo
-        leftChildEdge = undefined
-        rightChildEdge = undefined
-        parentEdge = undefined
+        leftChildEdge
+          = DirEdgeIndex (EdgeIndex tagInd parInd1) True
+        rightChildEdge
+          = DirEdgeIndex (EdgeIndex tagInd parInd2) True
+        parentEdge
+          = DirEdgeIndex (EdgeIndex tagInd childInd) True
       in
         Just $
-          NodeArrangement
-            parentEdge
-            leftChildEdge
-            rightChildEdge
+          NodeArrangement parentEdge leftChildEdge rightChildEdge
     TreeTag    ->
       let
         nodeInfo = graph `indexTree` untaggedInd
-        childInds = view _childInds nodeInfo
+        leftChild :!: rightChild = view _childInds nodeInfo
         parInd    = view _parentInds nodeInfo
-        leftChildEdge = undefined
-        rightChildEdge = undefined
-        parentEdge = undefined
+        leftChildEdge
+          = DirEdgeIndex (EdgeIndex tagInd leftChild) False
+        rightChildEdge
+          = DirEdgeIndex (EdgeIndex tagInd rightChild) False
+        parentEdge
+          = DirEdgeIndex (EdgeIndex tagInd parInd) False
       in
         Just $
-          NodeArrangement
-            parentEdge
-            leftChildEdge
-            rightChildEdge
+          NodeArrangement parentEdge leftChildEdge rightChildEdge
 
+type GraphEdgeMapping block =
+  GraphShape
+    (EdgeMapping (ResolutionCache (CharacterSequence block)))
+    (EdgeMapping (ResolutionCache (CharacterSequence block)))
+    ()
+    ()
+
+type GraphEdgeMemo block =
+  MemoGen
+    (EdgeMapping (ResolutionCache (CharacterSequence block)))
+    (EdgeMapping (ResolutionCache (CharacterSequence block)))
+    ()
+    ()
+
+
+lookupEdge :: forall edgeData . EdgeIndex -> EdgeMapping edgeData -> Maybe edgeData
+lookupEdge edgeInd EdgeMapping{..} =
+    getFirst . foldMap f $ [parentEdge, leftChildEdge, rightChildEdge]
+  where
+    f :: DirEdgeIndex :!: edgeData -> First edgeData
+    f (dirEdgeIndex :!: edgeData)
+      | edgeInd == (view _edgeIndex dirEdgeIndex) = pure edgeData
+      | otherwise                                 = mempty
+
+
+graphEdgeLookup :: GraphEdgeMemo block -> EdgeIndex -> ResolutionCache (CharacterSequence block)
+graphEdgeLookup MemoGen{..} edgeIndex@(EdgeIndex src _) =
+  case getTag src of
+    TreeTag    ->
+      case lookupEdge edgeIndex  $ treeGen (view _untaggedIndex src) of
+        Just resCache -> resCache
+        Nothing -> error $
+          unlines
+          ["graphEdgeLookup: Couldn't find edge:"
+          , show edgeIndex
+          , "in memoized graph edge mapping."
+          ]
+
+    NetworkTag ->
+      case lookupEdge edgeIndex  $ networkGen (view _untaggedIndex src) of
+        Just resCache -> resCache
+        Nothing -> error $
+          unlines
+          ["graphEdgeLookup: Couldn't find edge:"
+          , show edgeIndex
+          , "in memoized graph edge mapping."
+          ]
+    RootTag ->
+      error $
+        fold
+        [ "In graphEdgeLookup: We tried to find the memoized edge lookup on "
+        , "a root node. This should never occur. For a root node we should "
+        , "the resolutions given already by the post order"
+        ]
+    LeafTag ->
+      error $
+        fold
+        [ "In graphEdgeLookup: We tried to find the memoized edge lookup on "
+        , "a leaf node. This should never occur. A leaf node should never be "
+        , "the source of an edge index but is in the edge: "
+        , show edgeIndex
+        ]
 
                         --------------------
                         -- Edge functions --
