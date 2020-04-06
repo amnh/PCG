@@ -7,33 +7,22 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE LambdaCase                 #-}
-{-# LANGUAGE GADTs                      #-}
 
 
 module Data.Graph.Postorder.Resolution where
 
 import           Control.DeepSeq
-import           Control.Lens
-                   ( Lens
-                   , Lens'
-                   , Iso'
-                   , lens
-                   , iso
-                   , view
-                   , (&)
-                   , (.~)
-                   , set
-                   , over
-                   )
+import           Control.Lens                      (Iso', Lens, Lens', iso, lens, over, set, view, (&), (.~))
 import           Control.Monad                     (guard)
 import           Data.Bits
 import           Data.Functor.Apply
@@ -46,19 +35,19 @@ import           Data.UnionSet
 import           GHC.Generics
 import           GHC.TypeLits
 
-import           Data.Graph.TopologyRepresentation
-import           Data.Graph.Sequence.Class
-import           Data.Graph.Node.Context
-import           Data.Graph.NodeContext (HasNodeData(..))
-import qualified Data.Graph.NodeContext as NodeContext
-import qualified Data.Vector as Vector
-import           Data.Graph.Indices
-import           Data.Graph.Type
 import           Data.Coerce
-import           Data.Set (Set)
-import qualified Data.Set as Set
-import qualified Data.Vector as Vector
-import Data.Vector (Vector)
+import           Data.Graph.Indices
+import           Data.Graph.Node.Context
+import           Data.Graph.NodeContext            (HasNodeData (..))
+import qualified Data.Graph.NodeContext            as NodeContext
+import           Data.Graph.Sequence.Class
+import           Data.Graph.TopologyRepresentation
+import           Data.Graph.Type
+import           Data.Set                          (Set)
+import qualified Data.Set                          as Set
+import           Data.Vector                       (Vector)
+import qualified Data.Vector                       as Vector
+import qualified Data.Vector                       as Vector
 
 -- |
 -- The metadata of a subtree resolution.
