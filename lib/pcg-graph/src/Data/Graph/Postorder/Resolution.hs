@@ -521,6 +521,9 @@ instance (Monad m) => Apply (ResolutionCacheM m) where
             let newCharacterSequence = f leftCharacterSequence rightCharacterSequence
             pure $ Resolution newCharacterSequence newMetadata
 
+instance (Show (m a), Show a) => Show (ResolutionCacheM m a) where
+  show = error "to do: show ResolutionCahceM"
+
 
 -- |
 -- A 'Lens' for the 'totalSubtreeCost' field in 'ResolutionMetadata'

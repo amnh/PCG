@@ -116,6 +116,9 @@ instance (BlockBin a, BlockBin b, BlockBin c, BlockBin d, BlockBin e, BlockBin f
 newtype CharacterSequence block = CharacterSequence {getCharacterSequence :: Vector block}
   deriving stock Functor
 
+instance Show block => Show (CharacterSequence block) where
+  show = error "to do: show CharacterSequence"
+
 
 -- |
 -- A bidirectional 'Lens' for a type containing a 'characterSequence' field.
