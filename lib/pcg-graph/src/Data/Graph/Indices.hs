@@ -19,8 +19,6 @@ module Data.Graph.Indices
   ( LeafInd(..)
   , RootInd(..)
   , EdgeIndex(..)
-  , ChildIndex(..)
-  , ParentIndex(..)
   , ChildInfo(..)
   , HasChildIndex(..)
   , UntaggedIndex(..)
@@ -115,18 +113,9 @@ instance Tagged TaggedIndex where
   getIndex = untaggedIndex
 
 
-newtype ParentIndex  = ParentIndex {getParentIndex :: TaggedIndex}
-  deriving stock (Eq, Show)
-  deriving newtype (Tagged)
-
-
-newtype ChildIndex   = ChildIndex  {getChildIndex :: TaggedIndex}
-  deriving stock (Eq, Show)
-  deriving newtype (Tagged)
-
 data ChildInfo e =
   ChildInfo
-  { childIndex :: {-# UNPACK #-} !ChildIndex
+  { childIndex :: {-# UNPACK #-} !TaggedIndex
   , edgeData   :: {-# UNPACK #-} !e
   }
   deriving stock (Eq, Show, Functor)
@@ -159,13 +148,6 @@ instance HasIndexType TaggedIndex IndexType where
   _indexType = to tag
 
 
-instance HasIndexType ParentIndex IndexType where
-  _indexType = to (coerce tag)
-
-
-instance HasIndexType ChildIndex IndexType where
-  _indexType = to (coerce tag)
-
 
 instance HasIndexType (ChildInfo e) IndexType where
   _indexType = _childIndex . _indexType
@@ -180,7 +162,7 @@ instance HasUntaggedIndex TaggedIndex Int where
 
 
 
-instance HasChildIndex (ChildInfo e) ChildIndex where
+instance HasChildIndex (ChildInfo e) TaggedIndex where
   _childIndex = lens childIndex (\c i -> c { childIndex = i})
 
 class HasEdgeData s t a b| s -> a, t -> b, s b -> t, t a -> s where

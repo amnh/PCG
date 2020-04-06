@@ -112,7 +112,7 @@ toRoseForest leafConv internalConv netConv graph =
           let
             nodeInfo = fromJust $ preview (_rootReferences . ix untaggedInd) graph
             nodeName = internalConv $ view _nodeData nodeInfo
-            childInds :: Either ChildIndex (ChildIndex :!: ChildIndex)
+            childInds :: Either TaggedIndex (TaggedIndex :!: TaggedIndex)
             childInds = view _childInds nodeInfo
           in
             case childInds of

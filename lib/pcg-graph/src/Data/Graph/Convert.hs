@@ -215,14 +215,14 @@ indexAdjacencyGraphToGraph ((numL, numT, numN, numR), adjGraph) =
       in
         childInfoTag cTagInd (view _2 cEdge)
 
-    getParentIndex :: (t, e) -> ParentIndex
-    getParentIndex = coerce . (view _3) . (adjGraph M.!) . (view _1)
+    getTaggedIndex :: (t, e) -> TaggedIndex
+    getTaggedIndex = coerce . (view _3) . (adjGraph M.!) . (view _1)
 
-    getOneParent :: [(t, e)] -> ParentIndex
-    getOneParent = getParentIndex . head
+    getOneParent :: [(t, e)] -> TaggedIndex
+    getOneParent = getTaggedIndex . head
 
-    getTwoParents :: [(t, e)] -> ParentIndex :!: ParentIndex
-    getTwoParents = bimap getParentIndex getParentIndex . (getPair)
+    getTwoParents :: [(t, e)] -> TaggedIndex :!: TaggedIndex
+    getTwoParents = bimap getTaggedIndex getTaggedIndex . (getPair)
 
     toLeafData :: t -> ([(t, e)], [(t, e)], TaggedIndex) -> LeafIndexData t
     toLeafData name (parVals, _, untaggedIndex)

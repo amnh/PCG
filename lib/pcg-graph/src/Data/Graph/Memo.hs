@@ -140,13 +140,13 @@ memoPostorder leafFn treeFn netFn graph = f
                         . ix i
                         . _nodeData
 
-        fromTwoChildren  :: ChildIndex :!: ChildIndex -> g val
+        fromTwoChildren  :: TaggedIndex :!: TaggedIndex -> g val
         fromTwoChildren c =
             treeFn
               (childVal (coerce $ c ^. _left))
               (childVal (coerce $ c ^. _right))
 
-        fromOneChild :: ChildIndex -> g val
+        fromOneChild :: TaggedIndex -> g val
         fromOneChild c =
           netFn <$> (childVal . coerce $  c)
 
@@ -190,7 +190,7 @@ memoGraphPostorder leafFn treeFn netFn graph = f
                        fromJust (preview (_leafReferences . ix i) graph)
 
 
-        fromTwoChildren  :: ChildIndex :!: ChildIndex -> g val
+        fromTwoChildren  :: TaggedIndex :!: TaggedIndex -> g val
         fromTwoChildren c = runPar $ go
           where
             go :: Par (g val)
@@ -207,7 +207,7 @@ memoGraphPostorder leafFn treeFn netFn graph = f
                 treeFn leftVal rightVal
                   
 
-        fromOneChild :: ChildIndex -> g val
+        fromOneChild :: TaggedIndex -> g val
         fromOneChild c =
           netFn <$> (childVal . coerce $  c)
 
@@ -268,13 +268,13 @@ memoPostorder leafFn treeFn netFn graph = f
                         . singular (ix i)
                         . (_nodeData)
 
-        fromTwoChildren  :: Pair ChildIndex -> val
+        fromTwoChildren  :: Pair TaggedIndex -> val
         fromTwoChildren c =
             treeFn
               (childVal (coerce $ c ^. _left))
               (childVal (coerce $ c ^. _right))
 
-        fromOneChild :: ChildIndex -> val
+        fromOneChild :: TaggedIndex -> val
         fromOneChild c =
           netFn (childVal . coerce $  c)
 

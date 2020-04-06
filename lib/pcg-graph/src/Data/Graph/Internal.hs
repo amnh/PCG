@@ -48,7 +48,7 @@ postorderFold _leafFn _internalFn _graph = undefined -- foldMap (view _rootRefer
           let
             treeNode :: TreeIndexData (f n) e
             treeNode   = graph `indexTree` coerce untaggedInd
-            childInd1, childInd2 :: ChildIndex
+            childInd1, childInd2 :: TaggedIndex
             childInd1  = view (_childInds . _left ) treeNode
             childInd2  = view (_childInds . _right) treeNode
 
@@ -62,7 +62,7 @@ postorderFold _leafFn _internalFn _graph = undefined -- foldMap (view _rootRefer
           let
             networkNode :: NetworkIndexData (f n) e
             networkNode   = graph `unsafeNetworkInd` coerce untaggedInd
-            childInd :: ChildIndex
+            childInd :: TaggedIndex
             childInd  = view _childInds networkNode
 
             childVal :: m
@@ -73,7 +73,7 @@ postorderFold _leafFn _internalFn _graph = undefined -- foldMap (view _rootRefer
           let
             rootNode :: RootIndexData (f n) e
             rootNode   = graph `unsafeRootInd` coerce untaggedInd
-            childInd :: Either ChildIndex (ChildIndex :!: ChildIndex)
+            childInd :: Either TaggedIndex (TaggedIndex :!: TaggedIndex)
             childInd  = view _childInds rootNode
 
             childVals :: m
@@ -137,7 +137,7 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
     go
       :: TaggedIndex
       -> Vector (TreeIndexData (f n) e)
-      -> (Maybe (f n, ParentIndex), Vector (TreeIndexData (f n) e))
+      -> (Maybe (f n, TaggedIndex), Vector (TreeIndexData (f n) e))
     go tagInd treeVect =
       runST $
         do
@@ -147,7 +147,7 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
           pure (val, vec)
 
 
-    loop :: TaggedIndex -> MVector s (TreeIndexData (f n) e) -> ST s (Maybe (f n, ParentIndex))
+    loop :: TaggedIndex -> MVector s (TreeIndexData (f n) e) -> ST s (Maybe (f n, TaggedIndex))
     loop tagInd mvec = do
       let ind = getIndex tagInd
       currData <- MV.read mvec ind
@@ -155,7 +155,7 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
       let parInd        = currData ^. _parentInds
       let parTag        = getTag parInd
       let
-        childInds :: ChildIndex :!: ChildIndex
+        childInds :: TaggedIndex :!: TaggedIndex
         childInds     = currData ^. _childInds
       let childIndData1 = graph `index` (childInds ^. _left)
       let childIndData2 = graph `index` (childInds ^. _right)
@@ -186,8 +186,8 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
 breakEdgeAndReattachG
   :: forall f c e n t
   .  Graph f c e n (Graph f c e n t)
-  -> (ParentIndex, ChildIndex)
-  -> (ParentIndex, Direction)
+  -> (TaggedIndex, TaggedIndex)
+  -> (TaggedIndex, Direction)
   -> Graph f c e n (Graph f c e n t)
 breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
   let
@@ -207,11 +207,11 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
       => Lens' s (ChildInfo e)
     _leafParChild      =
       if
-        parIndexData ^. _leftChildIndex == leafInd then _left
+        parIndexData ^. _leftTaggedIndex == leafInd then _left
                                          else _right
     _otherLeafParChild =
       if
-        parIndexData ^. _leftChildIndex == leafInd then _right
+        parIndexData ^. _leftTaggedIndex == leafInd then _right
                                          else _left
 
 
@@ -226,7 +226,7 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
     srcNodeInfo    = graph `indexTree` getIndex srcInd
     tgtInfo :: ChildInfo e
     tgtInfo = srcNodeInfo ^. _srcChildLens
-    tgtInd :: ChildIndex
+    tgtInd :: TaggedIndex
     tgtInd       = tgtInfo ^. _childIndex
     tgtNodeInfo :: TreeIndexData (f n) e
     tgtNodeInfo  = graph `indexTree` getIndex tgtInd
@@ -250,7 +250,7 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
     _leafParParentChild :: Lens' (TreeIndexData (f n) e) (ChildInfo e)
     _leafParParentChild =
       if
-        leafParParentNodeInfo ^. _leftChildIndex == coerce leafParInd
+        leafParParentNodeInfo ^. _leftTaggedIndex == coerce leafParInd
         then _right
       else _left
 

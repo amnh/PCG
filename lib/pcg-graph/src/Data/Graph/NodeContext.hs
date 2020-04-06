@@ -11,7 +11,6 @@
 {-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeOperators          #-}
 
-
 module Data.Graph.NodeContext where
 
 import           Control.Applicative
@@ -27,10 +26,10 @@ import qualified Data.Vector.Mutable as MV
 --      │    Polymorphic Index Data    │
 --      └──────────────────────────────┘
 
-data LabelledChildIndex e =
-  LabelledChildIndex
+data LabelledTaggedIndex e =
+  LabelledTaggedIndex
   { edgeAnnotation     :: e
-  , labelledChildIndex :: {-# UNPACK #-} !ChildIndex
+  , labelledTaggedIndex :: {-# UNPACK #-} !TaggedIndex
   }
 
 data IndexData nodeContext nodeData  = IndexData
@@ -96,7 +95,7 @@ rootIndexDataA r inds =
 
 
 newtype LeafContext = LeafContext
-  { parentIndsL :: ParentIndex
+  { parentIndsL :: TaggedIndex
   }
   deriving stock (Show)
 
@@ -104,7 +103,7 @@ newtype LeafContext = LeafContext
 type LeafIndexData d = IndexData LeafContext d
 
 
-leafIndexData :: d -> ParentIndex -> LeafIndexData d
+leafIndexData :: d -> TaggedIndex -> LeafIndexData d
 leafIndexData d ind =
   IndexData
   { nodeData = d
@@ -113,7 +112,7 @@ leafIndexData d ind =
 
 
 data NetworkContext e = NetworkContext
-  { parentIndsN :: {-# UNPACK #-} !(ParentIndex :!: ParentIndex)
+  { parentIndsN :: {-# UNPACK #-} !(TaggedIndex :!: TaggedIndex)
   , childInfoN  :: {-# UNPACK #-} !(ChildInfo e)
   }
   deriving stock Show
@@ -124,7 +123,7 @@ type NetworkIndexData d e = IndexData (NetworkContext e) d
 
 networkIndexData
   :: d
-  -> ParentIndex :!: ParentIndex
+  -> TaggedIndex :!: TaggedIndex
   -> ChildInfo e
   -> NetworkIndexData d e
 networkIndexData d parInd childInd =
@@ -140,7 +139,7 @@ networkIndexData d parInd childInd =
 networkIndexDataA
   :: forall n e f . (Applicative f)
   => n
-  -> ParentIndex :!: ParentIndex
+  -> TaggedIndex :!: TaggedIndex
   -> ChildInfo e
   -> NetworkIndexData (f n) e
 networkIndexDataA n parInd childInd =
@@ -155,7 +154,7 @@ networkIndexDataA n parInd childInd =
 
 
 data TreeContext e = TreeContext
-  { parentIndsT :: {-# UNPACK #-} !ParentIndex
+  { parentIndsT :: {-# UNPACK #-} !TaggedIndex
   , childInfoT  :: {-# UNPACK #-} !(ChildInfo e :!: ChildInfo e)
   }
   deriving stock (Show)
@@ -166,7 +165,7 @@ type TreeIndexData d e = IndexData (TreeContext e) d
 
 treeIndexData
   :: d
-  -> ParentIndex
+  -> TaggedIndex
   -> ChildInfo e :!: ChildInfo e
   -> TreeIndexData d e
 treeIndexData d parInd childInd =
@@ -182,7 +181,7 @@ treeIndexData d parInd childInd =
 treeIndexDataA
   :: forall t e f . (Applicative f)
   => t
-  -> ParentIndex
+  -> TaggedIndex
   -> ChildInfo e :!: ChildInfo e
   -> TreeIndexData (f t) e
 treeIndexDataA t parInd childInd =
@@ -245,14 +244,14 @@ class HasChildInds s a | s -> a where
     _childInds :: Getter s a
 
 
-class HasLeftChildIndex s a | s -> a where
+class HasLeftTaggedIndex s a | s -> a where
 
-    _leftChildIndex :: Getter s a
+    _leftTaggedIndex :: Getter s a
 
 
-class HasRightChildIndex s a | s -> a where
+class HasRightTaggedIndex s a | s -> a where
 
-    _rightChildIndex :: Getter s a
+    _rightTaggedIndex :: Getter s a
 
 
 class HasLeftChildInfo s a | s -> a where
@@ -269,12 +268,12 @@ class HasRightChildInfo s a | s -> a where
 --      ┌─────────────────────┐
 --      │    Leaf Accessors   │
 --      └─────────────────────┘
-instance HasParentInds LeafContext ParentIndex where
+instance HasParentInds LeafContext TaggedIndex where
 
     _parentInds = lens parentIndsL  (\l p -> l {parentIndsL = p})
 
 
-instance HasParentInds (LeafIndexData e) ParentIndex where
+instance HasParentInds (LeafIndexData e) TaggedIndex where
 
     _parentInds = _nodeContext . _parentInds
 
@@ -283,12 +282,12 @@ instance HasParentInds (LeafIndexData e) ParentIndex where
 --      ┌─────────────────────┐
 --      │    Tree Accessors   │
 --      └─────────────────────┘
-instance HasParentInds (TreeContext e) ParentIndex where
+instance HasParentInds (TreeContext e) TaggedIndex where
 
     _parentInds =  lens parentIndsT (\l c -> l {parentIndsT = c})
 
 
-instance HasParentInds (TreeIndexData d e) ParentIndex where
+instance HasParentInds (TreeIndexData d e) TaggedIndex where
 
     _parentInds = _nodeContext . _parentInds
 
@@ -298,7 +297,7 @@ instance HasChildInfo (TreeContext e) (ChildInfo e :!: ChildInfo e) where
     _childInfo = lens childInfoT (\l c -> l {childInfoT = c})
 
 
-instance HasChildInds (TreeContext e) (ChildIndex :!: ChildIndex) where
+instance HasChildInds (TreeContext e) (TaggedIndex :!: TaggedIndex) where
 
     _childInds = withinP _childInfo _childIndex
 
@@ -308,7 +307,7 @@ instance HasChildInfo (TreeIndexData d e) (ChildInfo e :!: ChildInfo e) where
     _childInfo = _nodeContext . _childInfo
 
 
-instance HasChildInds (TreeIndexData d e) (ChildIndex :!: ChildIndex) where
+instance HasChildInds (TreeIndexData d e) (TaggedIndex :!: TaggedIndex) where
 
     _childInds = withinP _childInfo _childIndex
 
@@ -323,26 +322,26 @@ instance HasRight (TreeIndexData d e) (ChildInfo e) where
     _right = _childInfo . _right
 
 
-instance HasLeftChildIndex (TreeIndexData d e) ChildIndex where
+instance HasLeftTaggedIndex (TreeIndexData d e) TaggedIndex where
 
-    _leftChildIndex = _childInds . _left
+    _leftTaggedIndex = _childInds . _left
 
 
-instance HasRightChildIndex (TreeIndexData d e) ChildIndex where
+instance HasRightTaggedIndex (TreeIndexData d e) TaggedIndex where
 
-    _rightChildIndex = _childInds . _right
+    _rightTaggedIndex = _childInds . _right
 
 
 
 --      ┌────────────────────────┐
 --      │    Network Accessors   │
 --      └────────────────────────┘
-instance HasParentInds (NetworkContext e) (Pair ParentIndex ParentIndex) where
+instance HasParentInds (NetworkContext e) (Pair TaggedIndex TaggedIndex) where
 
     _parentInds = lens parentIndsN (\l c -> l {parentIndsN = c})
 
 
-instance HasParentInds (NetworkIndexData d e) (Pair ParentIndex ParentIndex) where
+instance HasParentInds (NetworkIndexData d e) (Pair TaggedIndex TaggedIndex) where
 
     _parentInds = _nodeContext . _parentInds
 
@@ -352,7 +351,7 @@ instance HasChildInfo (NetworkContext e) (ChildInfo e) where
     _childInfo = lens childInfoN (\l c -> l {childInfoN = c})
 
 
-instance HasChildInds (NetworkContext e) ChildIndex where
+instance HasChildInds (NetworkContext e) TaggedIndex where
 
     _childInds = _childInfo . _childIndex
 
@@ -362,7 +361,7 @@ instance HasChildInfo (NetworkIndexData d e) (ChildInfo e) where
     _childInfo = _nodeContext . _childInfo
 
 
-instance HasChildInds (NetworkIndexData d e) ChildIndex where
+instance HasChildInds (NetworkIndexData d e) TaggedIndex where
 
     _childInds = _childInfo . _childIndex
 
@@ -375,14 +374,14 @@ instance HasChildInfo (RootContext e)
                       (Either (ChildInfo e) (ChildInfo e :!: ChildInfo e)) where
   _childInfo = lens childInfoR (\l c -> l {childInfoR = c})
 
-instance HasChildInds (RootContext e) (Either ChildIndex (ChildIndex :!: ChildIndex)) where
+instance HasChildInds (RootContext e) (Either TaggedIndex (TaggedIndex :!: TaggedIndex)) where
   _childInds =
     let
       getChildInds
         :: Either (ChildInfo e) (ChildInfo e :!: ChildInfo e)
-        -> Either ChildIndex    (ChildIndex :!: ChildIndex)
+        -> Either TaggedIndex    (TaggedIndex :!: TaggedIndex)
       getChildInds = bimap (view _childIndex) (view (_both _childIndex))
-      _view :: RootContext e -> Either ChildIndex (ChildIndex :!: ChildIndex)
+      _view :: RootContext e -> Either TaggedIndex (TaggedIndex :!: TaggedIndex)
       _view = getChildInds . view _childInfo
     in
       to _view
@@ -395,7 +394,7 @@ instance HasChildInfo (RootIndexData d e)
 
 
 instance HasChildInds (RootIndexData d e)
-                      (Either ChildIndex (ChildIndex :!: ChildIndex)) where
+                      (Either TaggedIndex (TaggedIndex :!: TaggedIndex)) where
 
     _childInds = _nodeContext . _childInds
 
