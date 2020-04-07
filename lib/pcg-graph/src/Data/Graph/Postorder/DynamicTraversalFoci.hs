@@ -309,17 +309,19 @@ deriveNodeArrangementEdgeMapping
 -- |
 -- This function takes a node arrangement giving a selected node and those edges
 -- surrounding it and returns the parent edge in the arrangement and the resolutions
--- when the given parent node is selected (see below).
+-- when the given parent edge is selected (see below).
 --
 -- In terms of the following diagram of a node arrangement:
 --
---      (p)
---       |
---      (n)
---     /   \
---   (l)   (r)
+--                   (p)
+--                    | res j <> res k
+--                   (n)
+--            res j /   \ res k
+--                 /     \
+--                (l)   (r)
 --
--- we return the edge: Edge i n, along with the resolution cache
+--
+-- we return the edge: Edge p n, along with the resolution cache
 -- obtained if we treat nodes l and r as child nodes in the traversal
 -- and perform a local postorder resolution update from the selected
 -- (memoized) resolutions j and k.
@@ -732,7 +734,13 @@ modifyRootCosts _subBlock topologyMapping graph =
 
     updateCharSubBlock :: FinalBlockCostInfo -> subBlock -> subBlock
     updateCharSubBlock (FinalBlockCostInfo _ dynBlockCostInfo) =
-      Vector.zipWith set _characterCost finalCharacterCost dynBlockCostInfo
+      Vector.zipWith
+        (\finalCostInfo subBlock ->
+           set _characterCost (finalCharacterCost finalCostInfo) subBlock
+        ) dynBlockCostInfo
+
+
+
 
 
 
