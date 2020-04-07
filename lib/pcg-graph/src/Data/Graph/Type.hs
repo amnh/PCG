@@ -13,6 +13,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 
 module Data.Graph.Type
   ( -----------
@@ -23,6 +25,7 @@ module Data.Graph.Type
   , GraphShape'
   , GraphBuilder(..)
   , MGraph(..)
+  , GraphCostData(..)
     -----------------------
     -- Mutable interface --
     -----------------------
@@ -110,6 +113,9 @@ import Data.Key (foldMapWithKey, lookup)
 import Data.Coerce
 import Data.Set (Set)
 import qualified Data.Set as Set
+import           Numeric.Extended.Real
+import GHC.Generics
+import Control.DeepSeq
 
 
 --      ┌─────────────┐
@@ -300,6 +306,16 @@ makeRootFocusGraphs graph =
     fmap (:!: graph) rootNames
 
 
+data GraphCostData = GraphCostData
+  { graphCost       :: {-# UNPACK #-} !ExtendedReal
+  , networkEdgeCost :: {-# UNPACK #-} !ExtendedReal
+  , rootingCost     :: {-# UNPACK #-} !Double
+  , totalBlockCost  :: {-# UNPACK #-} !Double
+  }
+  deriving stock (Generic)
+  deriving anyclass (NFData)
+
+
 --      ┌─────────────────┐
 --      │    Instances    │
 --      └─────────────────┘
@@ -328,6 +344,9 @@ instance TextShow (Graph f c e n t) where
 --  show = toString . showb
 
 
+--      ┌─────────────────────┐
+--      │    Classy Lenses    │
+--      └─────────────────────┘
 
 class HasLeafData s t a b | s -> a, t -> b, s b -> t, t a -> s where
     _leafData :: Lens s t a b
@@ -437,6 +456,32 @@ instance HasCachedData
 
     _cachedData = lens cachedData (\g c2 -> g {cachedData = c2})
 
+class HasGraphCostData s a | s -> a where
+  _graphData :: Lens' s a
+
+class HasGraphCost s where
+  _graphCost :: Lens' s ExtendedReal
+
+class HasNetworkEdgeCost s where
+  _networkEdgeCost :: Lens' s ExtendedReal
+
+class HasRootingCost s where
+  _rootingCost :: Lens' s Double
+
+class HasTotalBlockCost s where
+  _totalBlockCost :: Lens' s Double
+
+instance HasGraphCost GraphCostData where
+  _graphCost = lens graphCost (\g gc -> g {graphCost = gc})
+
+instance HasNetworkEdgeCost GraphCostData where
+  _networkEdgeCost = lens networkEdgeCost (\g netCost -> g {networkEdgeCost = netCost})
+
+instance HasRootingCost GraphCostData where
+  _rootingCost = lens rootingCost (\g rootCost -> g {rootingCost = rootCost})
+
+instance HasTotalBlockCost GraphCostData where
+  _totalBlockCost = lens totalBlockCost (\g totCost -> g {totalBlockCost = totCost})
 
 --      ┌────────────────┐
 --      │    Indexing    │
