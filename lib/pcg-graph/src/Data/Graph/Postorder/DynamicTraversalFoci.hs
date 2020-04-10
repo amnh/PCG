@@ -29,12 +29,17 @@
 --     the total character cost for all non-exact characters along with the block-wise
 --     and then character-wise cost for each character within a block and selection
 --     of edges for which this minimal cost is attained.
---
+-- 
+--  * A Sequence of type: Vector (Vector (TraversalFoci))
+--    This gives us the collection of root topologies and minimal rooting edges
+--    blockwise and characterwise (where the outer vector represents each of the
+--    blocks and the inner vector represents each of the characters.
 -----------------------------------------------------------------------------
 
 
 {-# LANGUAGE DeriveFunctor       #-}
 {-# LANGUAGE DerivingStrategies  #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving  #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE KindSignatures      #-}
@@ -51,6 +56,7 @@ module Data.Graph.Postorder.DynamicTraversalFoci
   ( assignOptimalDynamicCharacterRootEdges
   , FinalNonExactCostInfo(..)
   , FinalBlockCostInfo(..)
+  , TraversalFoci(..)
   )
   where
 
@@ -69,6 +75,7 @@ import           Data.HashMap.Lazy                 (HashMap)
 import qualified Data.HashMap.Lazy                 as HashMap
 import           Data.Key
 import           Data.List.NonEmpty                (NonEmpty (..))
+import qualified Data.List.NonEmpty                as NonEmpty
 import           Data.Monoid                       (First (..), Sum (..))
 import           Data.Pair.Strict
 import           Data.Set                          (Set)
@@ -76,6 +83,7 @@ import qualified Data.Set                          as Set
 import           Data.Vector                       (Vector)
 import qualified Data.Vector                       as Vector
 import           Prelude                           hiding (lookup)
+
 
 -- |
 -- This function is the top-level function for performing re-rooting.
@@ -104,11 +112,12 @@ assignOptimalDynamicCharacterRootEdges
         (CharacterSequence block) (CharacterSequence (LeafBin block))
      , HashMap EdgeIndex (ResolutionCache (CharacterSequence block))
      , HashMap NetworkTopology (Vector FinalBlockCostInfo)
+     , Vector (Vector TraversalFoci)
      )
 assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
   case numberOfNodes graph of
-    0 -> (graph, mempty, mempty)
-    1 -> (graph, mempty, mempty)
+    0 -> (graph, mempty, mempty, mempty)
+    1 -> (graph, mempty, mempty, mempty)
     2 ->
       let
      -- In this case we have a trivial solution consisting of
@@ -129,8 +138,10 @@ assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
         topologyMapping = displayTreeRerooting _subBlock _subMeta meta edgeMapping
 
         updatedGraph = modifyRootCosts _subBlock topologyMapping graph
+
+        traversalFoci = computeRootTraversalFoci topologyMapping graph
       in
-        (updatedGraph, edgeMapping, topologyMapping)
+        (updatedGraph, edgeMapping, topologyMapping, traversalFoci)
 
     _ ->
       let
@@ -201,8 +212,10 @@ assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
         topologyMapping = displayTreeRerooting _subBlock _subMeta meta edgeMapping
 
         updatedGraph = modifyRootCosts _subBlock topologyMapping graph
+
+        traversalFoci = computeRootTraversalFoci topologyMapping graph
       in
-        (updatedGraph, edgeMapping, topologyMapping)
+        (updatedGraph, edgeMapping, topologyMapping, traversalFoci)
 
 
 
@@ -740,6 +753,74 @@ modifyRootCosts _subBlock topologyMapping graph =
         ) dynBlockCostInfo
 
 
+-------------------------
+-- Root Traversal Foci --
+-------------------------
+
+-- |
+-- This type is a newtype around a choice of root topology along with minimal traversal
+-- edge
+newtype TraversalFoci = TraversalFoci {getTraversalFoci :: NonEmpty (NetworkTopology, EdgeIndex)}
+  deriving stock (Eq, Ord, Show)
+  deriving newtype (Semigroup)
+
+computeRootTraversalFoci
+  :: forall c e block .
+  ( 
+  )
+  => HashMap NetworkTopology (Vector FinalBlockCostInfo)
+  -> Graph
+        (ResolutionCacheM Identity) c e
+        (CharacterSequence block) (CharacterSequence (LeafBin block))
+  -> Vector (Vector TraversalFoci)
+computeRootTraversalFoci topologyMapping graph = fociSequence
+  where
+-- Get each of the root topologies from each of the root resolutions.
+  rootTopologies :: (NonEmpty NetworkTopology)
+  rootTopologies =
+    let
+      resolutions :: Vector (NonEmpty (Resolution (CharacterSequence block)))
+      resolutions = fmap (view (_nodeData . _resolutionCache)) (view _rootReferences graph)
+
+      topologies :: Vector (NonEmpty NetworkTopology)
+      topologies = fmap (fmap (view _topologyRepresentation)) resolutions
+    in
+      foldr1 (<>) topologies
+
+-- For each root topology get the associated final root block cost info.
+  rootCostVectors
+    :: NonEmpty (NetworkTopology, Vector FinalBlockCostInfo)
+  rootCostVectors =
+    fmap (\top -> (top, topologyMapping ! top)) rootTopologies
+
+-- For each root topology this gives for each block and then for each character
+-- the topology and minimal rooting edges for the given character.
+  topologySequences
+    :: NonEmpty (Vector (Vector (TraversalFoci)))
+  topologySequences =
+    let
+      makeSequenceTraversalFoci :: (NetworkTopology, Vector FinalBlockCostInfo)
+        -> Vector (Vector TraversalFoci)
+      makeSequenceTraversalFoci (top, dynCharInfo) = fmap makeBlockFoci dynCharInfo
+        where
+          makeBlockFoci :: FinalBlockCostInfo -> Vector (TraversalFoci)
+          makeBlockFoci =
+            fmap (\charInfo -> zipTop (minimalEdgeFoci charInfo)) . finalNonExactCostInfo
+
+          zipTop :: NonEmpty EdgeIndex -> TraversalFoci
+          zipTop = TraversalFoci . NonEmpty.zip (NonEmpty.repeat top)
+    in
+      fmap makeSequenceTraversalFoci rootCostVectors
+
+-- Finally for each character we merge each of the traversal foci
+  fociSequence :: Vector (Vector (TraversalFoci))
+  fociSequence = foldr1 mergeBlocks topologySequences
+    where
+      mergeBlocks
+        :: Vector (Vector TraversalFoci)
+        -> Vector (Vector TraversalFoci)
+        -> Vector (Vector TraversalFoci)
+      mergeBlocks = Vector.zipWith (Vector.zipWith (<>))
 
 
 
