@@ -272,3 +272,7 @@ class HasSequenceCost block where
 
 -- Note (TODO): this should probably be rolled into the BlockBin typeclass
 type family FinalDecoration a :: Type
+
+
+class HasRootCost block where
+  rootCost :: (Integral i) => MetadataBlock block m -> block -> Double
