@@ -57,6 +57,8 @@ module Data.Graph.Postorder.DynamicTraversalFoci
   , FinalNonExactCostInfo(..)
   , FinalBlockCostInfo(..)
   , TraversalFoci(..)
+  , getUnbiasedRootTopology
+  , getUnbiasedRootEdge
   )
   where
 
@@ -92,7 +94,6 @@ import           Prelude                           hiding (lookup)
 assignOptimalDynamicCharacterRootEdges
   :: forall block subBlock dynChar m c e .
      ( BlockBin subBlock
-     , HasSequenceCost block
      , HasBlockCost block
      , HasCharacterWeight (CharacterMetadata dynChar) Double
      , HasCharacterCost dynChar Word
@@ -233,7 +234,6 @@ assignOptimalDynamicCharacterRootEdges _subBlock _subLeaf _subMeta meta graph =
 memoizedEdgeMapping
   :: forall block subBlock dynChar m c e .
      ( BlockBin subBlock
-     , HasSequenceCost block
      , HasBlockCost block
      , DynCharacterSubBlock subBlock dynChar
      , HasMetadataSequence c (MetadataSequence block m)
@@ -291,7 +291,7 @@ deriveNodeArrangementEdgeMapping
   . ( HasMetadataSequence c (MetadataSequence block meta)
     , BlockBin block
     , BlockBin subBlock
-    , HasSequenceCost block
+    , HasBlockCost block
     , DynCharacterSubBlock subBlock dynChar
     , Show block
     )
@@ -347,7 +347,7 @@ deriveDirectedEdgeDatum
   . ( HasMetadataSequence c (MetadataSequence block meta)
     , BlockBin block
     , BlockBin subBlock
-    , HasSequenceCost block
+    , HasBlockCost block
     , DynCharacterSubBlock subBlock dynChar
     , Show block
     )
@@ -694,7 +694,7 @@ modifyRootCosts
   :: forall c e block subBlock dynChar meta .
   ( DynCharacterSubBlock subBlock dynChar
   , HasCharacterCost dynChar Word
-  , HasSequenceCost block
+  , HasBlockCost block
   , HasMetadataSequence c (MetadataSequence block meta)
   )
   => Lens' block subBlock
@@ -763,6 +763,22 @@ modifyRootCosts _subBlock topologyMapping graph =
 newtype TraversalFoci = TraversalFoci {getTraversalFoci :: NonEmpty (NetworkTopology, EdgeIndex)}
   deriving stock (Eq, Ord, Show)
   deriving newtype (Semigroup)
+
+-- |
+-- This extracts any minimal network topology in a collection of traversal foci.
+getUnbiasedRootTopology :: TraversalFoci -> NetworkTopology
+getUnbiasedRootTopology =
+    fst
+  . NonEmpty.head
+  . getTraversalFoci
+
+getUnbiasedRootEdge :: TraversalFoci -> EdgeIndex
+getUnbiasedRootEdge =
+    snd
+  . NonEmpty.head
+  . getTraversalFoci
+  
+
 
 computeRootTraversalFoci
   :: forall c e block .
@@ -836,7 +852,7 @@ filterResolutionEdges
   :: Set EdgeIndex
   -> ResolutionCache (CharacterSequence block)
   -> [Resolution (CharacterSequence block)]
-filterResolutionEdges edges = runIdentity . filterResolution hasEdge
+filterResolutionEdges edges = filterResolution hasEdge
   where
     hasEdge :: Resolution (CharacterSequence block) -> Bool
     hasEdge res =

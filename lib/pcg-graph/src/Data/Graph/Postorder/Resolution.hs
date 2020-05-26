@@ -17,7 +17,7 @@
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeOperators              #-}
-
+{-# LANGUAGE TypeApplications           #-}
 
 module Data.Graph.Postorder.Resolution where
 
@@ -226,7 +226,7 @@ virtualParentResolution
   :: forall block subBlock dynChar meta .
      ( BlockBin block
      , BlockBin subBlock
-     , HasSequenceCost block
+     , HasBlockCost block
      , DynCharacterSubBlock subBlock dynChar
      )
   => Lens' block subBlock
@@ -276,7 +276,7 @@ virtualParentResolution
 
 generateLocalResolutions
   :: ( BlockBin block
-     , HasSequenceCost block
+     , HasBlockCost block
      )
   => MetadataSequence block meta
   -> Resolution
@@ -317,7 +317,7 @@ generateSubBlockLocalResolutions
   :: forall block subBlock meta .
      ( BlockBin block
      , BlockBin subBlock
-     , HasSequenceCost block
+     , HasBlockCost block
      )
   => Lens' block subBlock
   -> Lens' (CharacterMetadata block) (CharacterMetadata subBlock)
@@ -436,10 +436,14 @@ getResolutionCache meta taggedIndex graph =
 type ResolutionCache cs = ResolutionCacheM Identity cs
 type CharacterResolutionCache block = ResolutionCache (CharacterSequence block)
 
+
 _resolutionCache :: Iso' (ResolutionCache cs) (NonEmpty (Resolution cs))
+{-# INLINE _resolutionCache #-}
 _resolutionCache = iso coerce coerce
 
+
 singleton :: Resolution cs -> ResolutionCache cs
+{-# INLINE singleton #-}
 singleton = ResolutionCacheM . Identity . pure
 
 
@@ -453,19 +457,28 @@ mapResolution
   :: forall m cs cs' . (Functor m)
   => (Resolution cs -> Resolution cs')
   -> (ResolutionCacheM m cs -> ResolutionCacheM m cs')
+{-# INLINE mapResolution #-}
 mapResolution resFn =
     ResolutionCacheM
   . fmap (fmap resFn)
   . runResolutionCacheM
 
 
-filterResolution
+filterResolutionM
   :: forall m cs cs' . (Functor m)
   => (Resolution cs -> Bool)
   -> (ResolutionCacheM m cs -> m [(Resolution cs)])
-filterResolution p =
+filterResolutionM p =
     fmap (NonEmpty.filter p)
   . runResolutionCacheM
+
+filterResolution
+  :: (Resolution cs -> Bool)
+  -> ResolutionCache cs
+  -> [Resolution cs]
+filterResolution p = runIdentity . filterResolutionM p
+  
+
 
 
 

@@ -196,14 +196,14 @@ class HasBlocks s a | s -> a where
 -- |
 -- The underlying representation of a `MetadataSequence` is a `Vector` of metadata blocks.
 instance HasBlocks (MetadataSequence block m) (Vector (MetadataBlock block m)) where
-
+  {-# INLINE _blockSequence #-}
   _blockSequence = iso coerce coerce
 
 -- |
 -- The underlying representation of a `CharacterSequence` is a `Vector` of blocks
 -- which implement the `BlockBin` typeclass.
 instance HasBlocks (CharacterSequence block) (Vector block) where
-
+  {-# INLINE _blockSequence #-}
   _blockSequence = iso coerce coerce
 
 
@@ -243,8 +243,11 @@ characterBinaryPostorder meta leftCharSeq rightCharSeq =
 class (BlockBin block) => HasBlockCost block where
   staticCost  :: MetadataBlock block m -> block -> Double
   dynamicCost :: MetadataBlock block m -> block -> Double
-  rootcost    :: MetadataBlock block m -> block -> Double
+  rootCost    :: Int -> MetadataBlock block m -> block -> Double
   blockCost   :: MetadataBlock block m -> block -> Double
+  totalBlockCost :: Int -> MetadataBlock block m -> block -> Double
+  totalBlockCost n m b =
+    blockCost m b + rootCost n m b
 
 
 class HasCharacterCost char cost | char -> cost where
@@ -262,11 +265,44 @@ type DynCharacterSubBlock subBlock dynChar =
   )
 
 
+sequenceCost
+  :: (HasBlockCost block)
+  => MetadataSequence block meta
+  -> CharacterSequence block
+  -> Double
+sequenceCost meta char =
+    Vector.sum $ 
+      Vector.zipWith
+        blockCost
+        (view _blockSequence meta)
+        (view _blockSequence char)
 
--- Note (TODO): does it make sense to have this as a typeclass or should it be a function
--- using blockcost above?
-class HasSequenceCost block where
-  sequenceCost :: MetadataSequence block meta -> CharacterSequence block -> Double
+totalSequenceCost
+  :: (HasBlockCost block)
+  => Int
+  -> MetadataSequence block meta
+  -> CharacterSequence block
+  -> Double
+totalSequenceCost rootCount meta char =
+  Vector.sum $
+    Vector.zipWith
+      (totalBlockCost rootCount)
+      (view _blockSequence meta)
+      (view _blockSequence char)
+         
+
+sequenceRootCost
+  :: (HasBlockCost block)
+  => Int
+  -> MetadataSequence block meta
+  -> CharacterSequence block
+  -> Double
+sequenceRootCost rootCount meta char =
+  Vector.sum $
+    Vector.zipWith
+      (rootCost rootCount)
+      (view _blockSequence meta)
+      (view _blockSequence char)
 
 
 
@@ -274,5 +310,3 @@ class HasSequenceCost block where
 type family FinalDecoration a :: Type
 
 
-class HasRootCost block where
-  rootCost :: (Integral i) => MetadataBlock block m -> block -> Double
