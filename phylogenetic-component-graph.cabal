@@ -1167,7 +1167,9 @@ executable pcg
     Main.hs
 
   ghc-options:
-    -threaded -rtsopts
+    -threaded -rtsopts -fPIC
+
+  ld-options: -static
 
   hs-source-dirs:
     app/pcg
