@@ -31,6 +31,7 @@ module Analysis.Scoring
   -- * Decoration Removal
   , wipeNode
   , wipeScoring
+  , wipeScoring'
   ) where
 
 import           Analysis.Parsimony.Additive.Internal
@@ -55,12 +56,14 @@ import           Data.EdgeLength
 import           Data.Function                                 ((&))
 import           Data.HashMap.Lazy                             (HashMap)
 import           Data.IntMap                                   (IntMap)
+import qualified Data.IntMap                                   as IntMap
 import           Data.List.NonEmpty                            (NonEmpty)
 import qualified Data.List.NonEmpty                            as NE
 import           Data.NodeLabel
 import           Data.Set                                      (Set)
 import           Data.Vector                                   (Vector)
 import qualified Data.Vector.NonEmpty                          as NEV
+
 
 
 -- |
@@ -100,6 +103,29 @@ wipeScoring (PDAG2 dag m) = PDAG2 wipedDAG m
     wipeDecorations ind =
       ind & _nodeDecoration %~ wipeNode shouldWipe
 
+      where
+        shouldWipe = (not . null) . childRefs $ ind
+
+-- |
+-- Remove all scoring data from nodes and change edge type
+wipeScoring'
+  :: forall m e n u v w x y z e' . Default n
+  => (e -> e')
+  -> PhylogeneticDAG m e n u v w x y z
+  -> PhylogeneticDAG m e' n (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+wipeScoring' edgeFn (PDAG2 dag m) = PDAG2 wipedDAG m
+  where
+    wipedDAG =
+      dag & _references %~ fmap wipeDecorations
+          & _graphData  %~ setDefaultMetadata
+
+    wipeDecorations
+      :: IndexData e  (PhylogeneticNode (CharacterSequence u v w x y z) n)
+      -> IndexData e' (PhylogeneticNode (CharacterSequence (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)) n)
+    wipeDecorations ind =
+      ind { childRefs      = IntMap.map edgeFn   (childRefs ind)
+          , nodeDecoration = wipeNode shouldWipe (nodeDecoration ind)
+          }
       where
         shouldWipe = (not . null) . childRefs $ ind
 
