@@ -12,7 +12,6 @@
 
 {-# LANGUAGE ScopedTypeVariables #-}
 
-
 module Bio.Graph.PhylogeneticDAG.Substitute where
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
@@ -35,7 +34,10 @@ import qualified Data.Vector                        as V
 import           Prelude                            hiding (length)
 
 
-type CharacterIndexData e n u v w x y z = (IndexData e (PhylogeneticNode (CharacterSequence u v w x y z) n))
+
+
+type CharacterIndexData e n u v w x y z
+  = (IndexData e (PhylogeneticNode (CharacterSequence u v w x y z) n))
 
 type PhylogeneticRefDAG e n u v w x y z =
   ReferenceDAG
@@ -43,7 +45,8 @@ type PhylogeneticRefDAG e n u v w x y z =
     e
     (PhylogeneticNode (CharacterSequence u v w x y z) n)
 
-getNamedContext :: forall m e n u v w x y z . (Ord n) => PhylogeneticDAG m e n u v w x y z -> [n] -> M.Map n Int
+getNamedContext
+  :: forall m e n u v w x y z . (Ord n) => PhylogeneticDAG m e n u v w x y z -> [n] -> M.Map n Int
 getNamedContext dag = foldMap f
   where
     f :: n -> M.Map n Int
@@ -58,25 +61,39 @@ getIndexFromName dag name =
     refs :: Vector (CharacterIndexData e n u v w x y z)
     refs = dag ^. (_phylogeneticForest . _references)
 
-    l = length refs
-
-    refsWithInds :: Vector (CharacterIndexData e n u v w x y z, Int)
-    refsWithInds = V.zip refs (V.fromList [0..l])
+    refsWithInds :: Vector (Int, CharacterIndexData e n u v w x y z)
+    refsWithInds = V.indexed refs
 
     getNameFromIndexData
       :: IndexData e (PhylogeneticNode (CharacterSequence u v w x y z) n) -> n
     getNameFromIndexData indData =
       indData ^. _nodeDecoration . _nodeDecorationDatum
 
-    isName :: (CharacterIndexData e n u v w x y z, Int) -> Bool
-    isName (c, _) = getNameFromIndexData c == name
+    isName :: (Int, CharacterIndexData e n u v w x y z) -> Bool
+    isName (_, c) = getNameFromIndexData c == name
 
     ind = getFirst . foldMap (First . Just) . V.filter isName $ refsWithInds
   in
-    snd <$> ind
+    fst <$> ind
+
+
+substituteNode
+  :: forall m e n u v w x y z.
+  ( Ord n
+  , Monoid n
+  )
+  => Int
+  -> PhylogeneticDAG m e n u v w x y z
+  -> PhylogeneticDAG m e n u v w x y z
+  -> State (M.Map n Int) (PhylogeneticDAG m e n u v w x y z)
+substituteNode _ _ _ = do
+  pure undefined
 
 substituteSingle
-  :: forall m e n u v w x y z . (Ord n, Monoid n)
+  :: forall m e n u v w x y z .
+  ( Ord n
+  , Monoid n
+  )
   => n
   -> PhylogeneticDAG m e n u v w x y z
   -> PhylogeneticDAG m e n u v w x y z
@@ -92,12 +109,15 @@ substituteSingle nodeName subGraph totalGraph = do
           subReferences     = subGraph ^. _phylogeneticForest .  _references
           sizeOfSubGraph    = length subReferences
           sizeOfNewSubGraph = length subReferences - 1
+
           totalReferences   = totalGraph ^. _phylogeneticForest . _references
 
           incrementedTotalRef = incrementRefVector (sizeOfSubGraph - 1) totalReferences
 
           incrementedInd   = subInd + (sizeOfSubGraph - 1)
+
           rootChildData    = (subReferences ! rootInd) ^. _childRefs
+          rootChildRefs :: [Int]
           rootChildRefs    = keys rootChildData
 
           updateParentIndsSubRef
@@ -106,7 +126,7 @@ substituteSingle nodeName subGraph totalGraph = do
                   subReferences
                   rootChildRefs
 
-          updatedForDeletionSubNodes = decrementAfterIndex rootInd updateParentIndsSubRef
+          updatedForDeletionSubNodes = decrementAfterIndex rootInd rootChildRefs updateParentIndsSubRef
           removeRootNodeSub = deleteAtV rootInd updatedForDeletionSubNodes
           newSubGraphRefs   = removeRootNodeSub
 
@@ -147,7 +167,12 @@ substituteSingle nodeName subGraph totalGraph = do
               pure $ totalGraph & _phylogeneticForest .~ newReferenceDAG
 
 
-substituteDAGs :: (Ord n, Monoid n) => M.Map n (PhylogeneticDAG m e n u v w x y z) -> PhylogeneticDAG m e n u v w x y z -> State (M.Map n Int) (PhylogeneticDAG m e n u v w x y z)
+substituteDAGs
+  ::
+  ( Ord n
+  , Monoid n
+  )
+  => M.Map n (PhylogeneticDAG m e n u v w x y z) -> PhylogeneticDAG m e n u v w x y z -> State (M.Map n Int) (PhylogeneticDAG m e n u v w x y z)
 substituteDAGs namedSubGraphs totalGraph =
   foldrWithKeyM substituteSingle totalGraph namedSubGraphs
 
@@ -171,28 +196,31 @@ deleteAtV i = V.force . V.fromList . deleteAt i . toList
 -- This function takes an index of a deleted node and appropriately
 -- decrements all index information of indices greater than
 -- this node. This is to be used /before/ the node has been deleted.
-decrementAfterIndex :: Int -> Vector (IndexData e n) -> Vector (IndexData e n)
-{-# inline decrementAfterIndex #-}
-decrementAfterIndex ind = fmap updateIndexData
+decrementAfterIndex
+  :: Int
+  -> [Int]                    -- Indices of the children of the root node
+                              -- which should not be decremented as they now point
+                              -- to the parent nodes of the node they are substituted into.
+  -> Vector (IndexData e n)
+  -> Vector (IndexData e n)
+decrementAfterIndex ind rootChildRefs = V.imap updateIndexData
   where
     f :: Int -> Int
-    {-# INLINE f #-}
     f n =
       if n <= ind
         then n
         else n - 1
 
     updateParentRefs :: IntSet -> IntSet
-    {-# INLINE updateParentRefs #-}
     updateParentRefs = IS.map f
 
     updateChildRefs :: IntMap a -> IntMap a
-    {-# INLINE updateChildRefs #-}
     updateChildRefs = IM.mapKeys f
 
-    updateIndexData :: IndexData e' n' -> IndexData e' n'
-    {-# INLINE updateIndexData #-}
-    updateIndexData i = i & _parentRefs %~ updateParentRefs
-                          & _childRefs  %~ updateChildRefs
-
-
+    updateIndexData :: Int -> IndexData e' n' -> IndexData e' n'
+    updateIndexData nodeInd indData =
+      if nodeInd `elem` rootChildRefs then
+          indData & _childRefs  %~ updateChildRefs
+        else
+          indData & _parentRefs %~ updateParentRefs
+                  & _childRefs  %~ updateChildRefs
