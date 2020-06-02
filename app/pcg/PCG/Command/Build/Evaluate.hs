@@ -432,7 +432,8 @@ subTreeMethod buildMethod meta subTrees =
     namedContext =
       rootNodeTree `getNamedContext` rootNodeLabels
   in
-    substituteDAGs subTreeDict rootNodeTree `evalState` namedContext
+    performDecoration . (wipeScoring' fst)
+    $ substituteDAGs subTreeDict rootNodeTree `evalState` namedContext
   where
     getRootNode :: FinalDecorationDAG -> FinalCharacterNode
     {-# INLINE getRootNode #-}
