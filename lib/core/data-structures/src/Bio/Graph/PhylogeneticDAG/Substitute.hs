@@ -127,7 +127,7 @@ substituteSingle nodeName subGraph totalGraph = do
                   rootChildRefs
 
           updatedForDeletionSubNodes = decrementAfterIndex rootInd rootChildRefs updateParentIndsSubRef
-          removeRootNodeSub = deleteAtV rootInd updatedForDeletionSubNodes
+          removeRootNodeSub = deleteAt rootInd updatedForDeletionSubNodes
           newSubGraphRefs   = removeRootNodeSub
 
           updatedRootChildData    = (updatedForDeletionSubNodes ! rootInd) ^. _childRefs
@@ -177,20 +177,15 @@ substituteDAGs namedSubGraphs totalGraph =
   foldrWithKeyM substituteSingle totalGraph namedSubGraphs
 
 
-deleteAt :: Int -> [a] -> [a]
-{-# INLINE deleteAt #-}
-deleteAt i ls
-  | i < 0 = ls
-  | otherwise = go i ls
-  where
-    go 0 (_:xs) = xs
-    go n (x:xs) = x : go (n-1) xs
-    go _ []     = []
+deleteAt :: Int -> Vector a -> Vector a
+deleteAt i v | i < 0 = v
+deleteAt i v =
+  let
+    (before, after) = V.splitAt i v
+  in
+    V.force $ (before <> V.tail after)
 
 
-deleteAtV :: Int -> Vector a -> Vector a
-{-# INLINE deleteAtV #-}
-deleteAtV i = V.force . V.fromList . deleteAt i . toList
 
 -- |
 -- This function takes an index of a deleted node and appropriately
