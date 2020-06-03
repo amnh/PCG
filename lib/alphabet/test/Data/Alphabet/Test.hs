@@ -2,12 +2,13 @@ module Data.Alphabet.Test
   ( testSuite
   ) where
 
-import Data.Alphabet
-import Data.Foldable
-import Data.List             (nubBy)
-import Test.Tasty
-import Test.Tasty.HUnit      as HU
-import Test.Tasty.QuickCheck as QC
+import           Data.Alphabet
+import           Data.Foldable
+import           Data.List             (nubBy)
+import qualified Data.Set              as Set
+import           Test.Tasty
+import           Test.Tasty.HUnit      as HU
+import           Test.Tasty.QuickCheck as QC
 
 
 testSuite :: TestTree
@@ -30,6 +31,7 @@ testPropertyCases = testGroup "Invariant properties"
 testExampleCases :: TestTree
 testExampleCases = testGroup "Example cases for Data.Alphabet"
     [ alphabetDNACases
+    , subsetIndex
     ]
 
 
@@ -136,3 +138,73 @@ alphabetDNACases =
     states1 :: Assertion
     states1 = alphabetStateNames alphabetDNA
              @?= ["adenine", "cytosine", "guanine", "thymine", "-"]
+
+
+
+subsetIndex :: TestTree
+subsetIndex =
+  testGroup "Subset Index Tests:"
+      [ HU.testCase
+          "getSortedLookup agrees for sorted and unsorted alphabet [0, 1, 2] and input 1"
+          sortedLookup
+      , HU.testCase
+          "getSortedLookup agrees for sorted and unsorted alphabet [0, 1, 2] and gap input"
+          gapLookup
+      , QC.testProperty
+        (unlines
+        [ "getSortedLookup agrees for sorted and unsorted alphabets [0..n] for inputs"
+        , "      as subsets from [0..i] with i <= n"
+        ])
+        sortedUnsortedAgree
+      , QC.testProperty
+        "getSortedLookup agrees for sorted and unsorted alphabets [0..n] for gap input"
+        sortedUnsortedGapAgree
+      ]
+  where
+    alphabet :: Alphabet String
+    alphabet = fromSymbols ["0","1","2"]
+
+    sortedAlphabet :: Alphabet String
+    sortedAlphabet = alphabet {isSorted = True}
+
+    sortedLookup :: Assertion
+    sortedLookup =
+     getSubsetIndex alphabet (Set.singleton "1")
+      @?=
+     getSubsetIndex sortedAlphabet (Set.singleton "1")
+
+    gapLookup :: Assertion
+    gapLookup =
+      getSubsetIndex alphabet (Set.singleton $ gapSymbol alphabet)
+      @?=
+      getSubsetIndex sortedAlphabet (Set.singleton $ gapSymbol sortedAlphabet)
+
+--  This is a more elaborate version of the above version making sure
+--  both the sorted and unsorted branches agree for a given ambiguity group.
+    sortedUnsortedAgree :: Int -> Int -> Property
+    sortedUnsortedAgree i n =
+      let
+        symbols          = fmap show [0..n]
+        unsortedAlphabet = fromSymbols symbols
+        sortedAlphabet   = unsortedAlphabet {isSorted = True}
+        lookupGroup      = Set.singleton (show i)
+     -- generator for a subset of the list [0..i]
+        groupGen         = Set.fromList <$> sublistOf (fmap show [0..i])
+      in
+     -- Make sure the pre-condition holds that i is less than or equal to n.
+        (i <= n) ==>
+          forAll groupGen $ \ambGroup ->
+            getSubsetIndex unsortedAlphabet ambGroup ===
+            getSubsetIndex sortedAlphabet   ambGroup
+
+    sortedUnsortedGapAgree :: Int -> Int -> Property
+    sortedUnsortedGapAgree i n =
+      let
+        symbols          = fmap show [0..n]
+        unsortedAlphabet = fromSymbols symbols
+        sortedAlphabet   = unsortedAlphabet {isSorted = True}
+        gap              = Set.singleton $ gapSymbol sortedAlphabet
+      in
+     -- Test sorted and unsorted lookup is the same for gap character
+          getSubsetIndex unsortedAlphabet gap ===
+          getSubsetIndex sortedAlphabet  gap
