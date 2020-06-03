@@ -180,9 +180,15 @@ instance EncodableStreamElement DynamicCharacterElement where
 
     decodeElement alphabet character =
         case foldMapWithKey f alphabet of
-          []   -> error "Attempting to decode an empty dynamic character element."
+          []   -> error errorMsg
           x:xs -> x:|xs
       where
+        errorMsg = unlines
+          [ "Attempting to decode an empty dynamic character element."
+          , "Alphabet: "          <> show alphabet
+          , "Character element: " <> show character
+          ]
+
         f i symbol
           | character `testBit` i = [symbol]
           | otherwise             = []
