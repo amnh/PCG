@@ -37,7 +37,7 @@
 -----------------------------------------------------------------------------
 
 module Data.Alphabet
-  ( Alphabet()
+  ( Alphabet(..)
   , AmbiguityGroup
   -- * Construction
   , fromSymbols
