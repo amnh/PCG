@@ -1667,6 +1667,7 @@ test-suite test-suite-alphabet
 
   build-depends:
     alphabet,
+    containers               >= 0.5.8     && < 1.0,
     base                     >= 4.11      && < 5.0,
     QuickCheck               >= 2.12      && < 3.0,
     tasty                    >= 1.2       && < 2.0,
