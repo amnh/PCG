@@ -197,8 +197,8 @@ subsetIndex =
             getSubsetIndex unsortedAlphabet ambGroup ===
             getSubsetIndex sortedAlphabet   ambGroup
 
-    sortedUnsortedGapAgree :: Int -> Int -> Property
-    sortedUnsortedGapAgree i n =
+    sortedUnsortedGapAgree :: Int -> Property
+    sortedUnsortedGapAgree n =
       let
         symbols          = fmap show [0..n]
         unsortedAlphabet = fromSymbols symbols
