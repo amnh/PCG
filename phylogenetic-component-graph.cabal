@@ -27,7 +27,7 @@ extra-source-files:
     FUNDING.md
     README.md
 
-        
+
 -- Group of buildinfo specifications to correctly build and link to the C & C++:
 -- FFI code.
 common ffi-buildinfo
@@ -86,7 +86,7 @@ common ghc-flags
     -Wincomplete-patterns
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
-    -Wmissing-deriving-strategies          
+    -Wmissing-deriving-strategies
     -Wmissing-fields
     -Wmissing-home-modules
     -Wmissing-monadfail-instances
@@ -110,7 +110,7 @@ common ghc-flags
     ghc-options:
       -Wderiving-defaults
       -Wunused-packages
-    
+
 
 -- Global deviations from Haskell98
 common language-specs
@@ -160,12 +160,12 @@ library alphabet
   -- I consider this a temporary hack to get things to compile with profiling.
   -- TODO: remove this in the future when cabal gets it's act together.
   other-extensions: TemplateHaskell
-  
+
   exposed-modules:
     Data.Alphabet
     Data.Alphabet.IUPAC
     Data.Alphabet.Special
- 
+
   other-modules:
     Data.Alphabet.Internal
 
@@ -269,7 +269,7 @@ library character-name
 
 
 -- Data-types for defining and interacting with phylogenetic components.
-   
+
 -- Exposes core data-types for constructing, mutating, and scoring phylogenetic
 -- components. Phylogenetic forests, the primitive component type, are defined
 -- here along with the interface for interacting with phylogenetic forests.
@@ -355,7 +355,7 @@ library core
 
 library data-normalization
 
-  import:             
+  import:
     ghc-flags,
     language-specs
 
@@ -364,7 +364,7 @@ library data-normalization
 
   default-language:
     Haskell2010
-        
+
   hs-source-dirs:
     lib/data-normalization/src
 
@@ -388,7 +388,7 @@ library data-normalization
     Data.Normalization.Character
     Data.Normalization.Metadata
     Data.Normalization.Topology
-  
+
   other-modules:
     Data.Normalization.Character.Class
     Data.Normalization.Character.Internal
@@ -553,13 +553,13 @@ library data-structures
 
 library data-unification
 
-  import:             
+  import:
     ghc-flags,
     language-specs
 
   visibility:
     public
-  
+
   default-language:
     Haskell2010
 
@@ -629,13 +629,13 @@ library evaluation
     quickcheck-instances     >= 0.3.17    && < 1.0,
     semigroupoids            >= 5.2.1     && < 5.4,
     text                     >= 1.2       && < 2.0,
-    text-show                >= 3.8.3     && < 4.0,            
+    text-show                >= 3.8.3     && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
-                
+
   exposed-modules:
     Control.Evaluation
     Control.Monad.Logger
-    System.ErrorPhase              
+    System.ErrorPhase
 
   other-modules:
     Control.Evaluation.Notification
@@ -753,10 +753,10 @@ library file-parsers
 
 
 -- Library for interacting with file paths in a type-safe manner.
-                    
+
 -- Exposes a well-typed file path type and functionality for interacting with the
 -- file system through with this type.
-        
+
 library file-source
 
   import:
@@ -785,10 +785,10 @@ library file-source
     Glob                     >= 0.9       && < 2.0,
     hashable                 >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
-    megaparsec               >= 8.0       && < 9.0,                        
+    megaparsec               >= 8.0       && < 9.0,
     mono-traversable         >= 1.0       && < 2.0,
     mono-traversable-keys    >= 0.1       && < 1.0,
-    pipes                    >= 4.0       && < 5.0,            
+    pipes                    >= 4.0       && < 5.0,
     QuickCheck               >= 2.12      && < 3.0,
     semigroupoids            >= 5.2.1     && < 5.4,
     text                     >= 1.2       && < 2.0,
@@ -796,7 +796,7 @@ library file-source
     text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
-                
+
   exposed-modules:
     Data.FileSource
     Data.FileSource.IO
@@ -936,8 +936,8 @@ library serialize
     Text.XML
     Text.XML.Class
     Text.XML.Custom
- 
-                    
+
+
 -- Library for working with TCMs and SCMs in various representations.
 
 -- General purpose library for working with transition cost matrices (TCMs)
@@ -1046,7 +1046,7 @@ library tcm-memo
 
 
 -- Collection of utility functions and data structures
-                    
+
 -- Defines custom data structures for special use cases, more abstract functions
 -- that base provides, and re-exported correcting to deficient libraries.
 
@@ -1142,7 +1142,7 @@ library validation-transformer
   hs-source-dirs:
     lib/validation-transformer/src
 
-  build-depends:    
+  build-depends:
     base                     >= 4.11      && < 5.0,
     deepseq                  >= 1.4       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
@@ -1212,7 +1212,7 @@ executable pcg
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
     text-show                >= 3.8.3     && < 4.0,
-    th-lift-instances        >= 0.1       && < 1.0,            
+    th-lift-instances        >= 0.1       && < 1.0,
     transformers             >= 0.5.5     && < 1.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
@@ -1223,7 +1223,7 @@ executable pcg
   -- I consider this a temporary hack to get things to compile with profiling.
   -- TODO: remove this in the future when cabal gets it's act together.
   other-extensions: TemplateHaskell
-  
+
   other-modules:
     Paths_phylogenetic_component_graph
     PCG.Command.Build.Evaluate
@@ -1244,7 +1244,7 @@ executable pcg
     PCG.CommandLineOptions.Types
     PCG.Computation.Internal
     PCG.Software.Credits
-    PCG.Software.Metadata            
+    PCG.Software.Metadata
 
 
 executable 2d-do-comparison
@@ -1361,7 +1361,7 @@ executable file-tests
 
   hs-source-dirs:
     lib/file-parsers/test
-  
+
   build-depends:
     file-parsers,
     base                     >= 4.11      && < 5.0,
@@ -1396,7 +1396,7 @@ executable generate-data-set
   hs-source-dirs:
     app
 
-  build-depends:             
+  build-depends:
     alphabet,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
@@ -1405,7 +1405,7 @@ executable generate-data-set
     keys                     >= 3.0       && < 4.0,
     optparse-applicative     >= 0.15      && < 2.0,
     mtl                      >= 2.0       && < 3.0,
-    mwc-random               >= 0.14      && < 1.0,                         
+    mwc-random               >= 0.14      && < 1.0,
     random-shuffle           >= 0.0.4     && < 0.1,
     scientific               >= 0.3.6     && < 0.4,
     text                     >= 1.2       && < 2.0,
@@ -1429,7 +1429,7 @@ executable generate-random-sequence
   hs-source-dirs:
     app
 
-  build-depends:             
+  build-depends:
     alphabet,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
@@ -1536,10 +1536,10 @@ executable reduce-fastc
   hs-source-dirs:
     app
 
-  build-depends:             
+  build-depends:
     alphabet,
     file-parsers,
-    utility,                         
+    utility,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
     containers               >= 0.5.8     && < 1.0,
@@ -1667,6 +1667,7 @@ test-suite test-suite-alphabet
 
   build-depends:
     alphabet,
+    containers               >= 0.5.8     && < 1.0,
     base                     >= 4.11      && < 5.0,
     QuickCheck               >= 2.12      && < 3.0,
     tasty                    >= 1.2       && < 2.0,
@@ -1812,17 +1813,17 @@ test-suite test-suite-file-parsers
   default-language:
     Haskell2010
 
-  main-is:          
+  main-is:
     TestSuite.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
-  hs-source-dirs:   
+  hs-source-dirs:
     lib/file-parsers/src,
     lib/file-parsers/test
 
-  ghc-options:      
+  ghc-options:
     -threaded
 
   build-depends:
@@ -1901,7 +1902,7 @@ test-suite test-suite-graph
     base                     >= 4.11      && < 5.0,
     tasty                    >= 1.2       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
-                    
+
   other-modules:
     Data.Graph.Test
 
@@ -1951,10 +1952,10 @@ test-suite test-suite-utility
   default-language:
     Haskell2010
 
-  main-is:          
+  main-is:
     TestSuite.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
   hs-source-dirs:
@@ -1973,12 +1974,12 @@ test-suite test-suite-utility
     tasty-hunit              >= 0.10      && < 1.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
-                    
+
   other-modules:
     Control.Parallel.Test
     Data.BitMatrix.Test
     Data.MutualExclusionSet.Test
-    Numeric.Cost.Test            
+    Numeric.Cost.Test
     Numeric.Extended.Natural.Test
     Numeric.Extended.Real.Test
     Numeric.NonNegativeAverage.Test
@@ -2027,7 +2028,7 @@ benchmark bench-file-parsers-space
   import:
     ghc-flags,
     language-specs
-         
+
   default-language:
     Haskell2010
 
@@ -2035,14 +2036,14 @@ benchmark bench-file-parsers-space
     Space.hs
 
   type:
-    exitcode-stdio-1.0  
-    
+    exitcode-stdio-1.0
+
   ghc-options:
     -threaded
 
   hs-source-dirs:
     lib/file-parsers/bench
-  
+
   build-depends:
     file-parsers,
     base                     >= 4.11      && < 5.0,
@@ -2060,11 +2061,11 @@ benchmark bench-file-parsers-space
     Benchmark.FASTC.Files
     Benchmark.FASTC.Space
     Benchmark.Internal
-    Benchmark.Newick.Files            
+    Benchmark.Newick.Files
     Benchmark.Newick.Space
-    Benchmark.TCM.Files            
+    Benchmark.TCM.Files
     Benchmark.TCM.Space
-    Benchmark.VER.Files            
+    Benchmark.VER.Files
     Benchmark.VER.Space
 
 
@@ -2073,7 +2074,7 @@ benchmark bench-file-parsers-time
   import:
     ghc-flags,
     language-specs
-         
+
   default-language:
     Haskell2010
 
@@ -2081,14 +2082,14 @@ benchmark bench-file-parsers-time
     Time.hs
 
   type:
-    exitcode-stdio-1.0  
-    
+    exitcode-stdio-1.0
+
   ghc-options:
     -threaded
 
   hs-source-dirs:
     lib/file-parsers/bench
-  
+
   build-depends:
     file-parsers,
     base                     >= 4.11      && < 5.0,
@@ -2108,7 +2109,7 @@ benchmark bench-file-parsers-time
     Benchmark.Internal
     Benchmark.Newick.Files
     Benchmark.Newick.Time
-    Benchmark.TCM.Files            
+    Benchmark.TCM.Files
     Benchmark.TCM.Time
     Benchmark.VER.Files
     Benchmark.VER.Time
@@ -2123,13 +2124,13 @@ benchmark bench-graph
   default-language:
     Haskell2010
 
-  main-is:          
+  main-is:
     Benchmarks.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
-  hs-source-dirs: 
+  hs-source-dirs:
     lib/graph/bench
 
   build-depends:
@@ -2141,7 +2142,7 @@ benchmark bench-graph
     -fmax-simplifier-iterations=10
     -fspec-constr-count=6
     -threaded
-                    
+
   other-modules:
     Data.Graph.Bench
 
@@ -2204,7 +2205,7 @@ benchmark bench-string-alignment
     PCG.Command.Read.InputStreams
     PCG.Command.Read.ParseStreams
     PCG.Command.Read.ReadCommandError
-            
+
 
 benchmark bench-string-alignment-small
 
@@ -2264,7 +2265,7 @@ benchmark bench-string-alignment-small
     PCG.Command.Read.InputStreams
     PCG.Command.Read.ParseStreams
     PCG.Command.Read.ReadCommandError
-            
+
 
 benchmark bench-utility
 
@@ -2275,10 +2276,10 @@ benchmark bench-utility
   default-language:
     Haskell2010
 
-  main-is:          
+  main-is:
     Benchmarks.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
   hs-source-dirs:
@@ -2295,7 +2296,7 @@ benchmark bench-utility
     -fmax-simplifier-iterations=10
     -fspec-constr-count=6
     -threaded
-                    
+
   other-modules:
     Data.MutualExclusionSet.Bench
     Numeric.Extended.Natural.Bench

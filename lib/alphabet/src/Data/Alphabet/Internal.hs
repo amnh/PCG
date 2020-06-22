@@ -26,7 +26,7 @@
 {-# LANGUAGE TypeFamilies       #-}
 
 module Data.Alphabet.Internal
-  ( Alphabet()
+  ( Alphabet(..)
   , AmbiguityGroup
   , alphabetStateNames
   , alphabetSymbols
@@ -51,9 +51,9 @@ import           Data.Key
 import           Data.List                           (elemIndex, intercalate, sort)
 import           Data.List.NonEmpty                  (NonEmpty (..), unzip)
 import qualified Data.List.NonEmpty                  as NE
+import qualified Data.Map                            as Map
 import           Data.Matrix.NotStupid               (Matrix, matrix)
 import           Data.Maybe
-import qualified Data.Map                            as Map
 import           Data.Monoid
 import           Data.Semigroup.Foldable
 import           Data.Set                            (Set)
@@ -147,7 +147,7 @@ instance Ord a => Eq (Alphabet a) where
         (  (isSorted lhs && isSorted rhs && symbolVector lhs == symbolVector rhs)
         ||  sort (toList lhs) == sort (toList rhs)
         )
-      
+
 
 instance Foldable Alphabet where
 
@@ -291,7 +291,7 @@ gapSymbol alphabet = alphabet ! (length alphabet - 1)
 {-# SPECIALISE  getSubsetIndex :: Alphabet String    -> Set String    -> Natural #-}
 {-# SPECIALISE  getSubsetIndex :: Alphabet ShortText -> Set ShortText -> Natural #-}
 {-# INLINE      getSubsetIndex #-}
-getSubsetIndex :: Ord a => Alphabet a -> Set a -> Natural
+getSubsetIndex :: (Ord a) => Alphabet a -> Set a -> Natural
 getSubsetIndex a s
   | isSorted a = addGapVal . go 0 0 $ consumeSet s -- /O(log a + n)/, a >= n
   | otherwise  = addGapVal . mo 0 0 $ consumeSet s -- /O(a)/
@@ -305,7 +305,7 @@ getSubsetIndex a s
     addGapVal x
       | inputHadGap = x + bit (length a - 1)
       | otherwise   = x
-    
+
     -- Faster binary search for a sorted alphabet
     go !num   _    []  = num
     go !num !lo (x:xs) =
@@ -314,18 +314,11 @@ getSubsetIndex a s
         Left  i -> go  num           i    xs
 
     -- Slower version for an unsorted alphabet
-    mo !num   _    []   = num
-    mo !num !lo (x:xs)
-      | i >= length vec = num
-      | x == vec ! i    = mo (num + bit i) (i+1) xs
-      | otherwise       = mo  num          (i+1) xs
-      where
-        i = advanceWhile x lo
-
-    advanceWhile v !i
-      | i >= length vec = i
-      | v >= vec ! i    = i
-      | otherwise       = advanceWhile v $ i + 1
+    mo num   _    []   = num
+    mo num i (x:xs)
+      | i > length vec  = num
+      | x == (vec ! i)  = mo (num + bit i) 0      xs
+      | otherwise       = mo  num          (i+1) (x:xs)
 
 
 -- |

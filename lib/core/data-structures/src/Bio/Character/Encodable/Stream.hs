@@ -68,7 +68,7 @@ class ( Element b ~ Bool
 --      , Num b -- Required for bit twiddling hacks
       ) => EncodableStreamElement b where
 
-    decodeElement :: Eq a => Alphabet a -> b -> AmbiguityGroup a
+    decodeElement :: (Eq a, Show a) => Alphabet a -> b -> AmbiguityGroup a
 
     encodeElement :: (Ord a, IsString a) => Alphabet a -> AmbiguityGroup a -> b
 
@@ -93,7 +93,7 @@ class ( EncodableStreamElement (Element s)
       , MonoFunctor  s
       ) => EncodableStream s where
 
-    decodeStream :: (Ord a, IsString a) => Alphabet a -> s -> NonEmpty (AmbiguityGroup a)
+    decodeStream :: (Ord a, IsString a, Show a) => Alphabet a -> s -> NonEmpty (AmbiguityGroup a)
     decodeStream alphabet = NE.fromList . ofoldMap (\e -> [decodeElement alphabet e])
 
     encodeStream :: (Ord a, IsString a) => Alphabet a -> NonEmpty (AmbiguityGroup a) -> s
