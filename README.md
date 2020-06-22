@@ -18,7 +18,7 @@ Haskell program and libraries for general phylogenetic graph search
 
 | Directory         | Description of Contents
 |:----------------- |:--------------------------------------- |
-| [`app`      ][d0] | executables source code                 |
+| [`app`      ][d0] | main.hs files executables               |
 | [`bin`      ][d1] | binaries are placed here after build    |
 | [`doc`      ][d2] | Haddock & PDF documentation             |
 | [`lib`      ][d3] | project libraries source code           |
