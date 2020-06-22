@@ -33,6 +33,10 @@ Haskell program and libraries for general phylogenetic graph search
 
   * [Kleberg Foundation][f3]
 
+
+### [Installation instructions][install]
+
+
 [d0]: https://github.com/amnh/PCG/tree/master/app
 [d1]: https://github.com/amnh/PCG/tree/master/bin
 [d2]: https://github.com/amnh/PCG/tree/master/doc
@@ -46,6 +50,7 @@ Haskell program and libraries for general phylogenetic graph search
 [f3]: http://www.klebergfoundation.org/
 
 [latest-release]: https://github.com/amnh/PCG/releases/latest
+[install]: https://github.com/amnh/PCG/blob/master/doc/tutorials/Installation.md
 
 [   author-img]: https://img.shields.io/badge/author-Ward%20Wheeler-blue.svg?color=134EA2
 [   author-ref]: https://www.amnh.org/research/staff-directory/ward-wheeler
