@@ -27,7 +27,6 @@ import Data.MonoTraversable
 import Data.String                      (IsString)
 
 
-
 -- |
 -- Represents a single static character encoded in binary and coercable to
 -- `Int` values.

@@ -4,7 +4,7 @@ allow-newer:
     template-haskell
 
 package *
-    ghc-options: -fwrite-ide-info
+    ghc-options: -fwrite-ide-info -hiedir=.hie
 
 packages: .
 

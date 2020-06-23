@@ -133,6 +133,8 @@ instance EncodableStream StaticCharacterBlock where
 
 instance EncodableStreamElement StaticCharacter where
 
+    -- TODO: This can be improved if the alphabet is sorted.
+    --       See the Data.Alphabet.Internal module to update this code.
     decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
       where
         f i symbol
