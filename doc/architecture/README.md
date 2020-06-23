@@ -1,33 +1,33 @@
 # Architectural Overview
 
 ```
-+-------------------+
-|PCG Script Parser  +----------------------------------------------+
-+-------------------+                                              |
-                                                                   |
-+-------------------+    +-------------+    +-----------+    +-----v-----+    +-------------+
-|Input File Parsers +--->+Normalization+--->+Unification+--->+Interpreter+--->+Serialization|
-+-------------------+    +-+-----------+    +-----------+    +-+---------+    +-------------+
-                           |                                   |
-                           |  +---------------------+          |  +-------------+
-                           +->+Character Alphabets  |          +->+Graph Scoring|
-                           |  +---------------------+          |  +-------------+
-                           |                                   |
-                           |  +---------------------+          |  +-------------+
-                           +->+Character Decorations|          +->+Graph Search |
-                           |  +---------------------+             +-------------+
-                           |
-                           |  +---------------------+
-                           +->+Character Encodings  |
-                           |  +---------------------+
-                           |
-                           |  +---------------------+
-                           +->+Character Metadata   |
-                           |  +---------------------+
-                           |
-                           |  +---------------------+
-                           +->+Graph Structure      |
-                              +---------------------+
++--------------------+
+| PCG Script Parser  +---------------------------------------------------+
++--------------------+                                                   |
+                                                                         |
++--------------------+    +---------------+    +-------------+    +------v------+    +---------------+
+| Input File Parsers +--->+ Normalization +--->+ Unification +--->+ Interpreter +--->+ Serialization |
++--------------------+    +-+-------------+    +-------------+    +-+-----------+    +---------------+
+                            |                                       |
+                            |  +-----------------------+            |  +---------------+
+                            +->+ Character Alphabets   |            +->+ Graph Scoring |
+                            |  +-----------------------+            |  +---------------+
+                            |                                       |
+                            |  +-----------------------+            |  +---------------+
+                            +->+ Character Decorations |            +->+ Graph Search  |
+                            |  +-----------------------+               +---------------+
+                            |
+                            |  +-----------------------+
+                            +->+ Character Encodings   |
+                            |  +-----------------------+
+                            |
+                            |  +-----------------------+
+                            +->+ Character Metadata    |
+                            |  +-----------------------+
+                            |
+                            |  +-----------------------+
+                            +->+ Graph Structure       |
+                               +-----------------------+
 ```
 
 The design of PCG can be seperated into many discrete components which are connected as shown in the above informational flow chart.
@@ -35,8 +35,8 @@ The design of PCG can be seperated into many discrete components which are conne
 Each section of the above flow chart has it's own sys-system archetecture described in the following files:
 
  * [Character Alphabets  ](https://github.com/amnh/PCG/blob/master/doc/architecture/Character-Alphabets.md)
- * [Character Encodings  ](https://github.com/amnh/PCG/blob/master/doc/architecture/Character-Encodings.md)
  * [Character Decorations](https://github.com/amnh/PCG/blob/master/doc/architecture/Character-Decorations.md)
+ * [Character Encodings  ](https://github.com/amnh/PCG/blob/master/doc/architecture/Character-Encodings.md)
  * [Character Metadata   ](https://github.com/amnh/PCG/blob/master/doc/architecture/Character-Metadata.md)
  * [Graph Scoring        ](https://github.com/amnh/PCG/blob/master/doc/architecture/Graph-Scoring.md)
  * [Graph Search         ](https://github.com/amnh/PCG/blob/master/doc/architecture/Graph-Search.md)

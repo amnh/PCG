@@ -21,7 +21,7 @@
  -  *`Bio.Character.Encodable.Static.Internal`*
  -  *`Bio.Character.Encodable.Stream`*
  - **`Bio.Character.Exportable`**
- - **`Bio.Character.Exportable.Class`**
+ -  *`Bio.Character.Exportable.Class`*
 
 This sub-system determines how characters are encoded at run time and their associated type-classes for manipulating the encoded characters in an ergonomic way.
 
