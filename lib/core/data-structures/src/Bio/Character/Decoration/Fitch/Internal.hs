@@ -52,31 +52,6 @@ data  FitchOptimizationDecoration f
     deriving anyclass (NFData)
 
 
-instance (Bits c, Show c) => Show (FitchOptimizationDecoration c) where
-
-    show c = unlines
-        [ "Discrete Character : "    <> showStatic (fitchCharacterField     c)
-        , "Preliminary Median : "    <> showStatic (fitchPreliminaryMedian  c)
-        , "Final       Median : "    <> showStatic (fitchFinalMedian        c)
-        ]
-      where
-        showStatic x
-          | x == zeroBits = "<Empty Character>"
-          | otherwise     = show x
-
-instance (Bits c, TextShow c) => TextShow (FitchOptimizationDecoration c) where
-
-    showb c = unlinesB
-        [ "Discrete Character : "    <> showStatic (fitchCharacterField     c)
-        , "Preliminary Median : "    <> showStatic (fitchPreliminaryMedian  c)
-        , "Final       Median : "    <> showStatic (fitchFinalMedian        c)
-        ]
-      where
-        showStatic x
-          | x == zeroBits = "<Empty Character>"
-          | otherwise     = showb x
-
-
 instance HasDiscreteCharacter (FitchOptimizationDecoration f) f where
 
     discreteCharacter = lens fitchCharacterField (\e x -> e { fitchCharacterField = x })
@@ -128,6 +103,32 @@ instance EncodableStaticCharacter f => DiscreteExtensionFitchDecoration (FitchOp
         , fitchFinalMedian       = finMedian
         , fitchCharacterField    = subDecoration ^. discreteCharacter
         }
+
+
+instance (Bits c, Show c) => Show (FitchOptimizationDecoration c) where
+
+    show c = unlines
+        [ "Discrete Character : "    <> showStatic (fitchCharacterField     c)
+        , "Preliminary Median : "    <> showStatic (fitchPreliminaryMedian  c)
+        , "Final       Median : "    <> showStatic (fitchFinalMedian        c)
+        ]
+      where
+        showStatic x
+          | x == zeroBits = "<Empty Character>"
+          | otherwise     = show x
+
+
+instance (Bits c, TextShow c) => TextShow (FitchOptimizationDecoration c) where
+
+    showb c = unlinesB
+        [ "Discrete Character : "    <> showStatic (fitchCharacterField     c)
+        , "Preliminary Median : "    <> showStatic (fitchPreliminaryMedian  c)
+        , "Final       Median : "    <> showStatic (fitchFinalMedian        c)
+        ]
+      where
+        showStatic x
+          | x == zeroBits = "<Empty Character>"
+          | otherwise     = showb x
 
 
 instance (Show f) => ToXML (FitchOptimizationDecoration f) where

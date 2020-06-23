@@ -56,16 +56,16 @@ data  SankoffOptimizationDecoration c
     , sankoffMinCostVector         :: ![ExtendedNatural]   -- minimum total cost per state (left + right)
     , sankoffMinCost               :: {-# UNPACK #-} !Word -- overall minimum cost for all states
     , sankoffPreliminaryExtraCosts :: ![ExtendedNatural]   -- list of preliminary per-character-state extra costs
-                                                          -- for the node; these store only the costs for assigning
-                                                          -- this state to THIS node, rather than the accumulated
-                                                          -- extra costs down through the tree when this assignment
-                                                          -- is chosen
+                                                           -- for the node; these store only the costs for assigning
+                                                           -- this state to THIS node, rather than the accumulated
+                                                           -- extra costs down through the tree when this assignment
+                                                           -- is chosen
     , sankoffFinalExtraCosts       :: ![ExtendedNatural]   -- list of final extra costs for the node, so the sum of
-                                                          -- ALL of the extra costs, on the whole tree, for this
-                                                          -- assignment
+                                                           -- ALL of the extra costs, on the whole tree, for this
+                                                           -- assignment
     , sankoffBeta                  :: ![ExtendedNatural]   -- this is Goloboff's beta, where
-                                                          -- beta_(s,n) = min[t_(s,x) + prelimExtraCost_(x,n)]
-                                                          -- where t_(s,x) is the transition cost from state s to x
+                                                           -- beta_(s,n) = min[t_(s,x) + prelimExtraCost_(x,n)]
+                                                           -- where t_(s,x) is the transition cost from state s to x
     , sankoffCharacterField        :: c                    -- Bit Vector version of median character
     , sankoffIsLeaf                :: !Bool
     }
