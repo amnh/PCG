@@ -71,17 +71,17 @@ sankoffPreorder = preorderContext rootFn internalFn
   where
     rootFn childDecoration = childDecoration & discreteCharacter .~ newChar
        where
-         childMins     = childDecoration ^. characterCostVector
-         overallMin    = childDecoration ^. characterCost
-         emptyMedian   = emptyStatic $ childDecoration ^. discreteCharacter
-         newChar       = foldlWithKey' setState emptyMedian childMins
+         childMins   = childDecoration ^. characterCostVector
+         overallMin  = childDecoration ^. characterCost
+         emptyMedian = emptyStatic $ childDecoration ^. discreteCharacter
+         newChar     = foldlWithKey' setState emptyMedian childMins
 
          setState acc pos childMin
            | unsafeToFinite childMin == overallMin = acc `setBit` pos
            | otherwise                             = acc
 
-    internalFn childDecorationOpt parentDecoration
-      = case childDecorationOpt of
+    internalFn childDecorationOpt parentDecoration =
+        case childDecorationOpt of
           Left  childDecL -> resultDecoration fst childDecL
           Right childDecR -> resultDecoration snd childDecR
       where

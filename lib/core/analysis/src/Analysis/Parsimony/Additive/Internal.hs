@@ -113,6 +113,7 @@ additivePostorder
       initializeLeaf
       additivePostorderPairwise
 
+
 -- |
 -- Initializes a leaf node by copying its current value into its preliminary
 -- state. Gives it a minimum cost of 0.
@@ -126,8 +127,8 @@ initializeLeaf
   -> e
 initializeLeaf curDecoration = finalDecoration
   where
-    finalDecoration
-      = extendRangedToPostorder curDecoration 0 (toRange label) (unitRange, unitRange) True
+    finalDecoration =
+        extendRangedToPostorder curDecoration 0 (toRange label) (unitRange, unitRange) True
     label     = curDecoration ^. intervalCharacter
     unitRange = zeroRange label
 
@@ -178,11 +179,9 @@ additivePreorder = preorderContextSym rootFn internalFn
       = extendRangedToPreorder rootDecoration $ rootDecoration ^. preliminaryInterval
 
     internalFn childDecoration parentDecoration
-      | childDecoration ^. isLeaf
-          = finalizeLeaf childDecoration
-      | otherwise
-          = extendRangedToPreorder childDecoration
-              $ determineFinalState childDecoration parentDecoration
+      | childDecoration ^. isLeaf = finalizeLeaf childDecoration
+      | otherwise = extendRangedToPreorder childDecoration
+                  $ determineFinalState childDecoration parentDecoration
 
 
 -- |
