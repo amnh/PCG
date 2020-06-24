@@ -470,7 +470,7 @@ modeAndOutlierLengths xs = (mode, otherLengths)
 -- TCM: 8 x 8
 --   0 1 1 1 1 1 0 1
 --   1 0 1 1 1 0 1 1
---   1 1 1 1 0 1 1 1
+--   1 1 0 1 0 1 1 1
 --   1 1 1 0 1 1 1 1
 --   1 1 0 1 0 1 1 1
 --   1 0 1 1 1 0 1 1

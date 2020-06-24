@@ -1,6 +1,6 @@
 ------------------------------------------------------------------------------
 -- |
--- Module      :  Bio.Metadata.CharacterName
+-- Module      :  Data.CharacterName
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -17,7 +17,7 @@
 -- was originally parsed can be queried by the function 'sourceFile'.
 --
 -- A 'CharcterName' can be a either a user specified textual identifier or a
--- default generated value. Where a given 'CharacterName' is user specified or
+-- default generated value. Whether a given 'CharacterName' is user specified or
 -- defaulted may be queried by the function 'isUserDefined'.
 --
 -- A 'CharacterName' is only constructable by calling 'assignCharacterNames' or
