@@ -302,7 +302,7 @@ clean: phylogenetic-component-graph.cabal stack.yaml
 	@echo "[✓] Cleaning complete!"
 
 code-lines:
-	loc --exclude 'css|html|js|md|tex|sh|yaml' --sort lines
+	loc --exclude 'css|html|js|makefile|md|tex|sh|yaml' --sort lines
 
 # Legacy cabal build option
 cabal-build: phylogenetic-component-graph.cabal
