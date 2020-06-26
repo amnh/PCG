@@ -47,7 +47,7 @@ type Symbol            = ShortText
 
 
 -- |
--- Indexed sequences of 'Symbol's with possible abiguity at an index
+-- Indexed sequences of 'Symbol's with possible ambiguity at an index
 type CharacterSequence = Vector (Vector Symbol)
 
 
