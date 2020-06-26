@@ -17,7 +17,7 @@
  - **`PCG.Syntax.Parser`**
  - **`PCG.Syntax.Primitive`**
 
-The PCG scripting language is designed using a [Free Monad](https://www.tweag.io/blog/2018-02-05-free-monads) to construct a syntax for the language. The syntax is composed of primitive value types and recursive combinators. The language was designed with the following principles in mind: *sensible defaults, permutable argument lists, and exceptional error messages*.
+The PCG scripting language is designed using a [Free Monad](https://www.tweag.io/blog/2018-02-05-free-monads) to construct a syntax for the language.  For technical reasons related to argument permutations, we acturally use a Free Applicative, not a Free Monad, as a Free Monad is too restrictive. The syntax is composed of primitive value types and recursive combinators. The language was designed with the following principles in mind: *sensible defaults, permutable argument lists, and exceptional error messages*.
 
 The PCG scripting language has 6 primitive values. They are primitive in the sense that they cannot be composed of smaller components of the PCG syntax. They are the "base cases" of the recursively defined language.
  - **`bool`:** A boolean value
