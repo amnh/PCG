@@ -50,17 +50,17 @@ import           Data.FileSource
 import           Data.Foldable
 import           Data.Key
 import           Data.List                           (intersperse)
-import           Data.List.NonEmpty                  (NonEmpty((:|)))
+import           Data.List.NonEmpty                  (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty                  as NonEmpty
 import           Data.List.Utility
 import           Data.Map                            (Map)
 import qualified Data.Map                            as Map
-import           Data.Maybe
 import           Data.Matrix.Unboxed                 (Matrix)
 import qualified Data.Matrix.Unboxed                 as Matrix
+import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.NodeLabel
-import           Data.Semigroup.Foldable             (Foldable1(..))
+import           Data.Semigroup.Foldable             (Foldable1 (..))
 import           Data.String
 import           Data.Text.Lazy                      (Text)
 import qualified Data.Text.Lazy                      as Text
@@ -88,7 +88,7 @@ impliedAlignmentOutputs solution =
 
     renderAlignment (_,a) m = generateImpliedAlignment a m
 
-  
+
 -- |
 -- Collect the Implied Alignments for each character
 gatherImpliedAlignments
@@ -113,7 +113,7 @@ gatherImpliedAlignments l meta = iaMappings
         f i   block = foldMapWithKey (g i) block
         g i j cMeta = Map.singleton (getMetaTag cMeta) $ foldMap (h i j) charSeqs
         h i j (label, seqs) = Map.singleton label . (^. impliedAlignment) . runIdentity $ seqs ! i ! j
-    
+
     -- coerce to use a type amenable to the characterDistanceMatrix
     leaves :: Vector (DecoratedCharacterNode Identity)
     leaves = coerce l
