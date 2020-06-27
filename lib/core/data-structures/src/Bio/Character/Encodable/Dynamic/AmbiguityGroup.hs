@@ -40,6 +40,7 @@ import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bits
 import           Data.BitVector.LittleEndian
+import           Data.BitVector.LittleEndian.Instances ()
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty                    (NonEmpty (..))

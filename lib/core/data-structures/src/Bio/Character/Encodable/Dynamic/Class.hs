@@ -31,8 +31,10 @@ import Control.DeepSeq
 import Data.Bits
 import Data.Data
 import Data.List.NonEmpty
+import Data.IntMap                      (IntMap)
 import Data.MonoTraversable
 import Data.Semigroup.Foldable
+import Data.Vector.NonEmpty             (Vector)
 import GHC.Generics                     (Generic)
 
 
@@ -70,6 +72,10 @@ class ( Bits (Subcomponent (Element s))
     destructDynamic :: s -> Maybe (NonEmpty (Element s))
 
 --    encodeDynamic :: (Ord a, Foldable1 t, Foldable1 c, IsString a) => Alphabet a -> c (t a) -> s
+
+    deleteGaps :: s -> (IntMap Word, s)
+
+    insertGaps :: IntMap Word -> IntMap Word -> s -> s -> s -> s
 
 
 class EncodableDynamicCharacterElement e where

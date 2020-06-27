@@ -1,4 +1,4 @@
-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Encodable.Dynamic.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -13,6 +13,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE ApplicativeDo              #-}
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
@@ -44,17 +45,29 @@ import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable
 import           Control.DeepSeq
 import           Control.Lens
+import           Control.Monad                         (when)
+import           Control.Monad.Loops                   (whileM)
+import           Control.Monad.ST
 import           Data.Alphabet
 import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
+import           Data.BitVector.LittleEndian.Instances ()
+import           Data.Coerce
 import           Data.Foldable
 import           Data.Hashable
+import qualified Data.IntMap                           as IM
 import           Data.Key
 import qualified Data.List.NonEmpty                    as NE
 import           Data.List.Utility                     (invariantTransformation, occurrences)
 import           Data.MonoTraversable
+import           Data.Semigroup
 import           Data.Semigroup.Foldable
+import           Data.STRef
+import qualified Data.Vector                           as EV
+import qualified Data.Vector.Mutable                   as MV
+import qualified Data.Vector.Unboxed                   as UV
+import qualified Data.Vector.Unboxed.Mutable           as MUV
 import           Data.Vector.NonEmpty                  (Vector)
 import qualified Data.Vector.NonEmpty                  as V
 import           GHC.Generics
@@ -62,6 +75,10 @@ import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()
 import           Text.XML
 import           TextShow                              (TextShow (showb)) --, toString)
+
+--import Debug.Trace
+trace = const id
+tr s x = trace (s <> ": " <> show x) x
 
 
 -- |
@@ -73,7 +90,7 @@ import           TextShow                              (TextShow (showb)) --, to
 data  DynamicCharacter
     = Missing {-# UNPACK #-} !Word
     | DC      {-# UNPACK #-} !(Vector (BitVector, BitVector, BitVector))
-    deriving stock    (Eq, Generic, Ord, Show)
+    deriving stock    (Eq, Generic, Ord, Read, Show)
     deriving anyclass (NFData)
 
 
@@ -111,6 +128,248 @@ instance EncodableDynamicCharacter DynamicCharacter where
     constructDynamic = DC . force . V.fromNonEmpty . fmap (\(DCE x) -> x) . toNonEmpty
 
     destructDynamic = NE.nonEmpty . otoList
+
+    -- |
+    -- Strips the gap elements from the supplied character.
+    --
+    -- Remembers the locations of the gap characters that were deleted
+    --
+    -- If the character contains /only/ gaps, a missing character is returned.
+    {-# INLINEABLE deleteGaps #-}
+    deleteGaps c@(Missing{}) = (mempty, c)
+    deleteGaps c@(DC    bvs)
+      | null gaps   = (gaps,            c)
+      | newLen == 0 = (gaps, toMissing  c)
+      | otherwise   = (gaps, force $ DC newVector)
+      where
+        newVector = runST $ do
+            trace ("newLen: " <> show newLen) $ pure ()
+            j <- newSTRef 0
+            let isGapAtJ = do
+                  j' <- readSTRef j
+                  trace ("j: ?? " <> show j') $ pure ()
+                  pure $ if j' >= charLen
+                         then False
+                         else getMedian (c `indexStream` j') == gap
+
+            let g i = do
+                  whileM isGapAtJ (modifySTRef j succ)
+                  j' <- readSTRef j
+--                  when $ j' < charLen) $ do
+                  trace ("j & i: " <> show j' <> " " <> show i) $ pure ()
+                  modifySTRef j succ
+                  pure $ bvs ! j'
+                  
+            V.generateM newLen g -- $ const g
+
+        gapCount = fromEnum . getSum $ foldMap Sum gaps
+        charLen  = length bvs
+        newLen   = charLen - gapCount
+        gapElem  = gapOfStream c
+        gap      = getMedian $ gapElem
+
+        gaps = IM.fromDistinctAscList $ reverse refs
+        refs = runST $ do
+            trace ("Input char: " <> show bvs) $ pure ()
+            nonGaps <- newSTRef 0
+            prevGap <- newSTRef False
+            gapLen  <- newSTRef 0
+            gapRefs <- newSTRef []
+--            let showState = const $ pure ()
+{--}
+            let showState i = do
+                  ng <- readSTRef nonGaps
+                  pg <- readSTRef prevGap
+                  gl <- readSTRef gapLen
+                  gr <- readSTRef gapRefs
+                  let x = unlines
+                           [ "i --> " <> show i
+                           , "nonGaps: " <> show ng
+                           , "prevGap: " <> show pg
+                           , "gapLen:  " <> show gl
+                           , "gapRefs: " <> show gr
+                           ]
+                  trace x $ pure ()
+{--}
+
+            for_ [0 .. charLen - 1] $ \i ->
+              if getMedian (c `indexStream` i)  == gap
+              then do trace ("gap at " <> show i) (pure ()) *> showState i *> modifySTRef gapLen succ *> writeSTRef prevGap True
+              else do showState i
+                      gapBefore <- readSTRef prevGap
+                      when gapBefore $ do
+                        j <- readSTRef nonGaps
+                        g <- readSTRef gapLen
+                        modifySTRef gapRefs ( (j,g): )
+                        writeSTRef  gapLen 0
+                        writeSTRef prevGap False
+                      modifySTRef nonGaps succ
+            
+            gapBefore <- readSTRef prevGap
+            when gapBefore $ do
+              trace "There were (apparently) gaps at the end of the gap removal loop" $ pure ()
+              j <- readSTRef nonGaps
+              g <- readSTRef gapLen
+              modifySTRef gapRefs ( (j,g): )
+            readSTRef gapRefs
+
+    -- |
+    -- Adds gaps elements to the supplied character.
+--    insertGaps lGaps rGaps _ _ _ | trace (show (lGaps, rGaps)) False = undefined
+    insertGaps lGaps rGaps _ _ meds
+      | null lGaps && null rGaps = meds -- No work needed
+      | otherwise                = force . DC . coerce $ newVector
+      where
+        gap       = getMedian $ gapOfStream meds
+        totalGaps = fromEnum . getSum . foldMap Sum
+        gapVecLen = maybe 0 (succ . fst) . IM.lookupMax
+        lGapCount = totalGaps lGaps
+        rGapCount = totalGaps rGaps
+        newLength = lGapCount + rGapCount + olength meds
+        
+        newVector = EV.create $ do
+          mVec <- MV.unsafeNew newLength
+          lVec <- MUV.replicate (gapVecLen lGaps) 0
+          rVec <- MUV.replicate (gapVecLen rGaps) 0
+          lGap <- newSTRef 0
+--          lOff <- newSTRef 0
+--          lPtr <- newSTRef 0
+          mPtr <- newSTRef 0
+--          rPtr <- newSTRef 0
+          rGap <- newSTRef 0
+--          rOff <- newSTRef 0
+
+          trace ("input median seq " <> show meds) $ pure ()
+
+          -- Write out to the mutable vectors
+          for_ (IM.toAscList lGaps) $ uncurry (MUV.unsafeWrite lVec)
+          for_ (IM.toAscList rGaps) $ uncurry (MUV.unsafeWrite rVec)
+
+          let showState i = do
+                  lv <- UV.unsafeFreeze lVec
+                  rv <- UV.unsafeFreeze rVec
+                  lg <- readSTRef lGap
+--                  lo <- readSTRef lOff
+--                  lp <- readSTRef lPtr
+                  mp <- readSTRef mPtr
+--                  rp <- readSTRef rPtr
+                  rg <- readSTRef rGap
+--                  ro <- readSTRef rOff
+                  let x = init $ unlines
+                           [ ""
+                           , "i --> " <> show i
+                           , "lVec: " <> show lv
+                           , "rVec: " <> show rv
+                           , "lGap: " <> show lg
+--                           , "lOff: " <> show lo
+--                           , "lPtr: " <> show lp
+                           , "mPtr: " <> show mp
+--                           , "rPtr: " <> show rp
+--                           , "rOff: " <> show ro
+                           , "rGap: " <> show rg
+                           ]
+                  trace x $ pure ()
+
+          let align i = do
+                    trace "Aligning characters" $ pure ()
+                    m <- readSTRef mPtr
+                    let e = meds `indexStream` m
+                    let v = coerce e
+                    MV.unsafeWrite mVec i v
+                    modifySTRef mPtr succ
+                    when (isAlign e || isDelete e) $ do
+                      modifySTRef lGap succ
+--                      modifySTRef rGap succ
+                    when (isAlign e || isInsert e) $ do
+                      modifySTRef rGap succ
+--                      modifySTRef lGap succ
+
+          let checkRightGapReinsertion i = do
+                rg <- tr "rGap" <$> readSTRef rGap
+                v  <- if rg >= MUV.length rVec then pure 0 else MUV.unsafeRead rVec rg
+                if   v == 0
+                then do -- when (k + o + fromEnum v <= p) $ modifySTRef lOff (+ fromEnum v)
+                        align i
+                else do trace "Need to insert gap from Right char" $ pure ()
+                        MV.unsafeWrite mVec i . splitElement $ insertElement gap gap
+--                        MV.unsafeWrite mVec i . splitElement $ deleteElement gap gap
+--                        modifySTRef rPtr succ
+                        MUV.unsafeWrite rVec rg $ v - 1
+{-                
+                case IM.lookupLE rg rGaps of
+                  -- A removed gap from the *right* may need to be inserted
+                  Just (k,v) -> do
+                    trace ("(k,v) = " <> show (k,v)) $ pure ()
+                    p <- tr "rPtr" <$> readSTRef rPtr 
+                    o <- tr "rOff" <$> readSTRef rOff
+                    trace ("k + fromEnum v + o = " <> show (k + fromEnum v + o)) $ pure ()
+                    if k + o + fromEnum v <= p -- - rg
+                    then do when (k + o + fromEnum v <= p) $ modifySTRef rOff (+ fromEnum v)
+                            align i
+                    -- Insert the removed gaps from the right
+                    else do trace "Need to insert gap from Right char" $ pure ()
+                            MV.unsafeWrite mVec i . splitElement $ insertElement gap gap
+--                            MV.unsafeWrite mVec i . splitElement $ deleteElement gap gap
+                            modifySTRef rPtr succ
+
+                  -- No gaps to be inserted, just take aligned element from medians
+                  Nothing    -> align i
+-}
+
+          for_ [0 .. newLength - 1] $ \i -> do
+            showState i
+            -- Check if we need to insert a gap from the left char
+            lg <- tr "lGap" <$> readSTRef lGap
+            v  <- if lg >= MUV.length lVec then pure 0 else MUV.unsafeRead lVec lg
+            if   v == 0
+            then do -- when (k + o + fromEnum v <= p) $ modifySTRef lOff (+ fromEnum v)
+                    checkRightGapReinsertion i
+            else do trace "Need to insert gap from Left char" $ pure ()
+                    MV.unsafeWrite mVec i . splitElement $ deleteElement gap gap
+--                    MV.unsafeWrite mVec i . splitElement $ insertElement gap gap
+--                    modifySTRef lPtr succ
+                    MUV.unsafeWrite lVec lg $ v - 1
+{-
+            case IM.lookupLE lg lGaps of
+              -- No gaps to insert yet, check the right char
+              Nothing    -> checkRightGapReinsertion i
+              -- A removed gap from the *left* may need to be inserted
+              Just (k,v) -> do
+                    trace ("(k,v) = " <> show (k,v)) $ pure ()
+                    p <- tr "lPtr" <$> readSTRef lPtr 
+                    o <- tr "lOff" <$> readSTRef lOff
+                    trace ("k + fromEnum v + o = " <> show (k + fromEnum v + o)) $ pure ()
+                    if not $ k + o + fromEnum v <= p -- - lg
+                    -- Insert the removed gaps from the left char
+                    then do trace "Need to insert gap from Left char" $ pure ()
+                            MV.unsafeWrite mVec i . splitElement $ deleteElement gap gap
+--                            MV.unsafeWrite mVec i . splitElement $ insertElement gap gap
+                            modifySTRef lPtr succ
+                    -- No gap from the left char to insert, check the right char
+                    else do when (k + o + fromEnum v <= p) $ modifySTRef lOff (+ fromEnum v)
+                            checkRightGapReinsertion i
+-}
+
+          pure mVec
+
+{-
+    insertGaps asInserts lGaps rGaps lChar rChar mChar = ofoldrWithKey f 0 char
+      where
+ 
+        val = let g = getMedian $ gapOfStream char
+              in  if asInserts
+                  then insertElement g
+                  else deleteElement g
+
+        f k v (i, xs) =
+          let i' = if (    asInserts && isDelete v)
+                   || (not asInserts && isInsert v)
+                   then i + 1
+                   else i
+          in  if (k+i) `member` gaps
+              then (i', gap:v:xs)
+              else (i ,     v:xs)
+-}
 
 
 instance EncodableStream DynamicCharacter where

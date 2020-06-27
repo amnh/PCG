@@ -23,7 +23,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
   ( unboxedSwappingDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, measureCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, measureAndUngapCharacters, measureCharacters)
 import           Bio.Character.Encodable
 import           Control.Monad.ST
 import           Data.DList                  (snoc)
@@ -34,6 +34,10 @@ import qualified Data.Matrix.Unboxed.Mutable as M
 import           Data.Maybe                  (fromMaybe)
 import           Data.MonoTraversable
 import qualified Data.Vector.Unboxed.Mutable as V
+
+--import Debug.Trace
+trace = const id
+traceShowId = id
 
 
 -- |
@@ -61,6 +65,7 @@ buildDirectionMatrix
   -> s
   -> s
   -> (Word, Matrix Direction)
+buildDirectionMatrix _ topChar leftChar | trace (unlines ["Top char: " <> show topChar, "Left char: " <> show leftChar]) False = undefined
 buildDirectionMatrix overlapFunction topChar leftChar = fullMatrix
   where
     cost x y   = snd $ overlapFunction x y
@@ -124,6 +129,7 @@ buildDirectionMatrix overlapFunction topChar leftChar = fullMatrix
       pure (c, m)
 
 
+{-# SCC directOptimization #-}
 directOptimization
   :: DOCharConstraint s
   => OverlapFunction (Subcomponent (Element s))
@@ -135,13 +141,23 @@ directOptimization overlapλ matrixFunction char1 char2
   | isMissing char1 = (0, char2)
   | isMissing char2 = (0, char1)
   | otherwise =
-      let  (swapped, longerChar, shorterChar) = measureCharacters char1 char2
-           (alignmentCost, traversalMatrix)   = matrixFunction overlapλ longerChar shorterChar
-           alignmentContext = traceback overlapλ traversalMatrix longerChar shorterChar
-           transformation
-             | swapped   = omap swapContext
-             | otherwise = id
-      in   (alignmentCost, transformation alignmentContext)
+      let (swapped, gapsLesser, gapsLonger, shorterChar, longerChar) = measureAndUngapCharacters char1 char2
+          (alignmentCost, ungappedAlignment) =
+              if      olength shorterChar == 0
+              then if olength  longerChar == 0
+                   -- Niether character was Missing, but both are empty when gaps are removed
+                   then (0, toMissing char1)
+                   -- Niether character was Missing, but one of them is empty when gaps are removed
+                   else let gap = getMedian $ gapOfStream char1
+                            f x = let m = getMedian x in deleteElement (fst $ overlapλ m gap) m
+                        in  (0, trace "Just one is gapped" $ omap f longerChar)
+                   -- Both have some non-gap elements, perform string alignment
+              else let (cost, dirMatrix) = matrixFunction overlapλ longerChar shorterChar
+                   in  (cost, traceback overlapλ dirMatrix longerChar shorterChar)
+          transformation    = if swapped then  trace "SWAPPING" $ omap swapContext else trace "NO SWAP" id
+          regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+          alignmentContext  = transformation regappedAlignment
+      in (alignmentCost, alignmentContext)
 
 
 traceback
@@ -175,15 +191,15 @@ traceback overlapFunction alignMatrix longerChar lesserChar = alignmentContext
                   LeftArrow -> let j' = j-1
                                    te = getMedian $ longerChar `indexStream` j'
                                    e  = deleteElement (f gap te) te
-                               in (i , j', e)
+                               in  (i , j', e)
                   UpArrow   -> let i' = i-1
                                    le = getMedian $ lesserChar `indexStream` i'
                                    e  = insertElement (f le gap) le
-                               in (i', j , e)
+                               in  (i', j , e)
                   DiagArrow -> let i' = i-1
                                    j' = j-1
                                    te = getMedian $ longerChar `indexStream` j'
                                    le = getMedian $ lesserChar `indexStream` i'
                                    e  = alignElement (f le te) le te
-                               in (i', j', e)
+                               in  (i', j', e)
         in previousSequence `snoc` localContext

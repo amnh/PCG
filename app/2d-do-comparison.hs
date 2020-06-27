@@ -88,17 +88,17 @@ gatherContexts lhs rhs = (contextRendering, contextSameness)
     contextRendering = renderContexts (NS lhs) (NS rhs) contexts
 
     contexts =
-        [ ("Using C FFI"         ,     foreignDOResult) 
+        [ ("Using C FFI"         ,     foreignDOResult)
         , ("Old Full"            ,     memoizeDOResult)
         , ("Old Ukkonen"         ,  ukkonenOldDOResult)
-        , ("Unboxed Full"        ,     unboxedDOResult)
+--        , ("Unboxed Full"        ,     unboxedDOResult)
         , ("Unboxed Swapping"    ,    swappingDOResult)
         , ("Unboxed Ukkonen Swap", ukkonenSwapDOResult)
         , ("Unboxed Ukkonen Full", ukkonenFullDOResult)
         ]
 
 --    naiveDOResult       = naiveDO             lhs rhs costStructure
-    foreignDOResult     = foreignPairwiseDO denseMatrixValue lhs rhs 
+    foreignDOResult     = foreignPairwiseDO denseMatrixValue lhs rhs
     memoizeDOResult     = naiveDOMemo                    tcm lhs rhs
     ukkonenOldDOResult  = ukkonenDO                      tcm lhs rhs
     unboxedDOResult     = unboxedFullMatrixDO            tcm lhs rhs

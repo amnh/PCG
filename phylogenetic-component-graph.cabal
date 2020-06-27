@@ -422,6 +422,7 @@ library data-structures
     bimap                    >= 0.3       && < 1.0,
     binary                   >= 0.6       && < 1.0,
     bv-little                >= 1.0.1     && < 2.0,
+    bv-little:instances      >= 1.0.1     && < 2.0,
     compact                  >= 0.1       && < 2.0,
     -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
@@ -1087,6 +1088,7 @@ library utility
     base                     >= 4.11      && < 5.0,
     binary                   >= 0.6       && < 1.0,
     bv-little                >= 1.0.1     && < 2.0,
+    bv-little:instances      >= 1.0.1     && < 2.0,
     bytestring               >= 0.10.8    && < 0.11,
     -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
@@ -1271,6 +1273,7 @@ executable pcg
     PCG.Command.Report.Distance
     PCG.Command.Report.Evaluate
     PCG.Command.Report.GraphViz
+    PCG.Command.Report.ImpliedAlignment
     PCG.Command.Report.Metadata
     PCG.Command.Save.Evaluate
     PCG.CommandLineOptions
@@ -1469,6 +1472,7 @@ executable generate-random-sequence
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 1.0,
     bv-little                >= 1.1.1     && < 2.0,
+    bv-little:instances      >= 1.0.1     && < 2.0,
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
@@ -1581,6 +1585,7 @@ executable reduce-fastc
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 1.0,
     bv-little                >= 1.1.1     && < 2.0,
+    bv-little:instances      >= 1.0.1     && < 2.0,
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
@@ -2022,6 +2027,7 @@ test-suite test-suite-utility
     utility,
     base                     >= 4.11      && < 5.0,
     bv-little                >= 1.0.1     && < 2.0,
+    bv-little:instances      >= 1.0.1     && < 2.0,
     deepseq                  >= 1.4       && < 2.0,
     integer-gmp              >= 1.0       && < 2.0,
     mono-traversable         >= 1.0       && < 2.0,
@@ -2416,3 +2422,71 @@ benchmark bench-utility
     Numeric.Extended.Natural.Bench
 
 
+executable junk
+
+  import:
+    ghc-flags,
+    language-specs
+
+  default-language: Haskell2010
+
+  main-is:
+    junk.hs
+
+  ghc-options:
+    -threaded -rtsopts
+
+  hs-source-dirs:
+    app
+
+  build-depends:
+    alphabet,
+    character-name,
+    evaluation,
+    core,
+    data-normalization,
+    data-unification,
+    file-parsers,
+    file-source,
+    language,
+    serialize,
+    utility,
+    validation-transformer,
+    ansi-wl-pprint           >= 0.6.8     && < 0.7,
+    base                     >= 4.11      && < 5.0,
+    bimap                    >= 0.3       && < 2.0,
+    bytestring               >= 0.10.8    && < 0.11,
+    compact                  >= 0.1       && < 2.0,
+    -- >=0.5.8 Required for Data.Map.restrictKeys
+    containers               >= 0.5.8     && < 1.0,
+    deepseq                  >= 1.4       && < 2.0,
+    filepath                 >= 1.4       && < 2.0,
+    foldl                    >= 1.3.2     && < 2.0,
+    gitrev                   >= 1.3       && < 2.0,
+    -- >=2999.20 Required for forgiving construction of DOT object
+    graphviz                 >= 2999.20   && < 3000,
+    integer-gmp              >= 1.0       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.17      && < 5.0,
+    matrices                 >= 0.5       && < 0.6,
+    megaparsec               >= 8.0       && < 9.0,
+    mmark                    >= 0.0.7.2   && < 1.0,
+    modern-uri               >= 0.3       && < 1.0,
+    mono-traversable         >= 1.0       && < 2.0,
+    mtl                      >= 2.0       && < 3.0,
+    optparse-applicative     >= 0.15      && < 2.0,
+    parallel                 >= 3.2       && < 4.0,
+    perfect-vector-shuffle   ^>= 0.1             ,
+    random-shuffle           >= 0.0.4     && < 0.1,
+    -- required for Data.Semigroup.Foldable.toNonEmpty
+    semigroupoids            >= 5.2.1     && < 5.4,
+    semigroups               >= 0.18      && < 1.0,
+    template-haskell         >= 2.13      && < 3.0,
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1       && < 1.0,
+    text-show                >= 3.8.1     && < 4.0,
+    th-lift-instances        >= 0.1       && < 1.0,            
+    transformers             >= 0.5.5     && < 1.0,
+    validation               >= 1.1       && < 2.0,
+    vector                   >= 0.12.0.2  && < 0.13,
+    xml                      >= 1.3.14    && < 1.4,

@@ -31,10 +31,10 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
 import Bio.Character.Encodable
 import Bio.Character.Exportable
-import Control.Lens
+import Control.Lens           ((^.))
 --import Data.List            (intercalate)
 --import Data.List.NonEmpty   (NonEmpty, fromList)
---import Data.MonoTraversable (Element)
+import Data.MonoTraversable
 import Data.Semigroup
 import Data.TCM.Dense
 import Foreign
@@ -46,6 +46,9 @@ import Foreign.C.Types
 --import Foreign.StablePtr
 import Prelude   hiding (sequence, tail)
 import System.IO.Unsafe (unsafePerformIO)
+
+--import Debug.Trace
+trace = const id
 
 
 #include "c_alignment_interface.h"
@@ -178,6 +181,8 @@ foreign import ccall unsafe "c_alignment_interface.h align3d"
 foreignPairwiseDO
   :: ( EncodableDynamicCharacter s
      , ExportableElements s
+     , Ord (Subcomponent (Element s))
+     , Show s
      )
   => DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
   -> s                         -- ^ First  dynamic character
@@ -208,6 +213,7 @@ foreignThreeWayDO :: ( EncodableDynamicCharacter s
 foreignThreeWayDO char1 char2 char3 costMatrix = algn3d char1 char2 char3 costMatrix
 -}
 
+
 -- |
 -- Performs a naive direct optimization
 -- Takes in two characters to run DO on and a metadata object
@@ -218,6 +224,8 @@ foreignThreeWayDO char1 char2 char3 costMatrix = algn3d char1 char2 char3 costMa
 {-# SPECIALISE algn2d :: UnionContext -> MedianContext -> DenseTransitionCostMatrix -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
 algn2d :: ( EncodableDynamicCharacter s
           , ExportableElements s
+          , Ord (Subcomponent (Element s))
+          , Show s
           )
        => UnionContext
        -> MedianContext
@@ -225,11 +233,41 @@ algn2d :: ( EncodableDynamicCharacter s
        -> s                         -- ^ First  dynamic character
        -> s                         -- ^ Second dynamic character
        -> (Word, s)                 -- ^ The cost of the alignment
-algn2d computeUnion computeMedians denseTCMs char1 char2 = handleMissingCharacter char1 char2 $
-    case (toExportableElements t char1, toExportableElements t char2) of
-      (Just x, Just y) -> f x y
-      (     _,      _) -> error "2DO: There's a dynamic character missing!"
+algn2d computeUnion computeMedians denseTCMs char1 char2 =
+{-
+    let (gapsChar1, ungappedChar1) = (\v@(y,x) -> trace ("CHAR 1: " <> show x <> "\ngaps: " <> show y) v) $ deleteGaps char1
+        (gapsChar2, ungappedChar2) = (\v@(y,x) -> trace ("CHAR 2: " <> show x <> "\ngaps: " <> show y) v) $ deleteGaps char2
+        (swapped, shorterChar, longerChar) = (\v@(s,_,_) -> trace ("SWAPPED: " <> show s) v) $ measureCharacters ungappedChar1 ungappedChar2
+-}
+    let (swapped, gapsLesser, gapsLonger, shorterChar, longerChar) = measureAndUngapCharacters char1 char2
+        (alignmentCost, ungappedAlignment) =
+          if      olength shorterChar == 0
+          then if olength  longerChar == 0
+               -- Niether character was Missing, but both are empty when gaps are removed
+               then (0, toMissing char1)
+               -- Niether character was Missing, but one of them is empty when gaps are removed
+               else let gap = getMedian $ gapOfStream char1
+                        h x = let m = getMedian x in deleteElement (fst $ lookupPairwise denseTCMs m gap) m
+                    in  (0, omap h longerChar)
+               -- Both have some non-gap elements, perform string alignment
+          else g shorterChar longerChar
+        transformation = if swapped then omap swapContext else id
+{-
+        (gapsLesser, gapsLonger, transformation)
+          | swapped   = (gapsChar2, gapsChar1, omap swapContext)
+          | otherwise = (gapsChar1, gapsChar2, id)
+-}
+        regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+        alignmentContext  = transformation regappedAlignment
+    in  handleMissingCharacter char1 char2 (alignmentCost, alignmentContext)
   where
+    g lesser longer = case (toExportableElements t longer, toExportableElements t lesser) of
+              (Just x , Just y ) -> f x y
+              (Just _ , Nothing) -> (0, longer)
+              (Nothing, Just _ ) -> (0, lesser)
+              -- This needs to be correctly handled
+              (Nothing, Nothing) -> error "2DO: There's a dynamic character missing!"
+
     t x y = fst $ lookupPairwise denseTCMs x y
     f exportedChar1 exportedChar2 = unsafePerformIO $ do
 --        !_ <- trace ("char 1: " <> show char1) $ pure ()

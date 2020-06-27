@@ -137,6 +137,7 @@ dynamicCharacterDistance
      , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
      , HasCharacterWeight m Double
      , Ord (Subcomponent (Element c))
+     , Show c
      )
   => m -> f d -> f d -> Sum Double
 dynamicCharacterDistance meta c1 c2 = foldMap (Sum . (weight *) . fromIntegral) $
@@ -152,6 +153,7 @@ dynamicCharacterDistance'
      , GetDenseTransitionCostMatrix m (Maybe DenseTransitionCostMatrix)
      , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
      , Ord (Subcomponent (Element c))
+     , Show c
      )
   => m -> d -> d -> Word
 dynamicCharacterDistance' meta d1 d2 = (^. _1) $ selectDynamicMetric meta c1 c2

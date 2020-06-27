@@ -132,8 +132,8 @@ instance EncodableDynamicCharacterElement DynamicCharacterElement where
 
     isAlign  (DCE ~(_,l,r)) = not (isZeroVector l) && not (isZeroVector r)
     
-    gapElement w                = let !z = fromNumber w (0 :: Word)
-                                  in  DCE (bit . fromEnum $ w - 1, z, z)
+    gapElement w            = let !z = fromNumber w (0 :: Word)
+                              in  DCE (bit . fromEnum $ w - 1, z, z)
 
     deleteElement (AG m)        (AG y) = DCE $ (m, zeroVectorOf y, y)
 
@@ -150,7 +150,7 @@ instance EncodableDynamicCharacterElement DynamicCharacterElement where
 
     swapContext (DCE (m,l,r)) = DCE (m,r,l)
 
-    getMedian (DCE (m,_,_)) = AG m
+    getMedian   (DCE (m,_,_)) = AG m
 
 
 {-

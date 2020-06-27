@@ -37,6 +37,7 @@ import           Bio.Graph.Node.Context
 import           Bio.Metadata                                           hiding (DenseTransitionCostMatrix)
 import           Control.Lens
 import           Data.Bits
+import           Data.Either (isLeft)
 import           Data.Foldable
 import qualified Data.List.NonEmpty                                     as NE
 import           Data.MonoTraversable
@@ -45,6 +46,8 @@ import           Data.Semigroup
 import           Data.TCM.Dense
 import           Data.Word
 import           Prelude                                                hiding (zipWith)
+
+import Debug.Trace
 
 
 -- |
@@ -70,6 +73,7 @@ selectDynamicMetric
      , GetDenseTransitionCostMatrix dec (Maybe DenseTransitionCostMatrix)
      , GetPairwiseTransitionCostMatrix dec (Subcomponent (Element c)) Word
      , Ord (Subcomponent (Element c))
+     , Show c
      )
   => dec
   -> c
@@ -237,31 +241,33 @@ updateFromParent _pairwiseAlignment meta decorationDirection parentDecoration = 
     cac = f $ currentDecoration ^. alignmentContext
 
     f   = case decorationDirection of
-            Left {} -> omap swapContext
+            Left {} -> id -- omap swapContext
             Right{} -> id
 
     (cia, single)
       | isMissing cac = (pia, parentDecoration ^. singleDisambiguation)
-      | otherwise     = let x = deriveImpliedAlignment pia pac cac
+      | otherwise     = let x = deriveImpliedAlignment (isLeft decorationDirection) pia pac cac
                         in  (x, lexicallyDisambiguate x)
 
 
 {-# INLINEABLE deriveImpliedAlignment #-}
-{-# SPECIALISE deriveImpliedAlignment :: DynamicCharacter -> DynamicCharacter -> DynamicCharacter -> DynamicCharacter #-}
+{-# SPECIALISE deriveImpliedAlignment :: Bool -> DynamicCharacter -> DynamicCharacter -> DynamicCharacter -> DynamicCharacter #-}
 deriveImpliedAlignment
   :: EncodableDynamicCharacter c
-  => c -- ^ Parent Final       Alignment
+  => Bool
+  -> c -- ^ Parent Final       Alignment
   -> c -- ^ Parent Preliminary Context
   -> c -- ^ Child  Preliminary Context
   -> c -- ^ Child  Final       Alignment
-deriveImpliedAlignment pAlignment pContext cContext = cAlignment
+--deriveImpliedAlignment isLeftChild _ _ _ | trace ("isLeftChild " <> show isLeftChild) False = undefined
+deriveImpliedAlignment isLeftChild pAlignment pContext cContext = cAlignment
   where
     gap          = gapOfStream pAlignment
     initialState = ([], otoList cContext, otoList pContext)
     cAlignment   = extractVector . foldl' go initialState $ otoList pAlignment
     extractVector (x,_,_) = constructDynamic . NE.fromList $ reverse x
 
-{-
+{--
     showChar = foldMap (showElem . getContext)
       where
         showElem Gapping   = "G"
@@ -275,7 +281,7 @@ deriveImpliedAlignment pAlignment pContext cContext = cAlignment
                                              , "Child  alignment: " <> showChar (reverse acc)
                                              ]
                                    ) False = undefined
--}
+--}
     go (acc,   [],    _) _ = (gap : acc, [], [])
     go (  _,    _,   []) _ = error "Impossible happened in 'deriveImpliedAlignment'"
     go (acc, x:xs, y:ys) e =
@@ -284,9 +290,9 @@ deriveImpliedAlignment pAlignment pContext cContext = cAlignment
           Alignment -> (x : acc,   xs,   ys)
           Deletion  ->
               case getContext y of
-                Deletion  -> (gap : acc, x:xs,   ys)
-                _         -> (  x : acc,   xs,   ys)
+                Deletion  | not isLeftChild -> (  x : acc,   xs,   ys)
+                _                           -> (gap : acc, x:xs,   ys)
           Insertion ->
               case getContext y of
-                Insertion -> (  x : acc,   xs,   ys)
-                _         -> (gap : acc, x:xs,   ys)
+                Insertion | isLeftChild -> (  x : acc,   xs,   ys)
+                _                       -> (gap : acc, x:xs,   ys)

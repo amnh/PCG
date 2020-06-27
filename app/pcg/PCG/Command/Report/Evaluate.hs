@@ -8,20 +8,24 @@ module PCG.Command.Report.Evaluate
 
 
 import Bio.Graph
+import Control.Arrow ((***))
 import Control.Evaluation
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Validation
 import Data.Compact                   (getCompact)
-import Data.FileSource                (FileSource)
+import Data.FileSource                (FileSource, toFileSource)
 import Data.FileSource.IO
 import Data.Foldable                  (traverse_)
 import Data.Functor                   (($>))
 import Data.List.NonEmpty             (NonEmpty (..))
+import Data.Map                       (toAscList)
+import Data.MonoTraversable
 import Data.String                    (IsString (fromString))
 import Data.Validation
 import PCG.Command.Report
 import PCG.Command.Report.Distance
 import PCG.Command.Report.GraphViz
+import PCG.Command.Report.ImpliedAlignment
 import PCG.Command.Report.Metadata
 import Prelude                        hiding (appendFile, writeFile)
 import Text.XML
@@ -73,21 +77,33 @@ generateOutput
   -> FileStreamContext
 generateOutput g' format =
   case format of
-    Data     {}       -> SingleStream . streamText $ either showtl showtl g
-    XML      {}       -> SingleStream . streamText $ either showtl (fromString . ppTopElement . toXML) g
-    DotFile  {}       -> SingleStream . streamText $ generateDotFile g'
-    Metadata {}       -> either
-                           (const $ ErrorCase "No metadata in topological solution")
-                           (SingleStream . streamText . outputMetadata)
-                           g
-    DistanceMatrix {} -> either
-                           (const $ ErrorCase "No distance matrix in topological solution")
-                           (SingleStream . streamText . outputDistanceMatrix)
-                           g
-
-    _           -> ErrorCase "Unrecognized 'report' command"
+    Data     {} -> SingleStream . streamText $ either showtl showtl g
+    XML      {} -> SingleStream . streamText $ either showtl (fromString . ppTopElement . toXML) g
+    DotFile  {} -> SingleStream . streamText $ generateDotFile g'
+    Metadata {} -> either
+                     (const $ ErrorCase "No metadata in topological solution")
+                     (SingleStream . streamText . outputMetadata)
+                     g
+    DistanceMatrix {}   -> either
+                             (const $ ErrorCase "No distance matrix in topological solution")
+                             (SingleStream . streamText . outputDistanceMatrix)
+                             g
+    ImpliedAlignment {} -> streamImpliedAlignments g
+    _                   -> ErrorCase "Unrecognized 'report' command"
   where
     g = getCompact g'
+
+
+streamImpliedAlignments :: Either b DecoratedCharacterResult -> FileStreamContext
+streamImpliedAlignments =
+    either
+      (const $ ErrorCase "No implied alignment in topological solution")
+      f
+  where
+    f m = case toAscList $ impliedAlignmentOutputs m of
+            []      -> ErrorCase "No dynamic characters, no implied alignments to output"
+            [(_,x)] -> SingleStream $ streamText x
+            x:xs    -> MultiStream $ (toFileSource . otoList *** streamText) <$> x:|xs
 
 
 {--

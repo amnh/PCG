@@ -40,6 +40,7 @@ import qualified Data.Bimap                           as B
 import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
+import           Data.BitVector.LittleEndian.Instances ()
 import           Data.Foldable
 import           Data.Key
 import qualified Data.List.NonEmpty                   as NE

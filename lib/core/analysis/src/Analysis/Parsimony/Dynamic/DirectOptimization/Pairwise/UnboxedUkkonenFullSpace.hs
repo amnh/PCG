@@ -28,9 +28,10 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFull
   ( unboxedUkkonenFullSpaceDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, handleMissingCharacter, measureCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, handleMissingCharacter, measureAndUngapCharacters, measureCharacters)
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping (unboxedSwappingDO)
 import           Bio.Character.Encodable
+import           Control.Monad               (when)
 import           Control.Monad.Loops         (iterateUntilM, whileM_)
 import           Control.Monad.ST
 import           Data.Bits
@@ -71,7 +72,7 @@ unboxedUkkonenFullSpaceDO overlapFunction char1 char2
     
     buildFullMatrix = unboxedSwappingDO overlapFunction char1 char2
 
-    buildPartialMatrixMaybe = createUkkonenMethodMatrix coefficient gapsPresentInInputs cost
+    buildPartialMatrixMaybe = createUkkonenMethodMatrix coefficient gapsPresentInInputs overlapFunction
 
     -- /O(1)/
     --
@@ -153,16 +154,16 @@ unboxedUkkonenFullSpaceDO overlapFunction char1 char2
 -- input did not contain any gap symbols.
 {-# SCC createUkkonenMethodMatrix #-}
 {-# INLINE createUkkonenMethodMatrix #-}
-{-# SPECIALISE createUkkonenMethodMatrix :: Word -> Word -> (AmbiguityGroup -> AmbiguityGroup -> Word) -> DynamicCharacter -> DynamicCharacter -> (Word, Matrix Direction) #-}
+{-# SPECIALISE createUkkonenMethodMatrix :: Word -> Word -> (AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word)) -> DynamicCharacter -> DynamicCharacter -> (Word, Matrix Direction) #-}
 createUkkonenMethodMatrix
   :: DOCharConstraint a
   => Word -- ^ Coefficient value, representing the /minimum/ transition cost from a state to gap
   -> Word -- ^ Gaps present in input
-  -> (Subcomponent (Element a) -> Subcomponent (Element a) -> Word)
+  -> (Subcomponent (Element a) -> Subcomponent (Element a) -> (Subcomponent (Element a), Word))
   -> a    -- ^ Longer dynamic character
   -> a    -- ^ Shorter dynamic character
   -> (Word, Matrix Direction)
-createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs cost longerTop lesserLeft = finalMatrix
+createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs overlapFunction longerTop lesserLeft = finalMatrix
   where
     -- General values that need to be in scope for the recursive computations.
     longerLen   = olength longerTop
@@ -192,13 +193,13 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs cost longerTop le
                 pure $ threshold <= alignmentCost
       
     finalMatrix = runST $ do
-        (mCost, mDir) <- buildInitialBandedMatrix cost longerTop lesserLeft startOffset
+        (mCost, mDir) <- buildInitialBandedMatrix overlapFunction longerTop lesserLeft startOffset
         offsetRef <- newSTRef startOffset
         whileM_ (needToResizeBand mCost offsetRef) $ do
           previousOffset <- readSTRef offsetRef
           let currentOffset = previousOffset `shiftL` 1 -- Multiply by 2
           writeSTRef offsetRef currentOffset
-          expandBandedMatrix cost longerTop lesserLeft mCost mDir previousOffset currentOffset
+          expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir previousOffset currentOffset
 
         c <- M.unsafeRead mCost (lesserLen, longerLen)
         m <- unsafeFreeze mDir
@@ -208,17 +209,17 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs cost longerTop le
 {-# SCC buildInitialBandedMatrix #-}
 buildInitialBandedMatrix
   :: forall s a. DOCharConstraint a
-  => (Subcomponent (Element a) -> Subcomponent (Element a) -> Word)
+  => (Subcomponent (Element a) -> Subcomponent (Element a) -> (Subcomponent (Element a), Word))
   -> a
   -> a
   -> Word
   -> ST s (MMatrix s Word, MMatrix s Direction)
-buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
+buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
   where
     -- Note: "offset" cannot cause "width" to exceed "cols"
     offset      = let o' = fromEnum o in  min o' $ cols - quasiDiagonalWidth
-    gap         = gapOfStream longerTop
-    gapGroup    = getMedian gap
+    gap         = getMedian $ gapOfStream longerTop
+    cost x y    = snd $ overlapFunction x y
     longerLen   = olength longerTop
     lesserLen   = olength lesserLeft
     rows        = olength lesserLeft + 1
@@ -244,6 +245,39 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
       -- Write to a single cell of the current vector and directional matrix simultaneously
       let write !p ~(!c, !d) = M.unsafeWrite mCost p c *> M.unsafeWrite mDir p d
 
+      -- Write to an internal cell (not on a boundary) of the matrix.
+      let internalCell leftElement insertCost i j
+            -- Preserve the gap in the left (lesser) string
+            | leftElement == gap = (\x -> (x, UpArrow)) <$> M.unsafeRead mCost (i - 1, j)
+            | otherwise = {-# SCC internalCell_expanding #-}
+              let topElement = getMedian $ longerTop `indexStream` (j - 1)
+                  -- Preserve the gap in the top (longer) string
+{-
+              in  if topElement == gap
+                  then (\x -> (x, LeftArrow)) <$> M.unsafeRead mCost (i, j - 1)
+                  else let  deleteCost = cost topElement    gap
+                            alignCost   = cost topElement leftElement
+                       in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                              topCost  <- M.unsafeRead mCost (i - 1, j    )
+                              leftCost <- M.unsafeRead mCost (i    , j - 1)
+                              pure $ minimum
+                                  [ ( alignCost + diagCost, DiagArrow)
+                                  , (deleteCost + leftCost, LeftArrow)
+                                  , (insertCost +  topCost, UpArrow  )
+                                  ]
+-}
+              in  let deleteCost = cost topElement    gap
+                      (alignElem, alignCost) = overlapFunction topElement leftElement
+                  in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                         topCost  <- M.unsafeRead mCost (i - 1, j    )
+                         leftCost <- M.unsafeRead mCost (i    , j - 1)
+                         pure $ getMinimalResult gap alignElem 
+                             [ ( alignCost + diagCost, DiagArrow)
+                             , (deleteCost + leftCost, LeftArrow)
+                             , (insertCost +  topCost, UpArrow  )
+                             ]
+
+
       -- Define how to compute the first cell of the first "offest" rows.
       -- We need to ensure that there are only Up Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 1,
@@ -256,15 +290,18 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
       -- We need to ensure that there are no Left Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 2,
       -- since the leftward values are "out of bounds."
-      let leftBoundary leftElement insertCost i j = {-# SCC leftBoundary #-}
-            let topElement = getMedian $ longerTop `indexStream` (j - 1)
-                alignCost  = cost topElement leftElement
-            in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                   topCost  <- M.unsafeRead mCost (i - 1, j    )
-                   pure $ minimum
-                       [ ( alignCost + diagCost, DiagArrow)
-                       , (insertCost +  topCost, UpArrow  )
-                       ]
+      let leftBoundary leftElement insertCost i j =
+            -- Preserve the gap in the left (lesser) string
+--            | leftElement == gap = (\x -> (x, UpArrow)) <$> M.unsafeRead mCost (i - 1, j)
+--            | otherwise = {-# SCC leftBoundary #-}
+              let topElement = getMedian $ longerTop `indexStream` (j - 1)
+                  (alignElem, alignCost) = overlapFunction topElement leftElement
+              in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                     topCost  <- M.unsafeRead mCost (i - 1, j    )
+                     pure $ getMinimalResult gap alignElem 
+                         [ ( alignCost + diagCost, DiagArrow)
+                         , (insertCost +  topCost, UpArrow  )
+                         ]
 
       -- Define how to compute the last cell of the first "rows - offest" rows.
       -- We need to ensure that there are only Left Arrow values in the directional matrix.
@@ -272,31 +309,33 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
       -- since the diagonal and upward values are "out of bounds."
       let rightBoundary leftElement _insertCost i j = {-# SCC rightBoundary #-}
             let topElement = getMedian $ longerTop `indexStream` (j - 1)
-                deleteCost = cost topElement    gapGroup
-                alignCost  = cost topElement leftElement
-            in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                   leftCost <- M.unsafeRead mCost (i    , j - 1)
-                   pure $ minimum
-                       [ ( alignCost + diagCost, DiagArrow)
-                       , (deleteCost + leftCost, LeftArrow)
-                       ]
+            -- Preserve the gap in the top (longer) string
+{-
+            in  if topElement == gap
+                then (\x -> (x, LeftArrow)) <$> M.unsafeRead mCost (i, j - 1)
+                else let deleteCost = cost topElement    gap
+                         alignCost  = cost topElement leftElement
+                     in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                            leftCost <- M.unsafeRead mCost (i    , j - 1)
+                            pure $ minimum
+                                [ ( alignCost + diagCost, DiagArrow)
+                                , (deleteCost + leftCost, LeftArrow)
+                                ]
+-}
+            in  let deleteCost = cost topElement    gap
+                    (alignElem, alignCost) = overlapFunction topElement leftElement
+                in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                       leftCost <- M.unsafeRead mCost (i    , j - 1)
+                       pure $ getMinimalResult gap alignElem 
+                           [ ( alignCost + diagCost, DiagArrow)
+                           , (deleteCost + leftCost, LeftArrow)
+                           ]
 
       -- Define how to compute the last cell of the last "offest" rows.
       -- We need to ensure that there are no Up Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 2,
       -- since the upward values are "out of bounds."
-      let rightColumn leftElement insertCost i j = {-# SCC rightColumn #-}  do
-            let topElement  = getMedian $ longerTop `indexStream` (j - 1)
-            let deleteCost  = cost topElement    gapGroup
-            let alignCost   = cost topElement leftElement
-            diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-            topCost  <- M.unsafeRead mCost (i - 1, j    )
-            leftCost <- M.unsafeRead mCost (i    , j - 1)
-            pure $ minimum
-                [ ( alignCost + diagCost, DiagArrow)
-                , (deleteCost + leftCost, LeftArrow)
-                , (insertCost +  topCost, UpArrow  )
-                ]
+      let rightColumn = {-# SCC rightColumn #-} internalCell
 
       -- Define how to compute values to an entire row of the Ukkonen matrix.
       let writeRow i =
@@ -304,7 +343,7 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
             let start = max  0         $ i - offset
                 stop  = min (cols - 1) $ i - offset + width - 1
                 leftElement = getMedian $ lesserLeft `indexStream` (i - 1)
-                insertCost  = cost gapGroup leftElement
+                insertCost  = cost gap leftElement
                 firstCell
                   | i <= offset = leftColumn
                   | otherwise   = leftBoundary
@@ -315,21 +354,10 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
             in  do -- Write to the first cell of the Ukkonen band
                    firstCell leftElement insertCost i start >>= write (i, start)
                    -- Write to the all the intermediary cells of the Ukkonen band
-                   for_ [start + 1 .. stop - 1] $ \j -> {-# SCC internalCell_work #-}
-                     let topElement = getMedian $ longerTop `indexStream` (j - 1) 
-                         deleteCost = cost topElement    gapGroup
-                         alignCost  = cost topElement leftElement
-                     in  do
-                           diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                           topCost  <- M.unsafeRead mCost (i - 1, j    )
-                           leftCost <- M.unsafeRead mCost (i    , j - 1)
-                           write (i,j) $ minimum
-                               [ ( alignCost + diagCost, DiagArrow)
-                               , (deleteCost + leftCost, LeftArrow)
-                               , (insertCost +  topCost, UpArrow  )
-                               ]
-                           -- Write to the last cell of the Ukkonen band
-                           lastCell leftElement insertCost i stop >>= write (i, stop)
+                   for_ [start + 1 .. stop - 1] $ \j ->
+                       internalCell leftElement insertCost i j >>= write (i, j)
+                   -- Write to the last cell of the Ukkonen band
+                   lastCell leftElement insertCost i stop >>= write (i, stop)
 
       ---------------------------------------
       -- Compute all values of the matrix  --
@@ -341,7 +369,7 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
       -- Write the first row to seed subsequent rows.
       for_ [1 .. min (cols - 1) (width - offset - 1)] $ \j ->
         let topElement    = getMedian $ longerTop `indexStream` (j - 1)
-            firstCellCost = cost gapGroup topElement
+            firstCellCost = cost gap topElement
         in  do firstPrevCost <- M.unsafeRead mCost (0, j - 1)
                write (0,j) (firstCellCost + firstPrevCost, LeftArrow)
 
@@ -353,9 +381,73 @@ buildInitialBandedMatrix cost longerTop lesserLeft o = fullMatrix
 
 
 {-# SCC expandBandedMatrix #-}
+-- |
+-- Given a partially computed alignment matrix,
+-- will expand the computed region to the new specified offset.
+--
+--
+-- Dimensions: 13 ⨉ 17
+--  ⊗ ┃  ⁎ α1 α2 α3 α4 α5 α6 α7 α8 α9 α0 α1 α2 α3 α4 α5 α6 
+-- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--  ⁎ ┃ 0↖ 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 
+-- α1 ┃ 0↑ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 
+-- α2 ┃ 0↑ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 
+-- α3 ┃ 0↑ 0↑ 0↑ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0↖ 
+-- α4 ┃ 0↑ 0↑ 0↑ 0↖ 0↖ 0← 0↖ 0← 0↖ 0← 0← 0← 0← 0← 0← 0← 0← 
+-- α5 ┃ 0↑ 0↑ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0← 0← 
+-- α6 ┃ 0↑ 0↖ 0↖ 0↖ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 
+-- α7 ┃ 0↑ 0↑ 0↑ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 
+-- α8 ┃ 0↑ 0↑ 0↑ 0↑ 0↑ 0↖ 0← 0↖ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 
+-- α9 ┃ 0↑ 0↑ 0↑ 0↑ 0↖ 0↑ 0↖ 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 
+-- α0 ┃ 0↑ 0↑ 0↑ 0↑ 0↑ 0↖ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖
+-- α1 ┃ 0↑ 0↑ 0↑ 0↑ 0↖ 0↑ 0↖ 0↖ 0↖ 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖
+-- α2 ┃ 0↑ 0↖ 0↖ 0↖ 0↑ 0↑ 0↑ 0↖ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖
+--
+--      ┌───────────────w───────────────┐
+--      │              ┏━━━━━━━co━━━━━━━┪
+--      ┢━━━━━qd━━━━━━┓┠─po─┐┌────Δo────┨
+--  ⊗ ┃ ┃0  1  2  3  4┃┃5  6││7  8  9 10┃11 12 13 14 15 16 
+-- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+--  0 ┃ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
+--  1 ┃ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
+--  2 ┃ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
+--  3 ┃ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
+--  4 ┃ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
+--  5 ┃ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
+--  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒ 
+--  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒
+--  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒
+--  9 ┃          ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ 
+--  0 ┃             ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓
+--  1 ┃                ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓
+--  2 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██
+--
+--
+-- w  : Width
+-- qd : Quasi-diagonal
+-- co : Current Offset
+-- po : Previous Offset
+-- Δo : Difference in Offset
+--
+-- Note:
+-- w  = qd + co
+-- co = po + Δo
+--
+-- And often:
+-- co = 2*po = 2*Δo
+--
+-- ██ : The core band
+--       * Previously computed, sections may need to be recomputed
+-- 
+-- ▓▓ : The previous extension
+--       * Previously computed, sections may need to be recomputed
+--
+-- ▒▒ : The new extension
+--       * Needs to be computed
+--
 expandBandedMatrix
   :: forall s a. DOCharConstraint a
-  => (Subcomponent (Element a) -> Subcomponent (Element a) -> Word)
+  => (Subcomponent (Element a) -> Subcomponent (Element a) -> (Subcomponent (Element a), Word))
   -> a
   -> a
   -> MMatrix s Word
@@ -363,14 +455,14 @@ expandBandedMatrix
   -> Word
   -> Word
   -> ST s ()
-expandBandedMatrix cost longerTop lesserLeft mCost mDir po co = updateBand
+expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updatedBand
   where
     
     -- Note: "offset" cannot cause "width + quasiDiagonalWidth" to exceed "2 * cols"
     offset      = let o' = fromEnum co in  min o' $ cols - quasiDiagonalWidth
     prevOffset  = fromEnum po
-    gap         = gapOfStream longerTop
-    gapGroup    = getMedian gap
+    cost x y    = snd $ overlapFunction x y
+    gap         = getMedian $ gapOfStream longerTop 
     longerLen   = olength longerTop
     lesserLen   = olength lesserLeft
     rows        = olength lesserLeft + 1
@@ -380,14 +472,22 @@ expandBandedMatrix cost longerTop lesserLeft mCost mDir po co = updateBand
       where
         differenceInLength = longerLen - lesserLen
 
-    updateBand = do
+    w  = width
+    qd = quasiDiagonalWidth
+--    Δo = co - po
+
+    updatedBand = do
 
       ---------------------------------------
       -- Allocate mutable state variables  --
       ---------------------------------------
 
-      headStop  <- newSTRef $ cols
-      tailStart <- newSTRef $ cols
+      headStop  <- newSTRef cols
+      tailStart <- newSTRef cols
+
+      t0' <- newSTRef (-1)
+      t1' <- newSTRef $ qd + fromEnum po
+      t2' <- newSTRef (maxBound :: Int)
 
       ---------------------------------------
       -- Define some generalized functions --
@@ -397,19 +497,25 @@ expandBandedMatrix cost longerTop lesserLeft mCost mDir po co = updateBand
       let write !p ~(!c, !d) = M.unsafeWrite mCost p c *> M.unsafeWrite mDir p d
 
       -- Write to an internal cell (not on a boundary) of the matrix.
-      let internalCell leftElement insertCost i j = {-# SCC internalCell_expanding #-}
-            let topElement  = getMedian $ longerTop `indexStream` (j - 1)
-                deleteCost  = cost topElement    gapGroup
-                alignCost   = cost topElement leftElement
-            in do
-                  diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                  topCost  <- M.unsafeRead mCost (i - 1, j    )
-                  leftCost <- M.unsafeRead mCost (i    , j - 1)
-                  pure $ minimum
-                      [ ( alignCost + diagCost, DiagArrow)
-                      , (deleteCost + leftCost, LeftArrow)
-                      , (insertCost +  topCost, UpArrow  )
-                      ]
+      let internalCell leftElement insertCost i j
+            -- Preserve the gap in the left (lesser) string
+--            | leftElement == gap = (\x -> (x, UpArrow)) <$> M.unsafeRead mCost (i - 1, j)
+            | otherwise = {-# SCC internalCell_expanding #-}
+              let topElement = getMedian $ longerTop `indexStream` (j - 1)
+                  -- Preserve the gap in the top (longer) string
+              in  if topElement == gap
+                  then (\x -> (x, LeftArrow)) <$> M.unsafeRead mCost (i, j - 1)
+                  -- Normal Needleman-Wunsch Logic
+                  else let  deleteCost = cost topElement    gap
+                            (alignElem, alignCost) = overlapFunction topElement leftElement
+                       in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                              topCost  <- M.unsafeRead mCost (i - 1, j    )
+                              leftCost <- M.unsafeRead mCost (i    , j - 1)
+                              pure $ getMinimalResult gap alignElem
+                                  [ ( alignCost + diagCost, DiagArrow)
+                                  , (deleteCost + leftCost, LeftArrow)
+                                  , (insertCost +  topCost, UpArrow  )
+                                  ]
       
       -- Define how to compute the first cell of the first "offest" rows.
       -- We need to ensure that there are only Up Arrow values in the directional matrix.
@@ -423,15 +529,22 @@ expandBandedMatrix cost longerTop lesserLeft mCost mDir po co = updateBand
       -- We need to ensure that there are no Left Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 2,
       -- since the leftward values are "out of bounds."
-      let leftBoundary leftElement insertCost i j = {-# SCC leftBoundary #-}
-            let topElement = getMedian $ longerTop `indexStream` (j - 1)
-                alignCost  = cost topElement leftElement
-            in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                   topCost  <- M.unsafeRead mCost (i - 1, j    )
-                   pure $ minimum
-                       [ ( alignCost + diagCost, DiagArrow)
-                       , (insertCost +  topCost, UpArrow  )
-                       ]
+      -- Define how to compute the first cell of the remaining rows.
+      -- We need to ensure that there are no Left Arrow values in the directional matrix.
+      -- We can also reduce the number of comparisons the first row makes from 3 to 2,
+      -- since the leftward values are "out of bounds."
+      let leftBoundary leftElement insertCost i j
+            -- Preserve the gap in the left (lesser) string
+--            | leftElement == gap = (\x -> (x, UpArrow)) <$> M.unsafeRead mCost (i - 1, j)
+            | otherwise = {-# SCC leftBoundary #-}
+              let topElement = getMedian $ longerTop `indexStream` (j - 1)
+                  (alignElem, alignCost) = overlapFunction topElement leftElement
+              in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                     topCost  <- M.unsafeRead mCost (i - 1, j    )
+                     pure $ getMinimalResult gap alignElem
+                         [ ( alignCost + diagCost, DiagArrow)
+                         , (insertCost +  topCost, UpArrow  )
+                         ]
 
       -- Define how to compute the last cell of the first "rows - offest" rows.
       -- We need to ensure that there are only Left Arrow values in the directional matrix.
@@ -439,43 +552,54 @@ expandBandedMatrix cost longerTop lesserLeft mCost mDir po co = updateBand
       -- since the diagonal and upward values are "out of bounds."
       let rightBoundary leftElement _insertCost i j = {-# SCC rightBoundary #-}
             let topElement = getMedian $ longerTop `indexStream` (j - 1)
-                deleteCost = cost topElement    gapGroup
-                alignCost  = cost topElement leftElement
-            in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                   leftCost <- M.unsafeRead mCost (i    , j - 1)
-                   pure $ minimum
-                       [ ( alignCost + diagCost, DiagArrow)
-                       , (deleteCost + leftCost, LeftArrow)
-                       ]
+            -- Preserve the gap in the top (longer) string
+            in  if False && topElement == gap
+                then (\x -> (x, LeftArrow)) <$> M.unsafeRead mCost (i, j - 1)
+                else let deleteCost = cost topElement    gap
+                         (alignElem, alignCost) = overlapFunction topElement leftElement
+                     in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                            leftCost <- M.unsafeRead mCost (i    , j - 1)
+                            pure $ getMinimalResult gap alignElem
+                                [ ( alignCost + diagCost, DiagArrow)
+                                , (deleteCost + leftCost, LeftArrow)
+                                ]
 
       let rightColumn = {-# SCC rightColumn #-} internalCell
       
       let computeCell leftElement insertCost i j = {-# SCC recomputeCell #-}
             let topElement = getMedian $ longerTop `indexStream` (j - 1) 
-                deleteCost = cost topElement    gapGroup
-                alignCost  = cost topElement leftElement
+                deleteCost = cost topElement    gap
+                (alignElem, alignCost) = overlapFunction topElement leftElement
             in do
                   diagCost <- M.unsafeRead mCost (i - 1, j - 1)
                   topCost  <- M.unsafeRead mCost (i - 1, j    )
                   leftCost <- M.unsafeRead mCost (i    , j - 1)
                   oldCost  <- M.unsafeRead mCost (i    , j    )
-                  let e@(c,_) = minimum
+                  let e@(c,_) = getMinimalResult gap alignElem
                                   [ ( alignCost + diagCost, DiagArrow)
                                   , (deleteCost + leftCost, LeftArrow)
                                   , (insertCost +  topCost, UpArrow  )
                                   ]
                   write (i,j) e
-                  pure (c == oldCost, j)
+                  pure (c == oldCost, j+1)
+--                  pure (c /= oldCost, j+1)
+
+      let recomputeRange leftElement insertCost i x y = do
+            lastDiff <- newSTRef 0
+            for_ [x .. y] $ \j -> do
+              (same, _) <- computeCell leftElement insertCost i j
+              when (not same) $ writeSTRef lastDiff j
+            readSTRef lastDiff
 
       -- Define how to compute values to an entire row of the Ukkonen matrix.
       let extendRow i =
             -- Precomute some values that will be used for the whole row
             let start0 =  max 0          $ i - offset
-                start3 =  min (cols - 1) $ i + width - offset - prevOffset
-                goUpTo = (max 0          $ i - prevOffset) - 1
+                start3 =  min (cols    ) $ i + width - offset - prevOffset - 1
+                goUpTo =  max 0          ( i - prevOffset) - 1
                 stop   =  min (cols - 1) $ i + width - offset - 1
                 leftElement = getMedian $ lesserLeft `indexStream` (i - 1)
-                insertCost  = cost gapGroup leftElement
+                insertCost  = cost gap leftElement
                 firstCell
                   | i <= offset = leftColumn
                   | otherwise   = leftBoundary
@@ -484,7 +608,13 @@ expandBandedMatrix cost longerTop lesserLeft mCost mDir po co = updateBand
                   | i <= cols - quasiDiagonalWidth - offset = rightBoundary
                   | otherwise = rightColumn
 
-                continueRecomputing (changed, j) = changed || j >= stop - 1
+                b0 = start0
+                e0 = goUpTo
+                b1 = start3
+                e1 = stop
+                
+
+                continueRecomputing (same, j) = same || j >= stop - 1
                 computeCell' ~(_,j) = computeCell leftElement insertCost i j
                 internalCell' j = internalCell leftElement insertCost i j >>= write (i,j)
                 recomputeUntilSame j = snd <$> iterateUntilM continueRecomputing computeCell' (False, j)
@@ -492,47 +622,236 @@ expandBandedMatrix cost longerTop lesserLeft mCost mDir po co = updateBand
                    start1 <- readSTRef headStop
                    start2 <- readSTRef tailStart
 
+                   -- First, we fill in 0 or more cells of the left region of
+                   -- the expanded band. This is the region [b0, e0] computed
+                   -- above. 
+                   --  ⊗ ┃  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
+                   -- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                   --  0 ┃ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  1 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  2 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  3 ┃ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  4 ┃ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --      b0    e0
+                   --     ┏━━━━━━━━┓
+                   --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --      
+                   --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
+                   --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
+                   --  9 ┃          ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒
+                   -- 10 ┃             ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 11 ┃                ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 12 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██
+                   --
+
                    -- Conditionally write to the first cell of the Ukkonen band
                    if   i > prevOffset
-                   then firstCell leftElement insertCost i start0 >>= write (i, start0)
+                   then firstCell leftElement insertCost i start0 >>= write (i, b0)
                    else pure ()
 
-                   for_ [start0+1 .. goUpTo] internalCell'
-                   leadStop  <- if goUpTo < start0
-                                then pure start1
-                                else recomputeUntilSame $ goUpTo+1
+                   for_ [b0+1 .. e0] internalCell'
+
+                   -- Next, we assign to s0 the value t0 from the previous row.
+                   -- The cell t0 is up to where the values were recomputed in
+                   -- the previous row.
+                   -- We recompute the cells in the range [e0 + 1, s0].
+                   -- We assign to t0 the last cell in the range [s1, s2] which
+                   -- was updated for the next row.
+                   -- We remember cells t0 for the next row.
+                   --  ⊗ ┃  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
+                   -- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                   --  0 ┃ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  1 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  2 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  3 ┃ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  4 ┃ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --            e0    s0
+                   --              ┏━━━━━┓
+                   --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --      
+                   --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
+                   --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
+                   --  9 ┃          ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒
+                   -- 10 ┃             ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 11 ┃                ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 12 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██
+                   --
+                   --
+                   s0 <- readSTRef t0'
+                   writeSTRef t0' (-1)
+
+                   when (s0 > e0) $
+                       recomputeRange leftElement insertCost i (e0+1) s0 >>= writeSTRef t0'
+                   t0 <- readSTRef t0'
+
+                   -- If s0 = t0, we recompute the cell (s0 + 1).
+                   -- If the cost is the same, we stop here and remember the cell
+                   -- before we stopped.
+                   -- If the cost is not the same, we update cell (s0 + 1) and
+                   -- move on to (s0 + 2).
+                   -- This proceedure continues until (s0 + n) has the same cost
+                   -- as before, or *until we reach b1.*
+                   -- We remember the cell (s0 + n - 1) as t0 for the next row.
+                   --  ⊗ ┃  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
+                   -- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                   --  0 ┃ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  1 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  2 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  3 ┃ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  4 ┃ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --                  s0    t0
+                   --                    ╔═════╗
+                   --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --      
+                   --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
+                   --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
+                   --  9 ┃          ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒
+                   -- 10 ┃             ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 11 ┃                ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 12 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██
+                   --
+                   if      s0 == t0 && s0 > 0
+                   then recomputeUntilSame (s0 + 1) >>= writeSTRef t0' . pred
+                   else if s0 <= e0 && e0 > 0
+                   then recomputeUntilSame (e0 + 1) >>= writeSTRef t0' . pred
+                   else pure ()
+
+{-
                    headStop' <- if   leadStop >= start1
                                 then pure leadStop
                                 else recomputeUntilSame start1
-                   tailStop' <- recomputeUntilSame start2
-                   for_ [max (tailStop'+1) start3 .. stop-1] internalCell'
+-}
+                   -- Next, we assign to s1 the value t1 from the previous row.
+                   -- We also assign s2 the value t2 from the previous row.
+                   -- The range [t1, t2] is where the values were recomputed in
+                   -- the previous row.
+                   -- We recompute the cells in the range [s1, s2].
+                   -- We assign to t2 the last cell in the range [s1, s2] which
+                   -- was updated for the next row.
+                   -- We remember cells s1 as t1 for the next row.
+                   --  ⊗ ┃  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
+                   -- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                   --  0 ┃ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  1 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  2 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  3 ┃ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  4 ┃ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --                                 s1 s2
+                   --                                ┏━━━━━┓
+                   --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --      
+                   --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
+                   --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
+                   --  9 ┃          ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒
+                   -- 10 ┃             ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 11 ┃                ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 12 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██
+                   --
+                   -- NOPE, Try again
+                   --
+                   -- Next, we assign to s1 the value t1 from the previous row.
+                   -- We recompute the cells in the range [s1, b1 - 1].
+                   -- If any cell in the range was updated, we assign to s1 to t1.
+                   -- We remember cell t1 for the next row.
+                   --  ⊗ ┃  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
+                   -- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                   --  0 ┃ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  1 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  2 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  3 ┃ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  4 ┃ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --                                 s1       b1
+                   --                                ┏━━━━━━━━┓
+                   --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --      
+                   --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
+                   --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
+                   --  9 ┃          ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒
+                   -- 10 ┃             ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 11 ┃                ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 12 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██
+                   --                   
+                   s1 <- readSTRef t1'
+
+                   t1 <- recomputeRange leftElement insertCost i s1 $ b1 - 1
+
+                   -- If no cells were updated, a zero value is returned.
+                   -- In this case, the "last" updated cell for the next row is b1.
+                   writeSTRef t1' $ if t1 == 0 then b1 else s1
+
+                   -- Lastly, we fill in 0 or more cells of the left region of
+                   -- the expanded band. This is the region [b1, e1] computed
+                   -- above. 
+                   --  ⊗ ┃  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
+                   -- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                   --  0 ┃ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  1 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  2 ┃ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  3 ┃ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  4 ┃ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --                                          b1       e1
+                   --                                         ┏━━━━━━━━━━━┓
+                   --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --      
+                   --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
+                   --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
+                   --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
+                   --  9 ┃          ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒
+                   -- 10 ┃             ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 11 ┃                ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██
+                   -- 12 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██
+                   --                   
+                   for_ [b1 .. e1 - 1] internalCell'
 
                    -- Conditionally write to the last cell of the Ukkonen band
-                   if   tailStop' <= stop - 1
+                   if   i < rows - fromEnum po
                    then lastCell leftElement insertCost i stop >>= write (i, stop)
                    else pure ()
 
                    -- Update references for the next row
-                   writeSTRef headStop headStop'
-                   writeSTRef tailStart $ if tailStop' /= start2 then tailStop' else start3
+--                   writeSTRef headStop headStop'
+--                   writeSTRef tailStart $ if tailStop' /= start2 then tailStop' else start3
 
       ---------------------------------------
       -- Compute all values of the matrix  --
       ---------------------------------------
 
       let start = quasiDiagonalWidth + prevOffset
+
       -- Extend the first row to seed subsequent rows.
       for_ [start .. min (cols - 1) (width - offset - 1)] $ \j ->
         let topElement    = getMedian $ longerTop `indexStream` (j - 1)
-            firstCellCost = cost gapGroup topElement
+            firstCellCost = cost gap topElement
         in  do firstPrevCost <- M.unsafeRead mCost (0, j - 1)
                write (0,j) (firstCellCost + firstPrevCost, LeftArrow)
+
       writeSTRef tailStart start
 
       -- Loop through the remaining rows.
       for_ [1 .. rows - 1] extendRow
 
 
+getMinimalResult
+  :: ( Eq a
+     , Foldable f
+     )
+  => a
+  -> a
+  -> f (Word, Direction)
+  -> (Word, Direction)
+getMinimalResult gap alignElem opts =
+    let v@(~(c,d)) = minimum opts
+    in  if   d == DiagArrow && alignElem == gap
+        then (c, LeftArrow)
+        else v
+
+
+{-# SCC directOptimization #-}
 directOptimization
   :: ( DOCharConstraint s
      )
@@ -542,12 +861,23 @@ directOptimization
   -> s
   -> (Word, s)
 directOptimization overlapλ matrixFunction char1 char2 =
-    let ~(swapped, longerChar, shorterChar) = measureCharacters char1 char2
-        ~(alignmentCost, traversalMatrix)   = matrixFunction longerChar shorterChar
-        transformation   = if swapped then omap swapContext else id
-        alignmentContext = traceback overlapλ traversalMatrix longerChar shorterChar
-        alignment        = (alignmentCost, transformation alignmentContext)
-    in  handleMissingCharacter char1 char2 alignment
+    let ~(swapped, gapsLesser, gapsLonger, shorterChar, longerChar) = measureAndUngapCharacters char1 char2
+        ~(alignmentCost, ungappedAlignment) =
+            if      olength shorterChar == 0
+            then if olength  longerChar == 0
+                 -- Niether character was Missing, but both are empty when gaps are removed
+                 then (0, toMissing char1)
+                 -- Niether character was Missing, but one of them is empty when gaps are removed
+                 else let gap = getMedian $ gapOfStream char1
+                          f x = let m = getMedian x in deleteElement (fst $ overlapλ m gap) m
+                      in  (0, omap f longerChar)
+                 -- Both have some non-gap elements, perform string alignment
+            else let (cost, traversalMatrix) =  matrixFunction longerChar shorterChar
+                 in  (cost, traceback overlapλ traversalMatrix longerChar shorterChar)
+        transformation    = if swapped then omap swapContext else id
+        regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+        alignmentContext  = transformation regappedAlignment
+    in  handleMissingCharacter char1 char2 (alignmentCost, alignmentContext)
 
 
 {-# SCC traceback #-}
@@ -575,8 +905,6 @@ traceback overlapFunction alignMatrix longerChar lesserChar = alignmentContext
 
     go !p@(~(!i, !j))
       | p == (0,0) = mempty
-      | i < 0 = error $ "i is out of range: " <> show i
-      | j < 0 = error $ "j is out of range: " <> show j
       | otherwise  =
         let previousSequence = go (row', col')
 
@@ -587,16 +915,16 @@ traceback overlapFunction alignMatrix longerChar lesserChar = alignmentContext
                   LeftArrow -> let j' = j - 1
                                    te = getMedian $ longerChar `indexStream` j'
                                    e  = deleteElement (f gap te) te
-                               in (# i , j', e #)
+                               in  (# i , j', e #)
                   UpArrow   -> let i' = i - 1
                                    le = getMedian $ lesserChar `indexStream` i'
                                    e  = insertElement (f le gap) le
-                               in (# i', j, e #)
+                               in  (# i', j , e #)
                   DiagArrow -> let i' = i - 1
                                    j' = j - 1
                                    te = getMedian $ longerChar `indexStream` j'
                                    le = getMedian $ lesserChar `indexStream` i'
                                    e  = alignElement (f le te) le te
-                               in (# i', j', e #)
-
+                               in  (# i', j', e #)
         in  previousSequence `snoc` localContext
+
