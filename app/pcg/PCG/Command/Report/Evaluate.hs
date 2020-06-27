@@ -103,7 +103,7 @@ streamImpliedAlignments =
     f m = case toAscList $ impliedAlignmentOutputs m of
             []      -> ErrorCase "No dynamic characters, no implied alignments to output"
             [(_,x)] -> SingleStream $ streamText x
-            x:xs    -> MultiStream $ (toFileSource . otoList *** streamText) <$> x:|xs
+            x:xs    ->  MultiStream $ (toFileSource . otoList *** streamText) <$> x:|xs
 
 
 {--

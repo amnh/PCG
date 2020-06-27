@@ -15,8 +15,10 @@ Releases are available [on GitHub][2].
 * Added Wagner distance to the BUILD command option
 * Added distance CSV output to the REPORT command
 * Added sting alignment benchmarking suite
+* Added 'Efficient Implied Alignment' algorithm
 * Enhanced alphabet data-type to support sorted alphabets whenever possible
 * Improved efficiency of character encoding
+* Improved efficiency of string alignment
 * Improved efficiency of median state calculations
 * Corrected defect regarding syntany prefixes in FASTC parser
 * Reduced memory usage and pressure when normalizing and unifying inputs
