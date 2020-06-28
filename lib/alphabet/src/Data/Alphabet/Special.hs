@@ -29,6 +29,7 @@ import           Data.Bimap             (Bimap)
 import qualified Data.Bimap             as BM
 import           Data.Char              (isUpper)
 import           Data.Foldable
+import           Data.List.NonEmpty     (NonEmpty)
 import qualified Data.List.NonEmpty     as NE
 import qualified Data.Set               as Set
 import           Data.String
@@ -67,7 +68,7 @@ discreteAlphabet = fromSymbols $ fromString . pure <$> fold [['0'..'9'], ['A'..'
 --
 -- Determines if the supplied alphabet represents amino acid symbols.
 --
--- Useful for determining if an 'AmbiguityGroup' should be rendered as an IUPAC
+-- Useful for determining if an 'NonEmpty' should be rendered as an IUPAC
 -- code.
 isAlphabetAminoAcid :: (IsString s, Ord s) => Alphabet s -> Bool
 isAlphabetAminoAcid = isAlphabetSubsetOf aminoAcidAlphabet
@@ -78,7 +79,7 @@ isAlphabetAminoAcid = isAlphabetSubsetOf aminoAcidAlphabet
 --
 -- Determines if the supplied alphabet represents DNA symbols.
 --
--- Useful for determining if an 'AmbiguityGroup' should be rendered as an IUPAC
+-- Useful for determining if an 'NonEmpty' should be rendered as an IUPAC
 -- code.
 isAlphabetDna :: (IsString s, Ord s) => Alphabet s -> Bool
 isAlphabetDna = isAlphabetSubsetOf dnaAlphabet
@@ -89,7 +90,7 @@ isAlphabetDna = isAlphabetSubsetOf dnaAlphabet
 --
 -- Determines if the supplied alphabet represents DNA symbols.
 --
--- Useful for determining if an 'AmbiguityGroup' should be rendered as an IUPAC
+-- Useful for determining if an 'NonEmpty' should be rendered as an IUPAC
 -- code.
 isAlphabetRna :: (IsString s, Ord s) => Alphabet s -> Bool
 isAlphabetRna = isAlphabetSubsetOf rnaAlphabet
@@ -100,7 +101,7 @@ isAlphabetRna = isAlphabetSubsetOf rnaAlphabet
 --
 -- Determines if the supplied alphabet represents DNA symbols.
 --
--- Useful for determining if an 'AmbiguityGroup' should be rendered as an IUPAC
+-- Useful for determining if an 'NonEmpty' should be rendered as an IUPAC
 -- code.
 isAlphabetDiscrete :: (IsString s, Ord s) => Alphabet s -> Bool
 isAlphabetDiscrete = isAlphabetSubsetOf discreteAlphabet
@@ -113,7 +114,7 @@ isAlphabetSubsetOf specialAlpahbet queryAlphabet = querySet `Set.isSubsetOf` spe
     specialSet = Set.fromList $ toList specialAlpahbet
 
 
-fromBimap :: (IsString s, Ord s) => Bimap (AmbiguityGroup String) a -> Alphabet s
+fromBimap :: (IsString s, Ord s) => Bimap (NonEmpty String) a -> Alphabet s
 fromBimap = fromSymbols . fmap fromString . filter isUpperCaseStr . fmap NE.head . BM.keys
   where
     isUpperCaseStr (x:_) = isUpper x

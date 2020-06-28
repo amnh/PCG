@@ -133,12 +133,12 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs =
 -- the corresponding block of each block. If this assumtion is violated, the
 -- result will be truncated.
 hexZipMeta
-  :: (ContinuousCharacterMetadataDec                         -> u -> u')
-  -> (DiscreteCharacterMetadataDec                           -> v -> v')
-  -> (DiscreteCharacterMetadataDec                           -> w -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> x -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> y -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> z -> z')
+  :: (ContinuousCharacterMetadataDec                      -> u -> u')
+  -> (DiscreteCharacterMetadataDec                        -> v -> v')
+  -> (DiscreteCharacterMetadataDec                        -> w -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> x -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> y -> y')
+  -> (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> z -> z')
   -> MetadataSequence m
   -> CharacterSequence u   v   w   x   y   z
   -> CharacterSequence u'  v'  w'  x'  y'  z'

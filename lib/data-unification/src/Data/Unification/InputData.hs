@@ -71,7 +71,7 @@ data  PartialInputData
 
 
 -- |
--- A single, consistent collection of the input data.
+-- A single, consistent collection of all the input data.
 data  InputData
     = InputData
     { dataSequences :: Maybe (NonEmpty PartialInputData)

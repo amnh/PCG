@@ -75,19 +75,21 @@ instance Lookup UkkonenMethodMatrix where
 -- using Ukkonen's string edit distance algorthim to improve space and time
 -- complexity.
 {-# INLINE ukkonenDO #-}
-{-# SPECIALISE ukkonenDO :: DynamicCharacter -> DynamicCharacter -> OverlapFunction DynamicCharacterElement -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) #-}
+{-# SPECIALISE ukkonenDO :: OverlapFunction AmbiguityGroup -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
 ukkonenDO
   :: DOCharConstraint s
-  => s
+  => OverlapFunction (Subcomponent (Element s))
   -> s
-  -> OverlapFunction (Element s)
-  -> (Word, s, s, s, s)
-ukkonenDO char1 char2 overlapFunction
-  | noGainFromUkkonenMethod = naiveDOMemo char1 char2 overlapFunction
-  | otherwise               = directOptimization char1 char2 overlapFunction $ createUkkonenMethodMatrix coefficient
+  -> s
+  -> (Word, s)
+ukkonenDO overlapFunction char1 char2
+  | noGainFromUkkonenMethod = naiveDOMemo overlapFunction char1 char2
+  | otherwise               = directOptimization overlapFunction char1 char2 $ createUkkonenMethodMatrix coefficient
   where
     (_, longer, lesser) = measureCharacters char1 char2
-
+    
+    -- /O(1)/
+    --
     -- If the longer character is 50% larger than the shorter character, then
     -- there is no point in using the barriers. Rather, we fill the full matrix
     -- immediately.
@@ -127,11 +129,11 @@ ukkonenDO char1 char2 overlapFunction
     -- zero.
     coefficient = minimum $ indelCost <$> nonGapElements
       where
-        gap            = gapOfStream char1
+        gap            = getMedian $ gapOfStream char1
         alphabetSize   = fromEnum $ symbolCount gap
         nonGapElements = [ 0 .. alphabetSize - 2 ]
-        indelCost i    =  min (snd (overlapFunction (bit i)  gap    ))
-                              (snd (overlapFunction  gap    (bit i) ))
+        indelCost i    = min (snd (overlapFunction (bit i)  gap    ))
+                             (snd (overlapFunction  gap    (bit i) ))
 
 
 -- |
@@ -145,15 +147,15 @@ ukkonenDO char1 char2 overlapFunction
 -- original description of the algorithm, there was a subtle assumption that
 -- input did not contain any gap symbols.
 {-# INLINE createUkkonenMethodMatrix #-}
-{-# SPECIALISE createUkkonenMethodMatrix :: Word -> DynamicCharacter -> DynamicCharacter -> OverlapFunction DynamicCharacterElement -> UkkonenMethodMatrix (Cost, Direction, DynamicCharacterElement) #-}
+{-# SPECIALISE createUkkonenMethodMatrix :: Word -> OverlapFunction AmbiguityGroup -> DynamicCharacter -> DynamicCharacter -> UkkonenMethodMatrix (Cost, Direction) #-}
 createUkkonenMethodMatrix
   :: DOCharConstraint s
-  => Word                        -- ^ Coefficient value, representing the /minimum/ transition cost from a state to gap
-  -> s                           -- ^ Longer dynamic character
-  -> s                           -- ^ Shorter dynamic character
-  -> OverlapFunction (Element s) -- ^ Function to determine the cost a median state between two other states.
-  -> UkkonenMethodMatrix (Cost, Direction, Element s)
-createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction = U $ ukkonenUntilOptimal startOffset
+  => Word -- ^ Coefficient value, representing the /minimum/ transition cost from a state to gap
+  -> OverlapFunction (Subcomponent (Element s)) -- ^ Function to determine the cost a median state between two other states.
+  -> s    -- ^ Longer dynamic character
+  -> s    -- ^ Shorter dynamic character
+  -> UkkonenMethodMatrix (Cost, Direction)
+createUkkonenMethodMatrix minimumIndelCost overlapFunction longerTop lesserLeft = U $ ukkonenUntilOptimal startOffset
   where
     -- General values that need to be in scope for the recursive computations.
     longerLen   = olength longerTop
@@ -175,29 +177,30 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
 
     -- /O(n + m)/
     --
-    -- If one or more of the aligned character elements contained a gap, diagonal directions in the matrix
-    -- have an "indel" cost. 'gapsPresentInInputs' is necessary in order to decrement the threshold value
-    -- to account for this. This was not
-    -- described in Ukkonen's original paper, as the inputs were assumed not to
-    -- contain any gaps.
+    -- If one or more of the aligned character elements contained a gap, diagonal
+    -- directions in the matrix have an "indel" cost. 'gapsPresentInInputs' is
+    -- necessary in order to decrement the threshold value to account for this.
+    -- This was not described in Ukkonen's original paper, as the inputs were assumed
+    -- not to contain any gaps.
     gapsPresentInInputs = longerGaps + lesserGaps
       where
         longerGaps = countGaps longerTop
         lesserGaps = countGaps lesserLeft
-        countGaps  = length . filter (\b -> b .&. gap /= zeroBits) . otoList
-        gap        = gapOfStream longerTop
+        countGaps  = length . filter (hasGap . getMedian) . otoList
+        hasGap b   = popCount (b .&. gap) > 0
+        gap        = getMedian $ gapOfStream longerTop
 
     ukkonenUntilOptimal offset
       | threshold <= alignmentCost = ukkonenUntilOptimal $ 2 * offset
-      | otherwise                   = ukkonenMatrix
---      | otherwise                   = trace (renderedBounds <> renderedMatrix) ukkonenMatrix
+      | otherwise                  = ukkonenMatrix
       where
         ukkonenMatrix      = Ribbon.generate rows cols generatingFunction $ toEnum offset
-        generatingFunction = needlemanWunschDefinition longerTop lesserLeft overlapFunction ukkonenMatrix
-        (cost, _, _)       = ukkonenMatrix ! (lesserLen, longerLen)
+        generatingFunction = needlemanWunschDefinition overlapFunction longerTop lesserLeft ukkonenMatrix
+        (cost, _)          = ukkonenMatrix ! (lesserLen, longerLen)
         alignmentCost      = unsafeToFinite cost
         computedValue      = coefficient * (quasiDiagonalWidth + offset - gapsPresentInInputs)
-        threshold         = toEnum $ max 0 computedValue -- The threshold value must be non-negative
+        threshold          = toEnum $ max 0 computedValue -- The threshold value must be non-negative
+
 {--
         renderedMatrix = renderCostMatrix longerTop lesserLeft ukkonenMatrix
 
@@ -206,7 +209,7 @@ createUkkonenMethodMatrix minimumIndelCost longerTop lesserLeft overlapFunction 
             , "Input Gaps : " <> show gapsPresentInInputs
             , "Offset     : " <> show offset
             , "Coefficient: " <> show coefficient
-            , "Threshold : " <> show threshold
+            , "Threshold  : " <> show threshold
             , "Total Cost : " <> show alignmentCost
             ]
 --}

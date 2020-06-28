@@ -329,10 +329,8 @@ collapseAndMerge xs = extractResult $ foldlM sequenceMerge initialMap ms
          , MetadataSequence ()
          )
     extractResult st =
-      let
-        res = st `runState` initialState
-      in
-        (fmap CS.fromNonEmpty *** MD.fromNonEmpty . fmap fst) $ res
+      let res = st `runState` initialState
+      in  (fmap CS.fromNonEmpty *** MD.fromNonEmpty . fmap fst) $ res
 
     sequenceMerge :: Map ShortText (NonEmpty UnifiedCharacterBlock)
                   -> PartiallyUnififedCharacterSequences (TCM, TCMStructure)
@@ -403,6 +401,7 @@ buildMetadataBlock = foldMap1 encodeToSingletonMetadata
             NormalizedDynamicCharacter    {} ->
                 MD.dynamicToMetadataBlock
               $  dynamicMetadataFromTCM charName charWeight specifiedAlphabet tcmSource tcm
+--              $  dynamicMetadata charName charWeight specifiedAlphabet tcmSource tcm
      where
       charWeight        = weight charMeta
       specifiedAlphabet = fmap toString . alphabet $ charMeta

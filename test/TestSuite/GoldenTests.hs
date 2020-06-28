@@ -5,7 +5,7 @@ module TestSuite.GoldenTests
   ( testSuite
   ) where
 
-import Control.Monad         (filterM)
+import Control.Monad         (filterM, (<=<))
 import Data.Tree             (flatten, unfoldTreeM)
 import System.Directory
 import System.FilePath.Posix
@@ -80,8 +80,7 @@ getPCGFiles fp = do
         where
           listTopDirs :: FilePath -> IO (FilePath, [FilePath])
           listTopDirs x = do
-            topDirs <- (filterM doesDirectoryExist =<<)
-                     . listDirectoryWithFilePath $ x
+            topDirs <- filterM doesDirectoryExist <=< listDirectoryWithFilePath $ x
             pure (x, topDirs)
 
 

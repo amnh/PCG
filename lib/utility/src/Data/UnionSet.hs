@@ -26,6 +26,7 @@ module Data.UnionSet
 import Control.DeepSeq
 import Data.Bits
 import Data.BitVector.LittleEndian
+import Data.BitVector.LittleEndian.Instances ()
 import GHC.Generics
 import TextShow                    (TextShow)
 

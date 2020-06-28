@@ -93,8 +93,8 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
 validateUserInput :: UserInput -> Validation (NonEmpty Text) Specification
 validateUserInput userInput =
     Specification
-      <$> (pure . fromSymbols . fmap fromString . inputAlphabet) userInput
-      <*> validate (pure "length is non-positive") validLength (inputLength userInput)
+      (fromSymbols . fmap fromString $ inputAlphabet userInput)
+      <$> validate (pure "length is non-positive") validLength (inputLength userInput)
       <*> (pure . inputFASTC) userInput
   where
     validLength :: Scientific -> Maybe Natural

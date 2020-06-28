@@ -13,16 +13,27 @@
 -----------------------------------------------------------------------------
 
 module Bio.Character.Encodable.Dynamic
-  ( DynamicCharacter(..)
-  , DynamicCharacters
+  ( AmbiguityGroup()
+  , AlignmentContext(..)
+  , DecodableStream(..)
+  , DynamicCharacter(..)
   , DynamicCharacterElement()
   , EncodedAmbiguityGroupContainer(..)
+  , EncodedGapElementContainer(..)
   , EncodableDynamicCharacter(..)
+  , EncodableDynamicCharacterElement(..)
   , EncodableStreamElement(..)
   , EncodableStream(..)
+  , Subcomponent
+  , getLeft
+  , getRight
+  , arbitraryDynamicCharacterOfWidth
+  , renderDynamicCharacter
   ) where
 
+import Bio.Character.Encodable.Dynamic.AmbiguityGroup
 import Bio.Character.Encodable.Dynamic.Class
+import Bio.Character.Encodable.Dynamic.Element
 import Bio.Character.Encodable.Dynamic.Internal
 import Bio.Character.Encodable.Internal
 import Bio.Character.Encodable.Stream

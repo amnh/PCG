@@ -16,18 +16,16 @@ newtype MyStruct = T [CULong]
   deriving stock (Show)
 
 
-instance Exportable MyStruct where
+instance ExportableBuffer MyStruct where
 
     toExportableBuffer (T xs) =
-        ExportableCharacterSequence
-        { exportedElementCountSequence = 5
-        , exportedElementWidthSequence = toEnum $ length xs
+        ExportableCharacterBuffer
+        { exportedElementCountBuffer = 5
+        , exportedElementWidthBuffer = toEnum $ length xs
         , exportedBufferChunks         = xs
         }
 
     fromExportableBuffer   = T . exportedBufferChunks
-    toExportableElements   = undefined
-    fromExportableElements = undefined
 
 
 main :: IO ()

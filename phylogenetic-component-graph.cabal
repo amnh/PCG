@@ -19,6 +19,7 @@ description:        Phylogenetic Componet Graph provides a library for
 
 tested-with:
     GHC == 8.8.3
+    GHC == 8.10.1
 
 extra-source-files:
     AUTHORS.md
@@ -26,7 +27,7 @@ extra-source-files:
     FUNDING.md
     README.md
 
-        
+
 -- Group of buildinfo specifications to correctly build and link to the C & C++:
 -- FFI code.
 common ffi-buildinfo
@@ -63,6 +64,9 @@ common ffi-buildinfo
 common ghc-flags
 
   ghc-options:
+--    -debug
+--    -rtsopts          
+--    -g                    
     -- Optimization flags
     -O2
     -fexcess-precision
@@ -85,6 +89,7 @@ common ghc-flags
     -Wincomplete-patterns
     -Wincomplete-record-updates
     -Wincomplete-uni-patterns
+    -Wmissed-specialisations          
     -Wmissing-deriving-strategies          
     -Wmissing-fields
     -Wmissing-home-modules
@@ -105,10 +110,14 @@ common ghc-flags
     -Wunused-matches
     -Wwrong-do-bind
 
+  if impl(ghc >= 8.10)
+    ghc-options:
+      -Wderiving-defaults
+      -Wunused-packages
+
+
 -- Global deviations from Haskell98
 common language-specs
-
-  default-language: Haskell2010
 
   -- Always use MonadFail(fail), not Monad(fail)
   other-extensions:
@@ -122,7 +131,11 @@ library alphabet
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/alphabet/src
@@ -132,29 +145,26 @@ library alphabet
     utility,
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 1.0,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     mtl                      >= 2.0       && < 3.0,
     QuickCheck               >= 2.12      && < 3.0,
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
 
   -- Apparently this is needed to compile with profiling, which is really stupid.
   -- It should only be in the modules which use TemplateHaskell, not all modules.
   -- I consider this a temporary hack to get things to compile with profiling.
-  -- TODO: remove this in the future when cabal gets it's act together.
   other-extensions: TemplateHaskell
-  
+
   exposed-modules:
     Data.Alphabet
     Data.Alphabet.IUPAC
     Data.Alphabet.Special
- 
+
   other-modules:
     Data.Alphabet.Internal
 
@@ -170,7 +180,11 @@ library analysis
     ghc-flags,
     language-specs
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/core/analysis/src
@@ -183,15 +197,13 @@ library analysis
     utility,
     base                     >= 4.11      && < 5.0,
     clustering               >= 0.4       && < 0.5,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     data-default             >= 0.5.2     && < 0.8,
-    deepseq                  >= 1.4       && < 2.0,
     dlist                    >= 0.8       && < 1.0,
-    foldl                    >= 1.3.2     && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.18      && < 5.0,
-    matrices                 >= 0.5       && < 0.6,
+    matrices                 >= 0.5       && < 1.0,
+    monad-loops              >= 0.4       && < 1.0,
     mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
     parallel                 >= 3.2       && < 4.0,
@@ -200,9 +212,9 @@ library analysis
     semigroupoids            >= 5.2.1     && < 5.4,
     text-show                >= 3.8.1     && < 4.0,
     -- >=0.12.0.2 required for compatibility with "compact regions"
+    unordered-containers     >= 0.2.9     && < 1.0,
     vector                   >= 0.12.0.2  && < 0.13,
     vector-builder           >= 0.3.7     && < 0.4,
-    -- >=3.4 required for corrected definition of (!) & index
     vector-instances         >= 3.4       && < 3.5,
 
   exposed-modules:
@@ -229,6 +241,10 @@ library analysis
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
     Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen.Ribbon
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedFullMatrix
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFullSpace            
+    Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenSwapping
 
 
 library character-name
@@ -237,7 +253,11 @@ library character-name
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/character-name/src
@@ -259,7 +279,7 @@ library character-name
 
 
 -- Data-types for defining and interacting with phylogenetic components.
-   
+
 -- Exposes core data-types for constructing, mutating, and scoring phylogenetic
 -- components. Phylogenetic forests, the primitive component type, are defined
 -- here along with the interface for interacting with phylogenetic forests.
@@ -271,7 +291,11 @@ library core
   import:
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   build-depends:
     analysis,
@@ -341,12 +365,16 @@ library core
 
 library data-normalization
 
-  import:             
+  import:
     ghc-flags,
     language-specs
 
-  visibility: public
-        
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
+
   hs-source-dirs:
     lib/data-normalization/src
 
@@ -356,27 +384,21 @@ library data-normalization
     file-parsers,
     utility,
     base                     >= 4.11      && < 5.0,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
-    -- >=2999.20 Required for forgiving construction of DOT object
     graphviz                 >= 2999.20   && < 3000,
     hashable                 >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     text-short               >= 0.1.3     && < 1.0,
-    -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
-    -- >=3.4 required for corrected definition of (!) & index
     vector-instances         >= 3.4       && < 3.5,
 
   exposed-modules:
     Data.Normalization.Character
     Data.Normalization.Metadata
     Data.Normalization.Topology
-  
+
   other-modules:
     Data.Normalization.Character.Class
     Data.Normalization.Character.Internal
@@ -390,7 +412,11 @@ library data-structures
     ghc-flags,
     language-specs
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/core/data-structures/src
@@ -409,14 +435,12 @@ library data-structures
     bimap                    >= 0.3       && < 1.0,
     binary                   >= 0.6       && < 1.0,
     bv-little                >= 1.0.1     && < 2.0,
+    bv-little:instances      >= 1.0.1     && < 2.0,
     compact                  >= 0.1       && < 2.0,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     data-default             >= 0.5.2     && < 0.8,
     deepseq                  >= 1.4       && < 2.0,
     dlist                    >= 0.8       && < 1.0,
-    foldl                    >= 1.3.2     && < 2.0,
-    -- >=2999.20 Required for forgiving construction of DOT object
     graphviz                 >= 2999.20   && < 3000,
     hashable                 >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
@@ -427,19 +451,16 @@ library data-structures
     parallel                 >= 3.2       && < 4.0,
     pretty-tree              >= 0.1       && < 0.2,
     QuickCheck               >= 2.12      && < 3.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
     smallcheck               >= 1.1.5     && < 2.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     text-show-instances      >= 3.8       && < 4.0,
     unordered-containers     >= 0.2.9     && < 1.0,
-    -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
     vector-builder           >= 0.3.7     && < 0.4,
     vector-binary-instances  >= 0.2.1.1   && < 0.3,
-    -- >=3.4 required for corrected definition of (!) & index
     vector-instances         >= 3.4       && < 3.5,
     xml                      >= 1.3.14    && < 1.4,
 
@@ -501,7 +522,9 @@ library data-structures
     Bio.Character.Encodable.Continuous.Class
     Bio.Character.Encodable.Continuous.Internal
     Bio.Character.Encodable.Dynamic
+    Bio.Character.Encodable.Dynamic.AmbiguityGroup
     Bio.Character.Encodable.Dynamic.Class
+    Bio.Character.Encodable.Dynamic.Element
     Bio.Character.Encodable.Dynamic.Internal
     Bio.Character.Encodable.Internal
     Bio.Character.Encodable.Static
@@ -543,12 +566,16 @@ library data-structures
 
 library data-unification
 
-  import:             
+  import:
     ghc-flags,
     language-specs
 
-  visibility: public
-  
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
+
   hs-source-dirs:
     lib/data-unification/src
 
@@ -560,25 +587,20 @@ library data-unification
     serialize,
     utility,
     base                     >= 4.11      && < 5.0,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     data-default             >= 0.5.2     && < 0.8,
     deepseq                  >= 1.4       && < 2.0,
-    dlist-nonempty           >= 0.1.1     && < 1.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.18      && < 5.0,
     mtl                      >= 2.0       && < 3.0,
     parallel                 >= 3.2       && < 4.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     text-show-instances      >= 3.8       && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
     validation               >= 1.1       && < 2.0,
-    vector                   >= 0.12.0.2  && < 0.13,
 
   exposed-modules:
     Data.Unification
@@ -601,7 +623,11 @@ library evaluation
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/evaluation/src
@@ -611,20 +637,18 @@ library evaluation
     bimap                    >= 0.3       && < 1.0,
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
-    dlist,            
     mtl                      >= 2.0       && < 3.0,
     QuickCheck               >= 2.12      && < 3.0,
     quickcheck-instances     >= 0.3.17    && < 1.0,
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
-    text-show                >= 3.8.1     && < 4.0,            
+    text-show                >= 3.8.3     && < 4.0,
     transformers             >= 0.5.6     && < 1.0,
-                
+
   exposed-modules:
     Control.Evaluation
     Control.Monad.Logger
-    System.ErrorPhase              
+    System.ErrorPhase
 
   other-modules:
     Control.Evaluation.Notification
@@ -638,7 +662,11 @@ library exportable
     ghc-flags,
     language-specs,
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/exportable/src
@@ -646,7 +674,7 @@ library exportable
   build-depends:
     base                     >= 4.11      && < 5.0,
     lens                     >= 4.18      && < 5.0,
-    semigroups               >= 0.18      && < 1.0,
+    mono-traversable         >= 1.0       && < 2.0,
 
   exposed-modules:
     Bio.Character.Exportable
@@ -669,7 +697,11 @@ library file-parsers
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/file-parsers/src
@@ -683,7 +715,6 @@ library file-parsers
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     dlist                    >= 0.8       && < 1.0,
-    -- >=2999.20 Required for forgiving construction of DOT object
     graphviz                 >= 2999.20   && < 3000,
     integer-gmp              >= 1.0       && < 2.0,
     keys                     >= 3.0       && < 4.0,
@@ -693,15 +724,11 @@ library file-parsers
     parser-combinators       >= 1.0       && < 2.0,
     safe                     >= 0.3.17    && < 0.4,
     scientific               >= 0.3.6     && < 0.4,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
     transformers             >= 0.5.6     && < 1.0,
-    -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
-    vector-builder           >= 0.3       && < 1.0,             
 
   exposed-modules:
     File.Format.Dot
@@ -740,17 +767,21 @@ library file-parsers
 
 
 -- Library for interacting with file paths in a type-safe manner.
-                    
+
 -- Exposes a well-typed file path type and functionality for interacting with the
 -- file system through with this type.
-        
+
 library file-source
 
   import:
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/file-source/src
@@ -761,7 +792,6 @@ library file-source
     base                     >= 4.11      && < 5.0,
     binary                   >= 0.6       && < 1.0,
     bytestring               >= 0.10.8    && < 0.11,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     compact                  >= 0.1       && < 2.0,
     deepseq                  >= 1.4       && < 2.0,
     directory                >= 1.3       && < 2.0,
@@ -769,21 +799,18 @@ library file-source
     Glob                     >= 0.9       && < 2.0,
     hashable                 >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
-    megaparsec               >= 8.0       && < 9.0,                        
+    megaparsec               >= 8.0       && < 9.0,
     mono-traversable         >= 1.0       && < 2.0,
     mono-traversable-keys    >= 0.1       && < 1.0,
-    pipes                    >= 4.0       && < 5.0,            
+    pipes                    >= 4.0       && < 5.0,
     QuickCheck               >= 2.12      && < 3.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
-    -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
-                
+
   exposed-modules:
     Data.FileSource
     Data.FileSource.IO
@@ -802,7 +829,11 @@ library graph
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/graph/src
@@ -810,28 +841,17 @@ library graph
   build-depends:
     utility,
     base                     >= 4.11      && < 5.0,
-    bifunctors               ^>= 5.5.4            ,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
-    comonad                  ^>= 5.0.5            ,
+    comonad                  >= 5.0       && < 6.0,
     containers               >= 0.5.8     && < 0.7,
-    deepseq                  >= 1.4       && < 2.0,
-    foldl                    >= 1.3.2     && < 2.0,
-    hashable                 >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.17      && < 5.0,
     mtl                      ^>= 2.2.2            ,
-    parallel                 >= 3.2       && < 4.0,    
     QuickCheck               >= 2.12      && < 3.0,
-    text                     >= 1.2       && < 2.0,
     semigroupoids            >= 5.2.1     && < 5.4,
     text-show                >= 3.0       && < 4.0,
-    text-show-instances      >= 3.8       && < 4.0,
-    -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
-    vector-builder           >= 0.3.7.2   && < 0.4,
-    -- >=3.4 required for corrected definition of (!) & index
+    vector-builder           >= 0.3.7     && < 0.4,
     vector-instances         >= 3.4       && < 3.5,
-
 
   exposed-modules:
     Data.Graph
@@ -860,7 +880,11 @@ library language
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/language/src
@@ -869,14 +893,12 @@ library language
     file-source,
     base                     >= 4.11      && < 5.0,
     case-insensitive         >= 1.2.0     && < 1.3,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     free                     >= 5.0       && < 6.0,
     keys                     >= 3.0       && < 4.0,
     megaparsec               >= 8.0       && < 9.0,
     parser-combinators       >= 1.0       && < 2.0,
     scientific               >= 0.3.6     && < 0.4,
-    semigroups               >= 0.18      && < 1.0,
     text-short               >= 0.1.3     && < 1.0,
     time                     >= 1.8.0     && < 2.0,
 
@@ -906,7 +928,11 @@ library serialize
     ghc-flags,
     language-specs
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/serialize/src
@@ -914,10 +940,8 @@ library serialize
   build-depends:
     base                     >= 4.11      && < 5.0,
     keys                     >= 3.0       && < 4.0,
-    semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
-    text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     xml                      >= 1.3.14    && < 1.4,
 
   exposed-modules:
@@ -926,8 +950,8 @@ library serialize
     Text.XML
     Text.XML.Class
     Text.XML.Custom
- 
-                    
+
+
 -- Library for working with TCMs and SCMs in various representations.
 
 -- General purpose library for working with transition cost matrices (TCMs)
@@ -942,7 +966,11 @@ library tcm
     ghc-flags,
     language-specs,
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/core/tcm/src
@@ -978,10 +1006,15 @@ library tcm
 library tcm-memo
 
   import:
+    ffi-buildinfo,
     ghc-flags,
     language-specs,
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/tcm-memo/src
@@ -1018,7 +1051,6 @@ library tcm-memo
     base                     >= 4.11      && < 5.0,
     deepseq                  >= 1.4       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
-    semigroups               >= 0.18      && < 1.0,
 
   exposed-modules:
     Data.TCM.Memoized
@@ -1029,7 +1061,7 @@ library tcm-memo
 
 
 -- Collection of utility functions and data structures
-                    
+
 -- Defines custom data structures for special use cases, more abstract functions
 -- that base provides, and re-exported correcting to deficient libraries.
 
@@ -1039,7 +1071,11 @@ library utility
     ghc-flags,
     language-specs
 
-  visibility: private
+  visibility:
+    private
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/utility/src
@@ -1048,11 +1084,10 @@ library utility
     base                     >= 4.11      && < 5.0,
     binary                   >= 0.6       && < 1.0,
     bv-little                >= 1.0.1     && < 2.0,
+    bv-little:instances      >= 1.0.1     && < 2.0,
     bytestring               >= 0.10.8    && < 0.11,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
-    directory                >= 1.3       && < 2.0,
     foldl                    >= 1.3.2     && < 2.0,
     hashable                 >= 1.2       && < 2.0,
     integer-gmp              >= 1.0       && < 2.0,
@@ -1060,24 +1095,16 @@ library utility
     lens                     >= 4.18      && < 5.0,
     matrix                   >= 0.3.6     && < 0.4,
     mono-traversable         >= 1.0       && < 2.0,
---    mono-traversable-keys    >= 0.1       && < 1.0,
     parallel                 >= 3.2       && < 4.0,
-    pipes                    >= 4.0       && < 5.0,            
     pointed                  >= 5.0       && < 6.0,
     QuickCheck               >= 2.12      && < 3.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     tasty-hunit              >= 0.10      && < 1.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     text-show-instances      >= 3.8       && < 4.0,
-    transformers             >= 0.5.6     && < 1.0,
-    validation               >= 1.1       && < 2.0,
-    -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
-    -- >=3.4 required for corrected definition of (!) & index
     vector-instances         >= 3.4       && < 3.5,
 
   exposed-modules:
@@ -1122,19 +1149,20 @@ library validation-transformer
     ghc-flags,
     language-specs
 
-  visibility: public
+  visibility:
+    public
+
+  default-language:
+    Haskell2010
 
   hs-source-dirs:
     lib/validation-transformer/src
 
-  build-depends:    
+  build-depends:
     base                     >= 4.11      && < 5.0,
     deepseq                  >= 1.4       && < 2.0,
-    mtl                      >= 2.0       && < 3.0,
     QuickCheck               >= 2.12      && < 3.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     transformers             >= 0.5.6     && < 1.0,
     validation               >= 1.1       && < 2.0,
 
@@ -1147,6 +1175,9 @@ executable pcg
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     Main.hs
@@ -1173,15 +1204,12 @@ executable pcg
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 2.0,
-    bytestring               >= 0.10.8    && < 0.11,
     compact                  >= 0.1       && < 2.0,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     filepath                 >= 1.4       && < 2.0,
     foldl                    >= 1.3.2     && < 2.0,
     gitrev                   >= 1.3       && < 2.0,
-    -- >=2999.20 Required for forgiving construction of DOT object
     graphviz                 >= 2999.20   && < 3000,
     integer-gmp              >= 1.0       && < 2.0,
     keys                     >= 3.0       && < 4.0,
@@ -1194,16 +1222,13 @@ executable pcg
     mtl                      >= 2.0       && < 3.0,
     optparse-applicative     >= 0.15      && < 2.0,
     parallel                 >= 3.2       && < 4.0,
-    perfect-vector-shuffle   ^>= 0.1             ,
-    random-shuffle           >= 0.0.4     && < 0.1,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
+    perfect-vector-shuffle   >= 0.1       && < 1.0,
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     template-haskell         >= 2.13      && < 3.0,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
-    th-lift-instances        >= 0.1       && < 1.0,            
+    text-show                >= 3.8.3     && < 4.0,
+    th-lift-instances        >= 0.1       && < 1.0,
     transformers             >= 0.5.5     && < 1.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
@@ -1214,7 +1239,7 @@ executable pcg
   -- I consider this a temporary hack to get things to compile with profiling.
   -- TODO: remove this in the future when cabal gets it's act together.
   other-extensions: TemplateHaskell
-  
+
   other-modules:
     Paths_phylogenetic_component_graph
     PCG.Command.Build.Evaluate
@@ -1228,6 +1253,7 @@ executable pcg
     PCG.Command.Report.Distance
     PCG.Command.Report.Evaluate
     PCG.Command.Report.GraphViz
+    PCG.Command.Report.ImpliedAlignment
     PCG.Command.Report.Metadata
     PCG.Command.Save.Evaluate
     PCG.CommandLineOptions
@@ -1235,7 +1261,7 @@ executable pcg
     PCG.CommandLineOptions.Types
     PCG.Computation.Internal
     PCG.Software.Credits
-    PCG.Software.Metadata            
+    PCG.Software.Metadata
 
 
 executable 2d-do-comparison
@@ -1243,6 +1269,9 @@ executable 2d-do-comparison
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     2d-do-comparison.hs
@@ -1256,7 +1285,10 @@ executable 2d-do-comparison
     tcm-memo,
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 2.0,
+    mono-traversable         >= 1.0       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
+    tasty                    >= 1.2       && < 2.0,
+    tasty-quickcheck         >= 0.9       && < 1.0,
 
 
 executable 3d-do-comparison
@@ -1264,6 +1296,9 @@ executable 3d-do-comparison
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     3d-do-comparison.hs
@@ -1276,9 +1311,9 @@ executable 3d-do-comparison
     core,
     tcm-memo,
     base                     >= 4.11      && < 5.0,
-    bimap                    >= 0.3       && < 2.0,
-    deepseq                  >= 1.4       && < 2.0,
-    QuickCheck               >= 2.12      && < 3.0,
+--    bimap                    >= 0.3       && < 2.0,
+--    deepseq                  >= 1.4       && < 2.0,
+--    QuickCheck               >= 2.12      && < 3.0,
 
 
 executable affine-safety
@@ -1286,6 +1321,9 @@ executable affine-safety
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     affine-safety.hs
@@ -1296,6 +1334,7 @@ executable affine-safety
   build-depends:
     alphabet,
     core,
+    tcm-memo,
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
@@ -1307,6 +1346,9 @@ executable fasta-differ
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     fasta-differ.hs
 
@@ -1316,12 +1358,10 @@ executable fasta-differ
   build-depends:
     file-parsers,
     base                     >= 4.11      && < 5.0,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     keys                     >= 3.0       && < 4.0,
     megaparsec               >= 8.0       && < 9.0,
     text-short               >= 0.1       && < 1.0,
-    -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
 
 
@@ -1331,6 +1371,9 @@ executable file-tests
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     FileTests.hs
 
@@ -1339,14 +1382,13 @@ executable file-tests
 
   hs-source-dirs:
     lib/file-parsers/test
-  
+
   build-depends:
     file-parsers,
     base                     >= 4.11      && < 5.0,
     containers               >= 0.5.8     && < 1.0,
     directory                >= 1.3       && < 2.0,
     megaparsec               >= 8.0       && < 9.0,
-    semigroups               >= 0.18      && < 1.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-hunit              >= 0.10      && < 1.0,
 
@@ -1366,13 +1408,16 @@ executable generate-data-set
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     generate-data-set.hs
 
   hs-source-dirs:
     app
 
-  build-depends:             
+  build-depends:
     alphabet,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
@@ -1381,11 +1426,11 @@ executable generate-data-set
     keys                     >= 3.0       && < 4.0,
     optparse-applicative     >= 0.15      && < 2.0,
     mtl                      >= 2.0       && < 3.0,
-    mwc-random               >= 0.14      && < 1.0,                         
+    mwc-random               >= 0.14      && < 1.0,
     random-shuffle           >= 0.0.4     && < 0.1,
     scientific               >= 0.3.6     && < 0.4,
     text                     >= 1.2       && < 2.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
 
@@ -1396,29 +1441,27 @@ executable generate-random-sequence
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     generate-random-sequence.hs
 
   hs-source-dirs:
     app
 
-  build-depends:             
+  build-depends:
     alphabet,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 1.0,
     bv-little                >= 1.1.1     && < 2.0,
-    containers               >= 0.5.8     && < 1.0,
-    deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     optparse-applicative     >= 0.15      && < 2.0,
-    mtl                      >= 2.0       && < 3.0,
     random                   >= 1.0       && < 2.0,
     scientific               >= 0.3.6     && < 0.4,
     text                     >= 1.2       && < 2.0,
-    text-show                >= 3.8.1     && < 4.0,
     validation               >= 1.1       && < 2.0,
-    vector                   >= 0.12.0.2  && < 0.13,
 
 
 executable generate-tcm
@@ -1426,6 +1469,9 @@ executable generate-tcm
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     generate-tcm.hs
@@ -1437,12 +1483,10 @@ executable generate-tcm
     utility,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     keys                     >= 3.0       && < 4.0,
     matrix                   >= 0.3.6     && < 0.4,
     optparse-applicative     >= 0.15      && < 2.0,
-    -- >=0.12.0.2 required for compatibility with "compact regions"
     vector                   >= 0.12.0.2  && < 0.13,
 
 
@@ -1451,6 +1495,9 @@ executable graphviz-examples
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     graphviz-examples.hs
@@ -1469,7 +1516,6 @@ executable graphviz-examples
     filepath                 >= 1.4.2     && < 1.5,
     graphviz                 >= 2999.20   && < 3000,
     text                     >= 1.2.3     && < 1.3,
-    algebraic-graphs         >= 0.3       && < 1.0
 
 
 executable newick-resolver
@@ -1477,6 +1523,9 @@ executable newick-resolver
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     newick-resolver.hs
@@ -1488,7 +1537,6 @@ executable newick-resolver
     file-parsers,
     base                     >= 4.11      && < 5.0,
     megaparsec               >= 8.0       && < 9.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
@@ -1500,34 +1548,32 @@ executable reduce-fastc
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     reduce-fastc.hs
 
   hs-source-dirs:
     app
 
-  build-depends:             
+  build-depends:
     alphabet,
     file-parsers,
-    utility,                         
+    utility,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
-    bimap                    >= 0.3       && < 1.0,
-    bv-little                >= 1.1.1     && < 2.0,
+--    bimap                    >= 0.3       && < 1.0,
+--    bv-little                >= 1.1.1     && < 2.0,
+--    bv-little:instances      >= 1.0.1     && < 2.0,
     containers               >= 0.5.8     && < 1.0,
-    deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     optparse-applicative     >= 0.15      && < 2.0,
     megaparsec               >= 8.0       && < 9.0,
-    mtl                      >= 2.0       && < 3.0,
-    random                   >= 1.0       && < 2.0,
     scientific               >= 0.3.6     && < 0.4,
     semigroupoids            >= 5.2.1     && < 5.4,
-    text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
     validation               >= 1.1       && < 2.0,
-    vector                   >= 0.12.0.2  && < 0.13,
 
 
 executable ukkonen-do-comparison
@@ -1535,6 +1581,9 @@ executable ukkonen-do-comparison
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     ukkonen-do-comparison.hs
@@ -1557,6 +1606,9 @@ executable use-the-memoized-ffi
     ghc-flags,
     language-specs,
 
+  default-language:
+    Haskell2010
+
   main-is:
     Main.hs
 
@@ -1568,7 +1620,6 @@ executable use-the-memoized-ffi
     tcm-memo,
     base                     >= 4.11      && < 5.0,
     safe                     >= 0.3.17    && < 0.4,
-    semigroups               >= 0.18      && < 1.0,
 
 
 test-suite integration-tests
@@ -1576,6 +1627,9 @@ test-suite integration-tests
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     IntegrationTests.hs
@@ -1597,7 +1651,6 @@ test-suite integration-tests
     bimap                    >= 0.3       && < 2.0,
     binary                   >= 0.6       && < 1.0,
     bytestring               >= 0.10.8    && < 0.11,
-    -- >=0.5.8 Required for Data.Map.restrictKeys
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     directory                >= 1.3       && < 2.0,
@@ -1606,9 +1659,7 @@ test-suite integration-tests
     lens                     >= 4.17      && < 5.0,
     mtl                      >= 2.0       && < 3.0,
     process                  >= 1.6       && < 2.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-golden             >= 2.3       && < 3.0,
     tasty-hunit              >= 0.10      && < 1.0,
@@ -1623,6 +1674,9 @@ test-suite integration-tests
 
 test-suite test-suite-alphabet
 
+  default-language:
+    Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1630,6 +1684,7 @@ test-suite test-suite-alphabet
     exitcode-stdio-1.0
 
   hs-source-dirs:
+    lib/alphabet/src
     lib/alphabet/test
 
   ghc-options:
@@ -1637,15 +1692,26 @@ test-suite test-suite-alphabet
 
   build-depends:
     alphabet,
+    serialize,
+    utility,
     base                     >= 4.11      && < 5.0,
+    bimap                    >= 0.3       && < 1.0,
+    containers               >= 0.5.8     && < 1.0,
+    deepseq                  >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    mtl                      >= 2.0       && < 3.0,
     QuickCheck               >= 2.12      && < 3.0,
-    semigroups               >= 0.18      && < 1.0,
+    semigroupoids            >= 5.2.1     && < 5.4,
     tasty                    >= 1.2       && < 2.0,
     tasty-hunit              >= 0.10      && < 1.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
+    text-short               >= 0.1.3     && < 1.0,
+    text-show                >= 3.8.3     && < 4.0,
+    transformers             >= 0.5.6     && < 1.0,
 
   other-modules:
+    Data.Alphabet.Internal
     Data.Alphabet.Test
 
 
@@ -1654,6 +1720,9 @@ test-suite test-suite-analysis
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     TestSuite.hs
@@ -1675,7 +1744,6 @@ test-suite test-suite-analysis
     clustering               >= 0.4       && < 0.5,
     mono-traversable         >= 1.0       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
-    semigroups               >= 0.18      && < 1.0,
     smallcheck               >= 1.1.5     && < 2.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
@@ -1693,6 +1761,9 @@ test-suite test-suite-data-structures
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     TestSuite.hs
@@ -1712,12 +1783,11 @@ test-suite test-suite-data-structures
     data-structures,
     base                     >= 4.11      && < 5.0,
     containers               >= 0.5.8     && < 1.0,
-    deepseq                  >= 1.4       && < 2.0,
+--    deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.18      && < 5.0,
     mono-traversable         >= 1.0       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
-    semigroups               >= 0.18      && < 1.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-hunit              >= 0.10      && < 1.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
@@ -1738,6 +1808,9 @@ test-suite test-suite-evaluation
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1754,12 +1827,9 @@ test-suite test-suite-evaluation
     evaluation,
     base                     >= 4.11      && < 5.0,
     deepseq                  >= 1.4       && < 2.0,
-    dlist,            
     mtl                      >= 2.0       && < 3.0,
     QuickCheck               >= 2.12      && < 3.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     transformers             >= 0.5.6     && < 1.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
@@ -1776,17 +1846,20 @@ test-suite test-suite-file-parsers
     ghc-flags,
     language-specs
 
-  main-is:          
+  default-language:
+    Haskell2010
+
+  main-is:
     TestSuite.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
-  hs-source-dirs:   
+  hs-source-dirs:
     lib/file-parsers/src,
     lib/file-parsers/test
 
-  ghc-options:      
+  ghc-options:
     -threaded
 
   build-depends:
@@ -1807,7 +1880,6 @@ test-suite test-suite-file-parsers
     safe                     >= 0.3.17    && < 0.4,
     scientific               >= 0.3.6     && < 0.4,
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     smallcheck               >= 1.1.5     && < 2.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-hunit              >= 0.10      && < 1.0,
@@ -1816,7 +1888,6 @@ test-suite test-suite-file-parsers
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1.3     && < 1.0,
     vector                   >= 0.12.0.2  && < 0.13,
-    vector-builder           >= 0.3       && < 1.0,             
 
   other-modules:
     File.Format.Fasta.Internal
@@ -1849,6 +1920,9 @@ test-suite test-suite-graph
     ghc-flags,
     language-specs
 
+  default-language:
+    Haskell2010
+
   main-is:
     TestSuite.hs
 
@@ -1862,21 +1936,11 @@ test-suite test-suite-graph
     graph,
     utility,
     base                     >= 4.11      && < 5.0,
-    QuickCheck               >= 2.12      && < 3.0,
     tasty                    >= 1.2       && < 2.0,
-    tasty-hunit              >= 0.10      && < 1.0,
-    tasty-quickcheck         >= 0.9       && < 1.0,
-    tasty-rerun              >= 1.1.14    && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
-                    
+
   other-modules:
     Data.Graph.Test
-
-
--- Library for exporting dynamic characters across the FFI
-
--- Exports a type-cless for exporting dynamic characters across the FFI in
--- multiple formats.
 
 
 test-suite test-suite-tcm
@@ -1884,6 +1948,9 @@ test-suite test-suite-tcm
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     TestSuite.hs
@@ -1903,8 +1970,6 @@ test-suite test-suite-tcm
     utility,
     base                     >= 4.11      && < 5.0,
     mono-traversable         >= 1.0       && < 2.0,
-    QuickCheck               >= 2.12      && < 3.0,
-    semigroups               >= 0.18      && < 1.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-hunit              >= 0.10      && < 1.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
@@ -1920,10 +1985,13 @@ test-suite test-suite-utility
     ghc-flags,
     language-specs
 
-  main-is:          
+  default-language:
+    Haskell2010
+
+  main-is:
     TestSuite.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
   hs-source-dirs:
@@ -1933,22 +2001,22 @@ test-suite test-suite-utility
     utility,
     base                     >= 4.11      && < 5.0,
     bv-little                >= 1.0.1     && < 2.0,
+    bv-little:instances      >= 1.0.1     && < 2.0,
     deepseq                  >= 1.4       && < 2.0,
     integer-gmp              >= 1.0       && < 2.0,
     mono-traversable         >= 1.0       && < 2.0,
     parallel                 >= 3.2       && < 4.0,
     QuickCheck               >= 2.12      && < 3.0,
-    semigroups               >= 0.18      && < 1.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-hunit              >= 0.10      && < 1.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
-                    
+
   other-modules:
     Control.Parallel.Test
     Data.BitMatrix.Test
     Data.MutualExclusionSet.Test
-    Numeric.Cost.Test            
+    Numeric.Cost.Test
     Numeric.Extended.Natural.Test
     Numeric.Extended.Real.Test
     Numeric.NonNegativeAverage.Test
@@ -1960,6 +2028,9 @@ test-suite test-suite-validation-transformer
   import:
     ghc-flags,
     language-specs
+
+  default-language:
+    Haskell2010
 
   main-is:
     TestSuite.hs
@@ -1979,9 +2050,7 @@ test-suite test-suite-validation-transformer
     deepseq                  >= 1.4       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
     QuickCheck               >= 2.12      && < 3.0,
-    -- required for Data.Semigroup.Foldable.toNonEmpty
     semigroupoids            >= 5.2.1     && < 5.4,
-    semigroups               >= 0.18      && < 1.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-quickcheck         >= 0.9       && < 1.0,
     tasty-rerun              >= 1.1.14    && < 2.0,
@@ -1996,29 +2065,30 @@ benchmark bench-file-parsers-space
   import:
     ghc-flags,
     language-specs
-         
+
+  default-language:
+    Haskell2010
+
   main-is:
     Space.hs
 
   type:
-    exitcode-stdio-1.0  
-    
+    exitcode-stdio-1.0
+
   ghc-options:
     -threaded
 
   hs-source-dirs:
     lib/file-parsers/bench
-  
+
   build-depends:
     file-parsers,
     base                     >= 4.11      && < 5.0,
     case-insensitive         >= 1.2.0     && < 1.3,
-    containers               >= 0.5.8     && < 1.0,
     criterion                >= 1.5       && < 2.0,
     deepseq                  >= 1.4       && < 2.0,
     filepath                 >= 1.4       && < 2.0,
     megaparsec               >= 8.0       && < 9.0,
-    semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
     weigh                    >= 0.0.14    && < 1.0,
 
@@ -2028,11 +2098,11 @@ benchmark bench-file-parsers-space
     Benchmark.FASTC.Files
     Benchmark.FASTC.Space
     Benchmark.Internal
-    Benchmark.Newick.Files            
+    Benchmark.Newick.Files
     Benchmark.Newick.Space
-    Benchmark.TCM.Files            
+    Benchmark.TCM.Files
     Benchmark.TCM.Space
-    Benchmark.VER.Files            
+    Benchmark.VER.Files
     Benchmark.VER.Space
 
 
@@ -2041,29 +2111,30 @@ benchmark bench-file-parsers-time
   import:
     ghc-flags,
     language-specs
-         
+
+  default-language:
+    Haskell2010
+
   main-is:
     Time.hs
 
   type:
-    exitcode-stdio-1.0  
-    
+    exitcode-stdio-1.0
+
   ghc-options:
     -threaded
 
   hs-source-dirs:
     lib/file-parsers/bench
-  
+
   build-depends:
     file-parsers,
     base                     >= 4.11      && < 5.0,
     case-insensitive         >= 1.2.0     && < 1.3,
-    containers               >= 0.5.8     && < 1.0,
     criterion                >= 1.5       && < 2.0,
     deepseq                  >= 1.4       && < 2.0,
     filepath                 >= 1.4       && < 2.0,
     megaparsec               >= 8.0       && < 9.0,
-    semigroups               >= 0.18      && < 1.0,
     text                     >= 1.2       && < 2.0,
     weigh                    >= 0.0.14    && < 1.0,
 
@@ -2075,7 +2146,7 @@ benchmark bench-file-parsers-time
     Benchmark.Internal
     Benchmark.Newick.Files
     Benchmark.Newick.Time
-    Benchmark.TCM.Files            
+    Benchmark.TCM.Files
     Benchmark.TCM.Time
     Benchmark.VER.Files
     Benchmark.VER.Time
@@ -2087,26 +2158,28 @@ benchmark bench-graph
     ghc-flags,
     language-specs
 
-  main-is:          
+  default-language:
+    Haskell2010
+
+  main-is:
     Benchmarks.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
-  hs-source-dirs: 
+  hs-source-dirs:
     lib/graph/bench
 
   build-depends:
     utility,
     base                     >= 4.11      && < 5.0,
-    criterion                >= 1.5       && < 2.0,
 
   ghc-options:
     -fdicts-cheap
     -fmax-simplifier-iterations=10
     -fspec-constr-count=6
     -threaded
-                    
+
   other-modules:
     Data.Graph.Bench
 
@@ -2117,11 +2190,14 @@ benchmark bench-string-alignment
     ghc-flags,
     language-specs
 
-  type:
-    exitcode-stdio-1.0
+  default-language:
+    Haskell2010
 
   main-is:
     bench-string-alignment.hs
+
+  type:
+    exitcode-stdio-1.0
 
   ghc-options:
     -threaded
@@ -2153,7 +2229,7 @@ benchmark bench-string-alignment
     semigroupoids            >= 5.2.1     && < 5.4,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
 
@@ -2166,7 +2242,7 @@ benchmark bench-string-alignment
     PCG.Command.Read.InputStreams
     PCG.Command.Read.ParseStreams
     PCG.Command.Read.ReadCommandError
-            
+
 
 benchmark bench-string-alignment-small
 
@@ -2174,11 +2250,14 @@ benchmark bench-string-alignment-small
     ghc-flags,
     language-specs
 
-  type:
-    exitcode-stdio-1.0
+  default-language:
+    Haskell2010
 
   main-is:
     bench-string-alignment-small.hs
+
+  type:
+    exitcode-stdio-1.0
 
   ghc-options:
     -threaded
@@ -2210,7 +2289,7 @@ benchmark bench-string-alignment-small
     semigroupoids            >= 5.2.1     && < 5.4,
     text                     >= 1.2       && < 2.0,
     text-short               >= 0.1       && < 1.0,
-    text-show                >= 3.8.1     && < 4.0,
+    text-show                >= 3.8.3     && < 4.0,
     validation               >= 1.1       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
 
@@ -2223,7 +2302,58 @@ benchmark bench-string-alignment-small
     PCG.Command.Read.InputStreams
     PCG.Command.Read.ParseStreams
     PCG.Command.Read.ReadCommandError
-            
+
+
+benchmark bench-new-str-align
+
+  import:
+    ghc-flags,
+    language-specs
+
+  default-language: Haskell2010
+
+  main-is:
+    bench-new-str-align.hs
+
+  type:
+    exitcode-stdio-1.0
+
+  ghc-options:
+    -rtsopts
+    -with-rtsopts=-T
+
+  build-depends:
+    alphabet,
+    core,
+    data-normalization,
+    data-unification,
+    evaluation,
+    file-parsers,
+    file-source,
+    language,
+    tcm-memo,
+    utility,
+    validation-transformer,
+    base                     >= 4.11      && < 5.0,
+    bench-show               >= 0.3       && < 1.0,            
+    containers               >= 0.5.8     && < 1.0,
+    criterion                >= 1.5       && < 2.0,
+    deepseq                  >= 1.4       && < 2.0,
+    keys                     >= 3.0       && < 4.0,
+    lens                     >= 4.17      && < 5.0,
+    megaparsec               >= 8.0       && < 9.0,
+    mono-traversable         >= 1.0       && < 2.0,
+    semigroupoids            >= 5.2.1     && < 5.4,
+    split                    >= 0.2       && < 1.0,            
+    text                     >= 1.2       && < 2.0,
+    text-short               >= 0.1       && < 1.0,
+    text-show                >= 3.8.1     && < 4.0,
+    vector                   >= 0.12.0.2  && < 0.13,
+    weigh                    >= 0.0.16    && < 1.0,            
+
+  hs-source-dirs:
+    bench
+
 
 benchmark bench-utility
 
@@ -2231,10 +2361,13 @@ benchmark bench-utility
     ghc-flags,
     language-specs
 
-  main-is:          
+  default-language:
+    Haskell2010
+
+  main-is:
     Benchmarks.hs
 
-  type:             
+  type:
     exitcode-stdio-1.0
 
   hs-source-dirs:
@@ -2245,16 +2378,13 @@ benchmark bench-utility
     base                     >= 4.11      && < 5.0,
     criterion                >= 1.5       && < 2.0,
     deepseq                  >= 1.4       && < 2.0,
-    semigroups               >= 0.18      && < 1.0,
 
   ghc-options:
     -fdicts-cheap
     -fmax-simplifier-iterations=10
     -fspec-constr-count=6
     -threaded
-                    
+
   other-modules:
     Data.MutualExclusionSet.Bench
     Numeric.Extended.Natural.Bench
-
-
