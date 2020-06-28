@@ -42,8 +42,8 @@ counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) =
     ukkonenDOResult == foreignDOResult
   where
-    ukkonenDOResult = ukkonenDO         lhs rhs  (getMedianAndCost2D memoMatrixValue)
-    foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
+    ukkonenDOResult = ukkonenDO         (getMedianAndCost2D memoMatrixValue) lhs rhs
+    foreignDOResult = foreignPairwiseDO denseMatrixValue  lhs rhs
 
 
 performImplementationComparison :: String -> String -> IO ()
@@ -58,19 +58,18 @@ performImplementationComparison lhs rhs = do
   where
     ukkonenMessage   = renderResult ukkonenDOResult
     foreignMessage   = renderResult foreignDOResult
-    ukkonenDOResult  = ukkonenDO         char1 char2 (getMedianAndCost2D memoMatrixValue)
-    foreignDOResult  = foreignPairwiseDO char1 char2  denseMatrixValue
-    char1 = readSequence lhs
-    char2 = readSequence rhs
+    ukkonenDOResult  = ukkonenDO         tcm char1 char2
+    foreignDOResult  = foreignPairwiseDO denseMatrixValue char1 char2
+    tcm      = getMedianAndCost2D memoMatrixValue
+    tcm' x y = fst $ tcm x y
+    char1    = readSequence lhs
+    char2    = readSequence rhs
     alphabet = fromSymbols ["A","C","G","T"]
     readSequence :: String -> DynamicCharacter
     readSequence = encodeStream alphabet . fmap ((iupacToDna BM.!) . pure . pure) . NE.fromList
-    renderResult (c, w, x, y, z) = unlines
-        [ "Cost           : " <> show c
-        , "Median ungapped: " <> showStream alphabet w
-        , "Median   gapped: " <> showStream alphabet x
-        , "LHS   alignment: " <> showStream alphabet y
-        , "RHS   alignment: " <> showStream alphabet z
+    renderResult (c, w) = unlines
+        [ "Cost     : " <> show c
+        , "Alignment: " <> renderDynamicCharacter alphabet tcm' w
         ]
 
 

@@ -38,7 +38,6 @@
 
 module Data.Alphabet
   ( Alphabet()
-  , AmbiguityGroup
   -- * Construction
   , fromSymbols
   , fromSymbolsWithStateNames

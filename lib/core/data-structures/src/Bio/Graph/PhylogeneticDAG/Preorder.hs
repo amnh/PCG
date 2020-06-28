@@ -63,6 +63,12 @@ import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup, zip, zipWith)
 import           TextShow
 
+--import Debug.Trace
+trace :: b -> a -> a
+trace = const id
+traceShowId :: a -> a
+traceShowId = id
+
 
 type BlockTopologies = NEV.Vector TraversalTopology
 
@@ -75,12 +81,12 @@ type BlockTopologies = NEV.Vector TraversalTopology
 -- and returns the new decoration for the current node.
 preorderSequence ::
   forall m e n u v w x y z u' v' w' x' y' z' . HasBlockCost u  v  w  x  y  z
-  => (ContinuousCharacterMetadataDec                         -> AP.PreorderContext u u' -> u')
-  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext v v' -> v')
-  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext w w' -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext x x' -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> AP.PreorderContext z z' -> z')
+  => (ContinuousCharacterMetadataDec                      -> AP.PreorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                        -> AP.PreorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter -> AP.PreorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> AP.PreorderContext z z' -> z')
   -> PhylogeneticDAG m e n u  v  w  x  y  z
   -> PhylogeneticDAG m e n u' v' w' x' y' z'
 preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneticForest .~ newRDAG
@@ -156,8 +162,8 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
 
             parentIndices = otoParentContext $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
-            childPosition j
-              = toEnum . length . takeWhile (/= currInd) . IM.keys . childRefs $ refs ! j
+            childPosition j = traceShowId $
+                toEnum . length . takeWhile (/= currInd) . IM.keys . childRefs $ refs ! j
 
             selectTopologyFromParentOptions
               :: NonEmpty (Int, PhylogeneticNode (CharacterSequence u1 v1 w1 x1 y1 z1) n)
@@ -168,13 +174,13 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
                      (ResolutionCache (CharacterSequence u v w x y z))
                      (BLK.CharacterBlock u1 v1 w1 x1 y1 z1)
                  )
+            selectTopologyFromParentOptions _ _ _ | trace "selectTopologyFromParentOptions" False = undefined
             selectTopologyFromParentOptions nodeOptions key topology =
 
-                case NE.filter matchesTopology
-                       $ second (NE.head . resolutions) <$> nodeOptions of
+                case NE.filter matchesTopology $ second (NE.head . resolutions) <$> nodeOptions of
                   (x,y):_ ->
                     let
-                      parBlock        = (characterSequence y ^. blockSequence) ! key
+                      parBlock          = (characterSequence y ^. blockSequence) ! key
                       childCacheContext = leftRightChild (childPosition x) datumResolutions
                     in
                       ( topology
@@ -203,8 +209,8 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
               where
                 leftRightChild :: Int -> (a -> Either a a)
                 leftRightChild = \case
-                  0 -> Left
-                  _ -> Right
+                  0 -> trace "<making> Left"  . Left
+                  _ -> trace "<making> Right" . Right
 
                 matchesTopology :: (Int, b) -> Bool
                 matchesTopology (pInd, _)
@@ -246,12 +252,12 @@ mockResInfo currentResolutions newSequence =
 
 computeOnApplicableResolution
   :: forall m u v w x y z u' v' w' x' y' z'
-   . (ContinuousCharacterMetadataDec                         -> AP.PreorderContext u u' -> u')
-  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext v v' -> v')
-  -> (DiscreteCharacterMetadataDec                           -> AP.PreorderContext w w' -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext x x' -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> AP.PreorderContext y y' -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> AP.PreorderContext z z' -> z')
+   . (ContinuousCharacterMetadataDec                                        -> AP.PreorderContext u u' -> u')
+  -> (DiscreteCharacterMetadataDec                                          -> AP.PreorderContext v v' -> v')
+  -> (DiscreteCharacterMetadataDec                                          -> AP.PreorderContext w w' -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter                   -> AP.PreorderContext x x' -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter                   -> AP.PreorderContext y y' -> y')
+  -> (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> AP.PreorderContext z z' -> z')
   -> MetadataSequence m
   -> NEV.Vector
        ( TraversalTopology
@@ -353,7 +359,7 @@ adjustResolution f = pure . f . NE.head . resolutions . nodeDecoration
 preorderFromRooting
   :: forall m u v w x y z e' n' u' v' w' x' y' z'
   .  (TextShow n')
-  => (DynamicCharacterMetadataDec (Element DynamicCharacter) ->  AP.PreorderContext z z' -> z')
+  => (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) ->  AP.PreorderContext z z' -> z')
   ->         HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u v w x y z)))
   -> NEV.Vector (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge))
@@ -560,7 +566,11 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                     excludedEdges = excludedNetworkEdges topology
                     updatedDynamicCharacters = mapWithKey dynCharGen $ mBlock ^. dynamicBin
 
-                    dynCharGen :: Int -> DynamicCharacterMetadataDec DynamicCharacterElement -> z'
+                    -- In sparsely connected graphs (like ours) this will be effectively constant.
+                    childPosition x = traceShowId $
+                        toEnum . length . takeWhile (/= i) . IM.keys . childRefs $ refs ! x
+
+                    dynCharGen :: Int -> DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> z'
                     dynCharGen k m =
                         case parentRefContext of
                           NoBlockData      -> error "This is bad and sad plus I'm mad."
@@ -582,7 +592,7 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                             in  transformation m
                                   PreInternalContext
                                     { preParent       = parentalDecoration
-                                    , preChildContext = Left currentDecoration
+                                    , preChildContext = leftRightChild (childPosition p) currentDecoration
                                     }
 
                           NormalNode   p   ->
@@ -598,9 +608,15 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                                 else transformation m
                                        PreInternalContext
                                          { preParent       = parentalDecoration
-                                         , preChildContext = Left currentDecoration
+                                         , preChildContext =
+                                               leftRightChild (childPosition p) currentDecoration
                                          }
                       where
+                        leftRightChild :: Int -> (a -> Either a a)
+                        leftRightChild = \case
+                            0 -> trace "<making> Left"  . Left
+                            _ -> trace "<making> Right" . Right
+
                         parentRefContext     = (parentVectors ! (i,j)) ! k
                         -- Stupid monomorphisms prevent elegant code reuse
 
@@ -621,12 +637,12 @@ constructDefaultMetadata = ((mempty, mempty, Nothing) <$) . graphData
 -- Computes and sets the virtual node sequence on each edge.
 setEdgeSequences
   :: forall m e n u v w x y z u' v' w' x' y' z' u'' v'' w'' x'' y''
-  .  (ContinuousCharacterMetadataDec                         -> (u, u) -> u')
-  -> (DiscreteCharacterMetadataDec                           -> (v, v) -> v')
-  -> (DiscreteCharacterMetadataDec                           -> (w, w) -> w')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (x, x) -> x')
-  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter    -> (y, y) -> y')
-  -> (DynamicCharacterMetadataDec (Element DynamicCharacter) -> (z, z) -> z')
+  .  (ContinuousCharacterMetadataDec                                        -> (u, u) -> u')
+  -> (DiscreteCharacterMetadataDec                                          -> (v, v) -> v')
+  -> (DiscreteCharacterMetadataDec                                          -> (w, w) -> w')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter                   -> (x, x) -> x')
+  -> (DiscreteWithTCMCharacterMetadataDec StaticCharacter                   -> (y, y) -> y')
+  -> (DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> (z, z) -> z')
   -> Vector (HashMap EdgeReference (ResolutionCache (CharacterSequence u'' v'' w'' x'' y'' z')))
   -> PhylogeneticDAG m e n u v w x y z
   -> PhylogeneticDAG m (e, CharacterSequence u' v' w' x' y' z') n u v w x y z

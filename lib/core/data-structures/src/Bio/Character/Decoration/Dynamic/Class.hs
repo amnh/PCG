@@ -30,16 +30,11 @@ module Bio.Character.Decoration.Dynamic.Class
   , PostorderExtensionDirectOptimizationDecoration(..)
   , SimpleDynamicDecoration
   , SimpleDynamicExtensionPostorderDecoration(..)
+  , HasAlignmentContext(..)
   , HasAverageLength(..)
   , HasCharacterLocalCost(..)
   , HasEncoded(..)
-  , HasFinalGapped(..)
-  , HasFinalUngapped(..)
   , HasImpliedAlignment(..)
-  , HasLeftAlignment(..)
-  , HasPreliminaryGapped(..)
-  , HasPreliminaryUngapped(..)
-  , HasRightAlignment(..)
   , HasSingleDisambiguation(..)
   , getAverageLength
   , toAverageLength
@@ -77,7 +72,7 @@ instance Show AverageLength where
 class ( HasAverageLength           s AverageLength
       , HasEncoded                 s a
       , EncodableDynamicCharacter  a
-      , Exportable                 (Element a)
+      , ExportableBuffer           (Subcomponent (Element a))
       ) => SimpleDynamicDecoration s a | s -> a where
 
 
@@ -89,12 +84,10 @@ class ( HasAverageLength           s AverageLength
 -- Is a sub-class of 'DynamicCharacterDecoration'.
 class ( HasCharacterCost        s Word
       , HasCharacterLocalCost   s Word
-      , HasPreliminaryGapped    s a
-      , HasPreliminaryUngapped  s a
-      , HasLeftAlignment        s a
-      , HasRightAlignment       s a
+      , HasAlignmentContext     s a
       , SimpleDynamicDecoration s a
-      , Exportable (Element a)
+      , ExportableBuffer (Subcomponent (Element a))
+--      , GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec (Subcomponent (Element a))) MemoizedCostMatrix
       ) => DirectOptimizationPostorderDecoration s a | s -> a where
 
 
@@ -102,8 +95,7 @@ class ( HasCharacterCost        s Word
 -- A decoration of a dynamic character with all direct optimization annotations.
 --
 -- Is a sub-class of 'DirectOptimizationPostorderDecoration'.
-class ( HasFinalGapped          s a
-      , HasFinalUngapped        s a
+class ( HasImpliedAlignment     s a
       , DirectOptimizationPostorderDecoration s a
       ) => DirectOptimizationDecoration s a | s -> a where
 
@@ -140,10 +132,7 @@ class ( SimpleDynamicDecoration s c
                              -> Word          -- ^ The cost of the alignment
                              -> Word          -- ^ The cost of the alignment and the child subtrees
                              -> AverageLength -- ^ The average length of the dynamic character in the subtree
-                             -> c             -- ^ Preliminary /ungapped/ dynamic character
-                             -> c             -- ^ Preliminary   /gapped/ dynamic character
-                             -> c             -- ^ Left  alignment dynamic character
-                             -> c             -- ^ Right alignment dynamic character
+                             -> c             -- ^ The alignment context of the subtree
                              -> s             -- ^ Resulting decoration
 
 
@@ -157,9 +146,8 @@ class ( DirectOptimizationPostorderDecoration s c
 
     extendPostorderToDirectOptimization :: DirectOptimizationPostorderDecoration x c
                                         => x -- ^ Original decoration
-                                        -> c -- ^ Final /ungapped/ dynamic character
-                                        -> c -- ^ Final   /gapped/ dynamic character
-                                        -> c -- ^ Final   /single/ dynamic character
+                                        -> c -- ^ The single disambiguation
+                                        -> c -- ^ The implied Alignment
                                         -> s -- ^ Resulting decoration
 
 
@@ -180,22 +168,6 @@ class HasEncoded s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'finalGapped' field
-class HasFinalGapped s a | s -> a where
-
-    finalGapped :: Lens' s a
-    {-# MINIMAL finalGapped #-}
-
-
--- |
--- A 'Lens' for the 'finalUngapped' field
-class HasFinalUngapped s a | s -> a where
-
-    finalUngapped :: Lens' s a
-    {-# MINIMAL finalUngapped #-}
-
-
--- |
 -- A 'Lens' for the 'singleDisambiguation' field
 class HasSingleDisambiguation s a | s -> a where
 
@@ -204,35 +176,11 @@ class HasSingleDisambiguation s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'preliminaryGapped' field
-class HasPreliminaryGapped s a | s -> a where
-
-    preliminaryGapped :: Lens' s a
-    {-# MINIMAL preliminaryGapped #-}
-
-
--- |
--- A 'Lens' for the 'preliminaryUngapped' field
-class HasPreliminaryUngapped s a | s -> a where
-
-    preliminaryUngapped :: Lens' s a
-    {-# MINIMAL preliminaryUngapped #-}
-
-
--- |
--- A 'Lens' for the 'leftAlignment' field
-class HasLeftAlignment s a | s -> a where
-
-    leftAlignment :: Lens' s a
-    {-# MINIMAL leftAlignment #-}
-
-
--- |
 -- A 'Lens' for the 'rightAlignment' field
-class HasRightAlignment s a | s -> a where
+class HasAlignmentContext s a | s -> a where
 
-    rightAlignment :: Lens' s a
-    {-# MINIMAL rightAlignment #-}
+    alignmentContext :: Lens' s a
+    {-# MINIMAL alignmentContext #-}
 
 
 -- |

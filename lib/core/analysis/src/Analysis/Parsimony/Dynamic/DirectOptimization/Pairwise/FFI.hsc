@@ -19,18 +19,23 @@
 -- TODO: do I need this: https://hackage.haskell.org/package/base-4.9.0.0/docs/Foreign-StablePtr.html
 {-# LANGUAGE BangPatterns             #-}
 {-# LANGUAGE DeriveGeneric            #-}
+{-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE StrictData               #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
   ( DenseTransitionCostMatrix
   , foreignPairwiseDO
-  , foreignThreeWayDO
+--  , foreignThreeWayDO
   ) where
 
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (filterGaps, handleMissingCharacter, handleMissingCharacterThreeway)
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
 import Bio.Character.Encodable
 import Bio.Character.Exportable
-import Control.Lens
+import Control.Lens           ((^.))
+--import Data.List            (intercalate)
+--import Data.List.NonEmpty   (NonEmpty, fromList)
+import Data.MonoTraversable
 import Data.Semigroup
 import Data.TCM.Dense
 import Foreign
@@ -42,8 +47,6 @@ import Foreign.C.Types
 --import Foreign.StablePtr
 import Prelude   hiding (sequence, tail)
 import System.IO.Unsafe (unsafePerformIO)
-
--- import Debug.Trace
 
 
 #include "c_alignment_interface.h"
@@ -140,6 +143,7 @@ foreign import ccall unsafe "c_alignment_interface.h align2dAffine"
                       -> CInt        -- ^ cost
 
 
+{-
 -- | Create and allocate cost matrix
 -- first argument, TCM, is only for non-ambiguous nucleotides, and it used to generate
 -- the entire cost matrix, which includes ambiguous elements.
@@ -160,6 +164,7 @@ foreign import ccall unsafe "c_alignment_interface.h align3d"
                 -> CInt        -- ^ gap open cost
                 -> CInt        -- ^ indel cost
                 -> CInt        -- ^ alignment cost
+-}
 
 
 -- |
@@ -168,17 +173,22 @@ foreign import ccall unsafe "c_alignment_interface.h align3d"
 --
 -- Requires a pre-generated 'DenseTransitionCostMatrix' from a call to
 -- 'generateDenseTransitionCostMatrix' defining the alphabet and transition costs.
-foreignPairwiseDO :: ( EncodableDynamicCharacter s
-                     , Exportable s
---                     , Show s
-                     )
-                  => s                         -- ^ First  dynamic character
-                  -> s                         -- ^ Second dynamic character
-                  -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
-                  -> (Word, s, s, s, s)        -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix DoNotComputeUnions ComputeMedians
+-- {-# INLINE foreignPairwiseDO #-}
+{-# SPECIALISE foreignPairwiseDO :: DenseTransitionCostMatrix ->  DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
+{-# SCC foreignPairwiseDO #-}
+foreignPairwiseDO
+  :: ( EncodableDynamicCharacter s
+     , ExportableElements s
+     , Ord (Subcomponent (Element s))
+     )
+  => DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
+  -> s                         -- ^ First  dynamic character
+  -> s                         -- ^ Second dynamic character
+  -> (Word, s)        -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
+foreignPairwiseDO = algn2d DoNotComputeUnions ComputeMedians
 
 
+{-
 -- |
 -- Align three dynamic characters using an FFI call for more efficient computation
 -- on small (or smallish) alphabet sizes.
@@ -186,7 +196,7 @@ foreignPairwiseDO lhs rhs costMatrix = algn2d lhs rhs costMatrix DoNotComputeUni
 -- Requires a pre-generated 'DenseTransitionCostMatrix' from a call to
 -- 'generateDenseTransitionCostMatrix' defining the alphabet and transition costs.
 foreignThreeWayDO :: ( EncodableDynamicCharacter s
-                     , Exportable s
+                     , ExportableElements s
 --                     , Show s
                      )
                   => s                         -- ^ First  dynamic character
@@ -198,6 +208,7 @@ foreignThreeWayDO :: ( EncodableDynamicCharacter s
                   -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
                   -> (Word, s, s, s, s, s)     -- ^ The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
 foreignThreeWayDO char1 char2 char3 costMatrix = algn3d char1 char2 char3 costMatrix
+-}
 
 
 -- |
@@ -206,37 +217,62 @@ foreignThreeWayDO char1 char2 char3 costMatrix = algn3d char1 char2 char3 costMa
 -- Returns an assignment character, the cost of that assignment, the assignment character with gaps included,
 -- the aligned version of the first input character, and the aligned version of the second input character
 -- The process for this algorithm is to generate a traversal matrix then perform a traceback.
-algn2d :: ( EncodableDynamicCharacter s
-          , Exportable s
---          , Show s
-          )
-       => s                         -- ^ First  dynamic character
-       -> s                         -- ^ Second dynamic character
-       -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
-       -> UnionContext
-       -> MedianContext
-       -> (Word, s, s, s, s)        -- ^ The cost of the alignment
-                                    --
-                                    --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                    --
-                                    --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                    --
-                                    --   The gapped alignment of the /first/ input character when aligned with the second character
-                                    --
-                                    --   The gapped alignment of the /second/ input character when aligned with the first character
-                                    --
-algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacter char1 char2 $
-    case (toExportableElements char1, toExportableElements char2) of
-      (Just x, Just y) -> f x y
-      (     _,      _) -> error "2DO: There's a dynamic character missing!"
+-- {-# INLINE algn2d #-}
+{-# SPECIALISE algn2d :: UnionContext -> MedianContext -> DenseTransitionCostMatrix -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
+algn2d
+  :: ( EncodableDynamicCharacter s
+     , ExportableElements s
+     , Ord (Subcomponent (Element s))
+     )
+  => UnionContext
+  -> MedianContext
+  -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
+  -> s                         -- ^ First  dynamic character
+  -> s                         -- ^ Second dynamic character
+  -> (Word, s)                 -- ^ The cost of the alignment
+algn2d computeUnion computeMedians denseTCMs char1 char2 =
+{-
+    let (gapsChar1, ungappedChar1) = (\v@(y,x) -> trace ("CHAR 1: " <> show x <> "\ngaps: " <> show y) v) $ deleteGaps char1
+        (gapsChar2, ungappedChar2) = (\v@(y,x) -> trace ("CHAR 2: " <> show x <> "\ngaps: " <> show y) v) $ deleteGaps char2
+        (swapped, shorterChar, longerChar) = (\v@(s,_,_) -> trace ("SWAPPED: " <> show s) v) $ measureCharacters ungappedChar1 ungappedChar2
+-}
+    let (swapped, gapsLesser, gapsLonger, shorterChar, longerChar) = measureAndUngapCharacters char1 char2
+        (alignmentCost, ungappedAlignment) =
+          if      olength shorterChar == 0
+          then if olength  longerChar == 0
+               -- Niether character was Missing, but both are empty when gaps are removed
+               then (0, toMissing char1)
+               -- Niether character was Missing, but one of them is empty when gaps are removed
+               else let gap = getMedian $ gapOfStream char1
+                        h x = let m = getMedian x in deleteElement (fst $ lookupPairwise denseTCMs m gap) m
+                    in  (0, omap h longerChar)
+               -- Both have some non-gap elements, perform string alignment
+          else g shorterChar longerChar
+        transformation = if swapped then omap swapContext else id
+{-
+        (gapsLesser, gapsLonger, transformation)
+          | swapped   = (gapsChar2, gapsChar1, omap swapContext)
+          | otherwise = (gapsChar1, gapsChar2, id)
+-}
+        regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+        alignmentContext  = transformation regappedAlignment
+    in  handleMissingCharacter char1 char2 (alignmentCost, alignmentContext)
   where
+    g lesser longer = case (toExportableElements t longer, toExportableElements t lesser) of
+              (Just x , Just y ) -> f x y
+              (Just _ , Nothing) -> (0, longer)
+              (Nothing, Just _ ) -> (0, lesser)
+              -- This needs to be correctly handled
+              (Nothing, Nothing) -> error "2DO: There's a dynamic character missing!"
+
+    t x y = fst $ lookupPairwise denseTCMs x y
     f exportedChar1 exportedChar2 = unsafePerformIO $ do
 --        !_ <- trace ("char 1: " <> show char1) $ pure ()
 --        !_ <- trace ("char 2: " <> show char2) $ pure ()
-        char1ToSend <- allocInitAlign_io maxAllocLen exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
-        char2ToSend <- allocInitAlign_io maxAllocLen exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
-        retGapped   <- allocInitAlign_io maxAllocLen 0 []
-        retUngapped <- allocInitAlign_io maxAllocLen 0 []
+        char1ToSend <- {-# SCC char1ToSend #-} allocInitAlign_io maxAllocLen exportedChar1Len . fmap coerceEnum $ exportedCharacterElements exportedChar1
+        char2ToSend <- {-# SCC char2ToSend #-} allocInitAlign_io maxAllocLen exportedChar2Len . fmap coerceEnum $ exportedCharacterElements exportedChar2
+        retGapped   <- {-# SCC retGapped   #-} allocInitAlign_io maxAllocLen 0 []
+        retUngapped <- {-# SCC retUngapped #-} allocInitAlign_io maxAllocLen 0 []
         -- retUnion    <- allocInitALignIO 0 []
 
 {--
@@ -251,10 +287,10 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
         strategy <- getAlignmentStrategy <$> peek costStruct
         let !cost = case strategy of
                       Affine -> align2dAffineFn_c char1ToSend char2ToSend retGapped retUngapped costStruct                        (coerceEnum computeMedians)
-                      _      -> align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (coerceEnum computeMedians) (coerceEnum computeUnion)
+                      _      -> {-# SCC align2dFn_c #-} align2dFn_c       char1ToSend char2ToSend retGapped retUngapped costStruct neverComputeOnlyGapped (coerceEnum computeMedians) (coerceEnum computeUnion)
 
-{-
-        Align_io ungappedCharArr ungappedLen _ <- peek retUngapped
+{--
+--        Align_io ungappedCharArr ungappedLen _ <- peek retUngapped
         Align_io gappedCharArr   gappedLen   _ <- peek retGapped
         Align_io retChar1CharArr char1Len    _ <- peek char1ToSend
         Align_io retChar2CharArr char2Len    _ <- peek char2ToSend
@@ -270,15 +306,15 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
                   , " char2Len = " <> show char2Len
                   ]
 --        ungappedChar <- peekArray (fromEnum ungappedLen) ungappedCharArr
-        gappedChar   <- reverse <$> peekArray (fromEnum gappedArrLen)   gappedCharArr
-        char1Aligned <- reverse <$> peekArray (fromEnum  char1ArrLen) retChar1CharArr
-        char2Aligned <- reverse <$> peekArray (fromEnum  char2ArrLen) retChar2CharArr
+        gappedChar   <- reverse <$> peekArray (fromEnum gappedLen)   gappedCharArr
+        char1Aligned <- reverse <$> peekArray (fromEnum  char1Len) retChar1CharArr
+        char2Aligned <- reverse <$> peekArray (fromEnum  char2Len) retChar2CharArr
         -- unionChar    <- peekArray (fromEnum unionLen)    unionCharArr
 
---        !_ <- trace (" Gapped Char : " <> renderBuffer   gappedChar) $ pure ()
---        !_ <- trace (" Aligned LHS : " <> renderBuffer char1Aligned) $ pure ()
---        !_ <- trace (" Aligned RHS : " <> renderBuffer char2Aligned) $ pure ()
--}
+        !_ <- trace (" Gapped Char : " <> renderBuffer   gappedChar) $ pure ()
+        !_ <- trace (" Aligned LHS : " <> renderBuffer char1Aligned) $ pure ()
+        !_ <- trace (" Aligned RHS : " <> renderBuffer char2Aligned) $ pure ()
+--}
 
 {-
         Align_io char1Ptr' char1Len' buffer1Len' <- peek char1ToSend
@@ -289,22 +325,32 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
         !_ <- trace (mconcat [" Output RHS : { ", show char2Len', " / ", show buffer2Len', " } ", renderBuffer output2Buffer]) $ pure ()
 -}
 
-        resultingAlignedChar1 <- extractFromAlign_io elemWidth char1ToSend
-        resultingAlignedChar2 <- extractFromAlign_io elemWidth char2ToSend
-        resultingGapped       <- extractFromAlign_io elemWidth retGapped
-        let resultingUngapped = filterGaps resultingGapped
+        resultingAlignedChar1 <- {-# SCC resultingAlignedChar1 #-} extractFromElems_io char1ToSend
+        resultingAlignedChar2 <- {-# SCC resultingAlignedChar2 #-} extractFromElems_io char2ToSend
+        resultingGapped       <- {-# SCC resultingGapped       #-} extractFromElems_io retGapped
 
 {--
         !_ <- trace ("Ungapped Char: " <> show     resultingUngapped) $ pure ()
+
+        !_ <- trace ("\n Len: " <> show (length resultingAlignedChar1)) $ pure ()
         !_ <- trace ("  Gapped Char: " <> show       resultingGapped) $ pure ()
         !_ <- trace (" Aligned LHS : " <> show resultingAlignedChar1) $ pure ()
         !_ <- trace (" Aligned RHS : " <> show resultingAlignedChar2) $ pure ()
 --}
+
 --        !_ <- trace  " > Done with FFI Alignment\n" $ pure ()
 
-        -- NOTE: We swapped resultingAlignedChar1 & resultingAlignedChar2
-        -- because the C code returns the values in the wrong order!
-        pure (fromIntegral cost, resultingUngapped, resultingGapped, resultingAlignedChar2, resultingAlignedChar1)
+        let zippedElems    = {-# SCC zippedElems #-} zip3 resultingGapped resultingAlignedChar1 resultingAlignedChar2
+        
+        let reimportResult = {-# SCC reimportResult #-} ReImportableCharacterElements
+                             { reimportableElementCountElements = toEnum $ length zippedElems
+                             , reimportableElementWidthElements = elemWidth
+                             , reimportableCharacterElements    = zippedElems
+                             }
+
+        let new_result_obj = {-# SCC new_result_obj #-} fromExportableElements reimportResult
+
+        pure $ {-# SCC ffi_result #-} (fromIntegral cost, new_result_obj)
 
       where
         costStruct = costMatrix2D denseTCMs
@@ -327,15 +373,16 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
         --       paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
         
         -- Used for debugging
+{--
+        renderBuffer buf = "[" <> intercalate "," (fmap pad shownElems) <> "]"
+          where
+            maxElemChars = maximum $ fmap length shownElems
+            shownElems   = fmap show buf
+            pad e        = replicate (maxElemChars - length e) ' ' <> e
+--}
+
+
 {-
-      renderBuffer buf = "[" <> intercalate "," (fmap pad shownElems) <> "]"
-        where
-          maxElemChars = maximum $ fmap length shownElems
-          shownElems   = fmap show buf
-          pad e        = replicate (maxElemChars - length e) ' ' <> e
--}
-
-
 -- |
 -- Performs a naive direct optimization
 -- Takes in three characters to run DO on and a metadata object.
@@ -344,7 +391,7 @@ algn2d char1 char2 denseTCMs computeUnion computeMedians = handleMissingCharacte
 -- The process for this algorithm is to generate a traversal matrix, then perform a traceback.
 algn3d
   :: ( EncodableDynamicCharacter s
-     , Exportable s
+     , ExportableElements s
      )
   => s                         -- ^ First  dynamic character
   -> s                         -- ^ Second dynamic character
@@ -416,6 +463,7 @@ algn3d char1 char2 char3 mismatchCost openningGapCost indelCost denseTCMs = hand
         exportedChar3Len = coerceEnum $ exportedChar3 ^. exportedElementCount
 
         maxAllocLen      = exportedChar1Len + exportedChar2Len + exportedChar3Len
+-}
 
 
 {- Generic helper functions -}
@@ -433,23 +481,48 @@ allocInitAlign_io maxAllocLen elemCount elemArr  = do
     paddedArr = replicate (max 0 (fromEnum (maxAllocLen - elemCount))) 0 <> elemArr
 
 
+{-
 -- |
 -- Converts the data behind an 'Align_io' pointer to an 'Exportable' type.
-extractFromAlign_io :: Exportable s => Word -> Ptr Align_io -> IO s
+{-# INLINE extractFromAlign_io #-}
+{-# SPECIALISE extractFromAlign_io :: Word -> Ptr Align_io -> IO DynamicCharacter #-}
+extractFromAlign_io :: ExportableElements s => Word -> Ptr Align_io -> IO s
 extractFromAlign_io elemWidth ptr = do
     Align_io bufferPtr charLenC bufferLenC <- peek ptr
     let    charLength = fromEnum   charLenC
     let  bufferLength = fromEnum bufferLenC
     buffer <- peekArray bufferLength bufferPtr
     let !charElems = drop (bufferLength - charLength) buffer
-    let  exportVal = ExportableCharacterElements (toEnum charLength) elemWidth charElems
+    let  exportVal = ReImportableCharacterElements (toEnum charLength) elemWidth charElems
     _ <- free bufferPtr
     _ <- free ptr
     pure $ fromExportableElements exportVal
+-}
+
+
+-- |
+-- Converts the data behind an 'Align_io' pointer to an 'Exportable' type.
+extractFromElems_io :: Ptr Align_io -> IO [CUInt]
+extractFromElems_io ptr = do
+    Align_io bufferPtr charLenC bufferLenC <- peek ptr
+    let    charLength = fromEnum   charLenC
+    let  bufferLength = fromEnum bufferLenC
+    buffer <- peekArray bufferLength bufferPtr
+    let !charElems = drop (bufferLength - charLength) buffer
+    _ <- free bufferPtr
+    _ <- free ptr
+    pure charElems
 
 
 -- |
 -- Coercing one 'Enum' to another through their corresponding 'Int' values.
+{-# INLINE coerceEnum #-}
+{-# SPECIALISE coerceEnum :: Word  -> Int   #-}
+{-# SPECIALISE coerceEnum :: Int   -> Word  #-}
+{-# SPECIALISE coerceEnum :: Int   -> CUInt #-}
+{-# SPECIALISE coerceEnum :: CUInt -> Int   #-}
+{-# SPECIALISE coerceEnum :: Word  -> CUInt #-}
+{-# SPECIALISE coerceEnum :: CUInt -> Word  #-}
 coerceEnum :: (Enum a, Enum b) => a -> b
 coerceEnum = toEnum . fromEnum
 

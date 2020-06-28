@@ -25,11 +25,15 @@ module Analysis.Parsimony.Dynamic.DirectOptimization
   , directOptimizationPostorderPairwise
   , directOptimizationPreorder
   , foreignPairwiseDO
-  , foreignThreeWayDO
+--  , foreignThreeWayDO
   , naiveDO
   , naiveDOMemo
   , selectDynamicMetric
   , ukkonenDO
+  , unboxedFullMatrixDO
+  , unboxedSwappingDO
+  , unboxedUkkonenFullSpaceDO
+  , unboxedUkkonenSwappingDO
   ) where
 
 

@@ -262,10 +262,12 @@ size = length . build @Vector
 -}
 
 
+{-
 data RoseTree e t = RoseTree
   { root      :: t
   , subForest :: ([(RoseTree e t, e)], [(t, e)])
   }
+-}
 
 
 --type RoseForest e t = [RoseTree e t]

@@ -80,6 +80,7 @@ instance Show ContinuousCharacter where
         where
             renderRange x y = fold [ "[", show x, ", ", show y, "]" ]
 
+
 instance TextShow ContinuousCharacter where
 
     showb (CC (lower, upper))
@@ -87,6 +88,7 @@ instance TextShow ContinuousCharacter where
       | otherwise      = renderRange lower upper
         where
             renderRange x y = fold [ "[", showb x, ", ", showb y, "]" ]
+
 
 instance ToXML ContinuousCharacter where
 

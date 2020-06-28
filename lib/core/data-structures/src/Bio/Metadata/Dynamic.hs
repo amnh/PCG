@@ -30,7 +30,6 @@ module Bio.Metadata.Dynamic
     , dynamicMetadataFromTCM
     , maybeConstructDenseTransitionCostMatrix
     , overlap
-    , overlap'
     , overlap2
     ) where
 

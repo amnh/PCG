@@ -27,6 +27,7 @@ import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.BitVector.LittleEndian.Instances ()
 import Data.Foldable
+import Data.Hashable
 import Data.List.Utility           (equalityOf, invariantTransformation)
 import Data.MonoTraversable
 import Data.Ord
@@ -52,6 +53,11 @@ data  BitMatrix
     = BitMatrix {-# UNPACK #-} !Int {-# UNPACK #-} !BitVector
     deriving anyclass (Binary, NFData)
     deriving stock    (Eq, Generic)
+
+
+instance Hashable BitMatrix where
+
+    hashWithSalt salt (BitMatrix n bv) = salt `xor` n `xor` hashWithSalt salt bv
 
 
 -- |
@@ -268,6 +274,7 @@ col = undefined -- bit twiddle or math
 -- \( \mathcal{O} \left( 1 \right) \)
 --
 -- Extracts a bitvector with all cells concatenated in a row-major manner.
+{-# SCC    expandRows #-}
 {-# INLINE expandRows #-}
 expandRows :: BitMatrix -> BitVector
 expandRows (BitMatrix _ bv) = bv
@@ -278,6 +285,7 @@ expandRows (BitMatrix _ bv) = bv
 --
 -- Constructs a 'BitMatrix' from a 'BitVector' with all cells wrapped in a
 -- row-major manner.
+{-# SCC    factorRows #-}
 {-# INLINE factorRows #-}
 factorRows :: Word -> BitVector -> BitMatrix
 factorRows n bv
@@ -298,10 +306,15 @@ factorRows n bv
 -- \( \mathcal{O} \left( m \right) \)
 --
 -- Construct a 'BitMatrix' from a list of rows.
+{-# SCC    fromRows #-}
+{-# INLINE fromRows #-}
 fromRows :: Foldable t => t BitVector -> BitMatrix
 fromRows xs
   | equalityOf finiteBitSize xs = result
-  | otherwise                   = error "fromRows: All the rows did not have the same width!"
+  | otherwise                   = error $ unlines
+                                    [ "fromRows: All the rows did not have the same width!"
+                                    , show $ finiteBitSize <$> toList xs
+                                    ]
   where
     result =
         case toList xs of

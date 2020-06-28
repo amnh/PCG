@@ -23,7 +23,6 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Dynamic
 import           Bio.Character.Encodable
-import           Bio.Character.Exportable
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Graph.ReferenceDAG
@@ -49,7 +48,7 @@ import           Prelude                                       hiding (zipWith)
 totalEdgeCosts
   :: ( EncodableDynamicCharacter c
      , Exportable c
-     , HasSingleDisambiguation       z c
+     , HasSingleDisambiguation z c
      , Ord (Element c)
      , Element c ~ DynamicCharacterElement
      )
@@ -76,8 +75,7 @@ totalEdgeCosts (PDAG2 dag meta) = {-- toNonEmpty . --} applyWeights $ foldlWithK
 
     functionSequence = fmap getDynamicMetric <$> dynamicMetadataSeq
       where
-        getDynamicMetric m x y = let (!c,_,_,_,_) = selectDynamicMetric m x y
-                                 in {- trace ("Cost " <> show c) -} c
+        getDynamicMetric m x y = fst $ selectDynamicMetric m x y
 
     applyWeights = force . zipWith (zipWith (\d w -> d * fromIntegral w)) weightSequence
 

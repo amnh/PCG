@@ -7,16 +7,23 @@ Releases are available [on GitHub][2].
 
 ## _0.2.1_ - Unreleased Changes
 
-* Updated to GHC-8.8.2
+* Updated to GHC-8.10.1
 * Updated to Cabal-3.0
 * Updated to Cabal's multiple libraries functionality for sub-libraries
 * Updated Travis CI build script
 * Added greedy network search to the BUILD command
 * Added Wagner distance to the BUILD command option
 * Added distance CSV output to the REPORT command
-* Added sting alignment benchmarking suite
+* Added implied alignemnt output to the REPORT command
+* Added string alignment benchmarking suite
+* Added 'Efficient Implied Alignment' algorithm
 * Enhanced alphabet data-type to support sorted alphabets whenever possible
+* Enhanced representation of TCMs to be serializable as binary
+* Enhanced representation of TCMs to require less space
 * Improved efficiency of character encoding
+* Improved efficiency of string alignment by removing gaps beforehand and adding them back afterwards
+* Improved efficiency of string alignment by using unboxed alignment matricies
+* Improved efficiency of string alignment by using improved "sliding zip" algorithm
 * Improved efficiency of median state calculations
 * Corrected defect regarding syntany prefixes in FASTC parser
 * Reduced memory usage and pressure when normalizing and unifying inputs

@@ -72,7 +72,7 @@ data MetadataBlock m = MB
            DiscreteCharacterMetadataDec
           (DiscreteWithTCMCharacterMetadataDec StaticCharacter)
           (DiscreteWithTCMCharacterMetadataDec StaticCharacter)
-          (DynamicCharacterMetadataDec DynamicCharacterElement)
+          (DynamicCharacterMetadataDec AmbiguityGroup)
       )
     }
     deriving stock    (Generic, Show)
@@ -129,7 +129,7 @@ instance HasNonMetricBin (MetadataBlock m) (Vector (DiscreteWithTCMCharacterMeta
 
 
 
-instance HasDynamicBin (MetadataBlock m) (MetadataBlock m) (Vector (DynamicCharacterMetadataDec DynamicCharacterElement)) (Vector (DynamicCharacterMetadataDec DynamicCharacterElement)) where
+instance HasDynamicBin (MetadataBlock m) (MetadataBlock m) (Vector (DynamicCharacterMetadataDec AmbiguityGroup)) (Vector (DynamicCharacterMetadataDec AmbiguityGroup)) where
     {-# INLINE  dynamicBin #-}
     dynamicBin = lens (_dynamicBin . _blockDataSet)
                $ \(MB m b) x -> MB m (b { _dynamicBin = x })
@@ -261,7 +261,7 @@ discreteToMetadataBlock struct v =
 -- |
 -- Construct a singleton block containing a /dynamic/ character's metadata.
 dynamicToMetadataBlock
-  :: DynamicCharacterMetadataDec DynamicCharacterElement
+  :: DynamicCharacterMetadataDec AmbiguityGroup
   -> MetadataBlock ()
 dynamicToMetadataBlock v = MB ()
     Block

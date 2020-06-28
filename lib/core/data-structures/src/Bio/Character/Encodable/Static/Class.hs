@@ -24,8 +24,8 @@ import Data.Alphabet
 import Data.Bits
 import Data.List.NonEmpty               hiding (xor)
 import Data.MonoTraversable
+import Data.Semigroup.Foldable          (Foldable1(..))
 import Data.String                      (IsString)
-
 
 
 -- |
@@ -40,7 +40,7 @@ class ( EncodableStreamElement c
       , PossiblyMissingCharacter c
       ) => EncodableStaticCharacter c where
 
-    encodeStatic :: (Ord a, IsString a) => Alphabet a -> AmbiguityGroup a -> c
+    encodeStatic :: (Foldable1 f, Eq a, IsString a) => Alphabet a -> f a -> c
     encodeStatic = encodeElement
 
     emptyStatic :: c -> c

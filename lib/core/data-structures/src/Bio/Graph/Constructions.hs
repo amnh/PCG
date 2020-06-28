@@ -65,7 +65,6 @@ import Bio.Sequence
 import Control.Evaluation
 import Control.Lens.Combinators            (mapped)
 import Control.Lens.Operators              ((%~), (.~), (^.))
-import Data.Coerce                         (coerce)
 import Data.EdgeLength
 import Data.Function                       ((&))
 import Data.Kind

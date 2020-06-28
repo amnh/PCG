@@ -1,9 +1,10 @@
 allow-newer:
-  base
-  polyparse
+    base
+    ghc-prim
+    template-haskell
 
 package *
-  ghc-options: -fwrite-ide-info
+    ghc-options: -fwrite-ide-info -hiedir=.hie
 
 packages: .
 
@@ -12,4 +13,4 @@ source-repository-package
   location: https://github.com/recursion-ninja/bv-little
   tag: fd45919da9e4066f92ef51cfb22b5006af931bf8
 
-with-compiler: ghc-8.8.3
+with-compiler: ghc-8.10.1

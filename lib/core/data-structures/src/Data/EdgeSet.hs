@@ -25,7 +25,6 @@ module Data.EdgeSet
 
 import           Control.DeepSeq
 import           Data.Binary
-import           Data.Coerce
 import           Data.Foldable
 import           Data.IntSet          (IntSet)
 import           Data.MonoTraversable (MonoFoldable (..))

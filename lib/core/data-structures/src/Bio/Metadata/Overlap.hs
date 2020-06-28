@@ -27,7 +27,7 @@
 
 module Bio.Metadata.Overlap
   ( overlap
-  , overlap'
+--  , overlap'
   , overlap2
   , overlap3
   ) where
@@ -52,7 +52,7 @@ import           Data.Semigroup.Foldable
 -- value is A,C,G,T.
 {-# INLINE overlap #-}
 {-# SPECIALISE overlap :: FiniteBits e => (Word -> Word -> Word) -> NonEmpty e -> (e, Word) #-}
-{-# SPECIALISE overlap :: (Word -> Word -> Word) -> NonEmpty DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
+{-# SPECIALISE overlap :: (Word -> Word -> Word) -> NonEmpty AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 overlap
   :: ( FiniteBits e
      , Foldable1 f
@@ -86,6 +86,8 @@ overlap sigma xs = go size maxBound zero
           in  go' j' a'
 
 
+-- Uses selectDC
+{-
 overlap'
   :: ( Foldable1 f
      , Functor f
@@ -124,10 +126,11 @@ overlap' sigma xs = go size maxBound zero
                     Just !ind ->  (min a $ sigma i ind, (fromEnum ind) + 1)
                     _      ->  (a, size')
                   in  go' j' o' a'
+-}
 
 
 {-# INLINE overlap2 #-}
-{-# SPECIALISE overlap2 :: (Word -> Word -> Word) -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
+{-# SPECIALISE overlap2 :: (Word -> Word -> Word) -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 overlap2
   :: FiniteBits e -- EncodableStreamElement e {- , Show e -})
   => (Word -> Word -> Word)
@@ -138,7 +141,7 @@ overlap2 sigma char1 char2 = overlap sigma $ char1 :| [char2]
 
 
 {-# INLINE overlap3 #-}
-{-# SPECIALISE overlap3 :: (Word -> Word -> Word) -> DynamicCharacterElement -> DynamicCharacterElement -> DynamicCharacterElement -> (DynamicCharacterElement, Word) #-}
+{-# SPECIALISE overlap3 :: (Word -> Word -> Word) -> AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 overlap3
   :: FiniteBits e -- EncodableStreamElement e {- , Show e -})
   => (Word -> Word -> Word)

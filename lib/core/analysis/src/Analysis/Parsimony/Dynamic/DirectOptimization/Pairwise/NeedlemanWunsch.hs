@@ -25,6 +25,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
 import Bio.Character.Encodable
 import Bio.Metadata.Dynamic                                            (overlap2)
+import Data.Bits
 import Data.Matrix.NotStupid                                           (matrix)
 import Data.MonoTraversable
 
@@ -37,35 +38,29 @@ import Data.MonoTraversable
 -- and the aligned version of the second input character. The process for this
 -- algorithm is to generate a traversal matrix, then perform a traceback.
 {-# INLINE naiveDO #-}
-{-# SPECIALISE naiveDO :: DynamicCharacter -> DynamicCharacter -> (Word -> Word -> Word) -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) #-}
-naiveDO :: DOCharConstraint s
-        => s                       -- ^ First  dynamic character
-        -> s                       -- ^ Second dynamic character
-        -> (Word -> Word -> Word)  -- ^ Structure defining the transition costs between character states
-        -> (Word, s, s, s, s)      -- ^ The cost of the alignment
-                                   --
-                                   --   The /ungapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                   --
-                                   --   The /gapped/ character derived from the the input characters' N-W-esque matrix traceback
-                                   --
-                                   --   The gapped alignment of the /first/ input character when aligned with the second character
-                                   --
-                                   --   The gapped alignment of the /second/ input character when aligned with the first character
-
-naiveDO char1 char2 costStruct = directOptimization char1 char2 (overlap2 costStruct) createNeedlemanWunchMatrix
+{-# SPECIALISE naiveDO :: (Word -> Word -> Word) -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
+naiveDO
+  :: ( DOCharConstraint s
+     , FiniteBits (Subcomponent (Element s))
+     )
+  => (Word -> Word -> Word)  -- ^ Structure defining the transition costs between character states
+  -> s                       -- ^ First  dynamic character
+  -> s                       -- ^ Second dynamic character
+  -> (Word, s)               -- ^ The cost and resulting the alignment
+naiveDO costStruct char1 char2 = directOptimization (overlap2 costStruct) char1 char2 createNeedlemanWunchMatrix
 
 
 -- |
 -- The same as 'naiveDO' except that the "cost structure" parameter is assumed to
 -- be a memoized overlap function.
 {-# INLINE naiveDOMemo #-}
-{-# SPECIALISE naiveDOMemo :: DynamicCharacter -> DynamicCharacter -> OverlapFunction DynamicCharacterElement -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) #-}
+{-# SPECIALISE naiveDOMemo :: OverlapFunction AmbiguityGroup -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
 naiveDOMemo :: DOCharConstraint s
-            => s
+            => OverlapFunction (Subcomponent (Element s))
             -> s
-            -> OverlapFunction (Element s)
-            -> (Word, s, s, s, s)
-naiveDOMemo char1 char2 tcm = directOptimization char1 char2 tcm createNeedlemanWunchMatrix
+            -> s
+            -> (Word, s)
+naiveDOMemo tcm char1 char2 = directOptimization tcm char1 char2 createNeedlemanWunchMatrix
 
 
 -- |
@@ -78,13 +73,16 @@ naiveDOMemo char1 char2 tcm = directOptimization char1 char2 tcm createNeedleman
 -- character must be the longer of the two and is the top labeling of the matrix.
 -- Returns a 'NeedlemanWunchMatrix'.
 {-# INLINE createNeedlemanWunchMatrix #-}
-{-# SPECIALISE createNeedlemanWunchMatrix :: DynamicCharacter -> DynamicCharacter -> OverlapFunction DynamicCharacterElement -> NeedlemanWunchMatrix DynamicCharacterElement #-}
-createNeedlemanWunchMatrix :: DOCharConstraint s => s -> s -> OverlapFunction (Element s) -> NeedlemanWunchMatrix (Element s)
---createNeedlemanWunchMatrix topChar leftChar overlapFunction = trace renderedMatrix result
-createNeedlemanWunchMatrix topChar leftChar overlapFunction = result
+{-# SPECIALISE createNeedlemanWunchMatrix ::OverlapFunction AmbiguityGroup ->  DynamicCharacter -> DynamicCharacter -> NeedlemanWunchMatrix #-}
+createNeedlemanWunchMatrix
+  :: DOCharConstraint s
+  => OverlapFunction (Subcomponent (Element s))
+  -> s
+  -> s
+  -> NeedlemanWunchMatrix
+createNeedlemanWunchMatrix overlapFunction topChar leftChar = result
   where
     result             = matrix rows cols generatingFunction
     rows               = olength leftChar + 1
     cols               = olength topChar  + 1
-    generatingFunction = needlemanWunschDefinition topChar leftChar overlapFunction result
---    renderedMatrix     = renderCostMatrix topChar leftChar result
+    generatingFunction = needlemanWunschDefinition overlapFunction topChar leftChar result

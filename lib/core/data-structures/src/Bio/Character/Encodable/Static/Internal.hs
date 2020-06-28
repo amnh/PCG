@@ -50,6 +50,7 @@ import           Data.Maybe
 import           Data.Monoid                          ()
 import           Data.MonoTraversable
 import           Data.Range
+import           Data.Semigroup.Foldable              (Foldable1(..))
 import           Data.String                          (fromString)
 import           GHC.Generics
 import           Test.QuickCheck
@@ -73,8 +74,8 @@ newtype StaticCharacter
 -- character stream.
 newtype StaticCharacterBlock
       = SCB BitMatrix
-      deriving stock   (Generic, Show)
-      deriving newtype (Eq)
+      deriving stock   (Generic)
+      deriving newtype (Eq, Ord, Show, TextShow)
 
 
 type instance Bound StaticCharacter = Word
@@ -99,6 +100,19 @@ instance Arbitrary StaticCharacterBlock where
 instance CoArbitrary StaticCharacter
 
 
+instance DecodableStream StaticCharacterBlock where
+
+    decodeStream alphabet char
+      | isAlphabetDna alphabet  = (dnaIUPAC B.!) <$> rawResult
+      | isAlphabetRna alphabet  = (rnaIUPAC B.!) <$> rawResult
+      | otherwise               = rawResult
+      where
+        rawResult    = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
+        dnaIUPAC     = convertBimap iupacToDna
+        rnaIUPAC     = convertBimap iupacToRna
+        convertBimap = B.mapR (fmap fromString) . B.map (fmap fromString)
+
+
 instance EncodableStaticCharacter StaticCharacter where
 
     {-# INLINE emptyStatic #-}
@@ -112,17 +126,7 @@ instance EncodableStaticCharacterStream StaticCharacterBlock where
 
 instance EncodableStream StaticCharacterBlock where
 
-    decodeStream alphabet char
-      | isAlphabetDna alphabet  = (dnaIUPAC B.!) <$> rawResult
-      | isAlphabetRna alphabet  = (rnaIUPAC B.!) <$> rawResult
-      | otherwise               = rawResult
-      where
-        rawResult    = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
-        dnaIUPAC     = convertBimap iupacToDna
-        rnaIUPAC     = convertBimap iupacToRna
-        convertBimap = B.mapR (fmap fromString) . B.map (fmap fromString)
-
-    encodeStream alphabet = SCB . fromRows . fmap (unwrap . encodeElement alphabet) . toList
+    encodeStream alphabet = SCB . fromRows . fmap (unwrap . encodeElement alphabet) . toNonEmpty
 
     lookupStream (SCB bm) i
       | 0 <= i = let j = toEnum i
@@ -137,6 +141,8 @@ instance EncodableStream StaticCharacterBlock where
 
 instance EncodableStreamElement StaticCharacter where
 
+    -- TODO: This can be improved if the alphabet is sorted.
+    --       See the Data.Alphabet.Internal module to update this code.
     decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
       where
         f i symbol
@@ -168,6 +174,12 @@ instance EncodedAmbiguityGroupContainer StaticCharacterBlock where
     symbolCount = numCols . unstream
 
 
+instance EncodedGapElementContainer StaticCharacter where
+
+    {-# INLINE getGapElement #-}
+    getGapElement = bit . fromEnum . pred . symbolCount
+
+
 instance Enum StaticCharacter where
 
     fromEnum = toUnsignedNumber . unwrap
@@ -177,9 +189,9 @@ instance Enum StaticCharacter where
         dim = toEnum $ finiteBitSize i - countLeadingZeros i
 
 
-instance Exportable StaticCharacter where
+instance ExportableBuffer StaticCharacter where
 
-    toExportableBuffer e@(SC bv) = ExportableCharacterSequence 1 widthValue $ bitVectorToBufferChunks 1 widthValue bv
+    toExportableBuffer e@(SC bv) = ExportableCharacterBuffer 1 widthValue $ bitVectorToBufferChunks 1 widthValue bv
       where
         widthValue = symbolCount e
 
@@ -188,27 +200,24 @@ instance Exportable StaticCharacter where
         newBitVec = bufferChunksToBitVector 1 elemWidth $ exportedBufferChunks ecs
         elemWidth = ecs ^. exportedElementWidth
 
-    toExportableElements e@(SC bv)
-      | bitsInElement > bitsInLocalWord = Nothing
-      | otherwise                       = Just $ ExportableCharacterElements 1 bitsInElement [toUnsignedNumber bv]
-      where
-        bitsInElement   = symbolCount e
 
-    fromExportableElements = SC . exportableCharacterElementsHeadToBitVector
+instance ExportableBuffer StaticCharacterBlock where
 
-
-instance Exportable StaticCharacterBlock where
-
-    toExportableBuffer (SCB bm) = ExportableCharacterSequence x y . bitVectorToBufferChunks x y $ expandRows bm
+    toExportableBuffer (SCB bm) = ExportableCharacterBuffer x y . bitVectorToBufferChunks x y $ expandRows bm
       where
         x = numRows bm
         y = numCols bm
 
     fromExportableBuffer = error "When did we start using static character block?! Please implement Exportable.fromExportableBuffer"
 
+
+{-
+instance ExportableElements StaticCharacterBlock where
+
     toExportableElements = encodableStreamToExportableCharacterElements
 
     fromExportableElements = SCB . exportableCharacterElementsToBitMatrix
+-}
 
 
 instance FiniteBits StaticCharacter where

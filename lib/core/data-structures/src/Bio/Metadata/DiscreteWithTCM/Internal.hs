@@ -32,7 +32,6 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   , discreteMetadataFromTCM
   ) where
 
-import Bio.Metadata.CharacterName
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class
 import Bio.Metadata.Overlap
@@ -173,6 +172,7 @@ instance GetSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> 
 -- |
 -- A 'Lens' for the 'pairwiseTransitionCostMatrix' field
 instance (Bits c, Bound c ~ Word, Ranged c)
+--instance (Bits c, Bound c ~ Word, ExportableBuffer c, Ranged c)
     => GetPairwiseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) c Word where
 
     pairwiseTransitionCostMatrix =

@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE DeriveTraversable          #-}
@@ -28,6 +29,7 @@ module Data.Vector.NonEmpty
   -- * Construction
   , fromNonEmpty
   , generate
+  , generateM
   , singleton
   , unfoldr
   -- * Conversion
@@ -53,6 +55,7 @@ import           Data.Functor.Classes
 import           Data.Functor.Extend
 import           Data.Hashable
 import           Data.Key
+import           Data.List.NonEmpty         (NonEmpty((:|)))
 import qualified Data.List.NonEmpty         as NE
 import           Data.Pointed
 import           Data.Semigroup.Foldable
@@ -61,6 +64,7 @@ import qualified Data.Vector                as V
 import           Data.Vector.Binary         ()
 import           Data.Vector.Instances      ()
 import           Test.QuickCheck            hiding (generate)
+import           Text.Read
 import           TextShow                   (TextShow)
 import           TextShow.Instances         ()
 
@@ -85,6 +89,8 @@ newtype Vector a = NEV { unwrap :: V.Vector a }
                    , NFData
                    , Ord1
                    , Pointed
+                   , Read
+                   , Read1
                    , Semigroup
                    , TextShow
                    , Zip
@@ -147,6 +153,17 @@ instance TraversableWithKey1 Vector where
     traverseWithKey1 f = fmap fromNonEmpty . traverseWithKey1 f . toNonEmpty
 
 
+{-
+instance (Read a) => Read (Vector a) where
+
+    readPrec = parens $ prec 10 $ do
+        x:xs <- readPrec
+        pure . fromNonEmpty $ x:|xs
+
+    readListPrec = readListPrecDefault
+-}
+
+
 instance Show a => Show (Vector a) where
 
     show = show . unwrap
@@ -167,7 +184,9 @@ singleton = NEV . V.singleton
 -- Construct a 'Vector' from a non-empty structure.
 {-# INLINE fromNonEmpty #-}
 fromNonEmpty :: Foldable1 f => f a -> Vector a
-fromNonEmpty = NEV . V.fromList . NE.toList . toNonEmpty
+fromNonEmpty xs = 
+    let !n = length xs
+    in  NEV . V.fromListN n . NE.toList $ toNonEmpty xs
 
 
 -- |
@@ -200,6 +219,16 @@ generate n f
 
 
 -- |
+-- /O(n)/
+--
+-- Construct a vector of the given length by applying the monadic function to each index
+generateM :: Monad m => Int -> (Int -> m a) -> m (Vector a)
+generateM n f
+  | n < 1     = error $ "Called Vector.Nonempty.generateM on a non-positive dimension " <> show n
+  | otherwise = NEV <$> V.generateM n f
+
+
+-- |
 -- /O(1)/
 --
 -- Get the underlying 'V.Vector'.
@@ -226,8 +255,6 @@ unsafeFromVector :: V.Vector a -> Vector a
 unsafeFromVector v
   | V.null v  = error "NonEmpty.unsafeFromVector: empty vector"
   | otherwise = NEV v
-
-
 
 
 -- | /O(n)/

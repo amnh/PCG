@@ -25,7 +25,6 @@
 module Data.Normalization.Character.Internal where
 
 import           Control.DeepSeq
-import           Data.Alphabet
 import           Data.Data
 import           Data.Foldable
 import           Data.List.NonEmpty      (NonEmpty)
@@ -59,8 +58,8 @@ type Identifier = ShortText
 -- or discrete with variable length.
 data NormalizedCharacter
    = NormalizedContinuousCharacter (Maybe Double)
-   | NormalizedDiscreteCharacter   (Maybe (AmbiguityGroup ShortText))
-   | NormalizedDynamicCharacter    (Maybe (NonEmpty (AmbiguityGroup ShortText)))
+   | NormalizedDiscreteCharacter   (Maybe (NonEmpty ShortText))
+   | NormalizedDynamicCharacter    (Maybe (NonEmpty (NonEmpty ShortText)))
    deriving stock    (Data, Eq, Ord, Generic, Show, Typeable)
    deriving anyclass (NFData)
 
