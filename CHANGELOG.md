@@ -15,7 +15,6 @@ Releases are available [on GitHub][2].
 * Added Wagner distance to the BUILD command option
 * Added distance CSV output to the REPORT command
 * Added implied alignemnt output to the REPORT command
-* Added binary serialization to the LOAD and SAVE commands
 * Added string alignment benchmarking suite
 * Added 'Efficient Implied Alignment' algorithm
 * Enhanced alphabet data-type to support sorted alphabets whenever possible
@@ -28,7 +27,6 @@ Releases are available [on GitHub][2].
 * Improved efficiency of median state calculations
 * Corrected defect regarding syntany prefixes in FASTC parser
 * Reduced memory usage and pressure when normalizing and unifying inputs
-* Removed compact region serialization from the LOAD and SAVE commands
 
 ## [0.2.0][5] - 2019-07-09
 
