@@ -63,6 +63,12 @@ import qualified Data.Vector.NonEmpty               as NEV
 import           Prelude                            hiding (lookup, zip, zipWith)
 import           TextShow
 
+--import Debug.Trace
+trace :: b -> a -> a
+trace = const id
+traceShowId :: a -> a
+traceShowId = id
+
 
 type BlockTopologies = NEV.Vector TraversalTopology
 
@@ -156,8 +162,8 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
 
             parentIndices = otoParentContext $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
-            childPosition j
-              = toEnum . length . takeWhile (/= currInd) . IM.keys . childRefs $ refs ! j
+            childPosition j = traceShowId $
+                toEnum . length . takeWhile (/= currInd) . IM.keys . childRefs $ refs ! j
 
             selectTopologyFromParentOptions
               :: NonEmpty (Int, PhylogeneticNode (CharacterSequence u1 v1 w1 x1 y1 z1) n)
@@ -168,13 +174,13 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
                      (ResolutionCache (CharacterSequence u v w x y z))
                      (BLK.CharacterBlock u1 v1 w1 x1 y1 z1)
                  )
+            selectTopologyFromParentOptions _ _ _ | trace "selectTopologyFromParentOptions" False = undefined
             selectTopologyFromParentOptions nodeOptions key topology =
 
-                case NE.filter matchesTopology
-                       $ second (NE.head . resolutions) <$> nodeOptions of
+                case NE.filter matchesTopology $ second (NE.head . resolutions) <$> nodeOptions of
                   (x,y):_ ->
                     let
-                      parBlock        = (characterSequence y ^. blockSequence) ! key
+                      parBlock          = (characterSequence y ^. blockSequence) ! key
                       childCacheContext = leftRightChild (childPosition x) datumResolutions
                     in
                       ( topology
@@ -203,8 +209,8 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
               where
                 leftRightChild :: Int -> (a -> Either a a)
                 leftRightChild = \case
-                  0 -> Left
-                  _ -> Right
+                  0 -> trace "<making> Left"  . Left
+                  _ -> trace "<making> Right" . Right
 
                 matchesTopology :: (Int, b) -> Bool
                 matchesTopology (pInd, _)
@@ -560,6 +566,10 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                     excludedEdges = excludedNetworkEdges topology
                     updatedDynamicCharacters = mapWithKey dynCharGen $ mBlock ^. dynamicBin
 
+                    -- In sparsely connected graphs (like ours) this will be effectively constant.
+                    childPosition x = traceShowId $
+                        toEnum . length . takeWhile (/= i) . IM.keys . childRefs $ refs ! x
+
                     dynCharGen :: Int -> DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> z'
                     dynCharGen k m =
                         case parentRefContext of
@@ -582,7 +592,7 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                             in  transformation m
                                   PreInternalContext
                                     { preParent       = parentalDecoration
-                                    , preChildContext = Left currentDecoration
+                                    , preChildContext = leftRightChild (childPosition p) currentDecoration
                                     }
 
                           NormalNode   p   ->
@@ -598,9 +608,15 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                                 else transformation m
                                        PreInternalContext
                                          { preParent       = parentalDecoration
-                                         , preChildContext = Left currentDecoration
+                                         , preChildContext =
+                                               leftRightChild (childPosition p) currentDecoration
                                          }
                       where
+                        leftRightChild :: Int -> (a -> Either a a)
+                        leftRightChild = \case
+                            0 -> trace "<making> Left"  . Left
+                            _ -> trace "<making> Right" . Right
+
                         parentRefContext     = (parentVectors ! (i,j)) ! k
                         -- Stupid monomorphisms prevent elegant code reuse
 

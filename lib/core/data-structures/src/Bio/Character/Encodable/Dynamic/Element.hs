@@ -22,6 +22,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE StrictData                 #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE UnboxedSums                #-}
@@ -35,7 +36,7 @@ module Bio.Character.Encodable.Dynamic.Element
   , arbitraryOfSize
   , getLeft
   , getRight
-  , packDynamicCharacterElement
+--  , packDynamicCharacterElement
   ) where
 
 import           Bio.Character.Encodable.Dynamic.AmbiguityGroup
@@ -46,12 +47,12 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Data.Bits
 import           Data.BitVector.LittleEndian
-import           Data.Coerce
 import           Data.Foldable
 import           Data.Hashable
 import           Data.MonoTraversable
 import           Data.Range
 import           Data.String                           (fromString)
+import           Data.MetricRepresentation
 import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances   ()
@@ -94,9 +95,9 @@ import           TextShow                              (TextShow (showb), toStri
 -- The encoding scheme presented above represents an optimal-space encoding for our
 -- data-type.
 newtype DynamicCharacterElement
-      = DCE BitVector
+      = DCE { splitElement :: (BitVector, BitVector, BitVector) }
       deriving stock   (Generic)
-      deriving newtype (Bits, Eq, FiniteBits, Hashable, NFData, Ord)
+      deriving newtype (Eq, Hashable, NFData, Ord)
 
 
 type instance Bound DynamicCharacterElement = Word
@@ -118,26 +119,27 @@ instance CoArbitrary DynamicCharacterElement
 instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
 
     {-# INLINE symbolCount  #-}
-    symbolCount = (`div` 2) . dimension . packDynamicCharacterElement
+    symbolCount (DCE ~(m,_,_)) = dimension m
 
 
 instance EncodableDynamicCharacterElement DynamicCharacterElement where
   
-    isGap      = isZeroVector . packDynamicCharacterElement
+    isGap    (DCE ~(_,l,r)) =      isZeroVector l  &&      isZeroVector r
 
-    isInsert x =      isLeftEmpty x  && not (isRightEmpty x)
+    isInsert (DCE ~(_,l,r)) =      isZeroVector l  && not (isZeroVector r)
 
-    isDelete x = not (isLeftEmpty x) &&     (isRightEmpty x)
+    isDelete (DCE ~(_,l,r)) = not (isZeroVector l) &&     (isZeroVector r)
 
-    isAlign  x = not (isLeftEmpty x) && not (isRightEmpty x)
+    isAlign  (DCE ~(_,l,r)) = not (isZeroVector l) && not (isZeroVector r)
     
-    gapElement w                = DCE $ fromNumber (w `shiftL` 1) (0 :: Word)
+    gapElement w            = let !z = fromNumber w (0 :: Word)
+                              in  DCE (bit . fromEnum $ w - 1, z, z)
 
-    deleteElement        (AG y) = DCE $ zeroVectorOf y <> y
+    deleteElement (AG m)        (AG y) = DCE $ (m, zeroVectorOf y, y)
 
-    insertElement (AG x)        = DCE $ x <> zeroVectorOf x
+    insertElement (AG m) (AG x)        = DCE $ (m, x, zeroVectorOf x)
 
-    alignElement  (AG x) (AG y) = DCE $ x <> y
+    alignElement  (AG m) (AG x) (AG y) = DCE $ (m, x, y)
 
     getContext dce =
         case (not $ isLeftEmpty dce, not $ isRightEmpty dce) of
@@ -146,21 +148,9 @@ instance EncodableDynamicCharacterElement DynamicCharacterElement where
           (True , False) -> Insertion
           (True , True ) -> Alignment
 
-    swapContext dce =
-      let lhs = coerce $ getLeft  dce
-          rhs = coerce $ getRight dce
-      in  DCE $ rhs <> lhs 
+    swapContext (DCE (m,l,r)) = DCE (m,r,l)
 
-    getMedian transform dce =
-        let gap = AG . bit . fromEnum . pred
-                    $ symbolCount dce
-            one = getLeft  dce
-            two = getRight dce
-        in  case getContext dce of
-                Gapping   -> gap
-                Deletion  -> transform gap two
-                Insertion -> transform one gap
-                Alignment -> transform one two
+    getMedian   (DCE (m,_,_)) = AG m
 
 
 {-
@@ -201,10 +191,22 @@ instance Show DynamicCharacterElement where
 
 instance TextShow DynamicCharacterElement where
 
-    showb dce@(DCE bv) = fold ["[", prefix, "|", fromString (drop 2 (ofoldMap g bv)), "] ", showb bv]
+    showb dce@(DCE ~(m,l,r)) = fold
+        [ "["
+        , prefix
+        , "|"
+        , renderBits m
+        , "|"
+        , renderBits l
+        , "|"
+        , renderBits r
+        , "]"
+        ]
       where
-        g b | b         = "1"
-            | otherwise = "0"
+        renderBits = fromString . ofoldMap g
+          where
+            g b | b         = "1"
+                | otherwise = "0"
         
         prefix = case (not $ isLeftEmpty dce, not $ isRightEmpty dce) of
                    (False, False) -> "G"
@@ -216,39 +218,52 @@ instance TextShow DynamicCharacterElement where
 arbitraryOfSize :: Word -> Gen DynamicCharacterElement
 arbitraryOfSize alphabetLen = do
     tag <- choose (0, 9) :: Gen Word
-    let eGen   = fromNumber alphabetLen <$> choose (1 :: Integer, 2 ^ alphabetLen - 1)
-    let delGen = deleteElement . AG <$> eGen
-    let insGen = insertElement . AG <$> eGen
+    let gapped  = gapElement alphabetLen
+    let gap     = getMedian gapped
+    let med x y = fst (discreteMetricPairwiseLogic x y :: (AmbiguityGroup, Word))
+    let eGen    = fromNumber alphabetLen <$> choose (1 :: Integer, 2 ^ alphabetLen - 1)
+    let buildElem f v   = let v' = AG v
+                              m  = med gap v'
+                          in  f m v'
+    let unionElem f x y = let x' = AG x
+                              y' = AG y
+                              m  = med x' y'
+                          in  f m x' y'    
+    let delGen =         buildElem deleteElement <$> eGen
+    let insGen =         buildElem insertElement <$> eGen
+    let alnGen = liftA2 (unionElem alignElement) eGen eGen
     case tag of
-      0 -> pure . DCE $ fromNumber (2 * alphabetLen) (0 :: Integer)
+      0 -> pure gapped
       1 -> insGen
       2 -> insGen
       3 -> delGen
       4 -> delGen
-      _ -> liftA2 alignElement (AG <$> eGen) (AG <$> eGen)
+      _ -> alnGen
 
 
 isLeftEmpty  :: DynamicCharacterElement -> Bool
-isLeftEmpty  = isZeroVector . coerce . getLeft
+isLeftEmpty  (DCE (_,l,_)) = isZeroVector l
 
 
 isRightEmpty :: DynamicCharacterElement -> Bool
-isRightEmpty = isZeroVector . coerce . getRight
+isRightEmpty (DCE (_,_,r)) = isZeroVector r
 
 
 {-# INLINE getLeft #-}
 getLeft  :: DynamicCharacterElement -> AmbiguityGroup
-getLeft  e@(DCE x) = AG $ subRange (0, symbolCount e - 1) x
+getLeft  (DCE (_,l,_)) = AG l
 
 
 {-# INLINE getRight #-}
 getRight :: DynamicCharacterElement -> AmbiguityGroup
-getRight e@(DCE x) = AG $ subRange (symbolCount e, dimension x - 1) x
+getRight (DCE (_,_,r)) = AG r
 
 
+{-
 {-# INLINE packDynamicCharacterElement #-}
 packDynamicCharacterElement :: DynamicCharacterElement -> BitVector
 packDynamicCharacterElement (DCE x) = x
+-}
 
 
 {-# INLINE zeroVectorOf #-}

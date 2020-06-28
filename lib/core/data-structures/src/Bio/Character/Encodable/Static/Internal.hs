@@ -40,6 +40,7 @@ import qualified Data.Bimap                           as B
 import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
+import           Data.BitVector.LittleEndian.Instances ()
 import           Data.Foldable
 import           Data.Key
 import qualified Data.List.NonEmpty                   as NE
@@ -138,6 +139,8 @@ instance EncodableStream StaticCharacterBlock where
 
 instance EncodableStreamElement StaticCharacter where
 
+    -- TODO: This can be improved if the alphabet is sorted.
+    --       See the Data.Alphabet.Internal module to update this code.
     decodeElement alphabet character = NE.fromList $ foldMapWithKey f alphabet
       where
         f i symbol

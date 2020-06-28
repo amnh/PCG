@@ -40,6 +40,7 @@ import           Data.Matrix.Unboxed                           (Matrix)
 import qualified Data.Matrix.Unboxed                           as Matrix
 import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.TCM.Dense
 import           Data.Vector                                   hiding (length)
 import           Numeric.Extended.Real
 
@@ -59,8 +60,7 @@ characterSequenceDistance
   -> CharacterSequence (f u) (f v) (f  w) (f x) (f y) (f z)
   -> CharacterSequence (f u) (f v) (f  w) (f x) (f y) (f z)
   -> Sum Double
-characterSequenceDistance =
-  foldZipWithMeta blockDistance
+characterSequenceDistance = foldZipWithMeta blockDistance
 
 
 characterDistanceMatrix
@@ -78,13 +78,11 @@ characterDistanceMatrix
   -> MetadataSequence m
   -> Matrix Double
 characterDistanceMatrix leaves meta =
-  let
-    numLeaves = length leaves
-    distFn (i,j)  =  getSum $ characterSequenceDistance meta (leaves ! i) (leaves ! j)
-    matrixEntries :: [Double]
-    matrixEntries = parMap rpar distFn [(i,j) | i <- [0..(numLeaves - 1)], j <- [0..(numLeaves - 1)]]
-  in
-    Matrix.fromList (numLeaves, numLeaves) matrixEntries
+  let numLeaves = length leaves
+      distFn (i,j)  =  getSum $ characterSequenceDistance meta (leaves ! i) (leaves ! j)
+      matrixEntries :: [Double]
+      matrixEntries = parMap rpar distFn [(i,j) | i <- [0..(numLeaves - 1)], j <- [0..(numLeaves - 1)]]
+  in  Matrix.fromList (numLeaves, numLeaves) matrixEntries
 
 
 blockDistance
@@ -131,16 +129,19 @@ characterDistance f m c1 c2 = fold $
 
 dynamicCharacterDistance
   :: forall m d c f .
-     ( DirectOptimizationPostorderDecoration d c
+     ( Applicative f
+     , DirectOptimizationPostorderDecoration d c
+     , ExportableElements c
+     , Foldable f
+     , GetDenseTransitionCostMatrix m (Maybe DenseTransitionCostMatrix)
      , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
      , HasCharacterWeight m Double
-     , Applicative f
-     , Foldable f
-     , Show (Element c)
+     , Ord (Subcomponent (Element c))
+     , Show c
      )
   => m -> f d -> f d -> Sum Double
-dynamicCharacterDistance meta c1 c2
-  = foldMap (Sum . (weight *) . fromIntegral) $ liftA2 (dynamicCharacterDistance' meta) c1 c2
+dynamicCharacterDistance meta c1 c2 = foldMap (Sum . (weight *) . fromIntegral) $
+                                        liftA2 (dynamicCharacterDistance' meta) c1 c2
   where
     weight = meta ^. characterWeight
 
@@ -148,8 +149,11 @@ dynamicCharacterDistance meta c1 c2
 dynamicCharacterDistance'
   :: forall m d c
    . ( DirectOptimizationPostorderDecoration d c
+     , ExportableElements c
+     , GetDenseTransitionCostMatrix m (Maybe DenseTransitionCostMatrix)
      , GetPairwiseTransitionCostMatrix m (Subcomponent (Element c)) Word
-     , Show (Element c)
+     , Ord (Subcomponent (Element c))
+     , Show c
      )
   => m -> d -> d -> Word
 dynamicCharacterDistance' meta d1 d2 = (^. _1) $ selectDynamicMetric meta c1 c2

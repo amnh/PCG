@@ -42,8 +42,8 @@ counterExampleCheck :: (NucleotideSequence, NucleotideSequence) -> Bool
 counterExampleCheck (NS lhs, NS rhs) =
     ukkonenDOResult == foreignDOResult
   where
-    ukkonenDOResult = ukkonenDO         lhs rhs  (getMedianAndCost2D memoMatrixValue)
-    foreignDOResult = foreignPairwiseDO lhs rhs  denseMatrixValue
+    ukkonenDOResult = ukkonenDO         (getMedianAndCost2D memoMatrixValue) lhs rhs
+    foreignDOResult = foreignPairwiseDO denseMatrixValue  lhs rhs
 
 
 performImplementationComparison :: String -> String -> IO ()
@@ -58,8 +58,8 @@ performImplementationComparison lhs rhs = do
   where
     ukkonenMessage   = renderResult ukkonenDOResult
     foreignMessage   = renderResult foreignDOResult
-    ukkonenDOResult  = ukkonenDO         char1 char2 tcm
-    foreignDOResult  = foreignPairwiseDO char1 char2 denseMatrixValue
+    ukkonenDOResult  = ukkonenDO         tcm char1 char2
+    foreignDOResult  = foreignPairwiseDO denseMatrixValue char1 char2
     tcm      = getMedianAndCost2D memoMatrixValue
     tcm' x y = fst $ tcm x y
     char1    = readSequence lhs

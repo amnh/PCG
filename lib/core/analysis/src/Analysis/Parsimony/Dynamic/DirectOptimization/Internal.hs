@@ -37,15 +37,14 @@ import           Bio.Graph.Node.Context
 import           Bio.Metadata                                           hiding (DenseTransitionCostMatrix)
 import           Control.Lens
 import           Data.Bits
+import           Data.Either (isLeft)
 import           Data.Foldable
 import qualified Data.List.NonEmpty                                     as NE
 import           Data.MonoTraversable
-import           Data.Range
 import           Data.Semigroup
+import           Data.TCM.Dense
 import           Data.Word
 import           Prelude                                                hiding (zipWith)
-
-import Debug.Trace
 
 
 -- |
@@ -67,16 +66,22 @@ type PairwiseAlignment s = s -> s -> (Word, s)
 -- Select the most appropriate direct optimization metric implementation.
 selectDynamicMetric
   :: ( EncodableDynamicCharacter c
+     , ExportableElements c
+     , GetDenseTransitionCostMatrix dec (Maybe DenseTransitionCostMatrix)
      , GetPairwiseTransitionCostMatrix dec (Subcomponent (Element c)) Word
-     , Show (Element c)
+     , Ord (Subcomponent (Element c))
+     , Show c
      )
   => dec
   -> c
   -> c
   -> (Word, c)
 selectDynamicMetric meta =
-    let !pTCM = meta ^. pairwiseTransitionCostMatrix
-    in  \x y -> unboxedUkkonenDO x y pTCM
+    case {-# SCC getDense #-} meta ^. denseTransitionCostMatrix of
+      Just dm -> {-# SCC foreignPairwiseDO #-} foreignPairwiseDO dm
+      Nothing -> let !pTCM = meta ^. pairwiseTransitionCostMatrix
+--                 in  {-# SCC ukkonen #-} ukkonenDO pTCM 
+                 in  {-# SCC unboxedUkkonen #-} unboxedUkkonenFullSpaceDO pTCM
 
 
 -- |
@@ -141,9 +146,7 @@ directOptimizationPostorderPairwise pairwiseAlignment (lChild , rChild) = result
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
-     , Bound (Subcomponent (Element c)) ~ Word
      , EncodableStreamElement (Subcomponent (Element c))
-     , Ranged (Subcomponent (Element c))
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Subcomponent (Element c))
@@ -161,18 +164,16 @@ directOptimizationPreorder pairwiseAlignment meta =
 -- initializes the root node decoration as the base case of the pre-order
 -- traversal.
 initializeRoot
-  :: ( Bound (Subcomponent (Element c)) ~ Word
-     , DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
      , EncodableStreamElement (Subcomponent (Element c))
-     , Ranged (Subcomponent (Element c))
      )
   => DynamicCharacterMetadataDec (Subcomponent (Element c))
   -> d
   -> DynamicDecorationDirectOptimization c
-initializeRoot meta =
+initializeRoot _meta =
     extendPostorderToDirectOptimization
       <$> id
-      <*> lexicallyDisambiguate meta . (^. alignmentContext)
+      <*> lexicallyDisambiguate . (^. alignmentContext)
       <*> (^. alignmentContext)
 
 
@@ -180,22 +181,13 @@ initializeRoot meta =
 -- Disambiguate the elements of a dynamic character using only lexical ordering
 -- of the alphabet.
 lexicallyDisambiguate
-  :: forall c.
-     ( Bound (Subcomponent (Element c)) ~ Word
-     , EncodableDynamicCharacter c
+  :: ( EncodableDynamicCharacterElement (Element c)
      , FiniteBits (Subcomponent (Element c))
-     , EncodableStreamElement (Subcomponent (Element c))
-     , ExportableBuffer (Subcomponent (Element c))
-     , Ranged (Subcomponent (Element c))
+     , MonoFunctor c
      )
-  => DynamicCharacterMetadataDec (Subcomponent (Element c))
+  => c
   -> c
-  -> c
-lexicallyDisambiguate meta =
-  let pTCM :: Subcomponent (Element c) -> Subcomponent (Element c) -> (Subcomponent (Element c), Word)
-      pTCM  = meta ^. pairwiseTransitionCostMatrix
-      f x y = fst $ pTCM x y 
-  in  omap (disambiguateElement f)
+lexicallyDisambiguate = omap disambiguateElement
 
 
 -- |
@@ -204,12 +196,11 @@ disambiguateElement
   :: ( EncodableDynamicCharacterElement e
      , FiniteBits (Subcomponent e)
      )
-  => (Subcomponent e -> Subcomponent e -> Subcomponent e)
+  => e
   -> e
-  -> e
-disambiguateElement f x = alignElement val val
+disambiguateElement x = alignElement val val val
   where
-    med = getMedian f x
+    med = getMedian x
     idx = min (finiteBitSize med - 1) $ countLeadingZeros med
     zed = med `xor` med
     val = zed `setBit` idx
@@ -219,17 +210,15 @@ disambiguateElement f x = alignElement val val
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: ( Bound (Subcomponent (Element c)) ~ Word
-     , DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
      , EncodableStreamElement (Subcomponent (Element c))
-     , Ranged (Subcomponent (Element c))
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Subcomponent (Element c))
   -> Either d d
   -> DynamicDecorationDirectOptimization c
   -> DynamicDecorationDirectOptimization c
-updateFromParent _pairwiseAlignment meta decorationDirection parentDecoration = resultDecoration
+updateFromParent _pairwiseAlignment _meta decorationDirection parentDecoration = resultDecoration
   where
     resultDecoration  = extendPostorderToDirectOptimization currentDecoration single cia
     currentDecoration = either id id decorationDirection
@@ -239,31 +228,33 @@ updateFromParent _pairwiseAlignment meta decorationDirection parentDecoration = 
     cac = f $ currentDecoration ^. alignmentContext
 
     f   = case decorationDirection of
-            Left {} -> omap swapContext
+            Left {} -> id -- omap swapContext
             Right{} -> id
 
     (cia, single)
       | isMissing cac = (pia, parentDecoration ^. singleDisambiguation)
-      | otherwise     = let x = deriveImpliedAlignment pia pac cac
-                        in  (x, lexicallyDisambiguate meta x)
+      | otherwise     = let x = deriveImpliedAlignment (isLeft decorationDirection) pia pac cac
+                        in  (x, lexicallyDisambiguate x)
 
 
 {-# INLINEABLE deriveImpliedAlignment #-}
-{-# SPECIALISE deriveImpliedAlignment :: DynamicCharacter -> DynamicCharacter -> DynamicCharacter -> DynamicCharacter #-}
+{-# SPECIALISE deriveImpliedAlignment :: Bool -> DynamicCharacter -> DynamicCharacter -> DynamicCharacter -> DynamicCharacter #-}
 deriveImpliedAlignment
   :: EncodableDynamicCharacter c
-  => c -- ^ Parent Final       Alignment
+  => Bool
+  -> c -- ^ Parent Final       Alignment
   -> c -- ^ Parent Preliminary Context
   -> c -- ^ Child  Preliminary Context
   -> c -- ^ Child  Final       Alignment
-deriveImpliedAlignment pAlignment pContext cContext = cAlignment
+--deriveImpliedAlignment isLeftChild _ _ _ | trace ("isLeftChild " <> show isLeftChild) False = undefined
+deriveImpliedAlignment isLeftChild pAlignment pContext cContext = cAlignment
   where
     gap          = gapOfStream pAlignment
     initialState = ([], otoList cContext, otoList pContext)
     cAlignment   = extractVector . foldl' go initialState $ otoList pAlignment
     extractVector (x,_,_) = constructDynamic . NE.fromList $ reverse x
 
-{-
+{--
     showChar = foldMap (showElem . getContext)
       where
         showElem Gapping   = "G"
@@ -277,7 +268,7 @@ deriveImpliedAlignment pAlignment pContext cContext = cAlignment
                                              , "Child  alignment: " <> showChar (reverse acc)
                                              ]
                                    ) False = undefined
--}
+--}
     go (acc,   [],    _) _ = (gap : acc, [], [])
     go (  _,    _,   []) _ = error "Impossible happened in 'deriveImpliedAlignment'"
     go (acc, x:xs, y:ys) e =
@@ -286,9 +277,9 @@ deriveImpliedAlignment pAlignment pContext cContext = cAlignment
           Alignment -> (x : acc,   xs,   ys)
           Deletion  ->
               case getContext y of
-                Deletion  -> (gap : acc, x:xs,   ys)
-                _         -> (  x : acc,   xs,   ys)
+                Deletion  | not isLeftChild -> (  x : acc,   xs,   ys)
+                _                           -> (gap : acc, x:xs,   ys)
           Insertion ->
               case getContext y of
-                Insertion -> (  x : acc,   xs,   ys)
-                _         -> (gap : acc, x:xs,   ys)
+                Insertion | isLeftChild -> (  x : acc,   xs,   ys)
+                _                       -> (gap : acc, x:xs,   ys)

@@ -34,7 +34,7 @@ import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                       as BM
 import           Data.Bits
 import           Data.Foldable
-import           Data.List.NonEmpty               (NonEmpty)
+import           Data.List.NonEmpty               (NonEmpty((:|)))
 --import qualified Data.List.NonEmpty               as NE
 import           Data.List.Utility
 import           Data.Maybe                       (fromMaybe)
@@ -122,13 +122,13 @@ showStreamElement alphabet element
     allBits = complement noBits
     symbols = decodeElement alphabet element
     renderAmbiguity amb =
-        case toList amb of
-          []  -> undefined -- Never occurs!
-          [x] -> x
-          xs  ->
-              case invariantTransformation length xs of
-                Just 1 -> "[" <> concat  xs <> "]"
-                _      -> "[" <> unwords xs <> "]"
+      let (x:|xs) = toNonEmpty amb
+      in  case xs of
+            [] -> x
+            _  -> let bases = x:xs
+                  in case invariantTransformation length bases of
+                       Just 1 -> "[" <> concat  bases <> "]"
+                       _      -> "[" <> unwords bases <> "]"
 
     toIUPAC x
       | isAlphabetDna       alphabet = fromMaybe x $ x `BM.lookup` BM.twist iupacToDna
@@ -168,7 +168,6 @@ showStream alphabet xs
           then unwords shownElems
            -- All elements were rendered as a single character.
           else fold shownElems
-
 
 
 -- |

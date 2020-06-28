@@ -22,7 +22,8 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
   , ukkonenDO
   , unboxedFullMatrixDO
   , unboxedSwappingDO
-  , unboxedUkkonenDO
+  , unboxedUkkonenFullSpaceDO
+  , unboxedUkkonenSwappingDO
   ) where
 
 
@@ -32,4 +33,5 @@ import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedFullMatrix
 import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
-import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonen
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFullSpace
+import Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenSwapping

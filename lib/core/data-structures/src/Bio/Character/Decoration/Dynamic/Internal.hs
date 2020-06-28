@@ -220,7 +220,6 @@ instance HasAlignmentContext (DynamicDecorationDirectOptimizationPostorderResult
 instance (EncodableDynamicCharacter d, ExportableBuffer (Subcomponent (Element d))) => PostorderExtensionDirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where
 
     extendPostorderToDirectOptimization subDecoration single ia =
-
         DynamicDecorationDirectOptimization
         { dynamicDecorationDirectOptimizationCharacterCost            = subDecoration ^. characterCost
         , dynamicDecorationDirectOptimizationCharacterLocalCost       = subDecoration ^. characterLocalCost
@@ -255,6 +254,7 @@ instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOpt
             , ("Implied Alignment    : ", impliedAlignment    )
             ]
 
+
 instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOptimizationPostorderResult d) where
 
     showb dec = unlinesB . (shownCost:) $ f <$> pairs
@@ -269,6 +269,7 @@ instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOpt
 
 
 instance (EncodableDynamicCharacter d, ExportableBuffer (Subcomponent (Element d))) => SimpleDynamicDecoration (DynamicDecorationDirectOptimization d) d where
+
 
 instance ( EncodableStreamElement (Element d)
          , MonoFoldable d
@@ -305,8 +306,8 @@ instance Show d => ToXML (DynamicDecorationDirectOptimization d) where
     toXML decoration = xmlElement "Dynamic_DO_pre-order_decoration_result" attributes contents
         where
             attributes = []
-            contents   = [ Left ("Character_cost"           , show $ decoration ^. characterCost      )
-                         , Left ("Local_cost"               , show $ decoration ^. characterLocalCost )
+            contents   = [ Left ("Character_cost"           , show $ decoration ^. characterCost     )
+                         , Left ("Local_cost"               , show $ decoration ^. characterLocalCost)
                          , Left ("Alignment_Context"        , show $ decoration ^. alignmentContext  )
                          , Left ("Implied_Alignemnt"        , show $ decoration ^. alignmentContext  )
                          ]
@@ -319,7 +320,7 @@ instance Show d => ToXML (DynamicDecorationDirectOptimizationPostorderResult d) 
             attributes = []
             contents   = [ Left ("Character_cost"           , show $ decoration ^. characterCost      )
                          , Left ("Local_cost"               , show $ decoration ^. characterLocalCost )
-                         , Left ("Alignment_Context"        , show $ decoration ^. alignmentContext  )
+                         , Left ("Alignment_Context"        , show $ decoration ^. alignmentContext   )
                          ]
 
 

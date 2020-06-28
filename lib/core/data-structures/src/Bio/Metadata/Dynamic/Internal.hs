@@ -1,4 +1,4 @@
--------------------------------------------------------------------------------
+-----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Dynamic.Internal
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
@@ -94,7 +94,10 @@ type TraversalFoci      = NonEmpty TraversalFocus
 data  DynamicCharacterMetadataDec c
     = DynamicCharacterMetadataDec
     { optimalTraversalFoci        :: !(Maybe TraversalFoci)
-    , structuralRepresentationTCM :: !(MetricRepresentation MemoizedCostMatrix)
+    , structuralRepresentationTCM :: !(Either
+                                         (DenseTransitionCostMatrix, MetricRepresentation ())
+                                         (MetricRepresentation MemoizedCostMatrix)
+                                      )
     , metadata                    :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
     }
     deriving stock    (Generic)
@@ -105,6 +108,7 @@ data  DynamicCharacterMetadataDec c
 -- A decoration of an initial encoding of a dynamic character which has the
 -- appropriate 'Lens' & character class constraints.
 class ( DiscreteWithTcmCharacterMetadata s c
+      , GetDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
       , GetSparseTransitionCostMatrix    s (Maybe MemoizedCostMatrix)
       , GetPairwiseTransitionCostMatrix  s c Word
       , GetThreewayTransitionCostMatrix  s (c -> c -> c -> (c, Word))
@@ -175,6 +179,12 @@ instance HasCharacterWeight (DynamicCharacterMetadataDec c) Double where
                     $ \e x -> e { metadata = metadata e & characterWeight .~ x }
 
 
+instance GetDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe DenseTransitionCostMatrix) where
+
+    denseTransitionCostMatrix = to
+      $ either (Just . fst) (const Nothing) . structuralRepresentationTCM
+
+
 instance HasTcmSourceFile (DynamicCharacterMetadataDec c) FileSource where
 
     _tcmSourceFile = lens (\d -> metadata d ^. _tcmSourceFile)
@@ -183,14 +193,14 @@ instance HasTcmSourceFile (DynamicCharacterMetadataDec c) FileSource where
 
 instance GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe MemoizedCostMatrix) where
 
-    sparseTransitionCostMatrix = to
-      $ (foldl' (const Just) Nothing) . structuralRepresentationTCM
+    sparseTransitionCostMatrix = to $
+       either (const Nothing) (foldl' (const Just) Nothing) . structuralRepresentationTCM
 
 
 instance GetSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> Word) where
 
     symbolChangeMatrix = to
-      $ retreiveSCM . void . structuralRepresentationTCM
+      $ retreiveSCM . either snd void . structuralRepresentationTCM
 
 
 instance (Bound c ~ Word, EncodableStreamElement c, ExportableBuffer c, Ranged c)
@@ -228,15 +238,18 @@ dynamicMetadata
   -> Alphabet String
   -> FileSource
   -> TCM
-  -> DynamicCharacterMetadataDec c
-dynamicMetadata name weight alpha tcmSource tcm =
+  -> Maybe DenseTransitionCostMatrix -> DynamicCharacterMetadataDec c
+dynamicMetadata name weight alpha tcmSource tcm denseMay =
     force DynamicCharacterMetadataDec
     { optimalTraversalFoci        = Nothing
     , structuralRepresentationTCM = representaionOfTCM
     , metadata                    = discreteMetadata name weight alpha tcmSource
     }
   where
-    representaionOfTCM = metricRep $> memoMatrixValue
+    representaionOfTCM = maybe largeAlphabet smallAlphabet denseMay
+      where
+        largeAlphabet   = Right $ metricRep $> memoMatrixValue
+        smallAlphabet x = Left (x,metricRep)
 
     metricRep =
         case tcmStructure diagnosis of
@@ -258,7 +271,10 @@ dynamicMetadataFromTCM
   -> FileSource
   -> TCM
   -> DynamicCharacterMetadataDec c
-dynamicMetadataFromTCM = dynamicMetadata
+dynamicMetadataFromTCM name weight alpha tcmSource tcm
+    = dynamicMetadata name weight alpha tcmSource tcm denseMay
+  where
+    denseMay = maybeConstructDenseTransitionCostMatrix alpha (\i j -> toEnum . fromEnum $ tcm TCM.! (i,j))
 
 
 -- |
@@ -294,7 +310,10 @@ extractPairwiseTransitionCostMatrix
   -> c
   -> (c, Word)
 extractPairwiseTransitionCostMatrix =
-  (retreivePairwiseTCM (const getMedianAndCost2D)) . structuralRepresentationTCM
+  either
+    (lookupPairwise . fst)
+    (retreivePairwiseTCM (const getMedianAndCost2D))
+  . structuralRepresentationTCM
 
 
 -- |
@@ -314,7 +333,10 @@ extractThreewayTransitionCostMatrix
   -> c
   -> (c, Word)
 extractThreewayTransitionCostMatrix =
-  (retreiveThreewayTCM (const getMedianAndCost3D)) . structuralRepresentationTCM
+  either
+    (lookupThreeway . fst)
+    (retreiveThreewayTCM (const getMedianAndCost3D))
+  . structuralRepresentationTCM
 
 
 -- |

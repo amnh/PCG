@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns       #-}
 {-# LANGUAGE DeriveAnyClass     #-}
 {-# LANGUAGE DeriveFoldable     #-}
 {-# LANGUAGE DeriveFunctor      #-}
@@ -37,6 +38,7 @@ import Data.Foldable
 import Data.Ord        (comparing)
 import Data.Range
 import Data.TCM        as TCM
+import Data.Word
 import GHC.Generics
 
 
@@ -107,6 +109,12 @@ retreiveThreewayTCM _ LinearNorm           = firstLinearNormThreewayLogic
 
 -- |
 -- Definition of the discrete metric.
+{-# SCC        discreteMetricPairwiseLogic #-}
+{-# INLINE     discreteMetricPairwiseLogic #-}
+{-# SPECIALISE discreteMetricPairwiseLogic :: Bits b => b              -> b              -> (b             , Word) #-}
+{-# SPECIALISE discreteMetricPairwiseLogic ::           Int            -> Int            -> (Int           , Word) #-}
+{-# SPECIALISE discreteMetricPairwiseLogic ::           Word           -> Word           -> (Word          , Word) #-}
+{-# SPECIALISE discreteMetricPairwiseLogic ::           Word8          -> Word8          -> (Word8         , Word) #-}
 discreteMetricPairwiseLogic
   :: ( Bits a
      , Num b
@@ -114,12 +122,12 @@ discreteMetricPairwiseLogic
   => a
   -> a
   -> (a, b)
-discreteMetricPairwiseLogic lhs rhs
+discreteMetricPairwiseLogic !lhs !rhs
   | popCount intersect > 0 = (intersect, 0)
   | otherwise              = (  unioned, 1)
   where
-    unioned   = lhs .|. rhs
-    intersect = lhs .&. rhs
+    !intersect = lhs .&. rhs
+    !unioned   = lhs .|. rhs
 
 
 -- |
@@ -130,6 +138,13 @@ discreteMetricPairwiseLogic lhs rhs
 -- otherwise                                 ⮕  (    x    ⋃    y    ⋃    z    , 2)
 --
 --
+{-# SCC        discreteMetricThreewayLogic #-}
+{-# INLINE     discreteMetricThreewayLogic #-}
+{-# SPECIALISE discreteMetricThreewayLogic :: Bits b => b              -> b              -> b              -> (b             , Word) #-}
+--{-# SPECIALISE discreteMetricThreewayLogic ::           AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
+{-# SPECIALISE discreteMetricThreewayLogic ::           Int            -> Int            -> Int            -> (Int           , Word) #-}
+{-# SPECIALISE discreteMetricThreewayLogic ::           Word           -> Word           -> Word           -> (Word          , Word) #-}
+{-# SPECIALISE discreteMetricThreewayLogic ::           Word8          -> Word8          -> Word8          -> (Word8         , Word) #-}
 discreteMetricThreewayLogic
   :: ( Bits a
      , Num b
@@ -138,14 +153,14 @@ discreteMetricThreewayLogic
   -> a
   -> a
   -> (a, b)
-discreteMetricThreewayLogic x y z
+discreteMetricThreewayLogic !x !y !z
   | popCount fullIntersection > 0 = (fullIntersection, 0)
   | popCount joinIntersection > 0 = (joinIntersection, 1)
   | otherwise                     = (fullUnion,        2)
   where
-    fullUnion        = x .|. y .|. z
-    fullIntersection = x .&. y .&. z
-    joinIntersection = (x .&. y) .|. (x .&. z) .|. (y .&. z)
+    !fullIntersection =  x        .&.  y        .&.  z
+    !joinIntersection = (x .&. y) .|. (y .&. z) .|. (z .&. x)
+    !fullUnion        =  x        .|.  y        .|.  z
 
 
 -- |
@@ -162,7 +177,7 @@ firstLinearNormPairwiseLogic
   => a
   -> b
   -> (c, Bound a)
-firstLinearNormPairwiseLogic lhs rhs = (fromRange newInterval, cost)
+firstLinearNormPairwiseLogic !lhs !rhs = (fromRange newInterval, cost)
   where
     lhs' = toRange lhs
     rhs' = toRange rhs
@@ -191,7 +206,7 @@ firstLinearNormThreewayLogic
   -> b
   -> c
   -> (d, Bound a)
-firstLinearNormThreewayLogic x y z
+firstLinearNormThreewayLogic !x !y !z
   | and intersections = (fromRange fullIntersection, 0)
   | or  intersections = paritalIntersection
   | otherwise         = (fromRange y', lowerBound y' - upperBound x' + lowerBound z' - upperBound y')

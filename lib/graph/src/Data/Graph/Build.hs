@@ -93,9 +93,8 @@ initialBuild ts cache =
       }
 
 
-
 naiveWagnerBuild
-  :: forall c e n t charSeq f.
+  :: forall c e n t f. -- charSeq.
      ( HasGraphDecoration c e n t
 --     , HasScore (FinalDecorationGraph c e n t) Double
 --     , HasCharacterSequence t (CharacterSequence t)
@@ -152,11 +151,11 @@ naiveWagnerBuild ts cache =
 --                  , ( IS.singleton 0, wipeNode False z, mempty )
 --                  ]
         in
-          foldl' (iterativeBuild @c @e @n @t @charSeq) initTree xs
+          foldl' (iterativeBuild @c @e @n @t {- @charSeq -}) initTree xs
 
 
 iterativeBuild
-  :: forall c e n t charSeq.
+  :: forall c e n t. -- charSeq.
 {-
      ( HasScore (FinalDecorationGraph c e n t) Double
      , HasGraphDecoration c e n t

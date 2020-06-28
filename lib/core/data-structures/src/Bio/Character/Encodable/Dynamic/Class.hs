@@ -31,6 +31,7 @@ import Control.DeepSeq
 import Data.Bits
 import Data.Data
 import Data.List.NonEmpty
+import Data.IntMap                      (IntMap)
 import Data.MonoTraversable
 import Data.Semigroup.Foldable
 import GHC.Generics                     (Generic)
@@ -71,6 +72,10 @@ class ( Bits (Subcomponent (Element s))
 
 --    encodeDynamic :: (Ord a, Foldable1 t, Foldable1 c, IsString a) => Alphabet a -> c (t a) -> s
 
+    deleteGaps :: s -> (IntMap Word, s)
+
+    insertGaps :: IntMap Word -> IntMap Word -> s -> s -> s -> s
+
 
 class EncodableDynamicCharacterElement e where
 
@@ -78,14 +83,14 @@ class EncodableDynamicCharacterElement e where
 
     getContext    :: e -> AlignmentContext
 
-    getMedian     :: (Subcomponent e -> Subcomponent e -> Subcomponent e) -> e -> Subcomponent e
+    getMedian     :: e -> Subcomponent e
 
     gapElement    :: Word -> e
 
-    insertElement :: (Subcomponent e) -> e
+    insertElement :: (Subcomponent e) -> (Subcomponent e) -> e
 
-    deleteElement :: (Subcomponent e) -> e
+    deleteElement :: (Subcomponent e) -> (Subcomponent e) -> e
 
-    alignElement  :: (Subcomponent e) -> (Subcomponent e) -> e
+    alignElement  :: (Subcomponent e) -> (Subcomponent e) -> (Subcomponent e) -> e
 
     swapContext   :: e -> e

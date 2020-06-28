@@ -19,6 +19,7 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE RankNTypes             #-}
+{-# LANGUAGE StrictData             #-}
 
 module Bio.Sequence.Block.Internal
   ( Block(..)

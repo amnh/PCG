@@ -39,6 +39,7 @@ import           Data.List              (delete)
 import           Data.List.NonEmpty     (NonEmpty(..))
 import qualified Data.List.NonEmpty     as NE
 import           Data.Map               (Map)
+import           Data.MetricRepresentation
 import           Data.MonoTraversable
 import           Data.String            (fromString)
 import           Prelude                hiding (lookup)
@@ -104,16 +105,34 @@ instance Monad m => Serial m NucleotideBasePair where
 validNucleotideElements :: [DynamicCharacterElement]
 validNucleotideElements = fold
    [ pure . gapElement . symbolCount $ head validMedians
-   , deleteElement <$> validMedians
-   , insertElement <$> validMedians
-   , [alignElement x y | x <- validMedians, y <- validMedians, x <= y ]
+   , buildElem deleteElement <$> validMedians
+   , buildElem insertElement <$> validMedians
+   , [ unionElem alignElement x y | x <- validMedians, y <- validMedians, x <= y ]
    ]
   where
+    gap = getGapElement $ head validMedians
+    
+    med x y = fst (discreteMetricPairwiseLogic x y :: (AmbiguityGroup, Word))
+
     validMedians = fmap (encodeElement alphabet . NE.fromList) $
                      [] `delete` powerSet (toList alphabet)
+
     powerSet :: [a] -> [[a]]
     powerSet []     = [[]]
     powerSet (x:xs) = [x:ps | ps <- powerSet xs] <> powerSet xs
+
+    buildElem
+      :: (AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
+      -> AmbiguityGroup
+      -> DynamicCharacterElement
+    buildElem f x = f (med gap x) x
+
+    unionElem
+      :: (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> DynamicCharacterElement)
+      -> AmbiguityGroup
+      -> AmbiguityGroup
+      -> DynamicCharacterElement
+    unionElem f x y = f (med x y) x y
 
 
 alphabet :: Alphabet String
@@ -130,13 +149,11 @@ renderBase x =
         (pref, median, lVal, rVal) =
           case getContext x of
             Gapping   -> let g = bit . fromEnum $ symbolCount x - 1 in ('G', g, g, g)
-            Deletion  -> let v = getRight x in ('D', v .|. getGapElement v, getGapElement v, v)
-            Insertion -> let v = getLeft  x in ('I', v .|. getGapElement v, v, getGapElement v)
+            Deletion  -> let v = getRight x in ('D', getMedian x, getGapElement v, v)
+            Insertion -> let v = getLeft  x in ('I', getMedian x, v, getGapElement v)
             Alignment -> let l = getLeft  x
                              r = getRight x
-                             m | l == r = l
-                               | popCount (l .&. r) > 0 = l .&. r
-                               | otherwise = l .|. r
+                             m = getMedian x
                          in  ('A', m, l, r)
     in  case decodeBase median of
           Nothing ->  errorMsg median
