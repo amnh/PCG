@@ -47,7 +47,7 @@ data  OutputFormat
     | DistanceMatrix
     | DotFile
     | DynamicTable
-    | ImpliedAlignmentCharacters
+    | ImpliedAlignment
     | LikelihoodModel
     | Metadata
     | SearchStats
@@ -84,13 +84,22 @@ reportCommandSpecification = command "report" . argList $ ReportCommand <$> outp
 
 
 outputFormat :: Ap SyntacticArgument OutputFormat
-outputFormat = choiceFrom [ dataFormat, dotFormat, xmlFormat, metadataFormat, distanceMatrix]
+outputFormat =
+    choiceFrom
+        [ dataFormat
+        , distanceMatrix
+        , dotFormat
+        , impliedAlignFormat
+        , metadataFormat
+        , xmlFormat
+        ]
   where
-    dataFormat     = value "data" $> Data
-    xmlFormat      = value "xml"  $> XML
-    dotFormat      = choiceFrom [value "dot", value "graphviz"]  $> DotFile
-    metadataFormat = choiceFrom [value "metadata", value "crossreferences"] $> Metadata
-    distanceMatrix = value "distance" $> DistanceMatrix
+    dataFormat         = value "data" $> Data
+    dotFormat          = choiceFrom [value "dot", value "graphviz"] $> DotFile
+    distanceMatrix     = value "distance" $> DistanceMatrix 
+    impliedAlignFormat = value "implied-alignment" $> ImpliedAlignment
+    metadataFormat     = choiceFrom [value "metadata", value "cross-references"] $> Metadata
+    xmlFormat          = value "xml"  $> XML
 
 
 outputTarget :: Ap SyntacticArgument OutputTarget

@@ -21,12 +21,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
 
 
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
-{-
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Ukkonen
--}
 import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.List                                              (intercalate)
@@ -40,6 +34,8 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck
 import qualified Test.Tasty.SmallCheck                                  as SC
 
+-- import Debug.Trace
+
 
 testSuite :: TestTree
 testSuite = testGroup "Pairwise alignment tests"
@@ -47,6 +43,10 @@ testSuite = testGroup "Pairwise alignment tests"
     , testSuiteMemoizedDO
     , testSuiteUkkonnenDO
     , testSuiteForeignDO
+    , testSuiteUnboxedFullMatrixDO
+    , testSuiteUnboxedFullSwappingDO
+    , testSuiteUnboxedUkkonenSwapDO
+    , testSuiteUnboxedUkkonenFullDO
     , constistentImplementation
     ]
 
@@ -63,94 +63,139 @@ constistentImplementation = testGroup "All implementations return same states"
 consistentResults :: String -> (Word -> Word -> Word) -> TestTree
 consistentResults testLabel metric = SC.testProperty testLabel $ SC.forAll checkConsistency
   where
-    dense = genDenseMatrix metric
+    dense  = genDenseMatrix metric
     memoed = getMedianAndCost2D (genMemoMatrix metric)
+    median x y = fst $ memoed x y
     f :: DynamicCharacterElement -> DynamicCharacter
     f = constructDynamic . (:|[])
 
-    checkConsistency :: (NucleotideBase, NucleotideBase) -> Either String String
-    checkConsistency p@(NB x, NB y) =
-        let res = naiveResult =~= memoedResult && naiveResult =~= foreignResult
-        in  if   res
-            then Right $ show p
-            else Left errorMessage
+    checkConsistency :: NucleotideBasePair -> Either String String
+    checkConsistency (NBP p@(NB x, NB y))
+      | naiveResult == memoedResult = Right $ show p
+      | otherwise = Left errorMessage
       where
-        -- Ignore the ungapped value, It might be empty and throw an exception!
-        (=~=) :: (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter)
-              -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter)
-              -> Bool
-        (=~=) (a,_,b,c,d) (s,_,t,u,v) = (a,b,c,d) == (s,t,u,v)
-
-        naiveResult   = naiveDO           (f x) (f y) metric
-        memoedResult  = naiveDOMemo       (f x) (f y) memoed
-        foreignResult = foreignPairwiseDO (f x) (f y) dense
+        naiveResult   = naiveDO           metric (f x) (f y)
+        memoedResult  = naiveDOMemo       memoed (f x) (f y)
+        foreignResult = foreignPairwiseDO dense  (f x) (f y)
         errorMessage  = unlines
                    [ ""
-                   , "Naive:   " <> showResult   naiveResult
-                   , "Memoed:  " <> showResult  memoedResult
-                   , "Foreign: " <> showResult foreignResult
+                   , unwords [ "Naive:  ", showResult median   naiveResult, show   naiveResult ]
+                   , unwords [ "Memoed: ", showResult median  memoedResult, show  memoedResult ]
+                   , unwords [ "Foreign:", showResult median foreignResult, show foreignResult ]
                    ]
 
 
-showResult :: (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter) -> String
-showResult (cost, _w, x, y, z) = (\a->"("<>a<>")") $ intercalate ","
+showResult
+  :: (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup)
+  -> (Word, DynamicCharacter)
+  -> String
+showResult transformation (cost, a) = (\x->"("<>x<>")") $ intercalate ","
     [ show cost
-    , "_" -- showStream alphabet w
-    , showStream alphabet x
-    , showStream alphabet y
-    , showStream alphabet z
+    , renderDynamicCharacter alphabet transformation a
     ]
 
 
 testSuiteNaiveDO :: TestTree
 testSuiteNaiveDO = testGroup "Naive DO"
     [ isValidPairwiseAlignment "Naive DO over discrete metric"
-       $ \x y -> naiveDO x y discreteMetric
+       $ naiveDO discreteMetric
     , isValidPairwiseAlignment "Naive DO over L1 norm"
-       $ \x y -> naiveDO x y l1Norm
+       $ naiveDO l1Norm
     , isValidPairwiseAlignment "Naive DO over prefer substitution metric (1:2)"
-       $ \x y -> naiveDO x y preferSubMetric
+       $ naiveDO preferSubMetric
     , isValidPairwiseAlignment "Naive DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> naiveDO x y preferGapMetric
+       $ naiveDO preferGapMetric
     ]
 
 
 testSuiteMemoizedDO :: TestTree
 testSuiteMemoizedDO = testGroup "Memoized DO"
     [ isValidPairwiseAlignment "Memoized DO over discrete metric"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
+       $ naiveDOMemo (getMedianAndCost2D (genMemoMatrix discreteMetric))
     , isValidPairwiseAlignment "Memoized DO over L1 norm"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix l1Norm))
+       $ naiveDOMemo (getMedianAndCost2D (genMemoMatrix l1Norm))
     , isValidPairwiseAlignment "Memoized DO over prefer substitution metric (1:2)"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+       $ naiveDOMemo (getMedianAndCost2D (genMemoMatrix preferSubMetric))
     , isValidPairwiseAlignment "Memoized DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> naiveDOMemo x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+       $ naiveDOMemo (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+    ]
+
+
+testSuiteUnboxedFullMatrixDO :: TestTree
+testSuiteUnboxedFullMatrixDO = testGroup "Unboxed Full Matrix DO"
+    [ isValidPairwiseAlignment "Unboxed Full Matrix DO over discrete metric"
+       $ unboxedFullMatrixDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
+    , isValidPairwiseAlignment "Unboxed Full Matrix DO over L1 norm"
+       $ unboxedFullMatrixDO (getMedianAndCost2D (genMemoMatrix l1Norm))
+    , isValidPairwiseAlignment "Unboxed Full Matrix DO over prefer substitution metric (1:2)"
+       $ unboxedFullMatrixDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+    , isValidPairwiseAlignment "Unboxed Full Matrix DO over prefer insertion/deletion metric (2:1)"
+       $ unboxedFullMatrixDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+    ]
+
+
+testSuiteUnboxedFullSwappingDO :: TestTree
+testSuiteUnboxedFullSwappingDO = testGroup "Unboxed Swapping Vectors DO"
+    [ isValidPairwiseAlignment "Unboxed Swapping Vectors DO over discrete metric"
+       $ unboxedSwappingDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
+    , isValidPairwiseAlignment "Unboxed Swapping Vectors DO over L1 norm"
+       $ unboxedSwappingDO (getMedianAndCost2D (genMemoMatrix l1Norm))
+    , isValidPairwiseAlignment "Unboxed Swapping Vectors DO over prefer substitution metric (1:2)"
+       $ unboxedSwappingDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+    , isValidPairwiseAlignment "Unboxed Swapping Vectors DO over prefer insertion/deletion metric (2:1)"
+       $ unboxedSwappingDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+    ]
+
+
+testSuiteUnboxedUkkonenSwapDO :: TestTree
+testSuiteUnboxedUkkonenSwapDO = testGroup "Unboxed Ukkonen (Swapping) DO"
+    [ isValidPairwiseAlignment "Unboxed Ukkonen (Swapping) DO over discrete metric"
+       $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Swapping) DO over L1 norm"
+       $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix l1Norm))
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Swapping) DO over prefer substitution metric (1:2)"
+       $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Swapping) DO over prefer insertion/deletion metric (2:1)"
+       $ unboxedUkkonenSwappingDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+    ]
+
+
+testSuiteUnboxedUkkonenFullDO :: TestTree
+testSuiteUnboxedUkkonenFullDO = testGroup "Unboxed Ukkonen (Full Space) DO"
+    [ isValidPairwiseAlignment "Unboxed Ukkonen (Full Space) DO over discrete metric"
+       $ unboxedUkkonenFullSpaceDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Full Space) DO over L1 norm"
+       $ unboxedUkkonenFullSpaceDO (getMedianAndCost2D (genMemoMatrix l1Norm))
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Full Space) DO over prefer substitution metric (1:2)"
+       $ unboxedUkkonenFullSpaceDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+    , isValidPairwiseAlignment "Unboxed Ukkonen (Full Space) DO over prefer insertion/deletion metric (2:1)"
+       $ unboxedUkkonenFullSpaceDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
     ]
 
 
 testSuiteUkkonnenDO :: TestTree
 testSuiteUkkonnenDO = testGroup "Ukkonnen DO"
     [ isValidPairwiseAlignment "Ukkonnen DO over discrete metric"
-       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix discreteMetric))
+       $ ukkonenDO (getMedianAndCost2D (genMemoMatrix discreteMetric))
     , isValidPairwiseAlignment "Ukkonnen DO over L1 norm"
-       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix l1Norm))
+       $ ukkonenDO (getMedianAndCost2D (genMemoMatrix l1Norm))
     , isValidPairwiseAlignment "Ukkonnen DO over prefer substitution metric (1:2)"
-       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix preferSubMetric))
+       $ ukkonenDO (getMedianAndCost2D (genMemoMatrix preferSubMetric))
     , isValidPairwiseAlignment "Ukkonnen DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> ukkonenDO x y (getMedianAndCost2D (genMemoMatrix preferGapMetric))
+       $ ukkonenDO (getMedianAndCost2D (genMemoMatrix preferGapMetric))
     ]
 
 
 testSuiteForeignDO :: TestTree
 testSuiteForeignDO = testGroup "Foreign C DO"
     [ isValidPairwiseAlignment "Foreign C DO over discrete metric"
-       $ \x y -> foreignPairwiseDO x y (genDenseMatrix discreteMetric)
+       $ foreignPairwiseDO (genDenseMatrix discreteMetric)
     , isValidPairwiseAlignment "Foreign C DO over L1 norm"
-       $ \x y -> foreignPairwiseDO x y (genDenseMatrix l1Norm)
+       $ foreignPairwiseDO (genDenseMatrix l1Norm)
     , isValidPairwiseAlignment "Foreign C DO over prefer substitution metric (1:2)"
-       $ \x y -> foreignPairwiseDO x y (genDenseMatrix preferSubMetric)
+       $ foreignPairwiseDO (genDenseMatrix preferSubMetric)
     , isValidPairwiseAlignment "Foreign C DO over prefer insertion/deletion metric (2:1)"
-       $ \x y -> foreignPairwiseDO x y (genDenseMatrix preferGapMetric)
+       $ foreignPairwiseDO (genDenseMatrix preferGapMetric)
     ]
 
 
@@ -163,50 +208,40 @@ isValidPairwiseAlignment
 -}
 isValidPairwiseAlignment
   :: String
-  -> (DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter, DynamicCharacter, DynamicCharacter, DynamicCharacter))
+  -> (DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter))
   -> TestTree
 isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
     [  testProperty "alignment function is commutative"               commutivity
-     , testProperty "aligned results are all equal length"            resultsAreEqualLength
      , testProperty "output length is >= input length"                greaterThanOrEqualToInputLength
      , testProperty "alignment length is =< sum of input lengths"     totalAlignmentLengthLessThanOrEqualToSumOfLengths
-     , testProperty "output alignments were not erroneously swapped"  outputsCorrespondToInputs
-     , testProperty "output alignments were not erroneously reversed" outputsAreNotReversed
-     , testProperty "output alignments only contain new gaps"         filterGapsEqualsInput
-     , testProperty "ungapped output contains no gaps"                ungappedHasNogaps
+--     , testProperty "output alignments were not erroneously swapped"  outputsCorrespondToInputs
+--     , testProperty "output alignments were not erroneously reversed" outputsAreNotReversed
+--     , testProperty "output alignments only contain new gaps"         filterGapsEqualsInput
     ]
   where
     commutivity :: (NucleotideSequence, NucleotideSequence) -> Property
-    commutivity (NS lhs, NS rhs) =
-        a === x .&&. b === z .&&. c === y
-      where
-        (_, _, a, b, c) = alignmentFunction lhs rhs
-        (_, _, x, y, z) = alignmentFunction rhs lhs
-
-    resultsAreEqualLength :: (NucleotideSequence, NucleotideSequence) -> Property
-    resultsAreEqualLength (NS lhs, NS rhs) =
-        olength med === olength lhs' .&&. olength lhs' === olength rhs'
-      where
-        (_, _, med, lhs', rhs') = alignmentFunction lhs rhs
+    commutivity _input@(NS lhs, NS rhs) =
+        let x@(a,b) = alignmentFunction lhs rhs
+            y@(c,d) = alignmentFunction rhs lhs
+        in  x === (c, omap swapContext d) .&&. (a, omap swapContext b) === y
 
     greaterThanOrEqualToInputLength :: (NucleotideSequence, NucleotideSequence) -> Bool
     greaterThanOrEqualToInputLength (NS lhs, NS rhs) =
-        olength lhs' >= olength lhs && olength rhs' >= olength rhs
+        olength med >= olength lhs && olength med >= olength rhs
       where
-        (_, _, _, lhs', rhs') = alignmentFunction lhs rhs
+        (_, med) = alignmentFunction lhs rhs
 
-{--}
     totalAlignmentLengthLessThanOrEqualToSumOfLengths :: (NucleotideSequence, NucleotideSequence) -> Property
     totalAlignmentLengthLessThanOrEqualToSumOfLengths (NS lhs, NS rhs) =
         counterexample shownCounterexample $ medLen <= lhsLen + rhsLen
       where
-        (_, _, med, _, _) = alignmentFunction lhs rhs
+        (_, med) = alignmentFunction lhs rhs
         medLen = olength med
         lhsLen = olength lhs
         rhsLen = olength rhs
         shownCounterexample = unwords [ show medLen, ">", show lhsLen, "+", show rhsLen ]
-{--}
 
+{-
     outputsCorrespondToInputs :: (NucleotideSequence, NucleotideSequence) -> Property
     outputsCorrespondToInputs (NS lhs, NS rhs) =
         lhs /= rhs && filterGaps lhs' /= filterGaps rhs' ==>
@@ -234,19 +269,7 @@ isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
       where
         (_, _, _, lhs', rhs') = alignmentFunction lhs rhs
 
-    ungappedHasNogaps :: (NucleotideSequence, NucleotideSequence) -> Property
-    ungappedHasNogaps (NS lhs, NS rhs) = counterexample shownGappedResult $
-        oany (/=gap) meds ==> oall (/=gap) unGap
-      where
-        gap = gapOfStream meds
-        (_, unGap, meds, lhs', rhs') = alignmentFunction lhs rhs
-        shownGappedResult = (\x->"("<>x<>")") $ intercalate ","
-          [ "_"
-          , showStream alphabet unGap
-          , showStream alphabet meds
-          , showStream alphabet lhs'
-          , showStream alphabet rhs'
-          ]
+-}
 
 
 genDenseMatrix :: (Word -> Word -> Word) -> DenseTransitionCostMatrix

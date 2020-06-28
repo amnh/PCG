@@ -14,10 +14,13 @@
 
 module Bio.Character.Exportable
   ( -- * Datatypes
-    ExportableCharacterElements(..)
-  , ExportableCharacterSequence(..)
+    ExportableCharacterBuffer(..)
+  , ExportableCharacterElements(..)
+  , ReImportableCharacterElements(..)
+  , Subcomponent
     -- * Classes
-  , Exportable(..)
+  , ExportableBuffer(..)
+  , ExportableElements(..)
   , HasExportedElementCount(..)
   , HasExportedElementWidth(..)
   ) where

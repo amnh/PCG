@@ -18,16 +18,16 @@ module Data.Alphabet.IUPAC
 
 
 import           Control.Arrow          ((***))
-import           Data.Alphabet.Internal (AmbiguityGroup)
 import           Data.Bimap             (Bimap)
 import qualified Data.Bimap             as BM
+import           Data.List.NonEmpty     (NonEmpty)
 import qualified Data.List.NonEmpty     as NE
 import           Data.String
 
 
 -- |
 -- Substitutions for converting to an Amino Acid sequence based on IUPAC codes.
-iupacToAminoAcid :: (IsString s, Ord s) => Bimap (AmbiguityGroup s) (AmbiguityGroup s)
+iupacToAminoAcid :: (IsString s, Ord s) => Bimap (NonEmpty s) (NonEmpty s)
 iupacToAminoAcid = toBimap
     [ ('A', "A")
     , ('B', "DN")
@@ -59,7 +59,7 @@ iupacToAminoAcid = toBimap
 
 -- |
 -- Substitutions for converting to a DNA sequence based on IUPAC codes.
-iupacToDna :: (IsString s, Ord s) => Bimap (AmbiguityGroup s) (AmbiguityGroup s)
+iupacToDna :: (IsString s, Ord s) => Bimap (NonEmpty s) (NonEmpty s)
 iupacToDna = toBimap
     [ ('A', "A")
     , ('C', "C")
@@ -98,7 +98,7 @@ iupacToDna = toBimap
 
 -- |
 -- Substitutions for converting to a RNA sequence based on IUPAC codes.
-iupacToRna :: (IsString s, Ord s) => Bimap (AmbiguityGroup s) (AmbiguityGroup s)
+iupacToRna :: (IsString s, Ord s) => Bimap (NonEmpty s) (NonEmpty s)
 iupacToRna = BM.mapMonotonic setUpdate $ BM.mapMonotonicR setUpdate iupacToDna
   where
     setUpdate = fmap f
@@ -108,7 +108,7 @@ iupacToRna = BM.mapMonotonic setUpdate $ BM.mapMonotonicR setUpdate iupacToDna
           | otherwise =  x
 
 
-toBimap :: (IsString s, Ord s) => [(Char, String)] ->  Bimap (AmbiguityGroup s) (AmbiguityGroup s)
+toBimap :: (IsString s, Ord s) => [(Char, String)] ->  Bimap (NonEmpty s) (NonEmpty s)
 toBimap = BM.fromList . fmap transform
   where
     transform = pure . fromString . pure *** fmap (fromString . pure) . NE.fromList

@@ -133,11 +133,11 @@ parseUserInput = customExecParser preferences $ info (helper <*> userInput) desc
 validateUserInput :: UserInput -> Validation (NonEmpty Text) Specification
 validateUserInput userInput =
     Specification
-      <$> (pure . S.fromList . fmap fromString . inputAlphabet) userInput
-      <*> (pure . S.fromList . fmap fromString . inputLeaves  ) userInput
-      <*> (pure . inputFASTA   ) userInput
-      <*> (pure . inputTreeFile) userInput
-      <*> validate (pure "insertion probability outside range (0, 1)")    validProbability (inputInsertion    userInput)
+      (S.fromList . fmap fromString $ inputAlphabet userInput)
+      (S.fromList . fmap fromString $ inputLeaves   userInput)
+      (inputFASTA    userInput)
+      (inputTreeFile userInput)
+      <$> validate (pure "insertion probability outside range (0, 1)")    validProbability (inputInsertion    userInput)
       <*> validate (pure "deletion probability outside range (0, 1)")     validProbability (inputDeletion     userInput)
       <*> validate (pure "substitution probability outside range (0, 1)") validProbability (inputSubstitution userInput)
       <*> (pure . inputRootLength ) userInput

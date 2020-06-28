@@ -185,12 +185,12 @@ coerceEnum = toEnum . fromEnum
 -- /O(1)/
 --
 -- Malloc and populate a pointer to an exportable representation of the
--- 'Exportable' value. The supplied value is assumed to be a dynamic character
+-- 'ExportableSequence' value. The supplied value is assumed to be a dynamic character
 -- element and the result is a pointer to a C representation of a dynamic
 -- character element.
 --
 -- Call 'destructElement' to free the resulting pointer.
-constructElement :: Exportable s => s -> IO (Ptr DCElement)
+constructElement :: ExportableBuffer s => s -> IO (Ptr DCElement)
 constructElement exChar = do
     valueBuffer    <- newArray $ exportedBufferChunks exportableBuffer
     elementPointer <- malloc :: IO (Ptr DCElement)
@@ -198,7 +198,7 @@ constructElement exChar = do
     !_ <- poke elementPointer elementValue
     pure elementPointer
   where
-    width  = exportedElementWidthSequence exportableBuffer
+    width  = exportedElementWidthBuffer exportableBuffer
     exportableBuffer = toExportableBuffer exChar
 
 

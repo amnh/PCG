@@ -41,7 +41,6 @@ module Bio.Metadata
   , dynamicMetadataFromTCM
   , maybeConstructDenseTransitionCostMatrix
   -- * Lens fields
-  , GetDenseTransitionCostMatrix(..)
   , GetSparseTransitionCostMatrix(..)
   , GetSymbolChangeMatrix(..)
   , GetPairwiseTransitionCostMatrix(..)

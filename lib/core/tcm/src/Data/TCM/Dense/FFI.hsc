@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- an FFI interface for C code that efficiently aligns either two or three
+-- An FFI interface for C code that efficiently aligns either two or three
 -- sequences, using Ukkonen when appropriate, in both affine and non-affine
 -- cases.
 --
