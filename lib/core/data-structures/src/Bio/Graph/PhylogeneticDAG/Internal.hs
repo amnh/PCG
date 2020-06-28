@@ -46,6 +46,7 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , HasMinimalNetworkContext(..)
   , HasVirtualNodeMapping(..)
   , setDefaultMetadata
+  , pruneEdgeSet
   ) where
 
 
@@ -79,6 +80,7 @@ import           Data.List.NonEmpty              (NonEmpty (..))
 import qualified Data.List.NonEmpty              as NE
 import           Data.Maybe                      (fromMaybe)
 import           Data.MonoTraversable
+import           Data.Set                        (Set, notMember)
 import           Data.String
 import qualified Data.Text                       as T (Text, filter, length, unlines)
 import           Data.TopologyRepresentation
@@ -568,8 +570,22 @@ localResolutionApplication dynFunction meta leftResolutions rightResolutions =
         }
 
 
-
-
+-- |
+-- Remove all edges in the given edgeset from the PhylogeneticDAG.
+--
+-- *Note:* No saftey checks are performed to ensure that the reulsting graph is connected.
+pruneEdgeSet
+  :: Set EdgeReference
+  -> PhylogeneticDAG m e n u v w x y z
+  -> PhylogeneticDAG m e n u v w x y z
+pruneEdgeSet edgeSet (PDAG2 x m) = (`PDAG2` m) $ x & _references %~ (pruneEdge <#$>)
+  where
+    pruneEdge k v =
+        IndexData
+        { nodeDecoration = nodeDecoration v
+        , parentRefs     = IS.filter        (\i   -> (k,i) `notMember` edgeSet) $ parentRefs v
+        , childRefs      = IM.filterWithKey (\i _ -> (i,k) `notMember` edgeSet) $  childRefs v
+        }
 
 
 -- |
@@ -605,6 +621,7 @@ defaultMetadataValue =
   , minimalNetworkContext = Nothing
   }
 
+
 {-
 ┌───────────────────────────────┐
 │                               │
@@ -612,6 +629,7 @@ defaultMetadataValue =
 │                               │
 └───────────────────────────────┘
 -}
+
 
 -- |
 -- Nicely show the DAG information.

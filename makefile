@@ -18,7 +18,7 @@ sub-libs      = pcg-file-parsers pcg-language pcg-utility
 
 # file paths
 
-cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.8.1/phylogenetic-component-graph-0.1.0.1/x/pcg/build/pcg/pcg
+cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.10.1/phylogenetic-component-graph-0.1.0.1/x/pcg/build/pcg/pcg
 
 
 # Target aliases for easy CLI use
@@ -162,7 +162,7 @@ install-cabal:
 
 
 cabal-setup: phylogenetic-component-graph.cabal cabal.project
-	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests --with-compiler=ghc-8.8.1 --allow-newer
+	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests --with-compiler=ghc-8.10.1 --allow-newer
 
 # Builds with no extra generated features and no optimizations
 cabal-build-quick: phylogenetic-component-graph.cabal cabal.project
@@ -303,7 +303,7 @@ clean: phylogenetic-component-graph.cabal stack.yaml
 	@echo "[✓] Cleaning complete!"
 
 code-lines:
-	loc --exclude 'css|html|js|md|tex|sh|yaml' --sort lines
+	loc --exclude 'css|html|js|makefile|md|tex|sh|yaml' --sort lines
 
 # Legacy cabal build option
 cabal-build: phylogenetic-component-graph.cabal

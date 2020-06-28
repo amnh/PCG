@@ -1,15 +1,24 @@
 allow-newer: true
 
-compiler: ghc-8.8.3
+
+compiler: ghc-8.10.1
 
 compiler-check: match-exact
 
 dump-logs: all
 
 extra-deps:
+  - algebraic-graphs-0.4
   - clustering-0.4.1
   - compact-0.1.0.1
   - pretty-tree-0.1.0.0
+  - tasty-rerun-1.1.14
+  - vector-th-unbox-0.2.1.7
+  - wl-pprint-text-1.2.0.0
+  - git: https://github.com/ekmett/lens
+    commit: 12768f14b1112d4f4f1036861197e0610c325853
+  - git: https://github.com/sol/doctest
+    commit: ddef72d3512534533a87f7ca16d25e4d9a80ebed
 
 ghc-options:
   "$everything": -j -fdiagnostics-color=always
@@ -22,4 +31,4 @@ packages:
 
 require-stack-version: ">=2.3.1"
 
-resolver: lts-15.10
+resolver: lts-16.2

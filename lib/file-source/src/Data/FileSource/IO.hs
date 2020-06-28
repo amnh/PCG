@@ -29,7 +29,7 @@ module Data.FileSource.IO
   , writeFileWithMove
   , writeSTDOUT
     -- * Binary data I/O
-  , deserializeBinary
+--  , deserializeBinary
   , serializeBinary
     -- * Compact region I/O
   , deserializeCompact
@@ -45,7 +45,7 @@ import           Control.Monad
 import           Control.Monad.IO.Class
 import           Control.Monad.Trans.Validation
 import           Data.Bifunctor
-import           Data.Binary                       (Binary, decodeFileOrFail, encode)
+import           Data.Binary                       (Binary, encode)
 import           Data.ByteString.Lazy              (ByteString)
 import qualified Data.ByteString.Lazy              as BS
 import           Data.Char                         (isNumber)
@@ -196,6 +196,7 @@ writeSTDOUT = liftIO . \case
     B s -> BS.putStr s
 
 
+{-
 -- |
 -- Deserialize binary encodable content from the specified file path.
 --
@@ -215,6 +216,7 @@ deserializeBinary filePath =
         case res of
           Left  (_, err) -> invalid . Right . makeDeserializeErrorInBinaryEncoding fp $ fromString err
           Right val      -> pure val
+-}
 
 
 -- |

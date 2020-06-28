@@ -329,10 +329,8 @@ collapseAndMerge xs = extractResult $ foldlM sequenceMerge initialMap ms
          , MetadataSequence ()
          )
     extractResult st =
-      let
-        res = st `runState` initialState
-      in
-        (fmap CS.fromNonEmpty *** MD.fromNonEmpty . fmap fst) $ res
+      let res = st `runState` initialState
+      in  (fmap CS.fromNonEmpty *** MD.fromNonEmpty . fmap fst) $ res
 
     sequenceMerge :: Map ShortText (NonEmpty UnifiedCharacterBlock)
                   -> PartiallyUnififedCharacterSequences (TCM, TCMStructure)

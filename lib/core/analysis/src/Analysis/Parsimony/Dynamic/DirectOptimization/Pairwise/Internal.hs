@@ -61,10 +61,6 @@ import           Data.Word                   (Word8)
 import           Numeric.Extended.Natural
 import           Prelude                     hiding (lookup, zipWith)
 
---import Debug.Trace
-trace = const id
-traceShowId = id
-
 
 -- |
 -- Which direction to align the character at a given matrix point.
@@ -235,9 +231,9 @@ directOptimization overlapλ char1 char2 matrixFunction =
                -- Neither character was Missing, but one of them is empty when gaps are removed
                else let gap = getMedian $ gapOfStream char1
                         f x = let m = getMedian x in deleteElement (fst $ overlapλ m gap) m
-                    in  (0, (\x -> trace ("One char all gaps, non-gapped char: " <> show x) x) $ omap f longerChar)
+                    in  (0, omap f longerChar)
                -- Both have some non-gap elements, perform string alignment
-          else let traversalMatrix = matrixFunction overlapλ longerChar $ trace "Neither Empty" shorterChar
+          else let traversalMatrix = matrixFunction overlapλ longerChar shorterChar
                in  traceback overlapλ traversalMatrix longerChar shorterChar
         transformation    = if swapped then omap swapContext else id
         regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
@@ -331,31 +327,30 @@ measureCharacters
      , MonoFoldable s
      , Ord (Element s)
      , Ord (Subcomponent (Element s))
-     , Show s
      )
   => s
   -> s
   -> (Bool, s, s)
 measureCharacters lhs rhs
-  | lhsOrdering == GT = traceShowId ( True, rhs, lhs)
-  | otherwise         = traceShowId (False, lhs, rhs)
+  | lhsOrdering == GT = ( True, rhs, lhs)
+  | otherwise         = (False, lhs, rhs)
   where
     lhsOrdering =
         -- First, compare inputs by length.
-        case trace "Comparing lengths" $ comparing olength lhs rhs of
+        case comparing olength lhs rhs of
           -- If the inputs are equal length,
           -- Then compare by the (arbitary) lexicographical ordering of the median states.
           EQ -> let x = otoList lhs
                     y = otoList rhs
                     f = fmap getMedian
-                in  case trace "comparing medians" $ f x `compare` f y of
+                in  case f x `compare` f y of
                       -- If the input median states have the same ordering,
                       -- Lastly, we compare by the lexicographic ordering of the "tagged triples."
                       --
                       -- If they are equal after this step,
                       -- Then the inputs are representationally equal.
                       -- Actually, honest to goodness 100% equal!
-                      EQ -> trace "Comparing representations" $ x `compare` y
+                      EQ -> x `compare` y
                       v  -> v
           v  -> v
 
@@ -386,10 +381,7 @@ measureCharacters lhs rhs
 {-# SPECIALISE measureAndUngapCharacters :: DynamicCharacter -> DynamicCharacter -> (Bool, IntMap Word, IntMap Word, DynamicCharacter, DynamicCharacter) #-}
 measureAndUngapCharacters
   :: ( EncodableDynamicCharacter s
-     , EncodableDynamicCharacterElement (Element s)
-     , MonoFoldable s
      , Ord (Subcomponent (Element s))
-     , Show s
      )
   => s
   -> s
@@ -405,8 +397,8 @@ measureAndUngapCharacters char1 char2
           ungappedLen1 = olength ungappedChar1
           ungappedLen2 = olength ungappedChar2
       in  case ungappedLen1 `compare` ungappedLen2 of
-            EQ | ungappedLen1 == 0 -> needToSwap $ trace "Comparing gapped inputs" $ measureCharacters char1 char2
-            _                      -> needToSwap $ trace "Comparing ungapped inputs" $ measureCharacters ungappedChar1 ungappedChar2
+            EQ | ungappedLen1 == 0 -> needToSwap $ measureCharacters char1 char2
+            _                      -> needToSwap $ measureCharacters ungappedChar1 ungappedChar2
 
 
 -- |

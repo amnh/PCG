@@ -26,14 +26,12 @@ import           Bio.Graph.Node
 import           Bio.Sequence
 import           Control.Lens
 import           Data.Monoid                (Sum (..))
-import           Data.NodeLabel
 import           Data.Vector
 import qualified Data.Vector.NonEmpty       as NE
 import           VectorBuilder.Builder      (Builder)
 import qualified VectorBuilder.Builder      as VB
 import           VectorBuilder.Vector       (build)
 
-import           Debug.Trace
 
 
 clusterLeaves
@@ -57,12 +55,7 @@ clusterLeaves meta leaves opt = dendro
         getSum $ characterSequenceDistance @f meta charSeq1 charSeq2
 
     dendro :: Dendrogram (DecoratedCharacterNode f)
-    dendro =
-      (\x -> trace
-               (drawDendrogram
-                  $ fmap (nodeLabelToString . view _nodeDecorationDatum) x)
-               x) $
-      hclust opt leafSetVector distance
+    dendro = hclust opt leafSetVector distance
 
 
 clusterIntoGroups

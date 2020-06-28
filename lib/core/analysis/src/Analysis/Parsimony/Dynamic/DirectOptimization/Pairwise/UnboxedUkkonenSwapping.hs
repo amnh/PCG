@@ -40,9 +40,6 @@ import qualified Data.Matrix.Unboxed.Mutable as M
 import           Data.MonoTraversable
 import qualified Data.Vector.Unboxed.Mutable as V
 
---import Debug.Trace
-trace = const id
-
 
 -- |
 -- Performs a naive direct optimization.
@@ -98,13 +95,12 @@ unboxedUkkonenSwappingDO overlapFunction char1 char2
     -- > lesserLen <= 4
     --     OR
     -- > coefficient == 0
-    noGainFromUkkonenMethod = (\x -> trace ("UUS - noGainFromUkkonenMethod: " <> show x) x)
-                           $  lesserLen <= 4
+    noGainFromUkkonenMethod =     lesserLen <= 4
                            || 2 * longerLen >= 3 * lesserLen
                            || coefficient == 0
       where
-        longerLen = (\x -> trace ("longerLen: " <> show x) x) $ olength longer
-        lesserLen = (\x -> trace ("lesserLen: " <> show x) x) $ olength lesser
+        longerLen = olength longer
+        lesserLen = olength lesser
 
     -- /O(2*(a - 1))/
     --

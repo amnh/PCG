@@ -23,7 +23,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
   ( unboxedSwappingDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, measureAndUngapCharacters, measureCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, measureAndUngapCharacters)
 import           Bio.Character.Encodable
 import           Control.Monad.ST
 import           Data.DList                  (snoc)
@@ -34,10 +34,6 @@ import qualified Data.Matrix.Unboxed.Mutable as M
 import           Data.Maybe                  (fromMaybe)
 import           Data.MonoTraversable
 import qualified Data.Vector.Unboxed.Mutable as V
-
---import Debug.Trace
-trace = const id
-traceShowId = id
 
 
 -- |
@@ -65,7 +61,6 @@ buildDirectionMatrix
   -> s
   -> s
   -> (Word, Matrix Direction)
-buildDirectionMatrix _ topChar leftChar | trace (unlines ["Top char: " <> show topChar, "Left char: " <> show leftChar]) False = undefined
 buildDirectionMatrix overlapFunction topChar leftChar = fullMatrix
   where
     cost x y   = snd $ overlapFunction x y
@@ -150,11 +145,11 @@ directOptimization overlapλ matrixFunction char1 char2
                    -- Niether character was Missing, but one of them is empty when gaps are removed
                    else let gap = getMedian $ gapOfStream char1
                             f x = let m = getMedian x in deleteElement (fst $ overlapλ m gap) m
-                        in  (0, trace "Just one is gapped" $ omap f longerChar)
+                        in  (0, omap f longerChar)
                    -- Both have some non-gap elements, perform string alignment
               else let (cost, dirMatrix) = matrixFunction overlapλ longerChar shorterChar
                    in  (cost, traceback overlapλ dirMatrix longerChar shorterChar)
-          transformation    = if swapped then  trace "SWAPPING" $ omap swapContext else trace "NO SWAP" id
+          transformation    = if swapped then omap swapContext else id
           regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
           alignmentContext  = transformation regappedAlignment
       in (alignmentCost, alignmentContext)

@@ -34,7 +34,6 @@ import Data.List.NonEmpty
 import Data.IntMap                      (IntMap)
 import Data.MonoTraversable
 import Data.Semigroup.Foldable
-import Data.Vector.NonEmpty             (Vector)
 import GHC.Generics                     (Generic)
 
 

@@ -22,7 +22,7 @@ module PCG.Command.Report.ImpliedAlignment
   ( impliedAlignmentOutputs
   ) where
 
-import           Analysis.Distance
+--import           Analysis.Distance
 import           Bio.Character
 import           Bio.Character.Decoration.Additive
 import           Bio.Character.Decoration.Continuous
@@ -35,28 +35,28 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Metadata
 import           Bio.Sequence
-import           Bio.Sequence.Metadata
+--import           Bio.Sequence.Metadata
 import           Control.Arrow
 import           Control.Lens
-import           Control.Lens.Operators              ((^.))
+--import           Control.Lens.Operators              ((^.))
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
-import           Data.Bimap                          (Bimap)
+--import           Data.Bimap                          (Bimap)
 import qualified Data.Bimap                          as BM
 import           Data.Bits
 import           Data.CharacterName
 import           Data.Coerce
-import           Data.FileSource
+--import           Data.FileSource
 import           Data.Foldable
 import           Data.Key
-import           Data.List                           (intersperse)
+--import           Data.List                           (intersperse)
 import           Data.List.NonEmpty                  (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty                  as NonEmpty
 import           Data.List.Utility
 import           Data.Map                            (Map)
 import qualified Data.Map                            as Map
-import           Data.Matrix.Unboxed                 (Matrix)
-import qualified Data.Matrix.Unboxed                 as Matrix
+--import           Data.Matrix.Unboxed                 (Matrix)
+--import qualified Data.Matrix.Unboxed                 as Matrix
 import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.NodeLabel
@@ -64,16 +64,16 @@ import           Data.Semigroup.Foldable             (Foldable1 (..))
 import           Data.String
 import           Data.Text.Lazy                      (Text)
 import qualified Data.Text.Lazy                      as Text
-import           Data.Text.Lazy.Builder              (Builder)
+--import           Data.Text.Lazy.Builder              (Builder)
 import qualified Data.Text.Lazy.Builder              as Builder
-import qualified Data.Text.Lazy.Builder.RealFloat    as Builder
-import           Data.Text.Short                     (ShortText)
+--import qualified Data.Text.Lazy.Builder.RealFloat    as Builder
+--import           Data.Text.Short                     (ShortText)
 import           Data.Vector                         (Vector)
-import qualified Data.Vector                         as Vector
+--import qualified Data.Vector                         as Vector
 import qualified Data.Vector.NonEmpty                as NEV
 import           Prelude                             hiding (filter)
 import           TextShow                            hiding (fromString)
-import           TextShow.Custom
+--import           TextShow.Custom
 
 
 -- |
@@ -173,14 +173,14 @@ renderCharacter alphabet xs
 -- |
 -- Show an 'EncodableStreamElement' by decoding it with its corresponding alphabet.
 renderElement :: Alphabet String -> AmbiguityGroup -> Text
-renderElement alphabet element
-  |   noBits == element = "<Empty Character>"
-  |  allBits == element = "?"
-  | otherwise           = fromString . renderAmbiguity $ toIUPAC symbols
+renderElement alphabet e
+  |   noBits == e = "<Empty Character>"
+  |  allBits == e = "?"
+  | otherwise     = fromString . renderAmbiguity $ toIUPAC symbols
   where
-    noBits  = element `xor` element
+    noBits  = e `xor` e
     allBits = complement noBits
-    symbols = decodeElement alphabet element
+    symbols = decodeElement alphabet e
     renderAmbiguity amb =
       let (x:|xs) = toNonEmpty amb
       in  case xs of

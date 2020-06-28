@@ -21,6 +21,7 @@
 {-# LANGUAGE DeriveGeneric            #-}
 {-# LANGUAGE FlexibleContexts         #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
+{-# LANGUAGE StrictData               #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
   ( DenseTransitionCostMatrix
@@ -46,9 +47,6 @@ import Foreign.C.Types
 --import Foreign.StablePtr
 import Prelude   hiding (sequence, tail)
 import System.IO.Unsafe (unsafePerformIO)
-
---import Debug.Trace
-trace = const id
 
 
 #include "c_alignment_interface.h"
@@ -182,7 +180,6 @@ foreignPairwiseDO
   :: ( EncodableDynamicCharacter s
      , ExportableElements s
      , Ord (Subcomponent (Element s))
-     , Show s
      )
   => DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
   -> s                         -- ^ First  dynamic character
@@ -222,17 +219,17 @@ foreignThreeWayDO char1 char2 char3 costMatrix = algn3d char1 char2 char3 costMa
 -- The process for this algorithm is to generate a traversal matrix then perform a traceback.
 -- {-# INLINE algn2d #-}
 {-# SPECIALISE algn2d :: UnionContext -> MedianContext -> DenseTransitionCostMatrix -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
-algn2d :: ( EncodableDynamicCharacter s
-          , ExportableElements s
-          , Ord (Subcomponent (Element s))
-          , Show s
-          )
-       => UnionContext
-       -> MedianContext
-       -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
-       -> s                         -- ^ First  dynamic character
-       -> s                         -- ^ Second dynamic character
-       -> (Word, s)                 -- ^ The cost of the alignment
+algn2d
+  :: ( EncodableDynamicCharacter s
+     , ExportableElements s
+     , Ord (Subcomponent (Element s))
+     )
+  => UnionContext
+  -> MedianContext
+  -> DenseTransitionCostMatrix -- ^ Structure defining the transition costs between character states
+  -> s                         -- ^ First  dynamic character
+  -> s                         -- ^ Second dynamic character
+  -> (Word, s)                 -- ^ The cost of the alignment
 algn2d computeUnion computeMedians denseTCMs char1 char2 =
 {-
     let (gapsChar1, ungappedChar1) = (\v@(y,x) -> trace ("CHAR 1: " <> show x <> "\ngaps: " <> show y) v) $ deleteGaps char1

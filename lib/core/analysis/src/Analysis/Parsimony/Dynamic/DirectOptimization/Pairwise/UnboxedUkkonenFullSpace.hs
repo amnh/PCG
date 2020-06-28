@@ -472,9 +472,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
       where
         differenceInLength = longerLen - lesserLen
 
-    w  = width
     qd = quasiDiagonalWidth
---    Δo = co - po
 
     updatedBand = do
 
@@ -482,12 +480,10 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
       -- Allocate mutable state variables  --
       ---------------------------------------
 
-      headStop  <- newSTRef cols
       tailStart <- newSTRef cols
 
       t0' <- newSTRef (-1)
       t1' <- newSTRef $ qd + fromEnum po
-      t2' <- newSTRef (maxBound :: Int)
 
       ---------------------------------------
       -- Define some generalized functions --
@@ -618,11 +614,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                 computeCell' ~(_,j) = computeCell leftElement insertCost i j
                 internalCell' j = internalCell leftElement insertCost i j >>= write (i,j)
                 recomputeUntilSame j = snd <$> iterateUntilM continueRecomputing computeCell' (False, j)
-            in  do -- Get the starts from the previous iteration
-                   start1 <- readSTRef headStop
-                   start2 <- readSTRef tailStart
-
-                   -- First, we fill in 0 or more cells of the left region of
+            in  do -- First, we fill in 0 or more cells of the left region of
                    -- the expanded band. This is the region [b0, e0] computed
                    -- above. 
                    --  ⊗ ┃  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16

@@ -41,13 +41,10 @@ import           Data.Either (isLeft)
 import           Data.Foldable
 import qualified Data.List.NonEmpty                                     as NE
 import           Data.MonoTraversable
-import           Data.Range
 import           Data.Semigroup
 import           Data.TCM.Dense
 import           Data.Word
 import           Prelude                                                hiding (zipWith)
-
-import Debug.Trace
 
 
 -- |
@@ -149,9 +146,7 @@ directOptimizationPostorderPairwise pairwiseAlignment (lChild , rChild) = result
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
-     , Bound (Subcomponent (Element c)) ~ Word
      , EncodableStreamElement (Subcomponent (Element c))
-     , Ranged (Subcomponent (Element c))
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Subcomponent (Element c))
@@ -169,15 +164,13 @@ directOptimizationPreorder pairwiseAlignment meta =
 -- initializes the root node decoration as the base case of the pre-order
 -- traversal.
 initializeRoot
-  :: ( Bound (Subcomponent (Element c)) ~ Word
-     , DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
      , EncodableStreamElement (Subcomponent (Element c))
-     , Ranged (Subcomponent (Element c))
      )
   => DynamicCharacterMetadataDec (Subcomponent (Element c))
   -> d
   -> DynamicDecorationDirectOptimization c
-initializeRoot meta =
+initializeRoot _meta =
     extendPostorderToDirectOptimization
       <$> id
       <*> lexicallyDisambiguate . (^. alignmentContext)
@@ -188,13 +181,9 @@ initializeRoot meta =
 -- Disambiguate the elements of a dynamic character using only lexical ordering
 -- of the alphabet.
 lexicallyDisambiguate
-  :: forall c.
-     ( Bound (Subcomponent (Element c)) ~ Word
-     , EncodableDynamicCharacter c
+  :: ( EncodableDynamicCharacterElement (Element c)
      , FiniteBits (Subcomponent (Element c))
-     , EncodableStreamElement (Subcomponent (Element c))
-     , ExportableBuffer (Subcomponent (Element c))
-     , Ranged (Subcomponent (Element c))
+     , MonoFunctor c
      )
   => c
   -> c
@@ -221,17 +210,15 @@ disambiguateElement x = alignElement val val val
 -- Use the decoration(s) of the ancestral nodes to calculate the corrent node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
-  :: ( Bound (Subcomponent (Element c)) ~ Word
-     , DirectOptimizationPostorderDecoration d c
+  :: ( DirectOptimizationPostorderDecoration d c
      , EncodableStreamElement (Subcomponent (Element c))
-     , Ranged (Subcomponent (Element c))
      )
   => PairwiseAlignment c
   -> DynamicCharacterMetadataDec (Subcomponent (Element c))
   -> Either d d
   -> DynamicDecorationDirectOptimization c
   -> DynamicDecorationDirectOptimization c
-updateFromParent _pairwiseAlignment meta decorationDirection parentDecoration = resultDecoration
+updateFromParent _pairwiseAlignment _meta decorationDirection parentDecoration = resultDecoration
   where
     resultDecoration  = extendPostorderToDirectOptimization currentDecoration single cia
     currentDecoration = either id id decorationDirection

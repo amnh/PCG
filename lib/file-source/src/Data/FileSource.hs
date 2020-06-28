@@ -251,7 +251,7 @@ toFileSource = FileSource . pack . otoList
 -- |
 -- /O(n)/
 --
--- Get the normalizied extenstion of a FileSource.
+-- Get the normalizied extension of a FileSource.
 --
 -- The normalized form is a lower-case string with no leading '.'.
 --
