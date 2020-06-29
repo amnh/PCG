@@ -28,6 +28,7 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Control.DeepSeq
 import Control.Lens
+import Data.Binary
 import GHC.Generics
 import Numeric.Extended.Natural
 import Text.XML
@@ -42,7 +43,7 @@ newtype MetricDecorationInitial c
     { metricDecorationInitialCharacter :: c
     }
     deriving stock    (Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 -- |
@@ -70,7 +71,7 @@ data  SankoffOptimizationDecoration c
     , sankoffIsLeaf                :: !Bool
     }
     deriving stock    (Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 -- | A list of states on the child that contribute to the lowest score on each state in the parent

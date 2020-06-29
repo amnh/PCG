@@ -47,7 +47,9 @@ import           Prelude                                       hiding (zipWith)
 -- Computes the total edge cost over all the disambiguated final assignments.
 totalEdgeCosts
   :: ( EncodableDynamicCharacter c
+     , Exportable c
      , HasSingleDisambiguation z c
+     , Ord (Element c)
      , Element c ~ DynamicCharacterElement
      )
   => PhylogeneticDAG m e n u v w x y z

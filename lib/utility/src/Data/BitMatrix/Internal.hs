@@ -22,8 +22,10 @@
 module Data.BitMatrix.Internal where
 
 import Control.DeepSeq
+import Data.Binary
 import Data.Bits
 import Data.BitVector.LittleEndian
+import Data.BitVector.LittleEndian.Instances ()
 import Data.Foldable
 import Data.Hashable
 import Data.List.Utility           (equalityOf, invariantTransformation)
@@ -49,7 +51,7 @@ import TextShow                    (TextShow (showb), singleton, unlinesB, unwor
 -}
 data  BitMatrix
     = BitMatrix {-# UNPACK #-} !Int {-# UNPACK #-} !BitVector
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
     deriving stock    (Eq, Generic)
 
 

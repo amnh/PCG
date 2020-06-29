@@ -12,6 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -33,6 +34,7 @@ module Data.TopologyRepresentation
 
 
 import           Control.DeepSeq
+import           Data.Binary
 import           Data.Foldable
 import           Data.Functor.Classes
 import           Data.Hashable
@@ -53,8 +55,9 @@ isCompatableSubtopologyOf (TR x) (TR y) = isSubsetOf x y
 --
 -- Often used to represent a unique spanning tree in a phylogenetic DAG.
 newtype TopologyRepresentation a = TR { unwrap :: MutualExclusionSet a }
-  deriving stock   (Eq, Generic, Ord)
-  deriving newtype (Eq1, Hashable, Monoid, NFData, Ord1, Semigroup)
+  deriving anyclass (Binary)
+  deriving stock    (Eq, Generic, Ord)
+  deriving newtype  (Eq1, Hashable, Monoid, NFData, Ord1, Semigroup)
 
 {-
 instance Foldable TopologyRepresentation where

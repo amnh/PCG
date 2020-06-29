@@ -10,13 +10,14 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE DeriveGeneric         #-}
-{-# LANGUAGE DerivingStrategies    #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 module Bio.Metadata.Continuous
   ( ContinuousCharacterMetadataDec()
@@ -30,6 +31,7 @@ import Bio.Metadata.General
 import Bio.Metadata.Metric
 import Control.DeepSeq
 import Control.Lens
+import Data.Binary
 import Data.CharacterName
 import Data.MetricRepresentation
 import Data.Range
@@ -40,7 +42,8 @@ import Text.XML
 -- |
 -- Metadata type for a continuous character.
 newtype ContinuousCharacterMetadataDec = CCM GeneralCharacterMetadataDec
-  deriving stock (Generic, Show)
+  deriving stock   (Generic, Show)
+  deriving newtype (Binary, NFData)
 
 
 instance GeneralCharacterMetadata ContinuousCharacterMetadataDec where
@@ -62,9 +65,6 @@ instance HasCharacterName ContinuousCharacterMetadataDec CharacterName where
 instance HasCharacterWeight ContinuousCharacterMetadataDec Double where
 
     characterWeight = lens (\(CCM e) -> e ^. characterWeight) $ \(CCM e) x -> CCM (e & characterWeight .~ x)
-
-
-instance NFData ContinuousCharacterMetadataDec
 
 
 instance ToXML ContinuousCharacterMetadataDec where

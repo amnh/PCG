@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -35,6 +36,7 @@ import           Bio.Graph.PhylogeneticDAG
 import           Bio.Sequence
 import           Control.DeepSeq
 import           Control.Lens              as Lens hiding (Indexable)
+import           Data.Binary
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding (indent)
 import           Data.GraphViz.Types       hiding (attrs)
@@ -57,8 +59,9 @@ import           Type.Reflection           (Typeable)
 -- A solution that contains one or more equally costly forests.
 newtype PhylogeneticSolution a
       = PhylogeneticSolution {getPhylogeneticSolution :: NonEmpty (PhylogeneticForest a)}
-      deriving stock   (Generic)
-      deriving newtype (Semigroup, Typeable)
+      deriving anyclass (Binary)
+      deriving stock    (Generic)
+      deriving newtype  (Semigroup, Typeable)
 
 
 -- |

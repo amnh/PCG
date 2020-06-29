@@ -43,6 +43,7 @@ import           Control.Arrow
 import           Control.DeepSeq                     (NFData)
 import           Control.Monad.State.Strict
 import           Data.Bifunctor                      (bimap)
+import           Data.Binary                         (Binary)
 import           Data.Bits
 import           Data.Data
 import           Data.Foldable
@@ -80,7 +81,7 @@ data Alphabet a =
      , symbolVector :: {-# UNPACK #-} !(Vector a)
      , stateNames   :: [a]
      }
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
     deriving stock    (Data, Generic, Functor, Typeable)
 
 

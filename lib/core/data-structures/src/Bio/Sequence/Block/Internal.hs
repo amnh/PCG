@@ -35,11 +35,13 @@ module Bio.Sequence.Block.Internal
 import           Control.DeepSeq
 import           Control.Lens
 import           Data.Bifunctor
+import           Data.Binary
 import           Data.Foldable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
 import qualified Data.Text                   as T (Text, lines, unlines)
 import           Data.Vector                 (Vector, fromListN)
+import           Data.Vector.Binary          ()
 import           Data.Vector.Instances       ()
 import           GHC.Generics
 import           Text.XML
@@ -61,7 +63,7 @@ data  Block u v w x y z
     , _dynamicBin     :: Vector z
     }
     deriving stock    (Eq, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 -- |

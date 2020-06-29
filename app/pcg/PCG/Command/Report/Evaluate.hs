@@ -12,7 +12,6 @@ import Control.Arrow                       ((***))
 import Control.Evaluation
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Validation
-import Data.Compact                        (getCompact)
 import Data.FileSource                     (FileSource, toFileSource)
 import Data.FileSource.IO
 import Data.Foldable                       (traverse_)
@@ -75,11 +74,11 @@ generateOutput
   :: GraphState
   -> OutputFormat
   -> FileStreamContext
-generateOutput g' format =
+generateOutput g format =
   case format of
     Data     {} -> SingleStream . streamText $ either showtl showtl g
     XML      {} -> SingleStream . streamText $ either showtl (fromString . ppTopElement . toXML) g
-    DotFile  {} -> SingleStream . streamText $ generateDotFile g'
+    DotFile  {} -> SingleStream . streamText $ generateDotFile g
     Metadata {} -> either
                      (const $ ErrorCase "No metadata in topological solution")
                      (SingleStream . streamText . outputMetadata)
@@ -90,8 +89,6 @@ generateOutput g' format =
                              g
     ImpliedAlignment {} -> streamImpliedAlignments g
     _                   -> ErrorCase "Unrecognized 'report' command"
-  where
-    g = getCompact g'
 
 
 streamImpliedAlignments :: Either b DecoratedCharacterResult -> FileStreamContext

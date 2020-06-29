@@ -65,7 +65,6 @@ import Bio.Sequence
 import Control.Evaluation
 import Control.Lens.Combinators            (mapped)
 import Control.Lens.Operators              ((%~), (.~), (^.))
-import Data.Compact
 import Data.EdgeLength
 import Data.Function                       ((&))
 import Data.Kind
@@ -144,7 +143,7 @@ type SearchState = EvaluationT GlobalSettings IO GraphState
 -- |
 -- The state of the graph that partitions the evaluation model on one of two
 -- paths depending on the presence or absence of character states in the search.
-type GraphState = Compact (Either TopologicalResult DecoratedCharacterResult)
+type GraphState = Either TopologicalResult DecoratedCharacterResult
 
 
 -- |

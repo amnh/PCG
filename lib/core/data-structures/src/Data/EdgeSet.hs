@@ -12,6 +12,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -23,6 +24,7 @@ module Data.EdgeSet
   ) where
 
 import           Control.DeepSeq
+import           Data.Binary
 import           Data.Foldable
 import           Data.IntSet          (IntSet)
 import           Data.MonoTraversable (MonoFoldable (..))
@@ -38,8 +40,9 @@ import           TextShow.Instances   ()
 --
 -- Often used to represent a spanning tree in a DAG.
 newtype EdgeSet e = ES (Set e)
-    deriving stock   (Eq, Generic, Ord)
-    deriving newtype (Foldable, Monoid, Semigroup, TextShow)
+    deriving anyclass (Binary)
+    deriving stock    (Eq, Generic, Ord)
+    deriving newtype  (Foldable, Monoid, Semigroup, TextShow)
 
 
 instance NFData e => NFData (EdgeSet e) where

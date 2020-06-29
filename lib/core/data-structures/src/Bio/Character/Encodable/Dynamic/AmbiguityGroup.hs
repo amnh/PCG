@@ -42,6 +42,7 @@ import           Data.Bits
 import           Data.BitVector.LittleEndian
 import           Data.BitVector.LittleEndian.Instances ()
 import           Data.Foldable
+import           Data.Hashable
 import           Data.Key
 import           Data.List.NonEmpty                    (NonEmpty (..))
 import           Data.Maybe                            (fromJust)
@@ -65,7 +66,7 @@ import           TextShow                              (TextShow (showb), toStri
 newtype AmbiguityGroup
       = AG { packAmbiguityGroup :: BitVector }
       deriving stock   (Generic)
-      deriving newtype (Bits, Eq, FiniteBits, MonoFoldable, MonoFunctor, NFData, Ord)
+      deriving newtype (Bits, Eq, FiniteBits, Hashable, MonoFoldable, MonoFunctor, NFData, Ord)
 
 
 type instance Element AmbiguityGroup = Bool

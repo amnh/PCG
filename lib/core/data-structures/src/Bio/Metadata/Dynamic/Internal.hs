@@ -10,6 +10,7 @@
 --
 -----------------------------------------------------------------------------
 
+{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveGeneric          #-}
@@ -17,9 +18,12 @@
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MagicHash              #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE StrictData             #-}
 {-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE UnboxedTuples          #-}
 
 module Bio.Metadata.Dynamic.Internal
   ( DenseTransitionCostMatrix
@@ -46,22 +50,24 @@ import           Bio.Character.Exportable
 import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic.Class   hiding (DenseTransitionCostMatrix)
+import           Bio.Metadata.Overlap
+import           Control.Arrow                ((&&&))
 import           Control.DeepSeq
 import           Control.Lens                 hiding (Fold)
-import           Control.Monad.State.Strict
 import           Data.Alphabet
+import           Data.Binary
 import           Data.Bits
 import           Data.CharacterName
 import           Data.FileSource
 import           Data.Foldable
-import           Data.Functor                 (($>))
+import           Data.Functor                 (($>), void)
+import           Data.Hashable
+import           Data.Hashable.Memoize
 import           Data.List                    (intercalate)
 import           Data.List.NonEmpty           (NonEmpty (..))
 import           Data.MetricRepresentation
 import           Data.Range
-import           Data.Semigroup
-import           Data.Semigroup.Foldable
-import           Data.TCM
+import           Data.TCM                     hiding (size, (!))
 import qualified Data.TCM                     as TCM
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
@@ -96,7 +102,11 @@ data  DynamicCharacterMetadataDec c
     { optimalTraversalFoci        :: !(Maybe TraversalFoci)
     , structuralRepresentationTCM :: !(Either
                                          (DenseTransitionCostMatrix, MetricRepresentation ())
-                                         (MetricRepresentation MemoizedCostMatrix)
+                                         (MetricRepresentation ( MemoizedCostMatrix
+                                                               , c -> c -> (c, Word)
+                                                               , c -> c -> c -> (c, Word)
+                                                               )
+                                         )
                                       )
     , metadata                    :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
     }
@@ -116,6 +126,29 @@ class ( DiscreteWithTcmCharacterMetadata s c
       ) => DynamicCharacterMetadata s c | s -> c where
 
     extractDynamicCharacterMetadata :: s -> DynamicCharacterMetadataDec c
+
+
+instance
+     ( Eq c
+     , FiniteBits c
+     , Hashable c
+     , NFData c
+     ) => Binary (DynamicCharacterMetadataDec c) where
+
+    {-# INLINE put #-}
+    put x = fold [ put $ optimalTraversalFoci x
+                 , put . bimap snd void $ structuralRepresentationTCM x
+                 , put $ metadata x
+                 ]
+
+    {-# INLINE get #-}
+    get = do
+      x <- get
+      y <- get
+      z <- get
+      let len     = toEnum . length $ z ^. characterAlphabet
+      let rebuild = bimap (rebuildDenseMatrix len &&& id) rebuildMetricRepresentation
+      pure $ DynamicCharacterMetadataDec x (rebuild y) z
 
 
 instance Eq (DynamicCharacterMetadataDec c) where
@@ -161,7 +194,6 @@ instance GeneralCharacterMetadata (DynamicCharacterMetadataDec c) where
     extractGeneralCharacterMetadata = extractGeneralCharacterMetadata . metadata
 
 
-
 instance HasCharacterAlphabet (DynamicCharacterMetadataDec c) (Alphabet String) where
 
     characterAlphabet = lens (\e -> metadata e ^. characterAlphabet)
@@ -193,7 +225,7 @@ instance HasTcmSourceFile (DynamicCharacterMetadataDec c) FileSource where
 instance GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe MemoizedCostMatrix) where
 
     sparseTransitionCostMatrix = to $
-       either (const Nothing) (foldl' (const Just) Nothing) . structuralRepresentationTCM
+       either (const Nothing) (foldl' (const (\(x,_,_) -> Just x)) Nothing) . structuralRepresentationTCM
 
 
 instance GetSymbolChangeMatrix (DynamicCharacterMetadataDec c) (Word -> Word -> Word) where
@@ -206,9 +238,11 @@ instance (Bound c ~ Word, EncodableStreamElement c, ExportableBuffer c, Ranged c
     => GetPairwiseTransitionCostMatrix (DynamicCharacterMetadataDec c) c Word where
 
     pairwiseTransitionCostMatrix = to extractPairwiseTransitionCostMatrix
+-- to (retreivePairwiseTCM . fmap (\(_, x, _) -> x) . metricRepresentation)
 
 
 instance (Bound c ~ Word, EncodableStreamElement c, ExportableBuffer c, Ranged c)
+
     => GetThreewayTransitionCostMatrix (DynamicCharacterMetadataDec c) (c -> c -> c -> (c, Word)) where
 
     threewayTransitionCostMatrix = to extractThreewayTransitionCostMatrix
@@ -232,7 +266,11 @@ instance ToXML (DynamicCharacterMetadataDec c) where
 -- |
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadata
-  :: CharacterName
+  :: (  FiniteBits c
+     , Hashable c
+     , NFData c
+     )
+  => CharacterName
   -> Double
   -> Alphabet String
   -> FileSource
@@ -247,8 +285,8 @@ dynamicMetadata name weight alpha tcmSource tcm denseMay =
   where
     representaionOfTCM = maybe largeAlphabet smallAlphabet denseMay
       where
-        largeAlphabet   = Right $ metricRep $> memoMatrixValue
-        smallAlphabet x = Left (x,metricRep)
+        largeAlphabet   = Right $ metricRep $> memoedFunctions
+        smallAlphabet x = Left (x, metricRep)
 
     metricRep =
         case tcmStructure diagnosis of
@@ -256,15 +294,26 @@ dynamicMetadata name weight alpha tcmSource tcm denseMay =
           Additive    -> LinearNorm
           _           -> ExplicitLayout (factoredTcm diagnosis) ()
 
+    memoedFunctions = (memoMatrixValue, memoize2 $ overlap2 scm, memoize3 $ overlap3 scm)
+
+    scm i j         = toEnum . fromEnum $ tcm' TCM.! (fromEnum i, fromEnum j)
+    tcm'            = factoredTcm diagnosis
     diagnosis       = diagnoseTcm tcm
+    memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) scm
+{-
     sigma  i j      = toEnum . fromEnum $ factoredTcm diagnosis TCM.! (fromEnum i, fromEnum j)
     memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) sigma
+-}
 
 
 -- |
 -- Construct a concrete typed 'DynamicCharacterMetadataDec' value from the supplied inputs.
 dynamicMetadataFromTCM
-  :: CharacterName
+  :: ( FiniteBits c
+     , Hashable c
+     , NFData c
+     )
+  => CharacterName
   -> Double
   -> Alphabet String
   -> FileSource
@@ -294,39 +343,43 @@ maybeConstructDenseTransitionCostMatrix alpha sigma = force f
 
 
 -- |
--- /O(n^2)/
+-- /O(1)/
 --
 -- Correctly select the most efficient TCM function based on the alphabet size
 -- and metric specification.
+{-# INLINE extractPairwiseTransitionCostMatrix #-}
+{-# SPECIALISE extractPairwiseTransitionCostMatrix :: DynamicCharacterMetadataDec AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 extractPairwiseTransitionCostMatrix
-  :: ( ExportableBuffer c
-     , EncodableStreamElement c
+  :: ( EncodableStreamElement c
+--     , ExportableBuffer c
      , Ranged c
      , Bound c ~ Word
      )
-  => DynamicCharacterMetadataDec c2
+  => DynamicCharacterMetadataDec c
   -> c
   -> c
   -> (c, Word)
 extractPairwiseTransitionCostMatrix =
-  either
-    (lookupPairwise . fst)
-    (retreivePairwiseTCM (const getMedianAndCost2D))
-  . structuralRepresentationTCM
+    either
+      (lookupPairwise . fst)
+      (retreivePairwiseTCM . fmap (\(_, x, _) -> x))
+    . structuralRepresentationTCM
 
 
 -- |
--- /O(n^2)/
+-- /O(1)/
 --
 -- Correctly select the most efficient TCM function based on the alphabet size
 -- and metric specification.
+{-# INLINE extractThreewayTransitionCostMatrix #-}
+{-# SPECIALISE extractThreewayTransitionCostMatrix :: DynamicCharacterMetadataDec AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 extractThreewayTransitionCostMatrix
-  :: ( ExportableBuffer c
-     , EncodableStreamElement c
+  :: ( EncodableStreamElement c
+--     , ExportableBuffer c
      , Ranged c
      , Bound c ~ Word
      )
-  => DynamicCharacterMetadataDec c2
+  => DynamicCharacterMetadataDec c
   -> c
   -> c
   -> c
@@ -334,65 +387,32 @@ extractThreewayTransitionCostMatrix
 extractThreewayTransitionCostMatrix =
   either
     (lookupThreeway . fst)
-    (retreiveThreewayTCM (const getMedianAndCost3D))
+    (retreiveThreewayTCM . fmap (\(_, _, x) -> x))
   . structuralRepresentationTCM
 
 
--- |
--- Takes one or more elements of 'FiniteBits' and a symbol change cost function
--- and returns a tuple of a new character, along with the cost of obtaining that
--- character. The return character may be (or is even likely to be) ambiguous.
--- Will attempt to intersect the two characters, but will union them if that is
--- not possible, based on the symbol change cost function.
---
--- To clarify, the return character is an intersection of all possible least-cost
--- combinations, so for instance, if @ char1 == A,T @ and @ char2 == G,C @, and
--- the two (non-overlapping) least cost pairs are A,C and T,G, then the return
--- value is A,C,G,T.
-{-# INLINE overlap #-}
-{-# SPECIALISE overlap :: FiniteBits e => (Word -> Word -> Word) -> NonEmpty e -> (e, Word) #-}
-{-# SPECIALISE overlap :: (Word -> Word -> Word) -> NonEmpty AmbiguityGroup -> (AmbiguityGroup, Word) #-}
-overlap
-  ::
-     ( FiniteBits e
-     , Foldable1 f
-     , Functor f
+rebuildMetricRepresentation
+  :: ( FiniteBits c
+     , Hashable c
+     , NFData c
      )
-  => (Word -> Word -> Word) -- ^ Symbol change matrix (SCM) to determin cost
-  -> f e                    -- ^ List of elements for of which to find the k-median and cost
-  -> (e, Word)              -- ^ K-median and cost
-overlap sigma xs = go n maxBound zero
-  where
-    (n, zero) = let wlog = getFirst $ foldMap1 First xs
-                in  (finiteBitSize wlog, wlog `xor` wlog)
-
-    go 0 theCost bits = (bits, theCost)
-    go i oldCost bits =
-        let i' = i - 1
-            newCost = sum $ getDistance (toEnum i') <$> xs
-            (minCost, bits') = case oldCost `compare` newCost of
-                                 EQ -> (oldCost, bits `setBit` i')
-                                 LT -> (oldCost, bits            )
-                                 GT -> (newCost, zero `setBit` i')
-        in go i' minCost bits'
-
-    getDistance i b = go' n (maxBound :: Word)
-      where
-        go' :: Int -> Word -> Word
-        go' 0 a = a
-        go' j a =
-          let j' = j - 1
-              a' = if b `testBit` j' then min a $ sigma i (toEnum j') else a
-          in  go' j' a'
+  => MetricRepresentation ()
+  -> MetricRepresentation ( MemoizedCostMatrix
+                          , c -> c -> (c, Word)
+                          , c -> c -> c -> (c, Word)
+                          )
+rebuildMetricRepresentation metricRep =
+    case metricRep of
+      DiscreteMetric       -> DiscreteMetric
+      LinearNorm           -> LinearNorm
+      ExplicitLayout tcm _ ->
+          let     scm i j = toEnum . fromEnum $ tcm TCM.! (fromEnum i, fromEnum j)
+                  len     = toEnum $ TCM.size tcm
+          in  ExplicitLayout tcm ( generateMemoizedTransitionCostMatrix len scm
+                                 , memoize2 $ overlap2 scm
+                                 , memoize3 $ overlap3 scm
+                                 )
 
 
-{-# INLINE overlap2 #-}
-{-# SPECIALISE overlap2 :: (Word -> Word -> Word) -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
-overlap2
-  :: (FiniteBits e {- , Show e -})
-  => (Word -> Word -> Word)
-  -> e
-  -> e
-  -> (e, Word)
-overlap2 sigma char1 char2 = overlap sigma $ char1 :| [char2]
-
+rebuildDenseMatrix :: Word -> MetricRepresentation () -> DenseTransitionCostMatrix
+rebuildDenseMatrix len = generateDenseTransitionCostMatrix 0 len . retreiveSCM

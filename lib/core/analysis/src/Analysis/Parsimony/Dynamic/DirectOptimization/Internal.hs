@@ -35,7 +35,7 @@ import           Bio.Character.Encodable
 import           Bio.Character.Exportable
 import           Bio.Graph.Node.Context
 import           Bio.Metadata                                           hiding (DenseTransitionCostMatrix)
-import           Control.Lens
+import           Control.Lens                                           hiding ((<|), (|>))
 import           Data.Bits
 import           Data.Either (isLeft)
 import           Data.Foldable
@@ -80,7 +80,6 @@ selectDynamicMetric meta =
     case {-# SCC getDense #-} meta ^. denseTransitionCostMatrix of
       Just dm -> {-# SCC foreignPairwiseDO #-} foreignPairwiseDO dm
       Nothing -> let !pTCM = meta ^. pairwiseTransitionCostMatrix
---                 in  {-# SCC ukkonen #-} ukkonenDO pTCM 
                  in  {-# SCC unboxedUkkonen #-} unboxedUkkonenFullSpaceDO pTCM
 
 
@@ -146,6 +145,7 @@ directOptimizationPostorderPairwise pairwiseAlignment (lChild , rChild) = result
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
+     , Show (Element c)
      , EncodableStreamElement (Subcomponent (Element c))
      )
   => PairwiseAlignment c

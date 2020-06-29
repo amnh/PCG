@@ -52,6 +52,7 @@ module Bio.Graph.Node.Internal
 
 import Control.DeepSeq
 import Control.Lens                hiding (_head)
+import Data.Binary
 import Data.EdgeSet
 import Data.Foldable
 import Data.Functor.Apply
@@ -75,8 +76,8 @@ data  PhylogeneticFreeNode n s
     { nodeDecorationDatum :: !n
     , sequenceDecoration  :: !s
     }
+    deriving anyclass (Binary, NFData)
     deriving stock    (Eq, Functor, Generic, Show)
-    deriving anyclass (NFData)
 
 
 -- |
@@ -87,8 +88,8 @@ data  PhylogeneticNode s n
     { resolutions          :: !(ResolutionCache s)
     , nodeDecorationDatum2 :: !n
     }
+    deriving anyclass (Binary, NFData)
     deriving stock    (Eq, Functor, Generic)
-    deriving anyclass (NFData)
 
 
 -- |
@@ -148,8 +149,8 @@ data  ResolutionInformation s
     { resolutionMetadata :: ResolutionMetadata
     , characterSequence  :: !s
     }
+    deriving anyclass (Binary, NFData)
     deriving stock    (Functor, Foldable, Traversable, Generic)
-    deriving anyclass (NFData)
 
 
 -- |
@@ -163,8 +164,8 @@ data  ResolutionMetadata
     , subtreeEdgeSet         ::                !(EdgeSet (Int, Int))
     , topologyRepresentation :: {-# UNPACK #-} !(TopologyRepresentation (Int, Int))
     }
+    deriving anyclass (Binary, NFData)
     deriving stock    (Eq, Ord, Generic)
-    deriving anyclass (NFData)
 
 
 -- |
@@ -177,9 +178,9 @@ type ResolutionCache s = NonEmpty (ResolutionInformation s)
 -- A newick representation of a subtree. 'Semigroup' instance used for subtree
 -- joining.
 newtype NewickSerialization = NS Text
+    deriving anyclass (Binary, NFData)
     deriving newtype  (Eq, Ord, Show, TextShow)
     deriving stock    (Generic)
-    deriving anyclass (NFData)
 
 
 -- |

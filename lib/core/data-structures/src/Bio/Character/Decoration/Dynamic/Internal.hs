@@ -33,6 +33,7 @@ import Bio.Character.Encodable
 import Bio.Character.Exportable
 import Control.DeepSeq
 import Control.Lens
+import Data.Binary
 import Data.Bits
 import Data.Hashable
 import Data.MonoTraversable
@@ -53,7 +54,7 @@ data  DynamicDecorationDirectOptimization d
     , dynamicDecorationDirectOptimizationImpliedAlignment         :: !d
     , dynamicDecorationDirectOptimizationSingleDisambiguation     :: !d
     }
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
     deriving stock    (Eq, Generic)
 
 
@@ -66,8 +67,29 @@ data  DynamicDecorationDirectOptimizationPostorderResult d
     , dynamicDecorationDirectOptimizationPostorderCharacterAverageLength :: {-# UNPACK #-} !AverageLength
     , dynamicDecorationDirectOptimizationPostorderAlignmentContext       :: !d
     }
-    deriving anyclass (NFData)
     deriving stock    (Eq, Generic)
+    deriving anyclass (Binary, NFData)
+
+
+-- |
+-- An abstract implied alignment dynamic character decoration with a polymorphic
+-- character type.
+data  DynamicDecorationImpliedAlignment d
+    = DynamicDecorationImpliedAlignment
+    { dynamicDecorationImpliedAlignmentCharacterCost            :: {-# UNPACK #-} !Word
+    , dynamicDecorationImpliedAlignmentCharacterLocalCost       :: {-# UNPACK #-} !Word
+    , dynamicDecorationImpliedAlignmentCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
+    , dynamicDecorationImpliedAlignmentEncodedField             :: !d
+    , dynamicDecorationImpliedAlignmentFinalGappedField         :: !d
+    , dynamicDecorationImpliedAlignmentFinalUngappedField       :: !d
+    , dynamicDecorationImpliedAlignmentPreliminaryGappedField   :: !d
+    , dynamicDecorationImpliedAlignmentPreliminaryUngappedField :: !d
+    , dynamicDecorationImpliedAlignmentLeftAlignmentField       :: !d
+    , dynamicDecorationImpliedAlignmentRightAlignmentField      :: !d
+    , dynamicDecorationImpliedAlignmentImpliedAlignmentField    :: !d
+    }
+    deriving stock (Eq, Generic)
+    deriving anyclass (Binary, NFData)
 
 
 -- |
@@ -78,8 +100,8 @@ data  DynamicDecorationInitial d
     { dynamicDecorationInitialEncodedField           :: !d
     , dynamicDecorationInitialCharacterAverageLength :: {-# UNPACK #-} !AverageLength
     }
-    deriving anyclass (NFData)
     deriving stock    (Eq, Generic)
+    deriving anyclass (Binary, NFData)
 
 
 instance (EncodableDynamicCharacter d, ExportableBuffer (Subcomponent (Element d))) => DirectOptimizationDecoration (DynamicDecorationDirectOptimization d) d where

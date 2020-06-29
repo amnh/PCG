@@ -32,15 +32,20 @@ module Bio.Metadata.DiscreteWithTCM.Internal
   , discreteMetadataFromTCM
   ) where
 
-import Bio.Character.Exportable
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM.Class
+import Bio.Metadata.Overlap
+import Control.Applicative
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
 import Data.Bits
+import Data.Binary
 import Data.CharacterName
+import Data.Functor
 import Data.FileSource
+import Data.Hashable
+import Data.Hashable.Memoize
 import Data.List                          (intercalate)
 import Data.MetricRepresentation
 import Data.Range
@@ -55,23 +60,70 @@ import Text.XML
 -- discrete different bins. Continuous bins do not have Alphabets.
 data  DiscreteWithTCMCharacterMetadataDec c
     = DiscreteWithTCMCharacterMetadataDec
-    { metricRepresentation :: !(MetricRepresentation MemoizedCostMatrix)
+    { metricRepresentation :: !(MetricRepresentation ( MemoizedCostMatrix
+                                                     , c -> c -> (c, Word)
+                                                     , c -> c -> c -> (c, Word))
+                                                     )
     , discreteData         :: {-# UNPACK #-} !DiscreteCharacterMetadataDec
     }
-    deriving stock (Eq, Generic)
+    deriving stock (Generic)
 
 
 foreignPointerData :: DiscreteWithTCMCharacterMetadataDec c -> Maybe MemoizedCostMatrix
 foreignPointerData x =
-  case metricRepresentation x of
-    ExplicitLayout _ v -> Just v
-    _                  -> Nothing
+    case metricRepresentation x of
+      ExplicitLayout _ (v,_,_) -> Just v
+      _                        -> Nothing
 
 
+instance
+     ( Eq c
+     , FiniteBits c
+     , Hashable c
+     , NFData c
+     ) => Binary (DiscreteWithTCMCharacterMetadataDec c) where
+
+    {-# INLINE put #-}
+    put x = put (void (metricRepresentation x)) <> put (discreteData x)
+
+    {-# INLINE get #-}
+    get   = liftA2 DiscreteWithTCMCharacterMetadataDec (rebuildMetricRepresentation <$> get) get
+
+
+rebuildMetricRepresentation
+  :: ( FiniteBits c
+     , Hashable c
+     , NFData c
+     )
+  => MetricRepresentation ()
+  -> MetricRepresentation ( MemoizedCostMatrix
+                          , c -> c -> (c, Word)
+                          , c -> c -> c -> (c, Word)
+                          )            
+rebuildMetricRepresentation metricRep =
+    case metricRep of
+      DiscreteMetric       -> DiscreteMetric
+      LinearNorm           -> LinearNorm
+      ExplicitLayout tcm _ ->
+          let     scm i j = toEnum . fromEnum $ tcm TCM.! (fromEnum i, fromEnum j)
+                  len     = toEnum $ TCM.size tcm
+          in  ExplicitLayout tcm ( generateMemoizedTransitionCostMatrix len scm
+                                 , memoize2 $ overlap2 scm
+                                 , memoize3 $ overlap3 scm
+                                 )
+
+
+-- | (✔)
 instance DiscreteCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
     extractDiscreteCharacterMetadata = discreteData
+
+
+instance Eq (DiscreteWithTCMCharacterMetadataDec c) where
+
+    (==) lhs rhs = (discreteData lhs == discreteData rhs) &&
+                       (metricRepresentation lhs $> ()) == (metricRepresentation rhs $> ())
 
 
 instance HasCharacterAlphabet (DiscreteWithTCMCharacterMetadataDec c) (Alphabet String) where
@@ -119,10 +171,12 @@ instance GetSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> 
 
 -- |
 -- A 'Lens' for the 'pairwiseTransitionCostMatrix' field
-instance (Bits c, Bound c ~ Word, ExportableBuffer c, Ranged c)
+instance (Bits c, Bound c ~ Word, Ranged c)
+--instance (Bits c, Bound c ~ Word, ExportableBuffer c, Ranged c)
     => GetPairwiseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) c Word where
 
-    pairwiseTransitionCostMatrix = to (retreivePairwiseTCM (const getMedianAndCost2D) . metricRepresentation)
+    pairwiseTransitionCostMatrix =
+        to (retreivePairwiseTCM . fmap (\(_, x, _) -> x) . metricRepresentation)
 
 
 instance NFData (DiscreteWithTCMCharacterMetadataDec c) where
@@ -159,13 +213,17 @@ instance ToXML (DiscreteWithTCMCharacterMetadataDec c) where
 -- |
 -- Construct a concrete typed 'DiscreteWithTCMCharacterMetadataDec' value from the supplied inputs.
 discreteMetadataFromTCM
-  :: CharacterName
+  :: ( FiniteBits c
+     , Hashable c
+     , NFData c
+     )
+  => CharacterName
   -> Double
   -> Alphabet String
   -> FileSource
   -> TCM
   -> DiscreteWithTCMCharacterMetadataDec c
-discreteMetadataFromTCM name weight alpha tcmSource tcm =
+discreteMetadataFromTCM name weight alpha tcmSource tcm' =
     DiscreteWithTCMCharacterMetadataDec
     { metricRepresentation = representaionOfTCM
     , discreteData   = discreteMetadata name (weight * coefficient) alpha tcmSource
@@ -175,9 +233,12 @@ discreteMetadataFromTCM name weight alpha tcmSource tcm =
         case tcmStructure diagnosis of
           NonAdditive -> DiscreteMetric
           Additive    -> LinearNorm
-          _           -> ExplicitLayout (factoredTcm diagnosis) memoMatrixValue
+          _           -> ExplicitLayout tcm
+                           (memoMatrixValue, memoize2 $ overlap2 scm, memoize3 $ overlap3 scm)
 
-    diagnosis       = diagnoseTcm tcm
+    scm             = (\i j -> toEnum . fromEnum $ tcm TCM.! (fromEnum i, fromEnum j))
+    tcm             = factoredTcm diagnosis
+    diagnosis       = diagnoseTcm tcm'
     coefficient     = fromIntegral $ factoredWeight diagnosis
-    sigma  i j      = toEnum . fromEnum $ factoredTcm diagnosis ! (fromEnum i, fromEnum j)
+    sigma  i j      = toEnum . fromEnum $ tcm ! (fromEnum i, fromEnum j)
     memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) sigma

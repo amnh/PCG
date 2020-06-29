@@ -87,6 +87,7 @@ diagnoseTcmCases = testGroup "Example cases for TCMDiagnosis"
 
 -- Generate cases for TCMDiagnosis factoring
 
+
 factoringDiagnosisCases :: TestTree
 factoringDiagnosisCases = testGroup "Example cases for factoredTcm and factoredWeight"
     [ QC.testProperty "(omap (* weight) factoredTcm) === tcm" factorProp

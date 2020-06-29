@@ -33,6 +33,7 @@ module Data.TCM.Internal
 
 import           Control.Arrow        ((***))
 import           Control.DeepSeq
+import           Data.Binary
 import           Data.Data
 import           Data.Foldable
 import           Data.List            (transpose)
@@ -41,9 +42,9 @@ import           Data.Map             (delete, findMax, keys)
 import qualified Data.Map             as Map (fromList)
 import           Data.MonoTraversable
 import           Data.Ratio
+import           Data.Vector.Binary   ()
 import           Data.Vector.Unboxed  (Vector)
 import qualified Data.Vector.Unboxed  as V
-import           Data.Word
 import           GHC.Generics
 import           Test.QuickCheck      hiding (generate)
 import           Text.XML
@@ -69,7 +70,7 @@ import           Text.XML
 data TCM
    = TCM {-# UNPACK #-} Int !(Vector Word32)
    deriving stock    (Data, Eq, Generic, Typeable)
-   deriving anyclass (NFData)
+   deriving anyclass (Binary, NFData)
 
 
 -- |

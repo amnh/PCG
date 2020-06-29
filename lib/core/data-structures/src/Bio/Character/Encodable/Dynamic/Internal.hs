@@ -33,6 +33,7 @@
 module Bio.Character.Encodable.Dynamic.Internal
   ( DynamicCharacter (DC, Missing)
   , DynamicCharacterElement()
+--  , selectDC
   , arbitraryDynamicCharacterOfWidth
   , renderDynamicCharacter
   ) where
@@ -49,6 +50,7 @@ import           Control.Monad                         (when)
 import           Control.Monad.Loops                   (whileM)
 import           Control.Monad.ST
 import           Data.Alphabet
+import           Data.Binary
 import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
@@ -85,8 +87,8 @@ import           TextShow                              (TextShow (showb)) --, to
 data  DynamicCharacter
     = Missing {-# UNPACK #-} !Word
     | DC      {-# UNPACK #-} !(Vector (BitVector, BitVector, BitVector))
-    deriving stock    (Eq, Generic, Ord, Read, Show)
-    deriving anyclass (NFData)
+    deriving stock    (Eq, Generic, Ord, Show)
+    deriving anyclass (Binary, NFData)
 
 
 type instance Element DynamicCharacter = DynamicCharacterElement
@@ -399,6 +401,10 @@ instance ToXML DynamicCharacter where
         contents              = Left . contentTuple <$> otoList dynamicChar -- toXML on all dynamic character elements
         contentTuple (DCE (m,l,r)) = ("Character_states", show (f m, f l, f r)) -- the value of this character
         f = fmap (\x -> if x then '1' else '0') . toBits
+
+
+--selectDC :: DynamicCharacterElement -> Word -> Maybe Word
+--selectDC = coerce select
 
 
 arbitraryDynamicCharacterOfWidth :: Word -> Gen DynamicCharacter

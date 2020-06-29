@@ -34,6 +34,7 @@ module Bio.Character.Encodable
   , renderDynamicCharacter
   , showStream
   , showStreamElement
+--  , selectDC
   ) where
 
 import Bio.Character.Encodable.Continuous

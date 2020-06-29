@@ -38,7 +38,6 @@ import           Control.Monad.State.Strict
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Data.Coerce                                   (coerce)
-import           Data.Compact                                  (compact, getCompact)
 import           Data.Foldable
 import           Data.GraphViz.Printing
 import qualified Data.IntMap                                   as IM
@@ -83,45 +82,39 @@ evaluate
   :: BuildCommand
   -> GraphState
   -> SearchState
-evaluate (BuildCommand trajectoryCount buildType clusterType) cpctInState =
-    case getCompact cpctInState of
-      Left  _ -> pure cpctInState
-      Right v -> do
+evaluate (BuildCommand trajectoryCount buildType clusterType) inState =
+    case inState of
+      Left  _ -> pure inState
+      Right v ->
         let isInitialBuild =
-              let
-                leafNumber = length . fromLeafSet $ v ^. leafSet
-                rootNumber = extractNumberOfRoots v
-              in
-                (leafNumber == rootNumber)
-        let buildLogic =
+              let leafNumber = length . fromLeafSet $ v ^. leafSet
+                  rootNumber = extractNumberOfRoots v
+              in  (leafNumber == rootNumber)
+            buildLogic =
               case buildType of
                 WagnerTree     -> wagnerBuildLogic
                 WheelerNetwork -> networkBuildLogic isInitialBuild
                 WheelerForest  -> forestBuildLogic
-        let buildMethod =
+            buildMethod =
               case buildType of
                 WagnerTree     -> naiveWagnerBuild @NE.Vector
                 WheelerNetwork -> naiveNetworkBuild
                 WheelerForest  -> naiveForestBuild
-        let
-          cluster
-            :: AC.ClusterOptions
-            -> PhylogeneticSolution FinalDecorationDAG
-            -> Int
-            -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
-          cluster = clusterBuildLogic buildMethod
+            cluster
+              :: AC.ClusterOptions
+              -> PhylogeneticSolution FinalDecorationDAG
+              -> Int
+              -> EvaluationT GlobalSettings IO (NonEmpty FinalDecorationDAG)
+            cluster = clusterBuildLogic buildMethod
 
-        let clusterLogic =
+            clusterLogic =
               case clusterType of
                 ClusterOption _ (ClusterGroup 1) -> buildLogic
                 ClusterOption _ _                -> cluster clusterOptions
-        if numberOfClusterCheck clusterType then
-          fail "A non-positive number was supplied to the number of clusters."
-        else
-          do
-            bestNetwork <- clusterLogic v trajectoryCount
-            liftIO . compact . Right $ toSolution bestNetwork
-
+        in  if numberOfClusterCheck clusterType
+            then fail "A non-positive number was supplied to the number of clusters."
+            else do bestNetwork <- clusterLogic v trajectoryCount
+                    pure . Right $ toSolution bestNetwork
   where
 
     extractNumberOfRoots :: PhylogeneticSolution FinalDecorationDAG -> Int

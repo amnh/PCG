@@ -64,6 +64,8 @@ import           Bio.Sequence
 import           Control.Arrow                   ((***))
 import           Control.DeepSeq
 import           Control.Lens                    as Lens hiding ((<.>))
+import           Data.Binary
+import           Data.Binary.Instances.UnorderedContainers ()
 import           Data.Bits
 import           Data.Foldable
 import           Data.Foldable.Custom            (sum')
@@ -111,8 +113,8 @@ data  PhylogeneticFreeDAG m e n u v w x y z
     { simpleColumnMetadata     :: MetadataSequence m
     , simplePhylogeneticForest :: ReferenceDAG () e (PhylogeneticFreeNode n (CharacterSequence u v w x y z))
     }
+    deriving anyclass (Binary, NFData)
     deriving stock    (Generic)
-    deriving anyclass (NFData)
 
 
 -- |
@@ -135,7 +137,7 @@ data  PostorderContextualData t = PostorderContextualData
     , minimalNetworkContext :: Maybe (NonEmpty (TraversalTopology, Double, Double, Double, Vector (NonEmpty TraversalFocusEdge)))
     }
     deriving stock    (Eq, Show, Generic, Functor, Foldable, Traversable)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 -- |
@@ -151,8 +153,8 @@ data  PhylogeneticDAG m e n u v w x y z
                               (PhylogeneticNode (CharacterSequence u v w x y z) n)
     , columnMetadata     :: MetadataSequence m
     }
+    deriving anyclass (Binary, NFData)
     deriving stock    (Generic, Typeable)
-    deriving anyclass (NFData)
 
 
 -- |

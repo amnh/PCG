@@ -23,6 +23,7 @@ module Numeric.NonNegativeAverage
   ) where
 
 import Control.DeepSeq
+import Data.Binary
 import Data.Data
 import Data.Hashable
 import GHC.Generics
@@ -44,7 +45,7 @@ import Test.QuickCheck
 -- All instance operations are /O(1)/.
 data NonNegativeAverage = Avg !Word !Word
   deriving stock    (Data, Eq, Generic, Ord)
-  deriving anyclass (NFData)
+  deriving anyclass (Binary, NFData)
 
 
 instance Arbitrary NonNegativeAverage where

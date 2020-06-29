@@ -34,11 +34,11 @@ module Data.MetricRepresentation
 
 import Control.DeepSeq
 import Data.Bits
+import Data.Binary
 import Data.Foldable
 import Data.Ord        (comparing)
 import Data.Range
 import Data.TCM        as TCM
-import Data.Word
 import GHC.Generics
 
 
@@ -59,7 +59,7 @@ data  MetricRepresentation a
     | DiscreteMetric
     | LinearNorm
     deriving stock    (Eq, Foldable, Functor, Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 -- |
@@ -78,14 +78,13 @@ retreivePairwiseTCM
      , Bound c ~ Word
      , Ranged c
      )
-  => (TCM -> a -> c -> c -> (c, Word))
-  -> MetricRepresentation a
+  => MetricRepresentation (c -> c -> (c, Word))
   -> c
   -> c
   -> (c, Word)
-retreivePairwiseTCM f (ExplicitLayout a b) = f a b
-retreivePairwiseTCM _ DiscreteMetric       = discreteMetricPairwiseLogic
-retreivePairwiseTCM _ LinearNorm           = firstLinearNormPairwiseLogic
+retreivePairwiseTCM (ExplicitLayout _ f) = f
+retreivePairwiseTCM DiscreteMetric       = discreteMetricPairwiseLogic
+retreivePairwiseTCM LinearNorm           = firstLinearNormPairwiseLogic
 
 
 -- |
@@ -96,15 +95,14 @@ retreiveThreewayTCM
      , Bound c ~ Word
      , Ranged c
      )
-  => (TCM -> a -> c -> c -> c -> (c, Word))
-  -> MetricRepresentation a
+  => MetricRepresentation (c -> c -> c -> (c, Word))
   -> c
   -> c
   -> c
   -> (c, Word)
-retreiveThreewayTCM f (ExplicitLayout a b) = f a b
-retreiveThreewayTCM _ DiscreteMetric       =  discreteMetricThreewayLogic
-retreiveThreewayTCM _ LinearNorm           = firstLinearNormThreewayLogic
+retreiveThreewayTCM (ExplicitLayout _ f) = f
+retreiveThreewayTCM DiscreteMetric       =  discreteMetricThreewayLogic
+retreiveThreewayTCM LinearNorm           = firstLinearNormThreewayLogic
 
 
 -- |

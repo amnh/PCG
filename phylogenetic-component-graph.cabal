@@ -143,8 +143,10 @@ library alphabet
   build-depends:
     serialize,
     utility,
+    binary                   >= 0.6       && < 1.0,
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 1.0,
+    binary                   >= 0.6       && < 1.0,
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
@@ -200,6 +202,7 @@ library analysis
     containers               >= 0.5.8     && < 1.0,
     data-default             >= 0.5.2     && < 0.8,
     dlist                    >= 0.8       && < 1.0,
+    hashable                 >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.18      && < 5.0,
     matrices                 >= 0.5       && < 1.0,
@@ -207,6 +210,9 @@ library analysis
     mono-traversable         >= 1.0       && < 2.0,
     mtl                      >= 2.0       && < 3.0,
     parallel                 >= 3.2       && < 4.0,
+    -- required for Data.Semigroup.Foldable.toNonEmpty
+    semigroupoids            >= 5.2.1     && < 5.4,
+    text-show                >= 3.8.1     && < 4.0,
     unordered-containers     >= 0.2.9     && < 1.0,
     vector                   >= 0.12.0.2  && < 0.13,
     vector-builder           >= 0.3.7     && < 0.4,
@@ -259,6 +265,7 @@ library character-name
   build-depends:
     file-source,
     base                     >= 4.11      && < 5.0,
+    binary                   >= 0.6       && < 1.0,
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     keys                     >= 3.0       && < 4.0,
@@ -428,15 +435,17 @@ library data-structures
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 1.0,
     binary                   >= 0.6       && < 1.0,
+    binary-instances         >= 1         && < 2.0,
     bv-little                >= 1.0.1     && < 2.0,
     bv-little:instances      >= 1.0.1     && < 2.0,
-    compact                  >= 0.1       && < 2.0,
+    concurrent-hashtable     >= 0.1.8     && < 2.0,
     containers               >= 0.5.8     && < 1.0,
     data-default             >= 0.5.2     && < 0.8,
     deepseq                  >= 1.4       && < 2.0,
     dlist                    >= 0.8       && < 1.0,
     graphviz                 >= 2999.20   && < 3000,
     hashable                 >= 1.2       && < 2.0,
+    hashtables               >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     lens                     >= 4.18      && < 5.0,
     monad-loops              >= 0.4       && < 1.0,
@@ -476,6 +485,7 @@ library data-structures
     Bio.Metadata.DiscreteWithTCM
     Bio.Metadata.Dynamic
     Bio.Metadata.Metric
+    Bio.Metadata.Overlap
     Bio.Sequence
     Bio.Sequence.Block
     Bio.Sequence.Character
@@ -495,6 +505,7 @@ library data-structures
     Bio.Graph.ReferenceDAG.Utility
     Bio.Graph.Solution
     Data.EdgeLength
+    Data.Hashable.Memoize              
     Data.NodeLabel
     Data.TopologyRepresentation
     Test.Custom.NucleotideSequence
@@ -786,7 +797,6 @@ library file-source
     base                     >= 4.11      && < 5.0,
     binary                   >= 0.6       && < 1.0,
     bytestring               >= 0.10.8    && < 0.11,
-    compact                  >= 0.1       && < 2.0,
     deepseq                  >= 1.4       && < 2.0,
     directory                >= 1.3       && < 2.0,
     filepath                 >= 1.4       && < 2.0,
@@ -974,12 +984,14 @@ library tcm
     serialize,
     tcm-memo,
     utility,
+    binary                   >= 0.6       && < 1.0,
     base                     >= 4.11      && < 5.0,
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     QuickCheck               >= 2.12      && < 3.0,
     mono-traversable         >= 1.0       && < 2.0,
     vector                   >= 0.12.0.2  && < 0.13,
+    vector-binary-instances  >= 0.2.5     && < 1.0,
 
   exposed-modules:
     Data.MetricRepresentation
@@ -1099,6 +1111,7 @@ library utility
     text-show                >= 3.8.3     && < 4.0,
     text-show-instances      >= 3.8       && < 4.0,
     vector                   >= 0.12.0.2  && < 0.13,
+    vector-binary-instances  >= 0.2       && < 1.0,
     vector-instances         >= 3.4       && < 3.5,
 
   exposed-modules:
@@ -1198,7 +1211,7 @@ executable pcg
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 2.0,
-    compact                  >= 0.1       && < 2.0,
+    bytestring               >= 0.10.8    && < 0.11,
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,
     filepath                 >= 1.4       && < 2.0,
@@ -1449,7 +1462,7 @@ executable generate-random-sequence
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
     bimap                    >= 0.3       && < 1.0,
-    bv-little                >= 1.1.1     && < 2.0,
+    bv-little                >= 1.2       && < 2.0,
     keys                     >= 3.0       && < 4.0,
     optparse-applicative     >= 0.15      && < 2.0,
     random                   >= 1.0       && < 2.0,
@@ -1557,9 +1570,8 @@ executable reduce-fastc
     utility,
     ansi-wl-pprint           >= 0.6.8     && < 0.7,
     base                     >= 4.11      && < 5.0,
---    bimap                    >= 0.3       && < 1.0,
---    bv-little                >= 1.1.1     && < 2.0,
---    bv-little:instances      >= 1.0.1     && < 2.0,
+    bimap                    >= 0.3       && < 1.0,
+    bv-little                >= 1.2       && < 2.0,
     containers               >= 0.5.8     && < 1.0,
     keys                     >= 3.0       && < 4.0,
     optparse-applicative     >= 0.15      && < 2.0,
@@ -1689,6 +1701,7 @@ test-suite test-suite-alphabet
     serialize,
     utility,
     base                     >= 4.11      && < 5.0,
+    binary                   >= 0.6       && < 1.0,
     bimap                    >= 0.3       && < 1.0,
     containers               >= 0.5.8     && < 1.0,
     deepseq                  >= 1.4       && < 2.0,

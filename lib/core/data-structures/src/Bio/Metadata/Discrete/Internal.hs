@@ -34,6 +34,7 @@ import Bio.Metadata.Metric
 import Control.DeepSeq
 import Control.Lens
 import Data.Alphabet
+import Data.Binary
 import Data.Bits
 import Data.CharacterName
 import Data.FileSource
@@ -53,7 +54,7 @@ data  DiscreteCharacterMetadataDec
     , tcmSourceFile :: {-# UNPACK #-} !FileSource
     }
     deriving stock    (Generic)
-    deriving anyclass (NFData)
+    deriving anyclass (Binary, NFData)
 
 
 -- |

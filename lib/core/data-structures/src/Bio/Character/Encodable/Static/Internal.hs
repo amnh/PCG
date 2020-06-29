@@ -37,11 +37,13 @@ import           Control.Lens
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                           as B
+import           Data.Binary
 import           Data.BitMatrix
 import           Data.Bits
 import           Data.BitVector.LittleEndian
 import           Data.BitVector.LittleEndian.Instances ()
 import           Data.Foldable
+import           Data.Hashable
 import           Data.Key
 import qualified Data.List.NonEmpty                   as NE
 import           Data.Maybe
@@ -62,7 +64,7 @@ import           TextShow                             (TextShow)
 newtype StaticCharacter
       = SC BitVector
       deriving stock   (Generic)
-      deriving newtype (Arbitrary, Bits, Eq, MonoFunctor, MonoFoldable, Ord, Show, TextShow)
+      deriving newtype (Arbitrary, Binary, Bits, Eq, Hashable, MonoFunctor, MonoFoldable, Ord, Show, TextShow)
 
 
 -- |

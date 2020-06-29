@@ -25,6 +25,7 @@ module Bio.Character.Encodable.Dynamic
   , EncodableStreamElement(..)
   , EncodableStream(..)
   , Subcomponent
+--  , selectDC
   , getLeft
   , getRight
   , arbitraryDynamicCharacterOfWidth
