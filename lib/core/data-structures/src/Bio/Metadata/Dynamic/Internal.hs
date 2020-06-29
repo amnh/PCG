@@ -351,7 +351,7 @@ maybeConstructDenseTransitionCostMatrix alpha sigma = force f
 {-# SPECIALISE extractPairwiseTransitionCostMatrix :: DynamicCharacterMetadataDec AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 extractPairwiseTransitionCostMatrix
   :: ( EncodableStreamElement c
---     , ExportableBuffer c
+     , ExportableBuffer c
      , Ranged c
      , Bound c ~ Word
      )
@@ -362,7 +362,9 @@ extractPairwiseTransitionCostMatrix
 extractPairwiseTransitionCostMatrix =
     either
       (lookupPairwise . fst)
-      (retreivePairwiseTCM . fmap (\(_, x, _) -> x))
+-- Use this for the memoized TCM
+--      (retreivePairwiseTCM . fmap (\(_, x, _) -> x))
+      (retreivePairwiseTCM . fmap (\(x, _, _) -> getMedianAndCost2D x))
     . structuralRepresentationTCM
 
 
@@ -375,7 +377,7 @@ extractPairwiseTransitionCostMatrix =
 {-# SPECIALISE extractThreewayTransitionCostMatrix :: DynamicCharacterMetadataDec AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 extractThreewayTransitionCostMatrix
   :: ( EncodableStreamElement c
---     , ExportableBuffer c
+     , ExportableBuffer c
      , Ranged c
      , Bound c ~ Word
      )
@@ -387,7 +389,9 @@ extractThreewayTransitionCostMatrix
 extractThreewayTransitionCostMatrix =
   either
     (lookupThreeway . fst)
-    (retreiveThreewayTCM . fmap (\(_, _, x) -> x))
+-- Use this for the memoized TCM
+--      (retreivePairwiseTCM . fmap (\(_, _, x) -> x))
+    (retreiveThreewayTCM . fmap (\(x, _, _) -> getMedianAndCost3D x))
   . structuralRepresentationTCM
 
 

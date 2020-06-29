@@ -134,6 +134,8 @@ memoize f = unsafePerformIO $ do
 -}
 
 
+-- Old TVar based code
+{-
 {-# NOINLINE memoize' #-}
 memoize' :: forall a b. (Eq a, Hashable a, NFData b) => (a -> b) -> a -> b
 memoize' f = unsafePerformIO $ do
@@ -190,6 +192,7 @@ memoize' f = unsafePerformIO $ do
                   -- After performing the update side effects,
                   -- we return the value associated with the key
                   $> v
+-}
 -}
 
 
