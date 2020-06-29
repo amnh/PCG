@@ -217,10 +217,12 @@ instance GetDenseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe Den
     denseTransitionCostMatrix = to
       $ either (Just . fst) (const Nothing) . structuralRepresentationTCM
 
+
 instance HasTcmSourceFile (DynamicCharacterMetadataDec c) FileSource where
 
     _tcmSourceFile = lens (\d -> metadata d ^. _tcmSourceFile)
                    $ \d s -> d { metadata = metadata d & _tcmSourceFile .~ s }
+
 
 instance GetSparseTransitionCostMatrix (DynamicCharacterMetadataDec c) (Maybe MemoizedCostMatrix) where
 
