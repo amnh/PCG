@@ -910,10 +910,11 @@ library language
     PCG.Syntax
     PCG.Command.Build
     PCG.Command.Echo
+    PCG.Command.Load
     PCG.Command.Read
     PCG.Command.Report
     PCG.Command.Save
-    PCG.Command.Load
+    PCG.Command.Version
     PCG.Syntax.Combinators
 
   other-modules:
@@ -1267,6 +1268,7 @@ executable pcg
     PCG.Command.Report.ImpliedAlignment
     PCG.Command.Report.Metadata
     PCG.Command.Save.Evaluate
+    PCG.Command.Version.Evaluate
     PCG.CommandLineOptions
     PCG.CommandLineOptions.Display
     PCG.CommandLineOptions.Types

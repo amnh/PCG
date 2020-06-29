@@ -14,7 +14,7 @@ Within your new module, define the data types containing all the information req
 newtype VersionCommand = 
         VersionCommand 
         { fullVersion :: Bool 
-        }
+        } deriving stock (Show)
 ```
 
 ### Step 3
@@ -40,7 +40,6 @@ data  Command
     | REPORT  !ReportCommand
     | SAVE    !SaveCommand
     | VERSION !VersionCommand -- Added our new command here
-    deriving stock (Show)
 ```
 
 ### Step 5
@@ -72,9 +71,9 @@ $ emacs app/pcg/PCG/Command/Version/Evaluate.hs
 Within your new module, define a function `evaluate` which pattern matches on your new command type, takes the current `GraphState` and produces a new `SearchState`.
 
 ```haskell
-evaluate :: VersiomCommand -> GraphState -> SearchState
+evaluate :: VersionCommand -> GraphState -> SearchState
 evaluate (VersionCommand printFullVersion) graphState =
-    liftIO putStrLn versionStr $> graphState
+    liftIO (putStrLn versionStr) $> graphState
   where
     versionStr
       | printFullVersion = fullVersionInformation
@@ -97,3 +96,10 @@ evaluate = ...
              SAVE    c -> s >>=    Save.evaluate c
              VERSION c -> s >>= Version.evaluate c -- Added to the evaluation loop here
 ```
+
+
+Congratulations! We have added our new command to PCG. We are done, right? Nope...
+
+### Step 9
+
+Update the `CHANGELOG.md` to reflect the new functionality you have added.

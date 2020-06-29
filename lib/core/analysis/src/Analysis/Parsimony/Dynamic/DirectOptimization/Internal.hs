@@ -145,7 +145,6 @@ directOptimizationPostorderPairwise pairwiseAlignment (lChild , rChild) = result
 -- atomic alignments depending on the character's metadata.
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
-     , Show (Element c)
      , EncodableStreamElement (Subcomponent (Element c))
      )
   => PairwiseAlignment c

@@ -12,17 +12,18 @@ module PCG.Computation.Internal
 import           Bio.Graph
 import           Control.Evaluation
 import           Data.Bits
-import           Data.Char                   (isSpace)
+import           Data.Char                    (isSpace)
 import           Data.Foldable
-import           Data.List.NonEmpty          (NonEmpty (..))
-import           Data.Text.Lazy              (Text)
-import qualified Data.Text.Lazy              as T
-import qualified PCG.Command.Build.Evaluate  as Build
-import qualified PCG.Command.Echo.Evaluate   as Echo
-import qualified PCG.Command.Load.Evaluate   as Load
-import qualified PCG.Command.Read.Evaluate   as Read
-import qualified PCG.Command.Report.Evaluate as Report
-import qualified PCG.Command.Save.Evaluate   as Save
+import           Data.List.NonEmpty           (NonEmpty (..))
+import           Data.Text.Lazy               (Text)
+import qualified Data.Text.Lazy               as T
+import qualified PCG.Command.Build.Evaluate   as Build
+import qualified PCG.Command.Echo.Evaluate    as Echo
+import qualified PCG.Command.Load.Evaluate    as Load
+import qualified PCG.Command.Read.Evaluate    as Read
+import qualified PCG.Command.Report.Evaluate  as Report
+import qualified PCG.Command.Save.Evaluate    as Save
+import qualified PCG.Command.Version.Evaluate as Version
 import           PCG.Syntax
 import           System.Exit
 
@@ -54,13 +55,13 @@ evaluate (Computation (x:|xs)) = foldl' f z xs
 
     f :: SearchState -> Command -> SearchState
     f s = \case
-             BUILD  c -> s >>=  Build.evaluate c
-             ECHO   c -> s >>=   Echo.evaluate c
-             LOAD   c -> s *>    Load.evaluate c
-             READ   c -> s *>    Read.evaluate c
-             REPORT c -> s >>= Report.evaluate c
-             SAVE   c -> s >>=   Save.evaluate c
-
+             BUILD   c -> s >>=   Build.evaluate c
+             ECHO    c -> s >>=    Echo.evaluate c
+             LOAD    c -> s *>     Load.evaluate c
+             READ    c -> s *>     Read.evaluate c
+             REPORT  c -> s >>=  Report.evaluate c
+             SAVE    c -> s >>=    Save.evaluate c
+             VERSION c -> s >>= Version.evaluate c
 
 renderSearchState :: EvaluationResult a -> (ExitCode, Text)
 renderSearchState = fmap (<>"\n") . either id val . renderError

@@ -28,9 +28,9 @@ module Data.Hashable.Memoize
 import Control.DeepSeq
 --import Control.Monad          (join)
 --import Control.Monad.ST
-import Data.Functor
+--import Data.Functor
 import Data.Hashable
-import qualified Data.HashTable as HT
+--import qualified Data.HashTable as HT
 import Data.HashTable.IO
 --import Data.HashTable.ST.Basic
 import Data.IORef

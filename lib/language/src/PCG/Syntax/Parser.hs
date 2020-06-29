@@ -15,6 +15,7 @@
 
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts   #-}
+{-# LANGUAGE StrictData         #-}
 {-# LANGUAGE TypeFamilies       #-}
 {-# LANGUAGE UnboxedSums        #-}
 
@@ -28,6 +29,7 @@ import PCG.Command.Load
 import PCG.Command.Read
 import PCG.Command.Report
 import PCG.Command.Save
+import PCG.Command.Version
 import PCG.Syntax.Combinators
 import Text.Megaparsec
 
@@ -41,6 +43,7 @@ data  Command
     | READ    {-# UNPACK #-} !ReadCommand
     | REPORT  {-# UNPACK #-} !ReportCommand
     | SAVE                   !SaveCommand
+    | VERSION                !VersionCommand
     deriving stock (Show)
 
 
@@ -60,10 +63,11 @@ computationalStreamParser = Computation <$> some1 commandStreamParser <* eof
 -- Parse a single, well defined PCG command.
 commandStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Command
 commandStreamParser = whitespace *> choice
-    [ BUILD  <$> parseCommand  buildCommandSpecification
-    , ECHO   <$> parseCommand   echoCommandSpecification
-    , READ   <$> parseCommand   readCommandSpecification
-    , REPORT <$> parseCommand reportCommandSpecification
-    , SAVE   <$> parseCommand   saveCommandSpecification
-    , LOAD   <$> parseCommand   loadCommandSpecification
+    [ BUILD   <$> parseCommand   buildCommandSpecification
+    , ECHO    <$> parseCommand    echoCommandSpecification
+    , READ    <$> parseCommand    readCommandSpecification
+    , REPORT  <$> parseCommand  reportCommandSpecification
+    , SAVE    <$> parseCommand    saveCommandSpecification
+    , LOAD    <$> parseCommand    loadCommandSpecification
+    , VERSION <$> parseCommand versionCommandSpecification
     ] <* whitespace

@@ -16,6 +16,7 @@ Releases are available [on GitHub][2].
 * Added distance CSV output to the REPORT command
 * Added implied alignemnt output to the REPORT command
 * Added binary serialization to the LOAD and SAVE commands
+* Added VERSION command
 * Added string alignment benchmarking suite
 * Added 'Efficient Implied Alignment' algorithm
 * Enhanced alphabet data-type to support sorted alphabets whenever possible
