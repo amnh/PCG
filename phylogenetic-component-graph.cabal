@@ -1189,6 +1189,8 @@ executable pcg
   main-is:
     Main.hs
 
+  -- Try to build a static binary, not sure if these flags work
+  -- Can also try these flags: -optl-static -optl-pthread
   ghc-options:
     -threaded -rtsopts -fPIC
 
