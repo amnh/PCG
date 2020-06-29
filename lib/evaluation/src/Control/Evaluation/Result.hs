@@ -61,6 +61,7 @@ newtype EvaluationResult a = EU { runEvaluationResult :: Either (ErrorPhase, Tex
    deriving anyclass (NFData)
    deriving newtype  (Applicative, Apply, Eq1, Functor, MonadFix, Show1)
 
+
 -- |
 -- Keep track of which phase of the evaluation th error occurred in.
 --

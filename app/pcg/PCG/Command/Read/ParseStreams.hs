@@ -202,7 +202,7 @@ parseCustomAlphabet dataFileSources tcmPath = getSpecifiedContent spec
 
 
 -- |
--- Read from diask and parse the contents of the 'ileSource'.
+-- Read from diask and parse the contents of the 'FileSource'.
 --
 -- Intelligently use the file's extension to decide which parser to try first.
 -- If the first choice parser fails, try all other known parsers.

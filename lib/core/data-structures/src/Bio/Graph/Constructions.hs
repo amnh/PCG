@@ -185,7 +185,6 @@ type FinalDecorationDAG =
          (DynamicDecorationDirectOptimization DynamicCharacter)
 
 
-
 -- |
 -- Decoration of a phylogenetic DAG after a pre-order traversal.
 type PreorderDecorationDAG =
