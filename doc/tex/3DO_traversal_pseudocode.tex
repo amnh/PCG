@@ -32,11 +32,12 @@
         \Else 
             \State $prevValue \gets v.unambiguousFinal$ 
             \State \Comment {remember current value for later comparison}
-            \State $(v.unambiguousFinal, v.ambiguousFinal) \gets$ 
+            \State $(v.ungappedMedianResult, v.gappedMedianResult) \gets$ 
             \State \quad \quad \quad \quad $3DO ( neighbor1.unambiguousFinal$
             \State \quad \quad \quad \quad \quad \quad , $neighbor2.unambiguousFinal$ 
             \State \quad \quad \quad \quad \quad \quad , $neighbor3.unambiguousFinal )$ 
-
+            
+            \State $v.unambiguousFinal \gets disambiguate ( v.ungappedMedianResult ) $
             \If {$prevValue = v.unambiguousFinal$}
                 \State $v.updated \gets False$
             \Else 
@@ -48,7 +49,7 @@
     \EndFor
 
     \If {convergence}
-        \State textbf{break}
+        \State \textbf{break}
     \Else
         \State stateStack.push ( graph )
             \If {prefix cycle in stateStack}
