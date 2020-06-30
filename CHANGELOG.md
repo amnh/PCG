@@ -5,7 +5,12 @@ PCG uses [PVP Versioning][1].
 Releases are available [on GitHub][2].
 
 
-## _0.2.1_ - Unreleased Changes
+## _0.4.0_ - Unreleased Changes
+
+  * None
+
+
+## [0.3.0][6] - 2020-06-30
 
 * Updated to GHC-8.10.1
 * Updated to Cabal-3.0
@@ -127,4 +132,5 @@ Releases are available [on GitHub][2].
 [3]: https://github.com/amnh/PCG/releases/tag/0.1.0
 [4]: https://github.com/amnh/PCG/releases/tag/0.1.1
 [5]: https://github.com/amnh/PCG/releases/tag/0.2.0
+[6]: https://github.com/amnh/PCG/releases/tag/0.3.0
 
