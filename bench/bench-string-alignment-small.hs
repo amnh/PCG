@@ -12,10 +12,10 @@ import Data.MonoTraversable
 
 
 main :: IO ()
-main = let p = (128, 144)
-       in  benchStringAlignment $
-             \(m, x, y) -> ("two-hex-pref-gap" `isInfixOf` otoList (m ^. characterName))
+main = benchStringAlignment $
+            \(m, _, _) -> ("two-hex-pref-gap" `isInfixOf` otoList (m ^. characterName))
 {-
+       let p = (128, 144)
        in  benchStringAlignment $
              \(m, x, y) -> ((olength x == fst p && olength y == snd p)
                         ||  (olength x == snd p && olength y == fst p))
