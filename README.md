@@ -18,7 +18,7 @@ Haskell program and libraries for general phylogenetic graph search
 
 | Directory         | Description of Contents
 |:----------------- |:--------------------------------------- |
-| [`app`      ][d0] | main.hs files executables               |
+| [`app`      ][d0] | main.hs executables files               |
 | [`bin`      ][d1] | binaries are placed here after build    |
 | [`doc`      ][d2] | Haddock & PDF documentation             |
 | [`lib`      ][d3] | project libraries source code           |
@@ -36,6 +36,8 @@ Haskell program and libraries for general phylogenetic graph search
 
 ### [Installation instructions][install]
 
+### [Publications][p0]
+
 
 [d0]: https://github.com/amnh/PCG/tree/master/app
 [d1]: https://github.com/amnh/PCG/tree/master/bin
@@ -48,6 +50,8 @@ Haskell program and libraries for general phylogenetic graph search
 [f1]: https://www.amnh.org/our-research/computational-sciences
 [f2]: https://www.darpa.mil/program/simplifying-complexity-in-scientific-discovery
 [f3]: http://www.klebergfoundation.org/
+
+[p0]: https://github.com/amnh/PCG/blob/master/PUBLICATIONS.md
 
 [latest-release]: https://github.com/amnh/PCG/releases/latest
 [install]: https://github.com/amnh/PCG/blob/master/doc/tutorials/Installation.md
