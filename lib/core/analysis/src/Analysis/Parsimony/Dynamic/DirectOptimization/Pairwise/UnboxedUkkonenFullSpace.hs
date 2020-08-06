@@ -610,7 +610,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                 e1 = stop
                 
 
-                continueRecomputing (same, j) = same || j >= stop - 1
+                continueRecomputing (same, j) = same || j >= stop
                 computeCell' ~(_,j) = computeCell leftElement insertCost i j
                 internalCell' j = internalCell leftElement insertCost i j >>= write (i,j)
                 recomputeUntilSame j = snd <$> iterateUntilM continueRecomputing computeCell' (False, j)
@@ -671,10 +671,10 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                    -- 12 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██
                    --
                    --
-                   s0 <- readSTRef t0'
+                   s0 <- (\x -> min (x+1) e1) <$> readSTRef t0'
                    writeSTRef t0' (-1)
 
-                   when (s0 > e0) $
+                   when (s0 > e0 && toEnum i > po) $
                        recomputeRange leftElement insertCost i (e0+1) s0 >>= writeSTRef t0'
                    t0 <- readSTRef t0'
 
