@@ -7,7 +7,7 @@ Releases are available [on GitHub][2].
 
 ## _0.4.0_ - Unreleased Changes
 
-  * None
+* Corrected defect in unboxed Ukkonen string alignment
 
 
 ## [0.3.0][6] - 2020-06-30
