@@ -34,7 +34,7 @@ parseCommandLineOptions = customExecParser preferences parserInformation
 parserHelpMessage :: IO String
 parserHelpMessage = fst . renderFailure failValue <$> getProgName
   where
-    failValue = parserFailure (prefs showHelpOnEmpty) parserInformation ShowHelpText []
+    failValue = parserFailure (prefs showHelpOnEmpty) parserInformation (ShowHelpText Nothing) []
 
 
 -- |

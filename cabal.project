@@ -1,6 +1,6 @@
 allow-newer:
-    base
-    ghc-prim
+    base,
+    ghc-prim,
     template-haskell
 
 package *
