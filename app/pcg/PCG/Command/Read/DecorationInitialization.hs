@@ -26,9 +26,8 @@ initializeDecorations2 (PhylogeneticSolution forests) =
     PhylogeneticSolution $ fmap decorateAndPruneEdges <$> forests
   where
     decorateAndPruneEdges dag
-      | null extraEdges = performFinalizationDecoration postorderState
-                        $ uncurry performPreorderDecoration r
+      | null extraEdges = result
       | otherwise       = performDecoration $ pruneEdgeSet extraEdges dag
       where
         extraEdges = unusedNetworkEdges postorderState
-        r@(postorderState, _) = performPostorderDecoration dag
+        (postorderState, result) = performPostorderDecoration dag

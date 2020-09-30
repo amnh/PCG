@@ -79,7 +79,8 @@ import           TextShow                            hiding (fromString)
 -- |
 -- Gets the serialized streams of the implied alignment for each chearacter.
 impliedAlignmentOutputs :: DecoratedCharacterResult -> Map CharacterName Text
-impliedAlignmentOutputs solution =
+impliedAlignmentOutputs solution = mempty
+{-
     Map.mapKeysMonotonic fst $ mapWithKey renderAlignment charMap
   where
     meta    = view _columnMetadata . extractSolution $ solution
@@ -87,6 +88,7 @@ impliedAlignmentOutputs solution =
     charMap = gatherImpliedAlignments leaves meta
 
     renderAlignment (_,a) m = generateImpliedAlignment a m
+-}
 
 
 -- |

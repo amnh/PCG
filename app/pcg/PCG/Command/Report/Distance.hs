@@ -52,11 +52,15 @@ import           TextShow
 
 
 outputDistanceMatrix :: DecoratedCharacterResult -> Text
+outputDistanceMatrix = const mempty
+{-
 outputDistanceMatrix solution = distanceMatrixCSV leaves meta
   where
     meta = view _columnMetadata . extractSolution $  solution
 
     leaves = fromLeafSet $ view leafSet solution
+-}
+
 
 -- |
 -- This function outputs the distance matrix of each of the leaves

@@ -24,7 +24,7 @@ module Analysis.Scoring
     PostorderScoringState(..)
   -- * Decoration
   , performDecoration
-  , performFinalizationDecoration
+--  , performFinalizationDecoration
   , performPostorderDecoration
   , performPreorderDecoration
   , scoreSolution
@@ -162,6 +162,30 @@ scoreSolution (PhylogeneticSolution forests) = PhylogeneticSolution $ fmap perfo
 -- |
 -- Take an undecorated tree and assign preliminary and final states to all nodes.
 performDecoration
+  :: forall u v w x y z m a.
+     ( DiscreteCharacterDecoration v StaticCharacter
+     , DiscreteCharacterDecoration x StaticCharacter
+     , DiscreteCharacterDecoration y StaticCharacter
+     , RangedCharacterDecoration   u ContinuousCharacter
+     , RangedCharacterDecoration   w StaticCharacter
+     , SimpleDynamicDecoration     z DynamicCharacter
+     )
+  => PhylogeneticDAG m EdgeLength NodeLabel (Maybe u) (Maybe v) (Maybe w) (Maybe x) (Maybe y) (Maybe z)
+  -> PostorderDecorationDAG ( TraversalTopology
+                            , Double
+                            , Double
+                            , Double
+                            , Vector (NE.NonEmpty TraversalFocusEdge)
+                            )
+performDecoration x = postDAG
+  where
+    (_, postDAG) = performPostorderDecoration x
+
+
+{-
+-- |
+-- Take an undecorated tree and assign preliminary and final states to all nodes.
+performDecoration
   :: forall u v w x y z m .
      ( DiscreteCharacterDecoration v StaticCharacter
      , DiscreteCharacterDecoration x StaticCharacter
@@ -221,6 +245,8 @@ performFinalizationDecoration postorderState preorderDAG =
 
         setEmptyEdgeAnnotation :: IndexData e n -> IndexData EdgeAnnotation n
         setEmptyEdgeAnnotation indexData = indexData & _childRefs .~ emptyEdgeAnnotation
+-}
+
 
 {-
     performPreorderDecoration

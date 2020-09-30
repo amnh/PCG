@@ -101,6 +101,20 @@ type FinalCharacterNode = PhylogeneticNode FinalCharacterSequence NodeLabel
 -- |
 -- A final character sequence after decoration.
 type FinalCharacterSequence =
+       CharacterSequence
+         (ContinuousPostorderDecoration ContinuousCharacter)
+         (FitchOptimizationDecoration       StaticCharacter)
+         (AdditivePostorderDecoration       StaticCharacter)
+         (SankoffOptimizationDecoration     StaticCharacter)
+         (SankoffOptimizationDecoration     StaticCharacter)
+         (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
+
+
+
+{-
+-- |
+-- A final character sequence after decoration.
+type FinalCharacterSequence =
      CharacterSequence
       (ContinuousOptimizationDecoration ContinuousCharacter)
       (FitchOptimizationDecoration   StaticCharacter)
@@ -108,6 +122,7 @@ type FinalCharacterSequence =
       (SankoffOptimizationDecoration StaticCharacter)
       (SankoffOptimizationDecoration StaticCharacter)
       (DynamicDecorationDirectOptimization DynamicCharacter)
+-}
 
 
 -- |
@@ -172,6 +187,19 @@ type FinalReferenceVector = Vector (IndexData EdgeAnnotation FinalCharacterNode)
 -- |
 -- Decoration of a phylogenetic DAG after a pre-order traversal AND after the edge data has been finalized.
 type FinalDecorationDAG =
+       PostorderDecorationDAG                                                                                                                                                                                    
+         ( TraversalTopology
+         , Double
+         , Double
+         , Double
+         , Vector (NonEmpty TraversalFocusEdge)
+         )
+
+
+{-
+-- |
+-- Decoration of a phylogenetic DAG after a pre-order traversal AND after the edge data has been finalized.
+type FinalDecorationDAG =
        PhylogeneticDAG
          FinalMetadata
          EdgeAnnotation
@@ -182,6 +210,7 @@ type FinalDecorationDAG =
          (SankoffOptimizationDecoration        StaticCharacter)
          (SankoffOptimizationDecoration        StaticCharacter)
          (DynamicDecorationDirectOptimization DynamicCharacter)
+-}
 
 
 -- |
@@ -312,6 +341,10 @@ type UnReifiedCharacterDAG =
          UnifiedDynamicCharacter
 
 
+type EdgeAnnotation = EdgeLength
+
+
+{-
 type EdgeAnnotation =
     ( EdgeLength
     , CharacterSequence
@@ -322,7 +355,7 @@ type EdgeAnnotation =
         (SankoffOptimizationDecoration     StaticCharacter)
         (DynamicDecorationDirectOptimizationPostorderResult DynamicCharacter)
     )
-
+-}
 
 
 extractReferenceDAG
@@ -339,7 +372,7 @@ extractRefDAGfromDec finalDecDAG =
   let
     decRefDAG        = finalDecDAG      & (^. _phylogeneticForest) . extractSolution
     refDAGNoMetadata = decRefDAG        & (_graphData . _graphMetadata) .~ ()
-    refDAGNoEdgeData = refDAGNoMetadata & (_references . mapped . _childRefs . mapped) %~ fst
+    refDAGNoEdgeData = refDAGNoMetadata & (_references . mapped . _childRefs . mapped) %~ id
     refDAG           = refDAGNoEdgeData &
                          (_references . mapped . _nodeDecoration) %~ Just . nodeDecorationDatum2
   in refDAG

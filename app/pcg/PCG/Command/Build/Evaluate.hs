@@ -85,7 +85,8 @@ evaluate
 evaluate (BuildCommand trajectoryCount buildType clusterType) inState =
     case inState of
       Left  _ -> pure inState
-      Right v ->
+      Right v -> pure inState
+{-
         let isInitialBuild =
               let leafNumber = length . fromLeafSet $ v ^. leafSet
                   rootNumber = extractNumberOfRoots v
@@ -424,7 +425,7 @@ subTreeMethod buildMethod meta subTrees =
     namedContext :: M.Map NodeLabel Int
     namedContext =
       rootNodeTree `getNamedContext` rootNodeLabels
-  in  performDecoration . wipeScoring' fst $ substituteDAGs subTreeDict rootNodeTree `evalState` namedContext
+  in  performDecoration . wipeScoring' id $ substituteDAGs subTreeDict rootNodeTree `evalState` namedContext
   where
     getRootNode :: FinalDecorationDAG -> FinalCharacterNode
     {-# INLINE getRootNode #-}
@@ -487,7 +488,7 @@ iterativeBuild currentTree@(PDAG2 _ metaSeq) nextLeaf = printTaxaCounter nextTre
     tryEdge (i,j) = delta
       where
         delta   = sequenceCost metaSeq compSeq - sequenceCost metaSeq edgeSeq - sequenceCost metaSeq thisSeq
-        edgeSeq = snd $ childRefs (references dag ! i) ! j
+        edgeSeq = id $ childRefs (references dag ! i) ! j
         thisSeq = characterSequence . NE.head $ resolutions nextLeaf
         compSeq ::
           CharacterSequence
@@ -670,10 +671,11 @@ iterativeGreedyNetworkBuild currentNetwork@(PDAG2 inputDag metaSeq) =
 resetMetadata :: ReferenceDAG d e n -> ReferenceDAG (PostorderContextualData t) e n
 resetMetadata ref = ref & _graphData %~ setDefaultMetadata
 
-resetEdgeData :: ReferenceDAG d (e,a) n -> ReferenceDAG d e n
-resetEdgeData ref = ref & _references . (mapped . _childRefs . mapped) %~ fst
+resetEdgeData :: ReferenceDAG d e n -> ReferenceDAG d e n
+resetEdgeData ref = ref & _references . (mapped . _childRefs . mapped) %~ id
 
 
 parMapBuffer :: Int -> Strategy b -> (a -> b) -> [a] -> [b]
 parMapBuffer buffer strat f =
   withStrategy (parBuffer buffer strat) . fmap f
+-}
