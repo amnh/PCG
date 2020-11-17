@@ -1,6 +1,7 @@
 allow-newer:
     base,
     ghc-prim,
+    optparse-applicative,
     template-haskell
 
 package *
