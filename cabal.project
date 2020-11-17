@@ -19,5 +19,10 @@ source-repository-package
   location: https://github.com/recursion-ninja/bv-little
   tag: 44b1626f8f53ddc23b32e96125cf76ddc960b6c9
 
+source-repository-package
+  type: git
+  location: https://github.com/recursion-ninja/diagrams-lib
+  tag: 9d2e0c7bc022a66af7a31bfef5f9773794f7afcc
+
 with-compiler: ghc-9.0-rc1
 with-hc-pkg: ghc-pkg-9.0-rc1
