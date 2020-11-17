@@ -17,6 +17,6 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/recursion-ninja/diagrams-lib
-  tag: 9d2e0c7bc022a66af7a31bfef5f9773794f7afcc
+  tag: 4b9842c3e3d653be69af19778970337775e2404d
 
 with-compiler: ghc-8.10.2
