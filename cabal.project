@@ -3,6 +3,7 @@ allow-newer:
     Cabal,
     ghc-prim,
     integer-gmp,
+    optparse-applicative,
     template-haskell,
     th-abstraction,
 
