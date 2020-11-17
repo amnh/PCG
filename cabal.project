@@ -24,5 +24,10 @@ source-repository-package
   location: https://github.com/recursion-ninja/diagrams-lib
   tag: 4b9842c3e3d653be69af19778970337775e2404d
 
+source-repository-package
+  type: git
+  location: https://github.com/galenhuntington/th-lift-instances
+  tag: 6a58e232051b7b41cadd258314b2b12a5ee4e5bb
+
 with-compiler: ghc-9.0-rc1
 with-hc-pkg: ghc-pkg-9.0-rc1
