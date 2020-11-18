@@ -113,9 +113,9 @@ instance EncodableStreamElement AmbiguityGroup where
         cLen   = symbolCount character
         errMsg = fold
           [ "The alpabet size ("
-          , show $ aLen
+          , show aLen
           , ") does not match the character size ("
-          , show $ cLen
+          , show cLen
           , "), "
           , show bv
           ]

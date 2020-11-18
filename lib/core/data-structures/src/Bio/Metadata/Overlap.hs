@@ -32,11 +32,12 @@ module Bio.Metadata.Overlap
   , overlap3
   ) where
 
-import           Bio.Character.Encodable
-import           Data.Bits
-import           Data.List.NonEmpty           (NonEmpty (..))
-import           Data.Semigroup
-import           Data.Semigroup.Foldable
+import Bio.Character.Encodable
+import Data.Bits
+import Data.Foldable.Custom
+import Data.List.NonEmpty           (NonEmpty (..))
+import Data.Semigroup
+import Data.Semigroup.Foldable
 
 
 -- |
@@ -69,7 +70,7 @@ overlap sigma xs = go size maxBound zero
     go 0 theCost bits = (bits, theCost)
     go i oldCost bits =
         let i' = i - 1
-            newCost = sum $ getDistance (toEnum i') <$> xs
+            newCost = sum' $ getDistance (toEnum i') <$> xs
             (minCost, bits') = case oldCost `compare` newCost of
                                  EQ -> (oldCost, bits `setBit` i')
                                  LT -> (oldCost, bits            )

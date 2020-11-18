@@ -542,8 +542,8 @@ simpleTreeCharacterDecorationEqualityAssertion rootRef symbols transformation ac
         buildExpectedTree i = (def { dEncoded = encodedSequence }, otoList children)
           where
             encodedSequence
-              | null (expectedChar !! j) = mempty
-              | otherwise                =  pure . encodeStream alphabet . NE.fromList $ (\c -> [c]:|[]) <$> (expectedChar !! j)
+              | null (expectedChar ! j) = mempty
+              | otherwise                =  pure . encodeStream alphabet . NE.fromList $ (\c -> [c]:|[]) <$> (expectedChar ! j)
             (expectedChar, children) = mapping ! i
 
     --

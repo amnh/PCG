@@ -31,7 +31,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFull
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, handleMissingCharacter, measureAndUngapCharacters, measureCharacters)
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping (unboxedSwappingDO)
 import           Bio.Character.Encodable
-import           Control.Monad               (when)
+import           Control.Monad               (when, unless)
 import           Control.Monad.Loops         (iterateUntilM, whileM_)
 import           Control.Monad.ST
 import           Data.Bits
@@ -584,15 +584,15 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
             lastDiff <- newSTRef 0
             for_ [x .. y] $ \j -> do
               (same, _) <- computeCell leftElement insertCost i j
-              when (not same) $ writeSTRef lastDiff j
+              unless same $ writeSTRef lastDiff j
             readSTRef lastDiff
 
       -- Define how to compute values to an entire row of the Ukkonen matrix.
       let extendRow i =
             -- Precomute some values that will be used for the whole row
-            let start0 =  max 0          $ i - offset
-                start3 =  min (cols    ) $ i + width - offset - prevOffset - 1
-                goUpTo =  max 0          ( i - prevOffset) - 1
+            let start0 =  max  0         $ i - offset
+                start3 =  min  cols      $ i + width - offset - prevOffset - 1
+                goUpTo =  max  0         ( i - prevOffset) - 1
                 stop   =  min (cols - 1) $ i + width - offset - 1
                 leftElement = getMedian $ lesserLeft `indexStream` (i - 1)
                 insertCost  = cost gap leftElement

@@ -37,6 +37,7 @@ import           Data.Foldable
 import qualified Data.List.NonEmpty          as NE
 import           Data.Matrix.Unboxed         (Matrix, unsafeFreeze, unsafeIndex)
 import qualified Data.Matrix.Unboxed.Mutable as M
+import           Data.Maybe                  (fromMaybe)
 import           Data.MonoTraversable
 import qualified Data.Vector.Unboxed.Mutable as V
 
@@ -59,17 +60,16 @@ unboxedUkkonenSwappingDO
   -> (Word, s)
 unboxedUkkonenSwappingDO overlapFunction char1 char2
   | noGainFromUkkonenMethod = buildFullMatrix
-  | otherwise               =
-    case directOptimization overlapFunction buildPartialMatrixMaybe char1 char2 of
-      Nothing  -> buildFullMatrix
-      Just res -> res
+  | otherwise               = fromMaybe buildFullMatrix ukkonenMethodResult
   where
     (_, lesser, longer) = measureCharacters char1 char2
 
     gap = getMedian $ gapOfStream char1
     cost x y = snd $ overlapFunction x y
-    
-    buildFullMatrix = unboxedSwappingDO overlapFunction char1 char2
+
+    ukkonenMethodResult     = directOptimization overlapFunction buildPartialMatrixMaybe char1 char2
+
+    buildFullMatrix         = unboxedSwappingDO overlapFunction char1 char2
 
     buildPartialMatrixMaybe = createUkkonenMethodMatrix coefficient gapsPresentInInputs $
                                   buildDirectionMatrix cost longer lesser
@@ -233,7 +233,7 @@ buildDirectionMatrix cost longerTop lesserLeft o
                   then (\x -> (x, LeftArrow)) <$> V.unsafeRead curr (j - 1)
                   else let deleteCost = cost topElement    gap
                            alignCost  = cost topElement leftElement
-                       in  do diagCost <- V.unsafeRead prev $ j
+                       in  do diagCost <- V.unsafeRead prev   j
                               topCost  <- V.unsafeRead prev $ j + 1
                               leftCost <- V.unsafeRead curr $ j - 1
                               pure $ minimum
@@ -280,7 +280,7 @@ buildDirectionMatrix cost longerTop lesserLeft o
             | otherwise = {-# SCC leftBoundary #-}
               let topElement = getMedian $ longerTop  `indexStream` (i - offset - 1)
                   alignCost  = cost topElement leftElement
-              in  do diagCost <- V.unsafeRead prev $ j
+              in  do diagCost <- V.unsafeRead prev   j
                      topCost  <- V.unsafeRead prev $ j + 1
                      pure $  minimum
                          [ ( alignCost + diagCost, DiagArrow)
@@ -299,7 +299,7 @@ buildDirectionMatrix cost longerTop lesserLeft o
                 else let deleteCost = cost topElement    gap
                          alignCost  = cost topElement leftElement
 
-                     in  do diagCost <- V.unsafeRead prev $ j
+                     in  do diagCost <- V.unsafeRead prev   j
                             leftCost <- V.unsafeRead curr $ j - 1
                             pure $ minimum
                                 [ ( alignCost + diagCost, DiagArrow)
@@ -314,7 +314,7 @@ buildDirectionMatrix cost longerTop lesserLeft o
             let topElement  = getMedian $  longerTop `indexStream` (i + j - offset - 1)
             let deleteCost  = cost topElement    gap
             let alignCost   = cost topElement leftElement
-            diagCost <- V.unsafeRead prev $ j
+            diagCost <- V.unsafeRead prev   j
             topCost  <- V.unsafeRead prev $ j + 1
             leftCost <- V.unsafeRead curr $ j - 1
             pure $ minimum

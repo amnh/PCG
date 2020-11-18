@@ -80,7 +80,6 @@ import           Data.Key
 import           Data.List                       (zip4)
 import           Data.List.NonEmpty              (NonEmpty (..))
 import qualified Data.List.NonEmpty              as NE
-import           Data.Maybe                      (fromMaybe)
 import           Data.MonoTraversable
 import           Data.Set                        (Set, notMember)
 import           Data.String
@@ -738,8 +737,8 @@ renderBlockSummary (PDAG2 dag meta) key (costOfRooting, costOfNetworking, displa
       where
         bCost     = blockCost mValue bValue
         totalCost = sum'
-            [ fromMaybe 0 costOfRooting
-            , fromMaybe 0 costOfNetworking
+            [ sum' costOfRooting
+            , sum' costOfNetworking
             , bCost
             ]
 

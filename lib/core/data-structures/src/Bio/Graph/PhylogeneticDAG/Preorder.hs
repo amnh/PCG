@@ -162,7 +162,7 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
 
             parentIndices = otoParentContext $ parentRefs node
             -- In sparsely connected graphs (like ours) this will be effectively constant.
-            childPosition j = traceShowId $
+            childPosition j = traceShowId .
                 toEnum . length . takeWhile (/= currInd) . IM.keys . childRefs $ refs ! j
 
             selectTopologyFromParentOptions
@@ -567,7 +567,7 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                     updatedDynamicCharacters = mapWithKey dynCharGen $ mBlock ^. dynamicBin
 
                     -- In sparsely connected graphs (like ours) this will be effectively constant.
-                    childPosition x = traceShowId $
+                    childPosition x = traceShowId .
                         toEnum . length . takeWhile (/= i) . IM.keys . childRefs $ refs ! x
 
                     dynCharGen :: Int -> DynamicCharacterMetadataDec (Subcomponent (Element DynamicCharacter)) -> z'

@@ -117,7 +117,7 @@ performUnification inputPaths InputData{..} = fmap reifiedSolution <$> dagForest
           (Nothing, Just v@(charSeqs, _))
             -> Success . Right . PhylogeneticSolution . pure
              . PhylogeneticForest . NE.fromList
-             . foldr ((:) . (singletonComponent v)) mempty $ toKeyedList charSeqs
+             . foldr ((:) . singletonComponent v) mempty $ toKeyedList charSeqs
           -- Build a forest with the corresponding character data on the nodes
           (Just someForests, Just (charSeqs, meta)) -> Success . Right . PhylogeneticSolution $ matchToChars meta charSeqs <$> someForests
       where
@@ -330,7 +330,7 @@ collapseAndMerge xs = extractResult $ foldlM sequenceMerge initialMap ms
          )
     extractResult st =
       let res = st `runState` initialState
-      in  (fmap CS.fromNonEmpty *** MD.fromNonEmpty . fmap fst) $ res
+      in  (fmap CS.fromNonEmpty *** MD.fromNonEmpty . fmap fst) res
 
     sequenceMerge :: Map ShortText (NonEmpty UnifiedCharacterBlock)
                   -> PartiallyUnififedCharacterSequences (TCM, TCMStructure)

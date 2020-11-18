@@ -29,7 +29,7 @@ import Data.Foldable
 import Data.Functor             (($>))
 import Data.List.NonEmpty       (NonEmpty, some1)
 import Data.Matrix.NotStupid    (Matrix, matrix)
-import Data.Maybe               (fromJust, fromMaybe)
+import Data.Maybe               (fromJust)
 import Data.Vector              ((!))
 import File.Format.TNT.Internal
 import GHC.Generics
@@ -90,7 +90,7 @@ condenseToMatrix costs = matrix dimensions dimensions value
       where
         f tc = max (maximum $ origins tc) (maximum $ terminals tc)
 
-    value (i,j) = fromMaybe 1 $ foldl' f Nothing costs
+    value (i,j) = product $ foldl' f Nothing costs
       where
         i' = discreteStateValues ! i
         j' = discreteStateValues ! j

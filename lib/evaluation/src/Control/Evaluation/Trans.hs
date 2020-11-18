@@ -39,6 +39,7 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Evaluation.Notification
 import           Control.Evaluation.Result
+import           Control.Monad                   ((<=<))
 import           Control.Monad.Fix               (MonadFix (..))
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
@@ -287,7 +288,7 @@ failWithPhase p = EvaluationT . pure . evalUnitWithPhase p
 -- Prints an 'IO' parameterized transformer of 'Evaluation' context to
 -- the STDOUT.
 showRun :: Show a => r -> EvaluationT r IO a -> IO ()
-showRun r = (print . fst =<<) . (\e -> evalRWST e r ()) . unwrapEvaluationT
+showRun r = (print . fst) <=< ((\e -> evalRWST e r ()) . unwrapEvaluationT)
 
 
 {-

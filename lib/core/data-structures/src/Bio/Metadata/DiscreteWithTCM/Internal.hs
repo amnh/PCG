@@ -236,9 +236,9 @@ discreteMetadataFromTCM name weight alpha tcmSource tcm' =
           _           -> ExplicitLayout tcm
                            (memoMatrixValue, memoize2 $ overlap2 scm, memoize3 $ overlap3 scm)
 
-    scm             = (\i j -> toEnum . fromEnum $ tcm TCM.! (fromEnum i, fromEnum j))
+    scm i j         = toEnum . fromEnum $ tcm TCM.! (fromEnum i, fromEnum j)
     tcm             = factoredTcm diagnosis
     diagnosis       = diagnoseTcm tcm'
     coefficient     = fromIntegral $ factoredWeight diagnosis
-    sigma  i j      = toEnum . fromEnum $ tcm ! (fromEnum i, fromEnum j)
+    sigma i j       = toEnum . fromEnum $ tcm ! (fromEnum i, fromEnum j)
     memoMatrixValue = generateMemoizedTransitionCostMatrix (toEnum $ length alpha) sigma

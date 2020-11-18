@@ -128,18 +128,18 @@ instance EncodableDynamicCharacterElement DynamicCharacterElement where
 
     isInsert (DCE ~(_,l,r)) =      isZeroVector l  && not (isZeroVector r)
 
-    isDelete (DCE ~(_,l,r)) = not (isZeroVector l) &&     (isZeroVector r)
+    isDelete (DCE ~(_,l,r)) = not (isZeroVector l) &&      isZeroVector r
 
     isAlign  (DCE ~(_,l,r)) = not (isZeroVector l) && not (isZeroVector r)
     
     gapElement w            = let !z = fromNumber w (0 :: Word)
                               in  DCE (bit . fromEnum $ w - 1, z, z)
 
-    deleteElement (AG m)        (AG y) = DCE $ (m, zeroVectorOf y, y)
+    deleteElement (AG m)        (AG y) = DCE (m, zeroVectorOf y, y)
 
-    insertElement (AG m) (AG x)        = DCE $ (m, x, zeroVectorOf x)
+    insertElement (AG m) (AG x)        = DCE (m, x, zeroVectorOf x)
 
-    alignElement  (AG m) (AG x) (AG y) = DCE $ (m, x, y)
+    alignElement  (AG m) (AG x) (AG y) = DCE (m, x, y)
 
     getContext dce =
         case (not $ isLeftEmpty dce, not $ isRightEmpty dce) of

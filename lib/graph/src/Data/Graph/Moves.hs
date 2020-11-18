@@ -21,8 +21,8 @@ interchangeSubGraphs
   -> (Graph f c e n (Graph f c e n t), Graph f c e n (Graph f c e n t))
 interchangeSubGraphs graph1 graph2 leafInd1 leafInd2 =
   let
-    subGraph1 = graph1 ^. _leafReferences . (singular (ix leafInd1)) . _nodeData
-    subGraph2 = graph2 ^. _leafReferences . (singular (ix leafInd2)) . _nodeData
+    subGraph1 = graph1 ^. _leafReferences . singular (ix leafInd1) . _nodeData
+    subGraph2 = graph2 ^. _leafReferences . singular (ix leafInd2) . _nodeData
     hashSubGraph1 = subGraph1  ^. _cachedData . _hashValue
     hashSubGraph2 = subGraph2  ^. _cachedData . _hashValue
   in
