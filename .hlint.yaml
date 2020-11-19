@@ -13,7 +13,8 @@
         , lhs: maybeToList x
         , rhs: toList x
         }
-- warn: { note: Use more general Indexable typeclass instance
+- warn: { name: Use generalized indexing
+        , note: Use more general Indexable typeclass instance
         , lhs: (!!)
         , rhs: (!)
         }
@@ -122,6 +123,7 @@
 - ignore: { name: Strict sum
           , within:
               [ Data.MutualExclusionSet.Internal
+              , File.Format.Nexus.Parser
               , Control.Evaluation.Test
               , Control.Monad.Trans.Validation.Test
               ]
@@ -148,15 +150,22 @@
             ]
           }
 
+- ignore: { name: "Use generalized indexing"
+          , within:
+            [ Data.BitMatrix.Test
+            ]
+          }
+
 
 # unsafePerformIO can only appear in FFI modules
 - functions:
   - { name: unsafePerformIO
     , within:
-      [ PCG.Command.Build.Evaluate
-      , Data.TCM.Memoized.FFI
-      , Analysis.Parsimony.Dynamic.SequentialAlign.FFI
+      [ Analysis.Parsimony.Dynamic.SequentialAlign.FFI
       , Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.FFI
+      , Data.Hashable.Memoize
+      , Data.TCM.Memoized.FFI
+      , PCG.Command.Build.Evaluate
       ]
     }
 
@@ -176,7 +185,10 @@
           }
 
 - ignore: { name: Reduce duplication
-          , within: Bio.Graph.ReferenceDAG.Traversal
+          , within:
+             [ Bio.Graph.ReferenceDAG.Traversal
+             , Data.Alphabet.Test
+             ]
           }
 
 - ignore: { name: Reduce duplication

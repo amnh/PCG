@@ -145,16 +145,16 @@ instance M.MVector U.MVector Direction where
     basicOverlaps (MV_Direction v1) (MV_Direction v2) = M.basicOverlaps v1 v2
 
     {-# INLINE basicUnsafeNew #-}
-    basicUnsafeNew n = MV_Direction `liftM` M.basicUnsafeNew n
+    basicUnsafeNew n = MV_Direction <$> M.basicUnsafeNew n
 
     {-# INLINE basicInitialize #-}
     basicInitialize (MV_Direction v) = M.basicInitialize v
 
     {-# INLINE basicUnsafeReplicate #-}
-    basicUnsafeReplicate n x = MV_Direction `liftM` M.basicUnsafeReplicate n (fromDirection x)
+    basicUnsafeReplicate n x = MV_Direction <$> M.basicUnsafeReplicate n (fromDirection x)
 
     {-# INLINE basicUnsafeRead #-}
-    basicUnsafeRead (MV_Direction v) i = toDirection `liftM` M.basicUnsafeRead v i
+    basicUnsafeRead (MV_Direction v) i = toDirection <$> M.basicUnsafeRead v i
 
     {-# INLINE basicUnsafeWrite #-}
     basicUnsafeWrite (MV_Direction v) i x = M.basicUnsafeWrite v i (fromDirection x)
@@ -171,16 +171,16 @@ instance M.MVector U.MVector Direction where
     basicUnsafeMove (MV_Direction v1) (MV_Direction v2) = M.basicUnsafeMove v1 v2
 
     {-# INLINE basicUnsafeGrow #-}
-    basicUnsafeGrow (MV_Direction v) n = MV_Direction `liftM` M.basicUnsafeGrow v n
+    basicUnsafeGrow (MV_Direction v) n = MV_Direction <$> M.basicUnsafeGrow v n
 
 
 instance G.Vector U.Vector Direction where
 
     {-# INLINE basicUnsafeFreeze #-}
-    basicUnsafeFreeze (MV_Direction v) = V_Direction `liftM` G.basicUnsafeFreeze v
+    basicUnsafeFreeze (MV_Direction v) = V_Direction <$> G.basicUnsafeFreeze v
 
     {-# INLINE basicUnsafeThaw #-}
-    basicUnsafeThaw (V_Direction v) = MV_Direction `liftM` G.basicUnsafeThaw v
+    basicUnsafeThaw (V_Direction v) = MV_Direction <$> G.basicUnsafeThaw v
 
     {-# INLINE basicLength #-}
     basicLength (V_Direction v) = G.basicLength v
@@ -189,7 +189,7 @@ instance G.Vector U.Vector Direction where
     basicUnsafeSlice i n (V_Direction v) = V_Direction $ G.basicUnsafeSlice i n v
 
     {-# INLINE basicUnsafeIndexM #-}
-    basicUnsafeIndexM (V_Direction v) i = toDirection `liftM` G.basicUnsafeIndexM v i
+    basicUnsafeIndexM (V_Direction v) i = toDirection <$> G.basicUnsafeIndexM v i
 
     basicUnsafeCopy (MV_Direction mv) (V_Direction v) = G.basicUnsafeCopy mv v
 

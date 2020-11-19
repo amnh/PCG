@@ -179,7 +179,7 @@ deleteAt i v =
   let
     (before, after) = V.splitAt i v
   in
-    V.force $ (before <> V.tail after)
+    V.force $ before <> V.tail after
 
 
 

@@ -234,16 +234,16 @@ instance M.MVector U.MVector ExtendedNatural where
   basicLength (MV_ExtendedNatural v) = M.basicLength v
   basicUnsafeSlice i n (MV_ExtendedNatural v) = MV_ExtendedNatural $ M.basicUnsafeSlice i n v
   basicOverlaps (MV_ExtendedNatural v1) (MV_ExtendedNatural v2) = M.basicOverlaps v1 v2
-  basicUnsafeNew n = MV_ExtendedNatural `liftM` M.basicUnsafeNew n
+  basicUnsafeNew n = MV_ExtendedNatural <$> M.basicUnsafeNew n
   basicInitialize (MV_ExtendedNatural v) = M.basicInitialize v
-  basicUnsafeReplicate n x = MV_ExtendedNatural `liftM` M.basicUnsafeReplicate n (toWord x)
-  basicUnsafeRead (MV_ExtendedNatural v) i = fromWord `liftM` M.basicUnsafeRead v i
+  basicUnsafeReplicate n x = MV_ExtendedNatural <$> M.basicUnsafeReplicate n (toWord x)
+  basicUnsafeRead (MV_ExtendedNatural v) i = fromWord <$> M.basicUnsafeRead v i
   basicUnsafeWrite (MV_ExtendedNatural v) i x = M.basicUnsafeWrite v i (toWord x)
   basicClear (MV_ExtendedNatural v) = M.basicClear v
   basicSet (MV_ExtendedNatural v) x = M.basicSet v (toWord x)
   basicUnsafeCopy (MV_ExtendedNatural v1) (MV_ExtendedNatural v2) = M.basicUnsafeCopy v1 v2
   basicUnsafeMove (MV_ExtendedNatural v1) (MV_ExtendedNatural v2) = M.basicUnsafeMove v1 v2
-  basicUnsafeGrow (MV_ExtendedNatural v) n = MV_ExtendedNatural `liftM` M.basicUnsafeGrow v n
+  basicUnsafeGrow (MV_ExtendedNatural v) n = MV_ExtendedNatural <$> M.basicUnsafeGrow v n
 
 instance G.Vector U.Vector ExtendedNatural where
   {-# INLINE basicUnsafeFreeze #-}
@@ -252,11 +252,11 @@ instance G.Vector U.Vector ExtendedNatural where
   {-# INLINE basicUnsafeSlice #-}
   {-# INLINE basicUnsafeIndexM #-}
   {-# INLINE elemseq #-}
-  basicUnsafeFreeze (MV_ExtendedNatural v) = V_ExtendedNatural `liftM` G.basicUnsafeFreeze v
-  basicUnsafeThaw (V_ExtendedNatural v) = MV_ExtendedNatural `liftM` G.basicUnsafeThaw v
+  basicUnsafeFreeze (MV_ExtendedNatural v) = V_ExtendedNatural <$> G.basicUnsafeFreeze v
+  basicUnsafeThaw (V_ExtendedNatural v) = MV_ExtendedNatural <$> G.basicUnsafeThaw v
   basicLength (V_ExtendedNatural v) = G.basicLength v
   basicUnsafeSlice i n (V_ExtendedNatural v) = V_ExtendedNatural $ G.basicUnsafeSlice i n v
-  basicUnsafeIndexM (V_ExtendedNatural v) i = fromWord `liftM` G.basicUnsafeIndexM v i
+  basicUnsafeIndexM (V_ExtendedNatural v) i = fromWord <$> G.basicUnsafeIndexM v i
   basicUnsafeCopy (MV_ExtendedNatural mv) (V_ExtendedNatural v) = G.basicUnsafeCopy mv v
   elemseq _ = seq
 

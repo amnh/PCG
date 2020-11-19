@@ -13,7 +13,7 @@ import Data.MonoTraversable
 
 main :: IO ()
 main = benchStringAlignment $
-            \(m, _, _) -> ("two-hex-pref-gap" `isInfixOf` otoList (m ^. characterName))
+            \(m, _, _) -> "two-hex-pref-gap" `isInfixOf` otoList (m ^. characterName)
 {-
        let p = (128, 144)
        in  benchStringAlignment $

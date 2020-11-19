@@ -96,11 +96,12 @@ memoPostorder leafFn treeFn netFn graph = f
 
 
         leafGen' :: Int -> val
-        leafGen' i = leafFn . fromJust $
-                       graph ^?
-                         _leafReferences
-                        . ix i
-                        . _nodeData
+        leafGen' i = leafFn (graph ^?! (_leafReferences . ix i . _nodeData))
+--        leafGen' i = leafFn . fromJust $
+--                       graph ^?
+--                         _leafReferences
+--                        . ix i
+--                        . _nodeData
 
         fromTwoChildren  :: ChildIndex :!: ChildIndex -> g val
         fromTwoChildren c =

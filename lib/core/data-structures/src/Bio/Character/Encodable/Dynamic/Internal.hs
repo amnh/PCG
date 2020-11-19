@@ -133,7 +133,7 @@ instance EncodableDynamicCharacter DynamicCharacter where
     --
     -- If the character contains /only/ gaps, a missing character is returned.
     {-# INLINEABLE deleteGaps #-}
-    deleteGaps c@(Missing{}) = (mempty, c)
+    deleteGaps c@Missing{} = (mempty, c)
     deleteGaps c@(DC    bvs)
       | null gaps   = (gaps,            c)
       | newLen == 0 = (gaps, toMissing  c)
@@ -143,9 +143,7 @@ instance EncodableDynamicCharacter DynamicCharacter where
             j <- newSTRef 0
             let isGapAtJ = do
                   j' <- readSTRef j
-                  pure $ if j' >= charLen
-                         then False
-                         else getMedian (c `indexStream` j') == gap
+                  pure $ j' < charLen && getMedian (c `indexStream` j') == gap
 
             let g = do
                   whileM isGapAtJ (modifySTRef j succ)
@@ -159,7 +157,7 @@ instance EncodableDynamicCharacter DynamicCharacter where
         charLen  = length bvs
         newLen   = charLen - gapCount
         gapElem  = gapOfStream c
-        gap      = getMedian $ gapElem
+        gap      = getMedian gapElem
 
         gaps = IM.fromDistinctAscList $ reverse refs
         refs = runST $ do
@@ -259,10 +257,10 @@ instance EncodableStream DynamicCharacter where
             z = fromNumber w (0 :: Word)
         in  DCE (v,z,z)
 
-    indexStream (DC v) i = DCE $ v ! i
-    indexStream (Missing{}) i = error $ "Tried to index an missing character with index " <> show i
+    indexStream (DC v)    i = DCE $ v ! i
+    indexStream Missing{} i = error $ "Tried to index an missing character with index " <> show i
 
-    lookupStream (Missing{}) _ = Nothing
+    lookupStream Missing{} _ = Nothing
     lookupStream (DC v) i
       | 0 > i     = Nothing
       | otherwise = Just . DCE $ v ! i
@@ -300,7 +298,7 @@ instance ExportableElements DynamicCharacter where
 instance ExportableBuffer DynamicCharacter where
 
     toExportableBuffer Missing {} = error "Attempted to 'Export' a missing dynamic character to foreign functions."
-    toExportableBuffer dc@(DC v) = ExportableCharacterBuffer r c . bitVectorToBufferChunks r c $ expandRows . fromRows $ (\(x,_,_) -> x) <$> v
+    toExportableBuffer dc@(DC v) = ExportableCharacterBuffer r c . bitVectorToBufferChunks r c . expandRows . fromRows $ (\(x,_,_) -> x) <$> v
       where
         r = toEnum $ length v
         c = symbolCount dc
@@ -363,9 +361,9 @@ instance MonoFoldable DynamicCharacter where
 
 instance MonoFunctor DynamicCharacter where
 
-    omap _ dc@(Missing{}) = dc    
+    omap _ dc@Missing{} = dc    
     omap f dc@(DC      v) =
-      let dces = (splitElement . f . DCE) <$> v
+      let dces = splitElement . f . DCE <$> v
           bits (m,_,_) = finiteBitSize m
       in  case invariantTransformation bits v of
             Just _  -> DC dces

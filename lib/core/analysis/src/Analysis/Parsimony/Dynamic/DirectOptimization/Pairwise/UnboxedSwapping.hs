@@ -74,7 +74,7 @@ buildDirectionMatrix overlapFunction topChar leftChar = fullMatrix
       vOne <- V.new cols
       vTwo <- V.new cols
 
-      let write v !p@(_,!j) !c !d = V.unsafeWrite v j c *> M.unsafeWrite mDir p d
+      let write v p@(_,!j) !c !d = V.unsafeWrite v j c *> M.unsafeWrite mDir p d
 
       write vOne (0,0) 0 DiagArrow
 
@@ -108,7 +108,7 @@ buildDirectionMatrix overlapFunction topChar leftChar = fullMatrix
                      alignCost   = cost topElement leftElement
                      insertCost  = cost gapGroup   leftElement
                  in  do diagCost <- V.unsafeRead prev $ j - 1
-                        topCost  <- V.unsafeRead prev $ j
+                        topCost  <- V.unsafeRead prev   j
                         leftCost <- V.unsafeRead curr $ j - 1
                         let xs = [ ( alignCost + diagCost, DiagArrow)
                                  , (deleteCost + leftCost, LeftArrow)

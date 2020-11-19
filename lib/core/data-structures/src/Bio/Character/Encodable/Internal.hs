@@ -58,7 +58,7 @@ instance PossiblyMissingCharacter c => PossiblyMissingCharacter (Maybe c) where
 
     toMissing = fmap toMissing
 
-    isMissing = maybe False isMissing
+    isMissing = any isMissing
 
 
 -- |

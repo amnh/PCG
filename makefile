@@ -12,7 +12,7 @@ haddock       = --haddock --haddock-deps
               # --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
 profiling     = --executable-profiling --library-profiling
 
-code-dirs     = app bench test $(shell find . -maxdepth 2 -type d -name "pcg-*") 
+code-dirs     = app bench test $(shell find lib -maxdepth 1 -type d -name "*" | tail -n +2) 
 
 sub-libs      = pcg-file-parsers pcg-language pcg-utility
 

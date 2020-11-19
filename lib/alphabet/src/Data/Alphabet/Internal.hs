@@ -386,15 +386,7 @@ fromSymbolsWithTCM symbols originalTcm = (alphabet, permutedTcm)
   where
     (uniqueSymbols, permuted) = removeSpecialSymbolsAndDuplicates symbols
     alphabet    = Alphabet True (NEV.fromNonEmpty uniqueSymbols) []
-    len         = length alphabet
-
-    oldOrdering = NEV.fromNonEmpty permuted
-    permutedTcm
-      | isPermuted = matrix len len f
-      | otherwise  = originalTcm
-      where
-        isPermuted = oldOrdering /= NEV.generate len id
-        f (i,j) =  originalTcm ! (oldOrdering ! i, oldOrdering ! j)
+    permutedTcm = getPermutionContext alphabet originalTcm permuted
 
     removeSpecialSymbolsAndDuplicates xs = (uniqueVals, permutedKeys)
       where
@@ -429,15 +421,7 @@ fromSymbolsWithStateNamesAndTCM symbols originalTcm = (alphabet, permutedTcm)
   where
     (uniqueSymbols, uniqueStates, permuted) = removeSpecialSymbolsAndDuplicates symbols
     alphabet    = Alphabet True (NEV.fromNonEmpty uniqueSymbols) uniqueStates
-    len         = length alphabet
-
-    oldOrdering = NEV.fromNonEmpty permuted
-    permutedTcm
-      | isPermuted = matrix len len f
-      | otherwise  = originalTcm
-      where
-        isPermuted = oldOrdering /= NEV.generate len id
-        f (i,j) =  originalTcm ! (oldOrdering ! i, oldOrdering ! j)
+    permutedTcm = getPermutionContext alphabet originalTcm permuted
 
     removeSpecialSymbolsAndDuplicates xs = (uniqueVals, uniqueNames, permutedKeys)
       where
@@ -453,6 +437,17 @@ fromSymbolsWithStateNamesAndTCM symbols originalTcm = (alphabet, permutedTcm)
           | isGapSymboled     s = (m, Just i)
           | isMissingSymboled s = acc
           | otherwise           = (Map.insert s i m, g)
+
+
+getPermutionContext :: (Foldable1 f, Foldable t) => t a -> Matrix b -> f Int -> Matrix b
+getPermutionContext alphabet originalTcm permuted
+  | isPermuted = matrix len len f
+  | otherwise  = originalTcm
+  where
+    len         = length alphabet
+    oldOrdering = NEV.fromNonEmpty permuted
+    isPermuted  = oldOrdering /= NEV.generate len id
+    f (i,j)     =  originalTcm ! (oldOrdering ! i, oldOrdering ! j)
 
 
 -- |
