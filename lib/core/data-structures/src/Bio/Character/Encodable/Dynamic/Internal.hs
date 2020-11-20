@@ -45,7 +45,7 @@ import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable
 import           Control.DeepSeq
-import           Control.Lens
+import           Control.Lens                          ((^.))
 import           Control.Monad                         (when)
 import           Control.Monad.Loops                   (whileM)
 import           Control.Monad.ST
@@ -166,9 +166,22 @@ instance EncodableDynamicCharacter DynamicCharacter where
             gapLen  <- newSTRef 0
             gapRefs <- newSTRef []
 
+            let handleGapBefore op = do
+                    gapBefore <- readSTRef prevGap
+                    when gapBefore $ do
+                      j <- readSTRef nonGaps
+                      g <- readSTRef gapLen
+                      modifySTRef gapRefs ( (j,g): )
+                      op
+
             for_ [0 .. charLen - 1] $ \i ->
               if getMedian (c `indexStream` i)  == gap
-              then do modifySTRef gapLen succ *> writeSTRef prevGap True
+              then modifySTRef gapLen succ *> writeSTRef prevGap True
+              else do handleGapBefore $ do
+                        writeSTRef  gapLen 0
+                        writeSTRef prevGap False
+                      modifySTRef nonGaps succ
+{-
               else do gapBefore <- readSTRef prevGap
                       when gapBefore $ do
                         j <- readSTRef nonGaps
@@ -183,6 +196,8 @@ instance EncodableDynamicCharacter DynamicCharacter where
               j <- readSTRef nonGaps
               g <- readSTRef gapLen
               modifySTRef gapRefs ( (j,g): )
+-}
+            handleGapBefore $ pure ()
             readSTRef gapRefs
 
     -- |
