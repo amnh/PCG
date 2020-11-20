@@ -83,4 +83,4 @@ convertCharacterSequenceLikeFASTA =
 -- to duplicate keys. When identical keys occur in multiple 'Map's, the value
 -- occurring last in the 'Foldable' structure is returned.
 mergeMaps :: (Foldable t, Ord k) => t (Map k v) -> Map k v
-mergeMaps = foldl' (M.unionWith (flip const)) mempty
+mergeMaps = foldl' (M.unionWith (const id)) mempty

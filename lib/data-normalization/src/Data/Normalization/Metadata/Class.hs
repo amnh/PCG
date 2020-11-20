@@ -61,7 +61,7 @@ class HasNormalizedMetadata a where
 
 instance HasNormalizedMetadata (DotGraph n) where
 
-    getNormalizedMetadata = const mempty
+    getNormalizedMetadata = mempty
 
 
 instance HasNormalizedMetadata FastaParseResult where
@@ -81,7 +81,7 @@ instance HasNormalizedMetadata FastcParseResult where
 
 instance HasNormalizedMetadata (NonEmpty NewickForest) where
 
-    getNormalizedMetadata = const mempty
+    getNormalizedMetadata = mempty
 
 
 instance HasNormalizedMetadata TNT.TntResult where
@@ -193,7 +193,7 @@ instance HasNormalizedMetadata F.TCM where
 
 instance HasNormalizedMetadata VertexEdgeRoot where
 
-    getNormalizedMetadata = const mempty
+    getNormalizedMetadata = mempty
 
 
 instance HasNormalizedMetadata Nexus where

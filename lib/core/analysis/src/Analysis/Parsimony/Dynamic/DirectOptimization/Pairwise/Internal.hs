@@ -124,10 +124,10 @@ type MatrixFunction m s = OverlapFunction (Subcomponent (Element s)) -> s -> s -
 type OverlapFunction e = e -> e -> (e, Word)
 
 
-data instance U.MVector s Direction = MV_Direction (P.MVector s Word8)
+newtype instance U.MVector s Direction = MV_Direction (P.MVector s Word8)
 
 
-data instance U.Vector   Direction  = V_Direction  (P.Vector    Word8)
+newtype instance U.Vector   Direction  = V_Direction  (P.Vector    Word8)
 
 
 instance U.Unbox Direction

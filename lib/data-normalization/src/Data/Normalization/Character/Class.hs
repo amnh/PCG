@@ -72,7 +72,7 @@ class HasNormalizedCharacters a where
 
 instance HasNormalizedCharacters (DotGraph GraphID) where
 
-    getNormalizedCharacters = const mempty
+    getNormalizedCharacters = mempty
 
 
 instance HasNormalizedCharacters FastaParseResult where
@@ -100,7 +100,7 @@ instance HasNormalizedCharacters TaxonSequenceMap where
 
 instance HasNormalizedCharacters (NonEmpty NewickForest) where
 
-    getNormalizedCharacters = const mempty
+    getNormalizedCharacters = mempty
 
 
 instance HasNormalizedCharacters Nexus where
@@ -159,12 +159,12 @@ instance HasNormalizedCharacters TntResult where
 
 instance HasNormalizedCharacters TCM where
 
-    getNormalizedCharacters = const mempty
+    getNormalizedCharacters = mempty
 
 
 instance HasNormalizedCharacters VertexEdgeRoot where
 
-    getNormalizedCharacters = const mempty
+    getNormalizedCharacters = mempty
 {-
     getNormalizedCharacters (VER _ e r) =
         mergeMaps $ f . buildTree <$> toList r

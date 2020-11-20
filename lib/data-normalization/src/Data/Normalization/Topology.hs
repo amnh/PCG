@@ -111,8 +111,8 @@ instance HasNormalizedTopology (DotGraph GraphID) where
         f x = (parents, marker, kids)
            where
             kids, parents :: [(EdgeLength, GraphID)]
-            kids    = fmap (const mempty &&& id) . toList $ cMapping ! x
-            parents = fmap (const mempty &&& id) . toList $ pMapping ! x
+            kids    = fmap (mempty &&& id) . toList $ cMapping ! x
+            parents = fmap (mempty &&& id) . toList $ pMapping ! x
 
             marker
               | null kids = Just . fromString . toIdentifier $ x
@@ -223,7 +223,7 @@ instance HasNormalizedTopology TntResult where
             f i = (g $ toList parentMay, datum, g children)
               where
                 (parentMay, datum, children) = mapping ! i
-                g = fmap (const mempty &&& id)
+                g = fmap (mempty &&& id)
 
         -- | We assign a unique index to each node and create an adjcency matrix.
         enumerate :: (n -> NodeLabel) -> LeafyTree n -> IntMap (Maybe Int, Maybe NodeLabel, [Int])
