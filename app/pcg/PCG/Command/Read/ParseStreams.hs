@@ -360,7 +360,7 @@ expandDynamicCharactersMarkedAsAligned pid =
               x:xs  -> Failure $ unaligned (sourceFile pid) (x:|xs)
           _ -> pure (pure m, pure <$> singleCharacterMap)
       where
-        singleCharacterMap = (!k) <$> characterMap
+        singleCharacterMap = (! k) <$> characterMap
 
     -- Get the lengths of all the dynamic characters in the map.
     -- They should all be the same length, returning a singleton list.

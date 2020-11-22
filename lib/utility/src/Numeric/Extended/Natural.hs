@@ -138,7 +138,7 @@ instance Num ExtendedNatural where
       | lhs <= rhs      = minBound
       | otherwise       = Cost $ x - y
 
-    lhs@(Cost x) * rhs@ (Cost y)
+    lhs@(Cost x) * rhs@(Cost y)
       -- If either value is infinite,
       -- then the product is infinite
       | lhs    == infinity  = infinity
