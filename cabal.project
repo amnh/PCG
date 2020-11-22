@@ -3,6 +3,7 @@ allow-newer:
     Cabal,
     ghc-prim,
     integer-gmp,
+    lens,
     optparse-applicative,
     template-haskell,
     th-abstraction,
@@ -28,6 +29,32 @@ source-repository-package
   type: git
   location: https://github.com/bennofs/th-lift-instances
   tag: 06a134c5119fbd6e938a4048fde03904d202039b
+
+source-repository-package
+  type: git
+  location: https://github.com/Gabriel439/Haskell-Pipes-Library
+  tag: 9b3abc8ee721a638cf51bd776ab545a567ace60a
+
+source-repository-package
+  type: git
+  location: https://github.com/recursion-ninja/modern-uri
+  tag: f84e5c3093cb74272b3382ab1425f453f14b10b0
+
+source-repository-package
+  type: git
+  location: https://github.com/recursion-ninja/conduit
+  tag: ce1e38e63c5c124af6bae78fce4d53591e3da188
+  subdir: conduit
+
+source-repository-package
+  type: git
+  location: https://github.com/ekmett/lens
+  tag: 0679c15cce599dfc8802cf77b2c6f90c3cfe83ea
+
+source-repository-package
+  type: git
+  location: https://github.com/recursion-ninja/validation
+  tag: e2bca5a9bafdaa7bd33629fa4d7a0ef26f8e0943
 
 with-compiler: ghc-9.0-rc1
 with-hc-pkg: ghc-pkg-9.0-rc1
