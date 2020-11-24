@@ -22,34 +22,34 @@ source-repository-package
 
 source-repository-package
   type: git
-  location: https://github.com/recursion-ninja/diagrams-lib
-  tag: 4b9842c3e3d653be69af19778970337775e2404d
-
-source-repository-package
-  type: git
   location: https://github.com/bennofs/th-lift-instances
   tag: 06a134c5119fbd6e938a4048fde03904d202039b
 
 source-repository-package
   type: git
   location: https://github.com/Gabriel439/Haskell-Pipes-Library
-  tag: 9b3abc8ee721a638cf51bd776ab545a567ace60a
+  tag: 49ed267dc95df7254b5776d0fa7bc988197dd810
 
 source-repository-package
   type: git
-  location: https://github.com/recursion-ninja/modern-uri
-  tag: f84e5c3093cb74272b3382ab1425f453f14b10b0
-
-source-repository-package
-  type: git
-  location: https://github.com/recursion-ninja/conduit
-  tag: ce1e38e63c5c124af6bae78fce4d53591e3da188
+  location: https://github.com/snoyberg/conduit
+  tag: 2f9e8682014c77ba6372742f2e2be8b24ed9d3e9
   subdir: conduit
 
 source-repository-package
   type: git
   location: https://github.com/ekmett/lens
   tag: 0679c15cce599dfc8802cf77b2c6f90c3cfe83ea
+
+source-repository-package
+  type: git
+  location: https://github.com/recursion-ninja/diagrams-lib
+  tag: 4b9842c3e3d653be69af19778970337775e2404d
+
+source-repository-package
+  type: git
+  location: https://github.com/recursion-ninja/modern-uri
+  tag: f84e5c3093cb74272b3382ab1425f453f14b10b0
 
 source-repository-package
   type: git
