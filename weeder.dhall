@@ -50,6 +50,64 @@
 
 -- Ignore the incomplete Graph sub-library
     , "^Data.Graph.*$"
+
+-- Ignore Graphviz-Examples
+    , "^DisplayTree.*$"
+    , "^NetworkEdges.*$"
+    , "^ProjectOverview.*$"
+
+-- Expose Test Suites
+    , "^Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test.*$"
+    , "^Analysis.Clustering.Test.*$"
+    , "^Bio.Character.Encodable.Dynamic.Test.*$"
+    , "^Bio.Character.Encodable.Static.Test.*$"
+    , "^Bio.Graph.ReferenceDAG.Test.*$"
+    , "^Bio.Graph.ReferenceDAG.Test.NetworkPropertyTests.*$"
+    , "^Bio.Graph.ReferenceDAG.Test.NetworkUnitTests.*$"
+    , "^Control.Evaluation.Test.*$"
+    , "^Control.Monad.Trans.Validation.Test.*$"
+    , "^Control.Parallel.Test.*$"
+    , "^Data.Alphabet.Test.*$"
+    , "^Data.BitMatrix.Test.*$"
+    , "^Data.Graph.Test.*$"
+    , "^Data.List.Test.*$"
+    , "^Data.TCM.Test.*$"
+    , "^Data.MutualExclusionSet.Test.*$"
+    , "^File.Format.Fasta.Test.*$"
+    , "^File.Format.Fastc.Test.*$"
+    , "^File.Format.Newick.Test.*$"
+    , "^File.Format.TNT.Test.*$"
+    , "^File.Format.TransitionCostMatrix.Test.*$"
+    , "^File.Format.VertexEdgeRoot.Test.*$"
+    , "^Numeric.Cost.Test.*$"
+    , "^Numeric.Extended.Natural.Test.*$"
+    , "^Numeric.Extended.Real.Test.*$"
+    , "^Numeric.NonNegativeAverage.Test.*$"
+    , "^System.ErrorPhase.Test.*$"
+    , "^Text.Megaparsec.Custom.Test.*$"
+    
+--
+    , "^TestSuite.GeneratedTests.*$"
+    , "^TestSuite.GoldenTests.*$"
+    , "^TestSuite.ScriptTests.*$"
+    , "^TestSuite.SubProcess.*$"
+
+    , "^Benchmark.FASTA.Space.*$"
+    , "^Benchmark.FASTA.Time.*$"
+    , "^Benchmark.FASTC.Space.*$"
+    , "^Benchmark.FASTC.Time.*$"
+    , "^Benchmark.Newick.Space.*$"
+    , "^Benchmark.Newick.Time.*$"
+    , "^Benchmark.TCM.Space.*$"
+    , "^Benchmark.TCM.Time.*$"
+    , "^Benchmark.VER.Space.*$"
+    , "^Benchmark.VER.Time.*$"
+    
+    , "^Data.Graph.Bench.*$"
+
+    , "^Benchmark.StringAlignment.*$"
+    , "^Data.MutualExclusionSet.Bench.*$"
+    , "^Numeric.Extended.Natural.Bench.*$"
     ]
 
 , type-class-roots = True
