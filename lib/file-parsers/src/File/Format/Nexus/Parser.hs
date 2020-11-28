@@ -28,7 +28,7 @@ module File.Format.Nexus.Parser
 import           Data.CaseInsensitive                    (FoldCase)
 import           Data.Char                               (isSpace, toLower)
 import           Data.Functor
-import           Data.Maybe                              (fromMaybe, isJust)
+import           Data.Maybe                              (isJust)
 import           Data.Proxy
 import qualified Data.Set                                as S
 import           File.Format.Newick
