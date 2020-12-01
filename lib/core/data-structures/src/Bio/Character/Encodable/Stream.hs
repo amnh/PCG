@@ -31,11 +31,11 @@ import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                       as BM
 import           Data.Bits
 import           Data.Foldable
-import           Data.List.NonEmpty               (NonEmpty((:|)))
+import           Data.List.NonEmpty               (NonEmpty ((:|)))
 import           Data.List.Utility
 import           Data.Maybe                       (fromMaybe)
 import           Data.MonoTraversable
-import           Data.Semigroup.Foldable          (Foldable1(..))
+import           Data.Semigroup.Foldable          (Foldable1 (..))
 import           Data.String                      (IsString)
 
 

@@ -4,11 +4,11 @@ module Data.Alphabet.Test
 
 import           Data.Alphabet.Internal
 import           Data.Foldable
-import           Data.List             (nubBy)
-import qualified Data.Set              as Set
+import           Data.List              (nubBy)
+import qualified Data.Set               as Set
 import           Test.Tasty
-import           Test.Tasty.HUnit      as HU
-import           Test.Tasty.QuickCheck as QC
+import           Test.Tasty.HUnit       as HU
+import           Test.Tasty.QuickCheck  as QC
 
 
 testSuite :: TestTree

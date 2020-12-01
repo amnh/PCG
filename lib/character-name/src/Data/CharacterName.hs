@@ -55,24 +55,24 @@ module Data.CharacterName
   , sourceFile
   ) where
 
-import Control.DeepSeq
-import Control.Monad.State.Lazy
-import Data.Binary              (Binary)
-import Data.FileSource
-import Data.Foldable
-import Data.Map                 (Map, insertWith)
-import Data.Monoid
-import Data.Key                 (lookup)
-import Data.String
-import Data.Text.Short          (ShortText, isPrefixOf, uncons)
-import qualified Data.Text.Short as TS
-import Data.Traversable
-import Data.MonoTraversable
-import GHC.Generics             (Generic)
-import Prelude                  hiding (lookup)
-import TextShow                 (TextShow (showb, showbList), toString)
-import TextShow.Data.List       (showbListWith)
-import TextShow.Data.ShortText  ()
+import           Control.DeepSeq
+import           Control.Monad.State.Lazy
+import           Data.Binary              (Binary)
+import           Data.FileSource
+import           Data.Foldable
+import           Data.Key                 (lookup)
+import           Data.Map                 (Map, insertWith)
+import           Data.Monoid
+import           Data.MonoTraversable
+import           Data.String
+import           Data.Text.Short          (ShortText, isPrefixOf, uncons)
+import qualified Data.Text.Short          as TS
+import           Data.Traversable
+import           GHC.Generics             (Generic)
+import           Prelude                  hiding (lookup)
+import           TextShow                 (TextShow (showb, showbList), toString)
+import           TextShow.Data.List       (showbListWith)
+import           TextShow.Data.ShortText  ()
 
 
 -- |
@@ -113,12 +113,12 @@ instance MonoFoldable CharacterName where
     ofoldr1Ex f m =
         case getList m of
           []   -> error "Data.MonoTraversable.ofoldr1Ex"
-          x:xs -> foldr f x xs 
+          x:xs -> foldr f x xs
 
     ofoldl1Ex' f m =
         case getList m of
           []   -> error "Data.MonoTraversable.ofoldl1Ex'"
-          x:xs -> foldl' f x xs 
+          x:xs -> foldl' f x xs
 
 
 -- Ordering biases user defined names with a file path prefix before defaulted names with the same prefix.

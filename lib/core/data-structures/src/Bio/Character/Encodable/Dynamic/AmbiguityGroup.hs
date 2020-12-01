@@ -13,7 +13,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
@@ -33,26 +32,26 @@ module Bio.Character.Encodable.Dynamic.AmbiguityGroup
   ( AmbiguityGroup(..)
   ) where
 
-import           Bio.Character.Encodable.Internal
-import           Bio.Character.Encodable.Stream
-import           Bio.Character.Exportable
-import           Control.DeepSeq
-import           Control.Lens
-import           Data.Bits
-import           Data.BitVector.LittleEndian
-import           Data.BitVector.LittleEndian.Instances ()
-import           Data.Foldable
-import           Data.Hashable
-import           Data.Key
-import           Data.List.NonEmpty                    (NonEmpty (..))
-import           Data.Maybe                            (fromJust)
-import           Data.MetricRepresentation             (discreteMetricPairwiseLogic)
-import           Data.MonoTraversable
-import           Data.Range
-import           GHC.Generics
-import           Test.QuickCheck
-import           Test.QuickCheck.Arbitrary.Instances   ()
-import           TextShow                              (TextShow (showb), toString)
+import Bio.Character.Encodable.Internal
+import Bio.Character.Encodable.Stream
+import Bio.Character.Exportable
+import Control.DeepSeq
+import Control.Lens
+import Data.Bits
+import Data.BitVector.LittleEndian
+import Data.BitVector.LittleEndian.Instances ()
+import Data.Foldable
+import Data.Hashable
+import Data.Key
+import Data.List.NonEmpty                    (NonEmpty (..))
+import Data.Maybe                            (fromJust)
+import Data.MetricRepresentation             (discreteMetricPairwiseLogic)
+import Data.MonoTraversable
+import Data.Range
+import GHC.Generics
+import Test.QuickCheck
+import Test.QuickCheck.Arbitrary.Instances   ()
+import TextShow                              (TextShow (showb), toString)
 
 
 {-# SPECIALISE discreteMetricPairwiseLogic :: AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}

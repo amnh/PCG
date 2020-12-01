@@ -96,7 +96,7 @@ outputFormat =
   where
     dataFormat         = value "data" $> Data
     dotFormat          = choiceFrom [value "dot", value "graphviz"] $> DotFile
-    distanceMatrix     = value "distance" $> DistanceMatrix 
+    distanceMatrix     = value "distance" $> DistanceMatrix
     impliedAlignFormat = value "implied-alignment" $> ImpliedAlignment
     metadataFormat     = choiceFrom [value "metadata", value "cross-references"] $> Metadata
     xmlFormat          = value "xml"  $> XML

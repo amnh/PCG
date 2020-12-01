@@ -41,6 +41,7 @@ import           Control.Lens.Operators        ((%~), (.~), (^.))
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Binary                   (Binary)
+import qualified Data.DList                    as DL
 import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Foldable.Custom
@@ -82,7 +83,6 @@ import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
 import           TextShow                      (TextShow (..), toString, unlinesB)
-import qualified Data.DList                    as DL
 
 
 -- |

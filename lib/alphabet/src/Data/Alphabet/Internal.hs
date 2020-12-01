@@ -232,7 +232,7 @@ instance Lookup Alphabet where
 
 instance Ord a => Ord (Alphabet a) where
 
-    compare = comparing symbolVector 
+    compare = comparing symbolVector
 
 
 instance Show a => Show (Alphabet a) where
@@ -246,7 +246,7 @@ instance Show a => Show (Alphabet a) where
 
 instance TextShow a => TextShow (Alphabet a) where
 
-    showb x = fold 
+    showb x = fold
        [ "Alphabet: {"
         , intercalateB ", " $ showb <$> toList x
         , "}"

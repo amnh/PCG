@@ -30,17 +30,17 @@ module Data.NodeLabel
 
 import           Control.DeepSeq
 import           Data.Binary
-import           Data.Coerce          (coerce)
-import           Data.Data            (Data, Typeable)
+import           Data.Coerce             (coerce)
+import           Data.Data               (Data, Typeable)
 import           Data.Default
 import           Data.MonoTraversable
-import           Data.String          (IsString)
-import           Data.Text.Short      as TS
+import           Data.String             (IsString)
+import qualified Data.Text               as Strict
+import qualified Data.Text.Lazy          as Lazy
+import           Data.Text.Short         as TS
 import           GHC.Generics
 import           TextShow                (TextShow)
 import           TextShow.Data.ShortText ()
-import qualified Data.Text            as Strict
-import qualified Data.Text.Lazy       as Lazy
 
 
 -- |

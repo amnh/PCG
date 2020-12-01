@@ -30,8 +30,8 @@ import Bio.Character.Exportable         (Subcomponent)
 import Control.DeepSeq
 import Data.Bits
 import Data.Data
-import Data.List.NonEmpty
 import Data.IntMap                      (IntMap)
+import Data.List.NonEmpty
 import Data.MonoTraversable
 import Data.Semigroup.Foldable
 import GHC.Generics                     (Generic)

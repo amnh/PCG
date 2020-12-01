@@ -35,7 +35,7 @@ import Data.Binary
 import Data.CharacterName
 import Data.MetricRepresentation
 import Data.Range
-import GHC.Generics               hiding (to)
+import GHC.Generics              hiding (to)
 import Text.XML
 
 

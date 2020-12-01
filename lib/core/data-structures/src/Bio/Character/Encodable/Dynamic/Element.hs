@@ -39,24 +39,24 @@ module Bio.Character.Encodable.Dynamic.Element
 --  , packDynamicCharacterElement
   ) where
 
-import           Bio.Character.Encodable.Dynamic.AmbiguityGroup
-import           Bio.Character.Encodable.Dynamic.Class
-import           Bio.Character.Encodable.Internal
-import           Bio.Character.Exportable              (Subcomponent)
-import           Control.Applicative
-import           Control.DeepSeq
-import           Data.Bits
-import           Data.BitVector.LittleEndian
-import           Data.Foldable
-import           Data.Hashable
-import           Data.MonoTraversable
-import           Data.Range
-import           Data.String                           (fromString)
-import           Data.MetricRepresentation
-import           GHC.Generics
-import           Test.QuickCheck
-import           Test.QuickCheck.Arbitrary.Instances   ()
-import           TextShow                              (TextShow (showb), toString)
+import Bio.Character.Encodable.Dynamic.AmbiguityGroup
+import Bio.Character.Encodable.Dynamic.Class
+import Bio.Character.Encodable.Internal
+import Bio.Character.Exportable                       (Subcomponent)
+import Control.Applicative
+import Control.DeepSeq
+import Data.Bits
+import Data.BitVector.LittleEndian
+import Data.Foldable
+import Data.Hashable
+import Data.MetricRepresentation
+import Data.MonoTraversable
+import Data.Range
+import Data.String                                    (fromString)
+import GHC.Generics
+import Test.QuickCheck
+import Test.QuickCheck.Arbitrary.Instances            ()
+import TextShow                                       (TextShow (showb), toString)
 
 
 -- |
@@ -69,9 +69,9 @@ import           TextShow                              (TextShow (showb), toStri
 -- symbols for two 'AmbiguityGroup's. 'AmbiguityGroup' values must be non-empty.
 -- This means that a valid 'AmbiguityGroup' value has at least one bit set. We
 -- utilize this fact as part of our 'DynamicCharacterElement' encoding, decribed
--- below. 
+-- below.
 --
--- There he four alignment contexts the element has can be tagegd as: 
+-- There he four alignment contexts the element has can be tagegd as:
 -- @(GAPPING, DELETETION, INSERTION, or ALIGNMENT)@.
 --
 -- * @GAPPING@ represents /neither/ of the two possible 'AmbiguityGroup' values
@@ -123,7 +123,7 @@ instance EncodedAmbiguityGroupContainer DynamicCharacterElement where
 
 
 instance EncodableDynamicCharacterElement DynamicCharacterElement where
-  
+
     isGap    (DCE ~(_,l,r)) =      isZeroVector l  &&      isZeroVector r
 
     isInsert (DCE ~(_,l,r)) =      isZeroVector l  && not (isZeroVector r)
@@ -131,7 +131,7 @@ instance EncodableDynamicCharacterElement DynamicCharacterElement where
     isDelete (DCE ~(_,l,r)) = not (isZeroVector l) &&      isZeroVector r
 
     isAlign  (DCE ~(_,l,r)) = not (isZeroVector l) && not (isZeroVector r)
-    
+
     gapElement w            = let !z = fromNumber w (0 :: Word)
                               in  DCE (bit . fromEnum $ w - 1, z, z)
 
@@ -207,7 +207,7 @@ instance TextShow DynamicCharacterElement where
           where
             g b | b         = "1"
                 | otherwise = "0"
-        
+
         prefix = case (not $ isLeftEmpty dce, not $ isRightEmpty dce) of
                    (False, False) -> "G"
                    (False, True ) -> "I"
@@ -228,7 +228,7 @@ arbitraryOfSize alphabetLen = do
     let unionElem f x y = let x' = AG x
                               y' = AG y
                               m  = med x' y'
-                          in  f m x' y'    
+                          in  f m x' y'
     let delGen =         buildElem deleteElement <$> eGen
     let insGen =         buildElem insertElement <$> eGen
     let alnGen = liftA2 (unionElem alignElement) eGen eGen
