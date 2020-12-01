@@ -31,7 +31,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   , OverlapFunction
   -- * Direct Optimization primitive construction functions
   , directOptimization
-  , filterGaps
   , handleMissingCharacter
   , handleMissingCharacterThreeway
   , measureCharacters
@@ -47,7 +46,6 @@ import           Data.DList                  (snoc)
 import           Data.Foldable
 import           Data.IntMap                 (IntMap)
 import           Data.Key
-import           Data.List.NonEmpty          (NonEmpty (..))
 import qualified Data.List.NonEmpty          as NE
 import           Data.Matrix.NotStupid       (Matrix)
 import           Data.Maybe                  (fromMaybe)
@@ -241,6 +239,7 @@ directOptimization overlapλ char1 char2 matrixFunction =
     in  handleMissingCharacter char1 char2 (alignmentCost, alignmentContext)
     
 
+{-
 -- |
 -- Strips the gap elements from the supplied character.
 --
@@ -254,6 +253,7 @@ filterGaps char =
       x:xs -> constructDynamic $ x:|xs
   where
     gap = gapOfStream char
+-}
 
 
 -- |

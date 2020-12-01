@@ -24,7 +24,6 @@ module Data.NodeLabel
   ( NodeLabel(NL)
   , nodeLabel
   , nodeLabelString
-  , nodeLabelToString
   , nodeLabelToLazyText
   , nodeLabelToStrictText
   ) where
@@ -124,17 +123,21 @@ nodeLabelString :: String -> NodeLabel
 nodeLabelString = coerce . fromString
 
 
+{-
 -- |
--- Converts a NodeLabel to a string.
+-- Converts a 'NodeLabel' to a 'String'.
 nodeLabelToString :: NodeLabel -> String
 nodeLabelToString = coerce TS.toString
+-}
 
 
+-- |
+-- Converts a 'NodeLabel' to a strict 'Strict.Text'.
 nodeLabelToStrictText :: NodeLabel -> Strict.Text
 nodeLabelToStrictText = coerce TS.toText
 
 
+-- |
+-- Converts a 'NodeLabel' to a lazy 'Lazy.Text'.
 nodeLabelToLazyText :: NodeLabel -> Lazy.Text
 nodeLabelToLazyText = Lazy.fromStrict . nodeLabelToStrictText
-
-

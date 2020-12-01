@@ -32,6 +32,12 @@
     , "^Data.MutualExclusionSet.*$"
     , "^Numeric.Extended.Real.*$"
 
+-- Expose Alphabet sub-library module
+    , "^Data.Alphabet.Internal.fromSymbolsWithStateNamesAndTCM$"
+    , "^Data.Alphabet.Internal.fromSymbolsWithTCM$"
+    , "^Data.Alphabet.Internal.getPermutionContext$"
+    , "^Data.Alphabet.Special.isAlphabetDiscrete$"
+
 -- Expose file parsers and related data types
     , "^File.Format.Dot.*$"
     , "^File.Format.Fasta.*$"
@@ -47,6 +53,12 @@
     , "^Analysis.Scoring.performPostorderDecoration$"
     , "^Analysis.Scoring.performPreorderDecoration$"
     , "^Analysis.Scoring.scoreSolution$"
+
+-- Expose pairwise string alignment utility function
+    , "^Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal.handleMissingCharacterThreeway"
+
+-- Expose debugging utility function on streams
+    , "Bio.Character.Encodable.Stream.showStream"
 
 -- Ignore the incomplete Graph sub-library
     , "^Data.Graph.*$"
