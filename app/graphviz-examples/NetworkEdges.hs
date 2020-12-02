@@ -75,11 +75,11 @@ networkGraphParameters = G.defaultParams {
         (_, NewNodeLabel       ) -> colorAttribute  red     <> point
 
     , G.fmtEdge = \case
-        (_, _, ExistingEdgeLabel)  -> colorAttribute black <> order
-        (_, _, NewEdgeLabel     )  -> colorAttribute teal <> noArrow
-        (_, _, NewNetEdgeLabel     )  -> colorAttribute teal <> noArrow <> dotted
-        (_, _, CandNetEdgeLabel )  -> colorAttribute red  <> dotted <> emptyArrowHead
-        (_, _, NetEdgeLabel     )  -> colorAttribute black <> dotted <> noArrow
+        (_, _, ExistingEdgeLabel)    -> colorAttribute black <> order
+        (_, _, NewEdgeLabel     )    -> colorAttribute teal <> noArrow
+        (_, _, NewNetEdgeLabel     ) -> colorAttribute teal <> noArrow <> dotted
+        (_, _, CandNetEdgeLabel )    -> colorAttribute red  <> dotted <> emptyArrowHead
+        (_, _, NetEdgeLabel     )    -> colorAttribute black <> dotted <> noArrow
         }
   where
     colorAttribute color = [ G.Color $ G.toColorList [ color ] ]

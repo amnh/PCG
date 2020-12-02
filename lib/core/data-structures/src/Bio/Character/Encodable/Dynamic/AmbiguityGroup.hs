@@ -37,9 +37,9 @@ import Bio.Character.Encodable.Stream
 import Bio.Character.Exportable
 import Control.DeepSeq
 import Control.Lens
-import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.BitVector.LittleEndian.Instances ()
+import Data.Bits
 import Data.Foldable
 import Data.Hashable
 import Data.Key

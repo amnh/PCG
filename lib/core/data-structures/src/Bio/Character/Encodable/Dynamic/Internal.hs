@@ -14,7 +14,6 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE ApplicativeDo              #-}
-{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
@@ -45,37 +44,37 @@ import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable
 import           Control.DeepSeq
-import           Control.Lens                          ((^.))
-import           Control.Monad                         (when)
-import           Control.Monad.Loops                   (whileM)
+import           Control.Lens                                   ((^.))
+import           Control.Monad                                  (when)
+import           Control.Monad.Loops                            (whileM)
 import           Control.Monad.ST
 import           Data.Alphabet
 import           Data.Binary
 import           Data.BitMatrix
-import           Data.Bits
 import           Data.BitVector.LittleEndian
-import           Data.BitVector.LittleEndian.Instances ()
+import           Data.BitVector.LittleEndian.Instances          ()
+import           Data.Bits
 import           Data.Coerce
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.IntMap                           as IM
+import qualified Data.IntMap                                    as IM
 import           Data.Key
-import qualified Data.List.NonEmpty                    as NE
-import           Data.List.Utility                     (invariantTransformation, occurrences)
+import qualified Data.List.NonEmpty                             as NE
+import           Data.List.Utility                              (invariantTransformation, occurrences)
 import           Data.MonoTraversable
+import           Data.STRef
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.STRef
-import qualified Data.Vector                           as EV
-import qualified Data.Vector.Mutable                   as MV
-import qualified Data.Vector.Unboxed.Mutable           as MUV
-import           Data.Vector.NonEmpty                  (Vector)
-import qualified Data.Vector.NonEmpty                  as V
+import qualified Data.Vector                                    as EV
+import qualified Data.Vector.Mutable                            as MV
+import           Data.Vector.NonEmpty                           (Vector)
+import qualified Data.Vector.NonEmpty                           as V
+import qualified Data.Vector.Unboxed.Mutable                    as MUV
 import           GHC.Generics
 import           Test.QuickCheck
-import           Test.QuickCheck.Arbitrary.Instances   ()
+import           Test.QuickCheck.Arbitrary.Instances            ()
 import           Text.XML
-import           TextShow                              (TextShow (showb)) --, toString)
+import           TextShow                                       (TextShow (showb))
 
 
 -- |
@@ -150,7 +149,7 @@ instance EncodableDynamicCharacter DynamicCharacter where
                   j' <- readSTRef j
                   modifySTRef j succ
                   pure $ bvs ! j'
-                  
+
             V.generateM newLen $ const g
 
         gapCount = fromEnum . getSum $ foldMap Sum gaps
@@ -190,7 +189,7 @@ instance EncodableDynamicCharacter DynamicCharacter where
                         writeSTRef  gapLen 0
                         writeSTRef prevGap False
                       modifySTRef nonGaps succ
-            
+
             gapBefore <- readSTRef prevGap
             when gapBefore $ do
               j <- readSTRef nonGaps
@@ -212,7 +211,7 @@ instance EncodableDynamicCharacter DynamicCharacter where
         lGapCount = totalGaps lGaps
         rGapCount = totalGaps rGaps
         newLength = lGapCount + rGapCount + olength meds
-        
+
         newVector = EV.create $ do
           mVec <- MV.unsafeNew newLength
           lVec <- MUV.replicate (gapVecLen lGaps) 0
@@ -296,7 +295,7 @@ instance ExportableElements DynamicCharacter where
         }
       where
         toNumber = toUnsignedNumber . packAmbiguityGroup
-    
+
     fromExportableElements riCharElems = {-# SCC fromExportableElements #-} DC . force $ V.fromNonEmpty bvs
       where
         bvs = {-# SCC bvs #-} f <$> NE.fromList inputElems
@@ -376,7 +375,7 @@ instance MonoFoldable DynamicCharacter where
 
 instance MonoFunctor DynamicCharacter where
 
-    omap _ dc@Missing{} = dc    
+    omap _ dc@Missing{} = dc
     omap f dc@(DC      v) =
       let dces = splitElement . f . DCE <$> v
           bits (m,_,_) = finiteBitSize m
@@ -439,5 +438,5 @@ renderDynamicCharacter alphabet _transiton char
     let shownElems = showStreamElement alphabet . getMedian <$> otoList char
     in  if   any (\e -> length e > 1) shownElems
         then unwords shownElems
-        -- All elements were rendered as a single character.                                          
+        -- All elements were rendered as a single character.
         else fold shownElems

@@ -33,8 +33,8 @@ module Data.MetricRepresentation
   ) where
 
 import Control.DeepSeq
-import Data.Bits
 import Data.Binary
+import Data.Bits
 import Data.Foldable
 import Data.Ord        (comparing)
 import Data.Range

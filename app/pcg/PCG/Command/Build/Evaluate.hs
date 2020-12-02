@@ -32,7 +32,7 @@ import           Bio.Sequence
 import           Control.Arrow                                 (first, second, (&&&))
 import           Control.DeepSeq
 import           Control.Evaluation
-import           Control.Lens                                  hiding (snoc, _head)
+import           Control.Lens                                  hiding (_head, snoc)
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Strict
 import           Control.Parallel.Custom

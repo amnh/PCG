@@ -39,8 +39,8 @@ import           Control.Parallel.Strategies                   (rpar)
 import           Data.Foldable
 import           Data.Matrix.Unboxed                           (Matrix)
 import qualified Data.Matrix.Unboxed                           as Matrix
-import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.Monoid
 import           Data.TCM.Dense
 import           Data.Vector                                   hiding (length)
 import           Numeric.Extended.Real

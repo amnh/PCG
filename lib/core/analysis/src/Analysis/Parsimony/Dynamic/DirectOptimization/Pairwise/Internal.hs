@@ -14,7 +14,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -237,7 +236,7 @@ directOptimization overlapλ char1 char2 matrixFunction =
         regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
         alignmentContext  = transformation regappedAlignment
     in  handleMissingCharacter char1 char2 (alignmentCost, alignmentContext)
-    
+
 
 {-
 -- |

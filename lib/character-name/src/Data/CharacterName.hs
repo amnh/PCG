@@ -62,8 +62,8 @@ import           Data.FileSource
 import           Data.Foldable
 import           Data.Key                 (lookup)
 import           Data.Map                 (Map, insertWith)
-import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.Monoid
 import           Data.String
 import           Data.Text.Short          (ShortText, isPrefixOf, uncons)
 import qualified Data.Text.Short          as TS

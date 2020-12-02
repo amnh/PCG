@@ -45,8 +45,8 @@ import Bio.Character.Encodable.Internal
 import Bio.Character.Exportable                       (Subcomponent)
 import Control.Applicative
 import Control.DeepSeq
-import Data.Bits
 import Data.BitVector.LittleEndian
+import Data.Bits
 import Data.Foldable
 import Data.Hashable
 import Data.MetricRepresentation

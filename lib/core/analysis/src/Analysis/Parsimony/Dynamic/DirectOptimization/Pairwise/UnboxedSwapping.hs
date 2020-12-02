@@ -16,24 +16,26 @@
 {-# LANGUAGE BangPatterns     #-}
 {-# LANGUAGE ConstraintKinds  #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE Strict           #-} -- This makes things a little bit faster
+{-# LANGUAGE Strict           #-}
 {-# LANGUAGE TypeFamilies     #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
   ( unboxedSwappingDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, measureAndUngapCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (DOCharConstraint, Direction (..),
+                                                                                  OverlapFunction,
+                                                                                  measureAndUngapCharacters)
 import           Bio.Character.Encodable
 import           Control.Monad.ST
-import           Data.DList                  (snoc)
+import           Data.DList                                                      (snoc)
 import           Data.Foldable
-import qualified Data.List.NonEmpty          as NE
-import           Data.Matrix.Unboxed         (Matrix, unsafeFreeze, unsafeIndex)
-import qualified Data.Matrix.Unboxed.Mutable as M
-import           Data.Maybe                  (fromMaybe)
+import qualified Data.List.NonEmpty                                              as NE
+import           Data.Matrix.Unboxed                                             (Matrix, unsafeFreeze, unsafeIndex)
+import qualified Data.Matrix.Unboxed.Mutable                                     as M
+import           Data.Maybe                                                      (fromMaybe)
 import           Data.MonoTraversable
-import qualified Data.Vector.Unboxed.Mutable as V
+import qualified Data.Vector.Unboxed.Mutable                                     as V
 
 
 -- |
@@ -97,7 +99,7 @@ buildDirectionMatrix overlapFunction topChar leftChar = fullMatrix
             -- We need to ensure that there are only Up Arrow values in the directional matrix.
             -- We can also reduce the number of comparisons the first row makes from 3 to 1,
             -- since the diagonal and leftward values are "out of bounds."
-            firstCellCost = cost leftElement gapGroup 
+            firstCellCost = cost leftElement gapGroup
         in  do firstPrevCost <- V.unsafeRead prev 0
                write curr (i,0) (firstCellCost + firstPrevCost) UpArrow
                -- Finish special case for first cell of each row
@@ -177,7 +179,7 @@ traceback overlapFunction alignMatrix longerChar lesserChar = alignmentContext
 
     go p@(i, j)
       | p == (0,0) = mempty
-      | otherwise  = 
+      | otherwise  =
         let previousSequence = go (row', col')
             directionArrow   = unsafeIndex alignMatrix p
 

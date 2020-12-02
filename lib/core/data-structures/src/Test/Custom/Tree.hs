@@ -36,8 +36,8 @@ import           Data.List.NonEmpty               (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty               as NE
 import           Data.List.Utility                (chunksOf)
 import           Data.Maybe
-import           Data.Monoid
 import           Data.MonoTraversable
+import           Data.Monoid
 import           Data.Ord                         (comparing)
 import qualified Data.Set                         as S
 import           Data.Tree

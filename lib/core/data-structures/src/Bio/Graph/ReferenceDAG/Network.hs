@@ -32,8 +32,8 @@ import           Data.IntSet                      (IntSet, notMember)
 import qualified Data.IntSet                      as IS
 import           Data.Key
 import           Data.List                        (tails)
-import           Data.Monoid                      hiding ((<>))
 import           Data.MonoTraversable
+import           Data.Monoid                      hiding ((<>))
 import           Data.Set                         (Set)
 import qualified Data.Set                         as S
 import           Data.Vector                      (Vector)

@@ -19,8 +19,8 @@ module Bio.Character.Encodable.Internal
   ) where
 
 import Control.Lens
-import Data.Bits
 import Data.BitVector.LittleEndian
+import Data.Bits
 import Data.Foldable
 import Foreign.C.Types
 
