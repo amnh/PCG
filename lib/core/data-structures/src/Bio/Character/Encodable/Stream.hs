@@ -23,25 +23,20 @@ module Bio.Character.Encodable.Stream
   , EncodableStreamElement(..)
   , showStreamElement
   , showStream
-  , bitsInLocalWord
-  , encodableStreamToExportableCharacterElements
   ) where
 
 import           Bio.Character.Encodable.Internal
-import           Bio.Character.Exportable
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                       as BM
 import           Data.Bits
 import           Data.Foldable
-import           Data.List.NonEmpty               (NonEmpty((:|)))
---import qualified Data.List.NonEmpty               as NE
+import           Data.List.NonEmpty               (NonEmpty ((:|)))
 import           Data.List.Utility
 import           Data.Maybe                       (fromMaybe)
 import           Data.MonoTraversable
-import           Data.Semigroup.Foldable          (Foldable1(..))
+import           Data.Semigroup.Foldable          (Foldable1 (..))
 import           Data.String                      (IsString)
-import           Foreign.C.Types
 
 
 {- |
@@ -170,6 +165,7 @@ showStream alphabet xs
           else fold shownElems
 
 
+{-
 -- |
 -- Number of bits in a `Word` or `Int` type on this machine, derived at compile time.
 bitsInLocalWord :: Word
@@ -191,3 +187,4 @@ encodableStreamToExportableCharacterElements dc
     bitsInElement    = symbolCount dc
     numberOfElements = toEnum $ olength dc
     integralElements = ofoldMap (pure . toEnum . fromEnum) dc
+-}

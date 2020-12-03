@@ -24,7 +24,7 @@ import Data.Alphabet
 import Data.Bits
 import Data.List.NonEmpty               hiding (xor)
 import Data.MonoTraversable
-import Data.Semigroup.Foldable          (Foldable1(..))
+import Data.Semigroup.Foldable          (Foldable1 (..))
 import Data.String                      (IsString)
 
 

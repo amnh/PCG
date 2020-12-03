@@ -28,23 +28,23 @@ module Test.Custom.NucleotideSequence
 import           Bio.Character.Encodable
 import           Bio.Character.Encodable.Dynamic
 import           Bio.Character.Encodable.Dynamic.Element
-import           Control.Arrow          ((***), (&&&))
+import           Control.Arrow                           ((&&&), (***))
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
+import qualified Data.Bimap                              as B
 import           Data.Bits
-import qualified Data.Bimap                            as B
 import           Data.Foldable
 import           Data.Key
-import           Data.List              (delete)
-import           Data.List.NonEmpty     (NonEmpty(..))
-import qualified Data.List.NonEmpty     as NE
-import           Data.Map               (Map)
+import           Data.List                               (delete)
+import           Data.List.NonEmpty                      (NonEmpty (..))
+import qualified Data.List.NonEmpty                      as NE
+import           Data.Map                                (Map)
 import           Data.MetricRepresentation
 import           Data.MonoTraversable
-import           Data.String            (fromString)
-import           Prelude                hiding (lookup)
-import           Test.QuickCheck        (Arbitrary(..))
-import           Test.SmallCheck.Series hiding (NonEmpty)
+import           Data.String                             (fromString)
+import           Prelude                                 hiding (lookup)
+import           Test.QuickCheck                         (Arbitrary (..))
+import           Test.SmallCheck.Series                  hiding (NonEmpty)
 
 
 -- |
@@ -111,7 +111,7 @@ validNucleotideElements = fold
    ]
   where
     gap = getGapElement $ head validMedians
-    
+
     med x y = fst (discreteMetricPairwiseLogic x y :: (AmbiguityGroup, Word))
 
     validMedians = fmap (encodeElement alphabet . NE.fromList) $

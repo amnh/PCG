@@ -87,7 +87,7 @@ ukkonenDO overlapFunction char1 char2
   | otherwise               = directOptimization overlapFunction char1 char2 $ createUkkonenMethodMatrix coefficient
   where
     (_, longer, lesser) = measureCharacters char1 char2
-    
+
     -- /O(1)/
     --
     -- If the longer character is 50% larger than the shorter character, then

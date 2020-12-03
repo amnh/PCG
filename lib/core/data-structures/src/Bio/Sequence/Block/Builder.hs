@@ -24,9 +24,9 @@ module Bio.Sequence.Block.Builder
   ) where
 
 
-import Data.TCM
-import Data.Vector.Instances ()
-import VectorBuilder.Builder (Builder)
+import           Data.TCM
+import           Data.Vector.Instances ()
+import           VectorBuilder.Builder (Builder)
 import qualified VectorBuilder.Builder as VB
 
 

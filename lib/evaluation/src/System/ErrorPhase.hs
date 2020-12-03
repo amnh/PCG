@@ -77,10 +77,10 @@ instance TextShow ErrorPhase where
 
     showb = fromText .
         \case
-           Inputing  -> "Inputing"
-           Parsing   -> "Parsing"
-           Unifying  -> "Unifying"
-           Computing -> "Computing"
+           Inputing   -> "Inputing"
+           Parsing    -> "Parsing"
+           Unifying   -> "Unifying"
+           Computing  -> "Computing"
            Outputting -> "Outputting"
 
 

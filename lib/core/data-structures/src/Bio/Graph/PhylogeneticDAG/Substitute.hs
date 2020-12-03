@@ -77,6 +77,7 @@ getIndexFromName dag name =
     fst <$> ind
 
 
+{-
 substituteNode
   :: Int
   -> PhylogeneticDAG m e n u v w x y z
@@ -84,6 +85,8 @@ substituteNode
   -> State (M.Map n Int) (PhylogeneticDAG m e n u v w x y z)
 substituteNode _ _ _ = do
   pure undefined
+-}
+
 
 substituteSingle
   :: forall m e n u v w x y z .
@@ -179,7 +182,7 @@ deleteAt i v =
   let
     (before, after) = V.splitAt i v
   in
-    V.force $ (before <> V.tail after)
+    V.force $ before <> V.tail after
 
 
 

@@ -61,7 +61,7 @@ class HasNormalizedMetadata a where
 
 instance HasNormalizedMetadata (DotGraph n) where
 
-    getNormalizedMetadata = const mempty
+    getNormalizedMetadata = mempty
 
 
 instance HasNormalizedMetadata FastaParseResult where
@@ -81,7 +81,7 @@ instance HasNormalizedMetadata FastcParseResult where
 
 instance HasNormalizedMetadata (NonEmpty NewickForest) where
 
-    getNormalizedMetadata = const mempty
+    getNormalizedMetadata = mempty
 
 
 instance HasNormalizedMetadata TNT.TntResult where
@@ -125,7 +125,7 @@ instance HasNormalizedMetadata TNT.TntResult where
                           | null stateNameValues = getMetadataFromInputSymbolsAndTCM initialSymbolSet (undefined :: Matrix Word)
                           | otherwise            = getMetadataFromInputSymbolsStatesAndTCM (zip initialSymbolSet stateNameValues) (undefined :: Matrix Word)
                     in  (1, alphabet', Nothing)
-                    
+
                   Just mat ->
                     let truncatedSymbols = V.take (nrows mat - 1) initialSymbolSet
                         stateNameValues  = TNT.characterStates inMeta
@@ -193,7 +193,7 @@ instance HasNormalizedMetadata F.TCM where
 
 instance HasNormalizedMetadata VertexEdgeRoot where
 
-    getNormalizedMetadata = const mempty
+    getNormalizedMetadata = mempty
 
 
 instance HasNormalizedMetadata Nexus where
@@ -213,7 +213,7 @@ instance HasNormalizedMetadata Nexus where
             }
           where
             suppliedWeight = fromIntegral $ Nex.weight inMeta
-            
+
             (finalAlphabet, chosenWeight, chosenTCM)
               | Nex.additive inMeta =
                 let (alphabet', _, _, _) = getMetadataFromInputSymbolsAndTCM developedAlphabet (undefined :: Matrix Word)

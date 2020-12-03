@@ -27,18 +27,25 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenSwap
   ( unboxedUkkonenSwappingDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, handleMissingCharacter, measureAndUngapCharacters, measureCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal        (DOCharConstraint,
+                                                                                         Direction (..),
+                                                                                         OverlapFunction,
+                                                                                         handleMissingCharacter,
+                                                                                         measureAndUngapCharacters,
+                                                                                         measureCharacters)
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping (unboxedSwappingDO)
 import           Bio.Character.Encodable
 import           Control.Monad.ST
 import           Data.Bits
-import           Data.DList                  (snoc)
+import           Data.DList                                                             (snoc)
 import           Data.Foldable
-import qualified Data.List.NonEmpty          as NE
-import           Data.Matrix.Unboxed         (Matrix, unsafeFreeze, unsafeIndex)
-import qualified Data.Matrix.Unboxed.Mutable as M
+import qualified Data.List.NonEmpty                                                     as NE
+import           Data.Matrix.Unboxed                                                    (Matrix, unsafeFreeze,
+                                                                                         unsafeIndex)
+import qualified Data.Matrix.Unboxed.Mutable                                            as M
+import           Data.Maybe                                                             (fromMaybe)
 import           Data.MonoTraversable
-import qualified Data.Vector.Unboxed.Mutable as V
+import qualified Data.Vector.Unboxed.Mutable                                            as V
 
 
 -- |
@@ -59,17 +66,16 @@ unboxedUkkonenSwappingDO
   -> (Word, s)
 unboxedUkkonenSwappingDO overlapFunction char1 char2
   | noGainFromUkkonenMethod = buildFullMatrix
-  | otherwise               =
-    case directOptimization overlapFunction buildPartialMatrixMaybe char1 char2 of
-      Nothing  -> buildFullMatrix
-      Just res -> res
+  | otherwise               = fromMaybe buildFullMatrix ukkonenMethodResult
   where
     (_, lesser, longer) = measureCharacters char1 char2
 
     gap = getMedian $ gapOfStream char1
     cost x y = snd $ overlapFunction x y
-    
-    buildFullMatrix = unboxedSwappingDO overlapFunction char1 char2
+
+    ukkonenMethodResult     = directOptimization overlapFunction buildPartialMatrixMaybe char1 char2
+
+    buildFullMatrix         = unboxedSwappingDO overlapFunction char1 char2
 
     buildPartialMatrixMaybe = createUkkonenMethodMatrix coefficient gapsPresentInInputs $
                                   buildDirectionMatrix cost longer lesser
@@ -183,7 +189,7 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs matrixBuilder lon
         computedValue = coefficient * (quasiDiagonalWidth + fromEnum offset - fromEnum gapsPresentInInputs)
         threshold     = toEnum $ max 0 computedValue -- The threshold value must be non-negative
 
-               
+
 {-# SCC buildDirectionMatrix #-}
 buildDirectionMatrix
   :: DOCharConstraint s
@@ -196,7 +202,7 @@ buildDirectionMatrix cost longerTop lesserLeft o
   | cols <= longerLen + 1 = Just fullMatrix
   | otherwise             = Nothing
   where
-    offset      = fromEnum o    
+    offset      = fromEnum o
     gap         = getMedian $ gapOfStream longerTop
     longerLen   = olength longerTop
     lesserLen   = olength lesserLeft
@@ -207,7 +213,7 @@ buildDirectionMatrix cost longerTop lesserLeft o
         differenceInLength = longerLen - lesserLen
 
     fullMatrix = runST $ do
-      
+
       ---------------------------------------
       -- Allocate required space           --
       ---------------------------------------
@@ -219,7 +225,7 @@ buildDirectionMatrix cost longerTop lesserLeft o
       ---------------------------------------
       -- Define some generalized functions --
       ---------------------------------------
-      
+
       -- Write to a single cell of the current vector and directional matrix simultaneously
       let write v !p@(~(_,!j)) ~(!c, !d) = V.unsafeWrite v j c *> M.unsafeWrite mDir p d
 
@@ -228,12 +234,12 @@ buildDirectionMatrix cost longerTop lesserLeft o
             -- Preserve the gap in the left (lesser) string
             | leftElement == gap = (\x -> (x, UpArrow)) <$> V.unsafeRead prev (j + 1)
             | otherwise = {-# SCC internalCell_expanding #-}
-              let topElement = getMedian $ longerTop `indexStream` (i + j - offset - 1) 
+              let topElement = getMedian $ longerTop `indexStream` (i + j - offset - 1)
               in  if topElement == gap
                   then (\x -> (x, LeftArrow)) <$> V.unsafeRead curr (j - 1)
                   else let deleteCost = cost topElement    gap
                            alignCost  = cost topElement leftElement
-                       in  do diagCost <- V.unsafeRead prev $ j
+                       in  do diagCost <- V.unsafeRead prev   j
                               topCost  <- V.unsafeRead prev $ j + 1
                               leftCost <- V.unsafeRead curr $ j - 1
                               pure $ minimum
@@ -280,7 +286,7 @@ buildDirectionMatrix cost longerTop lesserLeft o
             | otherwise = {-# SCC leftBoundary #-}
               let topElement = getMedian $ longerTop  `indexStream` (i - offset - 1)
                   alignCost  = cost topElement leftElement
-              in  do diagCost <- V.unsafeRead prev $ j
+              in  do diagCost <- V.unsafeRead prev   j
                      topCost  <- V.unsafeRead prev $ j + 1
                      pure $  minimum
                          [ ( alignCost + diagCost, DiagArrow)
@@ -299,7 +305,7 @@ buildDirectionMatrix cost longerTop lesserLeft o
                 else let deleteCost = cost topElement    gap
                          alignCost  = cost topElement leftElement
 
-                     in  do diagCost <- V.unsafeRead prev $ j
+                     in  do diagCost <- V.unsafeRead prev   j
                             leftCost <- V.unsafeRead curr $ j - 1
                             pure $ minimum
                                 [ ( alignCost + diagCost, DiagArrow)
@@ -314,7 +320,7 @@ buildDirectionMatrix cost longerTop lesserLeft o
             let topElement  = getMedian $  longerTop `indexStream` (i + j - offset - 1)
             let deleteCost  = cost topElement    gap
             let alignCost   = cost topElement leftElement
-            diagCost <- V.unsafeRead prev $ j
+            diagCost <- V.unsafeRead prev   j
             topCost  <- V.unsafeRead prev $ j + 1
             leftCost <- V.unsafeRead curr $ j - 1
             pure $ minimum
@@ -378,7 +384,7 @@ directOptimization overlapλ matrixFunction char1 char2 =
         alignmentResult =
           if      olength shorterChar == 0
           then if olength  longerChar == 0
-             -- Niether character was Missing, but both are empty when gaps are removed          
+             -- Niether character was Missing, but both are empty when gaps are removed
              then Just (0, toMissing char1)
              -- Niether character was Missing, but one of them is empty when gaps are removed
              else let gap = getMedian $ gapOfStream char1

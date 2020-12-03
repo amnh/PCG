@@ -14,8 +14,8 @@ import           Control.Monad
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                   as BM
-import           Data.Bits
 import           Data.BitVector.LittleEndian
+import           Data.Bits
 import           Data.Foldable
 import           Data.Key
 import           Data.List.NonEmpty           (NonEmpty (..))

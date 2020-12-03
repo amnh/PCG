@@ -91,7 +91,7 @@ dendroToVector =
   where
     vectorBuilder :: Dendrogram a -> Builder a
     vectorBuilder = \case
-      Leaf a -> VB.singleton a
+      Leaf a           -> VB.singleton a
       Branch _ _ d1 d2 -> vectorBuilder d1 <> vectorBuilder d2
 
 

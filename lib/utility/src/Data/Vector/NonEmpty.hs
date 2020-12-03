@@ -55,7 +55,7 @@ import           Data.Functor.Classes
 import           Data.Functor.Extend
 import           Data.Hashable
 import           Data.Key
-import           Data.List.NonEmpty         (NonEmpty((:|)))
+import           Data.List.NonEmpty         (NonEmpty ((:|)))
 import qualified Data.List.NonEmpty         as NE
 import           Data.Pointed
 import           Data.Semigroup.Foldable
@@ -184,7 +184,7 @@ singleton = NEV . V.singleton
 -- Construct a 'Vector' from a non-empty structure.
 {-# INLINE fromNonEmpty #-}
 fromNonEmpty :: Foldable1 f => f a -> Vector a
-fromNonEmpty xs = 
+fromNonEmpty xs =
     let !n = length xs
     in  NEV . V.fromListN n . NE.toList $ toNonEmpty xs
 

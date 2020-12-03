@@ -28,7 +28,7 @@ module File.Format.Nexus.Parser
 import           Data.CaseInsensitive                    (FoldCase)
 import           Data.Char                               (isSpace, toLower)
 import           Data.Functor
-import           Data.Maybe                              (fromMaybe, isJust)
+import           Data.Maybe                              (isJust)
 import           Data.Proxy
 import qualified Data.Set                                as S
 import           File.Format.Newick
@@ -173,7 +173,7 @@ treeBlockDefinition :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Tok
 treeBlockDefinition = do
         _     <- symbol $ string'' "trees;"
         xs    <- many treeFieldDef
-        (x,y) <- partitionTreeBlock <$> pure xs
+        let (x,y) = partitionTreeBlock xs
         pure $ TreeBlock x y
 
 
@@ -208,8 +208,8 @@ dimensionsDefinition = do
         charCount <- optional . try $ symbol decimal
         _         <- symbol   $ char ';'
         pure $ DimensionsFormat (isJust newTaxa')
-                                (fromMaybe 0 numTaxa')
-                                (fromMaybe 0 charCount)
+                                (sum numTaxa')
+                                (sum charCount)
 
 
 -- |

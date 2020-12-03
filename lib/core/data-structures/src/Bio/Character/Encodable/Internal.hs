@@ -16,13 +16,11 @@ module Bio.Character.Encodable.Internal
   , PossiblyMissingCharacter(..)
   , bitVectorToBufferChunks
   , bufferChunksToBitVector
-  , exportableCharacterElementsHeadToBitVector
   ) where
 
-import Bio.Character.Exportable
 import Control.Lens
-import Data.Bits
 import Data.BitVector.LittleEndian
+import Data.Bits
 import Data.Foldable
 import Foreign.C.Types
 
@@ -58,7 +56,7 @@ instance PossiblyMissingCharacter c => PossiblyMissingCharacter (Maybe c) where
 
     toMissing = fmap toMissing
 
-    isMissing = maybe False isMissing
+    isMissing = any isMissing
 
 
 -- |
@@ -105,6 +103,7 @@ bufferChunksToBitVector elemWidth elemCount chunks = fromNumber totalBits . fst 
         addend = fromIntegral e `shift` shiftDistance
 
 
+{-
 -- |
 -- Converts an exportable character context to a 'BitVector'.
 exportableCharacterElementsHeadToBitVector :: ExportableCharacterElements -> BitVector
@@ -112,3 +111,4 @@ exportableCharacterElementsHeadToBitVector ece = fromNumber elementWidth $ head 
   where
     elementWidth   = ece ^. exportedElementWidth
     integralValues = exportedCharacterElements ece
+-}

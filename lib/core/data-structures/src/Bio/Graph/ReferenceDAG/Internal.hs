@@ -41,6 +41,7 @@ import           Control.Lens.Operators        ((%~), (.~), (^.))
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Binary                   (Binary)
+import qualified Data.DList                    as DL
 import           Data.EdgeSet
 import           Data.Foldable
 import           Data.Foldable.Custom
@@ -48,8 +49,8 @@ import           Data.GraphViz.Attributes
 import           Data.GraphViz.Printing
 import           Data.GraphViz.Types           hiding (attrs)
 import           Data.GraphViz.Types.Graph     hiding (node, (&))
-import           Data.Hashable                 (Hashable)
 import qualified Data.HashMap.Strict           as HM
+import           Data.Hashable                 (Hashable)
 import           Data.IntMap                   (IntMap)
 import qualified Data.IntMap                   as IM
 import           Data.IntSet                   (IntSet)
@@ -59,8 +60,8 @@ import           Data.List                     (intercalate)
 import           Data.List.NonEmpty            (NonEmpty (..), intersperse)
 import qualified Data.List.NonEmpty            as NE
 import           Data.List.Utility             (isSingleton)
-import           Data.Monoid                   hiding ((<>))
 import           Data.MonoTraversable
+import           Data.Monoid                   hiding ((<>))
 import           Data.Semigroup                hiding (First (..))
 import           Data.Semigroup.Foldable
 import qualified Data.Set                      as S
@@ -82,7 +83,6 @@ import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
 import           TextShow                      (TextShow (..), toString, unlinesB)
-import qualified Data.DList                    as DL
 
 
 -- |

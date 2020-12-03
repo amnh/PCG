@@ -17,8 +17,8 @@ module Data.Vector.Custom
   ) where
 
 --import qualified Control.Foldl as L
-import           Data.Vector   (Vector)
-import qualified Data.Vector   as V
+import           Data.Vector (Vector)
+import qualified Data.Vector as V
 
 -- |
 -- /O(n)/

@@ -14,7 +14,6 @@
 -----------------------------------------------------------------------------
 
 {-# LANGUAGE ApplicativeDo              #-}
-{-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveAnyClass             #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DerivingStrategies         #-}
@@ -45,37 +44,37 @@ import           Bio.Character.Encodable.Internal
 import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable
 import           Control.DeepSeq
-import           Control.Lens
-import           Control.Monad                         (when)
-import           Control.Monad.Loops                   (whileM)
+import           Control.Lens                                   ((^.))
+import           Control.Monad                                  (when)
+import           Control.Monad.Loops                            (whileM)
 import           Control.Monad.ST
 import           Data.Alphabet
 import           Data.Binary
 import           Data.BitMatrix
-import           Data.Bits
 import           Data.BitVector.LittleEndian
-import           Data.BitVector.LittleEndian.Instances ()
+import           Data.BitVector.LittleEndian.Instances          ()
+import           Data.Bits
 import           Data.Coerce
 import           Data.Foldable
 import           Data.Hashable
-import qualified Data.IntMap                           as IM
+import qualified Data.IntMap                                    as IM
 import           Data.Key
-import qualified Data.List.NonEmpty                    as NE
-import           Data.List.Utility                     (invariantTransformation, occurrences)
+import qualified Data.List.NonEmpty                             as NE
+import           Data.List.Utility                              (invariantTransformation, occurrences)
 import           Data.MonoTraversable
+import           Data.STRef
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import           Data.STRef
-import qualified Data.Vector                           as EV
-import qualified Data.Vector.Mutable                   as MV
-import qualified Data.Vector.Unboxed.Mutable           as MUV
-import           Data.Vector.NonEmpty                  (Vector)
-import qualified Data.Vector.NonEmpty                  as V
+import qualified Data.Vector                                    as EV
+import qualified Data.Vector.Mutable                            as MV
+import           Data.Vector.NonEmpty                           (Vector)
+import qualified Data.Vector.NonEmpty                           as V
+import qualified Data.Vector.Unboxed.Mutable                    as MUV
 import           GHC.Generics
 import           Test.QuickCheck
-import           Test.QuickCheck.Arbitrary.Instances   ()
+import           Test.QuickCheck.Arbitrary.Instances            ()
 import           Text.XML
-import           TextShow                              (TextShow (showb)) --, toString)
+import           TextShow                                       (TextShow (showb))
 
 
 -- |
@@ -133,7 +132,7 @@ instance EncodableDynamicCharacter DynamicCharacter where
     --
     -- If the character contains /only/ gaps, a missing character is returned.
     {-# INLINEABLE deleteGaps #-}
-    deleteGaps c@(Missing{}) = (mempty, c)
+    deleteGaps c@Missing{} = (mempty, c)
     deleteGaps c@(DC    bvs)
       | null gaps   = (gaps,            c)
       | newLen == 0 = (gaps, toMissing  c)
@@ -143,23 +142,21 @@ instance EncodableDynamicCharacter DynamicCharacter where
             j <- newSTRef 0
             let isGapAtJ = do
                   j' <- readSTRef j
-                  pure $ if j' >= charLen
-                         then False
-                         else getMedian (c `indexStream` j') == gap
+                  pure $ j' < charLen && getMedian (c `indexStream` j') == gap
 
             let g = do
                   whileM isGapAtJ (modifySTRef j succ)
                   j' <- readSTRef j
                   modifySTRef j succ
                   pure $ bvs ! j'
-                  
+
             V.generateM newLen $ const g
 
         gapCount = fromEnum . getSum $ foldMap Sum gaps
         charLen  = length bvs
         newLen   = charLen - gapCount
         gapElem  = gapOfStream c
-        gap      = getMedian $ gapElem
+        gap      = getMedian gapElem
 
         gaps = IM.fromDistinctAscList $ reverse refs
         refs = runST $ do
@@ -168,9 +165,22 @@ instance EncodableDynamicCharacter DynamicCharacter where
             gapLen  <- newSTRef 0
             gapRefs <- newSTRef []
 
+            let handleGapBefore op = do
+                    gapBefore <- readSTRef prevGap
+                    when gapBefore $ do
+                      j <- readSTRef nonGaps
+                      g <- readSTRef gapLen
+                      modifySTRef gapRefs ( (j,g): )
+                      op
+
             for_ [0 .. charLen - 1] $ \i ->
               if getMedian (c `indexStream` i)  == gap
-              then do modifySTRef gapLen succ *> writeSTRef prevGap True
+              then modifySTRef gapLen succ *> writeSTRef prevGap True
+              else do handleGapBefore $ do
+                        writeSTRef  gapLen 0
+                        writeSTRef prevGap False
+                      modifySTRef nonGaps succ
+{-
               else do gapBefore <- readSTRef prevGap
                       when gapBefore $ do
                         j <- readSTRef nonGaps
@@ -179,12 +189,14 @@ instance EncodableDynamicCharacter DynamicCharacter where
                         writeSTRef  gapLen 0
                         writeSTRef prevGap False
                       modifySTRef nonGaps succ
-            
+
             gapBefore <- readSTRef prevGap
             when gapBefore $ do
               j <- readSTRef nonGaps
               g <- readSTRef gapLen
               modifySTRef gapRefs ( (j,g): )
+-}
+            handleGapBefore $ pure ()
             readSTRef gapRefs
 
     -- |
@@ -199,7 +211,7 @@ instance EncodableDynamicCharacter DynamicCharacter where
         lGapCount = totalGaps lGaps
         rGapCount = totalGaps rGaps
         newLength = lGapCount + rGapCount + olength meds
-        
+
         newVector = EV.create $ do
           mVec <- MV.unsafeNew newLength
           lVec <- MUV.replicate (gapVecLen lGaps) 0
@@ -259,10 +271,10 @@ instance EncodableStream DynamicCharacter where
             z = fromNumber w (0 :: Word)
         in  DCE (v,z,z)
 
-    indexStream (DC v) i = DCE $ v ! i
-    indexStream (Missing{}) i = error $ "Tried to index an missing character with index " <> show i
+    indexStream (DC v)    i = DCE $ v ! i
+    indexStream Missing{} i = error $ "Tried to index an missing character with index " <> show i
 
-    lookupStream (Missing{}) _ = Nothing
+    lookupStream Missing{} _ = Nothing
     lookupStream (DC v) i
       | 0 > i     = Nothing
       | otherwise = Just . DCE $ v ! i
@@ -283,7 +295,7 @@ instance ExportableElements DynamicCharacter where
         }
       where
         toNumber = toUnsignedNumber . packAmbiguityGroup
-    
+
     fromExportableElements riCharElems = {-# SCC fromExportableElements #-} DC . force $ V.fromNonEmpty bvs
       where
         bvs = {-# SCC bvs #-} f <$> NE.fromList inputElems
@@ -300,7 +312,7 @@ instance ExportableElements DynamicCharacter where
 instance ExportableBuffer DynamicCharacter where
 
     toExportableBuffer Missing {} = error "Attempted to 'Export' a missing dynamic character to foreign functions."
-    toExportableBuffer dc@(DC v) = ExportableCharacterBuffer r c . bitVectorToBufferChunks r c $ expandRows . fromRows $ (\(x,_,_) -> x) <$> v
+    toExportableBuffer dc@(DC v) = ExportableCharacterBuffer r c . bitVectorToBufferChunks r c . expandRows . fromRows $ (\(x,_,_) -> x) <$> v
       where
         r = toEnum $ length v
         c = symbolCount dc
@@ -363,9 +375,9 @@ instance MonoFoldable DynamicCharacter where
 
 instance MonoFunctor DynamicCharacter where
 
-    omap _ dc@(Missing{}) = dc    
+    omap _ dc@Missing{} = dc
     omap f dc@(DC      v) =
-      let dces = (splitElement . f . DCE) <$> v
+      let dces = splitElement . f . DCE <$> v
           bits (m,_,_) = finiteBitSize m
       in  case invariantTransformation bits v of
             Just _  -> DC dces
@@ -426,5 +438,5 @@ renderDynamicCharacter alphabet _transiton char
     let shownElems = showStreamElement alphabet . getMedian <$> otoList char
     in  if   any (\e -> length e > 1) shownElems
         then unwords shownElems
-        -- All elements were rendered as a single character.                                          
+        -- All elements were rendered as a single character.
         else fold shownElems

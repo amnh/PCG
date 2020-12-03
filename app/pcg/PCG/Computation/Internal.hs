@@ -103,10 +103,10 @@ renderError = evaluateResult (\p -> Left . err p) Right
 errorPhaseToCode :: ErrorPhase -> ExitCode
 errorPhaseToCode = ExitFailure .
     \case
-      Inputing  -> bit 2
-      Parsing   -> bit 3
-      Unifying  -> bit 2 .|. bit 3
-      Computing -> bit 4
+      Inputing   -> bit 2
+      Parsing    -> bit 3
+      Unifying   -> bit 2 .|. bit 3
+      Computing  -> bit 4
       Outputting -> bit 5
 
 

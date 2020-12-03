@@ -53,7 +53,6 @@ module Bio.Graph
   , assignPunitiveNetworkEdgeCost
   , extractSolution
   , extractPhylogeneticForest
-  , extractReferenceDAG
   , generateLocalResolutions
   , phylogeneticForests
   , postorderSequence'

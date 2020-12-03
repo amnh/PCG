@@ -24,24 +24,23 @@ module Data.NodeLabel
   ( NodeLabel(NL)
   , nodeLabel
   , nodeLabelString
-  , nodeLabelToString
   , nodeLabelToLazyText
   , nodeLabelToStrictText
   ) where
 
 import           Control.DeepSeq
 import           Data.Binary
-import           Data.Coerce          (coerce)
-import           Data.Data            (Data, Typeable)
+import           Data.Coerce             (coerce)
+import           Data.Data               (Data, Typeable)
 import           Data.Default
 import           Data.MonoTraversable
-import           Data.String          (IsString)
-import           Data.Text.Short      as TS
+import           Data.String             (IsString)
+import qualified Data.Text               as Strict
+import qualified Data.Text.Lazy          as Lazy
+import           Data.Text.Short         as TS
 import           GHC.Generics
 import           TextShow                (TextShow)
 import           TextShow.Data.ShortText ()
-import qualified Data.Text            as Strict
-import qualified Data.Text.Lazy       as Lazy
 
 
 -- |
@@ -124,17 +123,21 @@ nodeLabelString :: String -> NodeLabel
 nodeLabelString = coerce . fromString
 
 
+{-
 -- |
--- Converts a NodeLabel to a string.
+-- Converts a 'NodeLabel' to a 'String'.
 nodeLabelToString :: NodeLabel -> String
 nodeLabelToString = coerce TS.toString
+-}
 
 
+-- |
+-- Converts a 'NodeLabel' to a strict 'Strict.Text'.
 nodeLabelToStrictText :: NodeLabel -> Strict.Text
 nodeLabelToStrictText = coerce TS.toText
 
 
+-- |
+-- Converts a 'NodeLabel' to a lazy 'Lazy.Text'.
 nodeLabelToLazyText :: NodeLabel -> Lazy.Text
 nodeLabelToLazyText = Lazy.fromStrict . nodeLabelToStrictText
-
-

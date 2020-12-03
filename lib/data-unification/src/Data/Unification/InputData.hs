@@ -163,7 +163,7 @@ getUnificationErrors v@InputData{..} = foldr1 (<~>) possibleUnificationErrors $>
     collectTaxaWith f = foldMap (NE.filter hasData . (first (fmap f) `pmap`)) forestTaxa
       where
         hasData :: (Foldable f, Foldable t) => (f (t a), b) -> Bool
-        hasData = any (not . null) . fst
+        hasData = not . all null . fst
 
 
 expandForestErrors :: [([t a], PartialInputData)] -> [[(t a, PartialInputData)]]

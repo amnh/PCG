@@ -30,6 +30,6 @@ intercalateB :: Foldable f => Builder -> f Builder -> Builder
 intercalateB sep = go sep mempty . toList
     where
       go s a = \case
-        []    -> a
-        [x]   -> x <> a
+        []   -> a
+        [x]  -> x <> a
         b:bs -> go s (s <> b <> a) bs

@@ -1,10 +1,10 @@
 {-# LANGUAGE BlockArguments #-}
 module Benchmarks.Internal where
 
-import qualified Criterion.Main        as C (bench, bgroup, defaultMain, nf)
-import qualified Weigh as W
-import Data.Foldable
-import Control.DeepSeq
+import           Control.DeepSeq
+import qualified Criterion.Main  as C (bench, bgroup, defaultMain, nf)
+import           Data.Foldable
+import qualified Weigh           as W
 
 timeAndWeigh
   :: (NFData b)

@@ -28,19 +28,25 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFull
   ( unboxedUkkonenFullSpaceDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, handleMissingCharacter, measureAndUngapCharacters, measureCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal        (DOCharConstraint,
+                                                                                         Direction (..),
+                                                                                         OverlapFunction,
+                                                                                         handleMissingCharacter,
+                                                                                         measureAndUngapCharacters,
+                                                                                         measureCharacters)
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping (unboxedSwappingDO)
 import           Bio.Character.Encodable
-import           Control.Monad               (when)
-import           Control.Monad.Loops         (iterateUntilM, whileM_)
+import           Control.Monad                                                          (unless, when)
+import           Control.Monad.Loops                                                    (iterateUntilM, whileM_)
 import           Control.Monad.ST
 import           Data.Bits
-import           Data.DList                  (snoc)
+import           Data.DList                                                             (snoc)
 import           Data.Foldable
-import qualified Data.List.NonEmpty          as NE
-import           Data.Matrix.Unboxed         (Matrix, unsafeFreeze, unsafeIndex)
-import           Data.Matrix.Unboxed.Mutable (MMatrix)
-import qualified Data.Matrix.Unboxed.Mutable as M
+import qualified Data.List.NonEmpty                                                     as NE
+import           Data.Matrix.Unboxed                                                    (Matrix, unsafeFreeze,
+                                                                                         unsafeIndex)
+import           Data.Matrix.Unboxed.Mutable                                            (MMatrix)
+import qualified Data.Matrix.Unboxed.Mutable                                            as M
 import           Data.MonoTraversable
 import           Data.STRef
 
@@ -69,7 +75,7 @@ unboxedUkkonenFullSpaceDO overlapFunction char1 char2
 
     gap = getMedian $ gapOfStream char1
     cost x y = snd $ overlapFunction x y
-    
+
     buildFullMatrix = unboxedSwappingDO overlapFunction char1 char2
 
     buildPartialMatrixMaybe = createUkkonenMethodMatrix coefficient gapsPresentInInputs overlapFunction
@@ -191,7 +197,7 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs overlapFunction l
                       | quasiDiagonalWidth + offset <= gapsPresentInInputs = 0
                       | otherwise = minimumIndelCost * (quasiDiagonalWidth + offset - gapsPresentInInputs)
                 pure $ threshold <= alignmentCost
-      
+
     finalMatrix = runST $ do
         (mCost, mDir) <- buildInitialBandedMatrix overlapFunction longerTop lesserLeft startOffset
         offsetRef <- newSTRef startOffset
@@ -205,7 +211,7 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs overlapFunction l
         m <- unsafeFreeze mDir
         pure (c, m)
 
-               
+
 {-# SCC buildInitialBandedMatrix #-}
 buildInitialBandedMatrix
   :: forall s a. DOCharConstraint a
@@ -230,7 +236,7 @@ buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
         differenceInLength = longerLen - lesserLen
 
     fullMatrix = do
-      
+
       ---------------------------------------
       -- Allocate required space           --
       ---------------------------------------
@@ -271,7 +277,7 @@ buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
                   in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
                          topCost  <- M.unsafeRead mCost (i - 1, j    )
                          leftCost <- M.unsafeRead mCost (i    , j - 1)
-                         pure $ getMinimalResult gap alignElem 
+                         pure $ getMinimalResult gap alignElem
                              [ ( alignCost + diagCost, DiagArrow)
                              , (deleteCost + leftCost, LeftArrow)
                              , (insertCost +  topCost, UpArrow  )
@@ -298,7 +304,7 @@ buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
                   (alignElem, alignCost) = overlapFunction topElement leftElement
               in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
                      topCost  <- M.unsafeRead mCost (i - 1, j    )
-                     pure $ getMinimalResult gap alignElem 
+                     pure $ getMinimalResult gap alignElem
                          [ ( alignCost + diagCost, DiagArrow)
                          , (insertCost +  topCost, UpArrow  )
                          ]
@@ -326,7 +332,7 @@ buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
                     (alignElem, alignCost) = overlapFunction topElement leftElement
                 in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
                        leftCost <- M.unsafeRead mCost (i    , j - 1)
-                       pure $ getMinimalResult gap alignElem 
+                       pure $ getMinimalResult gap alignElem
                            [ ( alignCost + diagCost, DiagArrow)
                            , (deleteCost + leftCost, LeftArrow)
                            ]
@@ -387,18 +393,18 @@ buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
 --
 --
 -- Dimensions: 13 ⨉ 17
---  ⊗ ┃  ⁎ α1 α2 α3 α4 α5 α6 α7 α8 α9 α0 α1 α2 α3 α4 α5 α6 
+--  ⊗ ┃  ⁎ α1 α2 α3 α4 α5 α6 α7 α8 α9 α0 α1 α2 α3 α4 α5 α6
 -- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
---  ⁎ ┃ 0↖ 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 
--- α1 ┃ 0↑ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 
--- α2 ┃ 0↑ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 
--- α3 ┃ 0↑ 0↑ 0↑ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0↖ 
--- α4 ┃ 0↑ 0↑ 0↑ 0↖ 0↖ 0← 0↖ 0← 0↖ 0← 0← 0← 0← 0← 0← 0← 0← 
--- α5 ┃ 0↑ 0↑ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0← 0← 
--- α6 ┃ 0↑ 0↖ 0↖ 0↖ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 
--- α7 ┃ 0↑ 0↑ 0↑ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 
--- α8 ┃ 0↑ 0↑ 0↑ 0↑ 0↑ 0↖ 0← 0↖ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 
--- α9 ┃ 0↑ 0↑ 0↑ 0↑ 0↖ 0↑ 0↖ 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 
+--  ⁎ ┃ 0↖ 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0←
+-- α1 ┃ 0↑ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0←
+-- α2 ┃ 0↑ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0←
+-- α3 ┃ 0↑ 0↑ 0↑ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0← 0← 0← 0← 0↖
+-- α4 ┃ 0↑ 0↑ 0↑ 0↖ 0↖ 0← 0↖ 0← 0↖ 0← 0← 0← 0← 0← 0← 0← 0←
+-- α5 ┃ 0↑ 0↑ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 0← 0← 0← 0← 0← 0← 0←
+-- α6 ┃ 0↑ 0↖ 0↖ 0↖ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0←
+-- α7 ┃ 0↑ 0↑ 0↑ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖
+-- α8 ┃ 0↑ 0↑ 0↑ 0↑ 0↑ 0↖ 0← 0↖ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖
+-- α9 ┃ 0↑ 0↑ 0↑ 0↑ 0↖ 0↑ 0↖ 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖
 -- α0 ┃ 0↑ 0↑ 0↑ 0↑ 0↑ 0↖ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖
 -- α1 ┃ 0↑ 0↑ 0↑ 0↑ 0↖ 0↑ 0↖ 0↖ 0↖ 0← 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖
 -- α2 ┃ 0↑ 0↖ 0↖ 0↖ 0↑ 0↑ 0↑ 0↖ 0↑ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖ 0↖
@@ -406,7 +412,7 @@ buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
 --      ┌───────────────w───────────────┐
 --      │              ┏━━━━━━━co━━━━━━━┪
 --      ┢━━━━━qd━━━━━━┓┠─po─┐┌────Δo────┨
---  ⊗ ┃ ┃0  1  2  3  4┃┃5  6││7  8  9 10┃11 12 13 14 15 16 
+--  ⊗ ┃ ┃0  1  2  3  4┃┃5  6││7  8  9 10┃11 12 13 14 15 16
 -- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 --  0 ┃ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
 --  1 ┃ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
@@ -414,10 +420,10 @@ buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
 --  3 ┃ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
 --  4 ┃ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
 --  5 ┃ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
---  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒ 
+--  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒ ▒▒
 --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒ ▒▒
 --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ ▒▒
---  9 ┃          ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒ 
+--  9 ┃          ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓ ▒▒
 --  0 ┃             ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓ ▓▓
 --  1 ┃                ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██ ▓▓
 --  2 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ▓▓ ▓▓ ██ ██ ██ ██ ██
@@ -438,7 +444,7 @@ buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
 --
 -- ██ : The core band
 --       * Previously computed, sections may need to be recomputed
--- 
+--
 -- ▓▓ : The previous extension
 --       * Previously computed, sections may need to be recomputed
 --
@@ -457,12 +463,12 @@ expandBandedMatrix
   -> ST s ()
 expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updatedBand
   where
-    
+
     -- Note: "offset" cannot cause "width + quasiDiagonalWidth" to exceed "2 * cols"
     offset      = let o' = fromEnum co in  min o' $ cols - quasiDiagonalWidth
     prevOffset  = fromEnum po
     cost x y    = snd $ overlapFunction x y
-    gap         = getMedian $ gapOfStream longerTop 
+    gap         = getMedian $ gapOfStream longerTop
     longerLen   = olength longerTop
     lesserLen   = olength lesserLeft
     rows        = olength lesserLeft + 1
@@ -512,7 +518,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                                   , (deleteCost + leftCost, LeftArrow)
                                   , (insertCost +  topCost, UpArrow  )
                                   ]
-      
+
       -- Define how to compute the first cell of the first "offest" rows.
       -- We need to ensure that there are only Up Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 1,
@@ -561,9 +567,9 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                                 ]
 
       let rightColumn = {-# SCC rightColumn #-} internalCell
-      
+
       let computeCell leftElement insertCost i j = {-# SCC recomputeCell #-}
-            let topElement = getMedian $ longerTop `indexStream` (j - 1) 
+            let topElement = getMedian $ longerTop `indexStream` (j - 1)
                 deleteCost = cost topElement    gap
                 (alignElem, alignCost) = overlapFunction topElement leftElement
             in do
@@ -584,15 +590,15 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
             lastDiff <- newSTRef 0
             for_ [x .. y] $ \j -> do
               (same, _) <- computeCell leftElement insertCost i j
-              when (not same) $ writeSTRef lastDiff j
+              unless same $ writeSTRef lastDiff j
             readSTRef lastDiff
 
       -- Define how to compute values to an entire row of the Ukkonen matrix.
       let extendRow i =
             -- Precomute some values that will be used for the whole row
-            let start0 =  max 0          $ i - offset
-                start3 =  min (cols    ) $ i + width - offset - prevOffset - 1
-                goUpTo =  max 0          ( i - prevOffset) - 1
+            let start0 =  max  0         $ i - offset
+                start3 =  min  cols      $ i + width - offset - prevOffset - 1
+                goUpTo =  max  0         ( i - prevOffset) - 1
                 stop   =  min (cols - 1) $ i + width - offset - 1
                 leftElement = getMedian $ lesserLeft `indexStream` (i - 1)
                 insertCost  = cost gap leftElement
@@ -608,7 +614,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                 e0 = goUpTo
                 b1 = start3
                 e1 = stop
-                
+
 
                 continueRecomputing (same, j) = same || j >= stop
                 computeCell' ~(_,j) = computeCell leftElement insertCost i j
@@ -616,7 +622,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                 recomputeUntilSame j = snd <$> iterateUntilM continueRecomputing computeCell' (False, j)
             in  do -- First, we fill in 0 or more cells of the left region of
                    -- the expanded band. This is the region [b0, e0] computed
-                   -- above. 
+                   -- above.
                    --  ⊗ ┃  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
                    -- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                    --  0 ┃ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
@@ -627,7 +633,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                    --      b0    e0
                    --     ┏━━━━━━━━┓
                    --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
-                   --      
+                   --
                    --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
                    --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
                    --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
@@ -661,7 +667,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                    --            e0    s0
                    --              ┏━━━━━┓
                    --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
-                   --      
+                   --
                    --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
                    --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
                    --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
@@ -696,7 +702,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                    --                  s0    t0
                    --                    ╔═════╗
                    --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
-                   --      
+                   --
                    --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
                    --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
                    --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
@@ -734,7 +740,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                    --                                 s1 s2
                    --                                ┏━━━━━┓
                    --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
-                   --      
+                   --
                    --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
                    --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
                    --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
@@ -759,7 +765,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                    --                                 s1       b1
                    --                                ┏━━━━━━━━┓
                    --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
-                   --      
+                   --
                    --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
                    --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
                    --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
@@ -767,7 +773,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                    -- 10 ┃             ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██
                    -- 11 ┃                ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██
                    -- 12 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██
-                   --                   
+                   --
                    s1 <- readSTRef t1'
 
                    t1 <- recomputeRange leftElement insertCost i s1 $ b1 - 1
@@ -778,7 +784,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
 
                    -- Lastly, we fill in 0 or more cells of the left region of
                    -- the expanded band. This is the region [b1, e1] computed
-                   -- above. 
+                   -- above.
                    --  ⊗ ┃  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
                    -- ━━━╋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
                    --  0 ┃ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
@@ -789,7 +795,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                    --                                          b1       e1
                    --                                         ┏━━━━━━━━━━━┓
                    --  5 ┃ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
-                   --      
+                   --
                    --  6 ┃ ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒ ▒▒
                    --  7 ┃    ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒ ▒▒
                    --  8 ┃       ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██ ▒▒ ▒▒
@@ -797,7 +803,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                    -- 10 ┃             ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██ ██
                    -- 11 ┃                ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██ ██
                    -- 12 ┃                   ▒▒ ▒▒ ▒▒ ▒▒ ██ ██ ██ ██ ██ ██ ██
-                   --                   
+                   --
                    for_ [b1 .. e1 - 1] internalCell'
 
                    -- Conditionally write to the last cell of the Ukkonen band

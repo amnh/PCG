@@ -333,7 +333,7 @@ testIsZeroMatrix = testProperty "isZeroMatrix bm <===> ∀ i, not (bm `isSet` i)
     -- The generating function always returns false if and only if
     -- the BitMatrix contains only zeros.
     f :: BitMatrix -> Bool
-    f bm = all (not . isSet bm) indices == isZeroMatrix bm
+    f bm = (not . any (isSet bm)) indices == isZeroMatrix bm
       where
         indices = bmIndices bm
 
