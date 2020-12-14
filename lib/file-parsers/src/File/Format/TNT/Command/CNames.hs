@@ -22,6 +22,7 @@ module File.Format.TNT.Command.CNames
   ) where
 
 import           Data.CaseInsensitive     (FoldCase)
+import           Data.Functor             (void)
 import           Data.Foldable            (toList)
 import           Data.Functor             (($>))
 import           Data.IntMap              (insertWith)
@@ -109,7 +110,7 @@ cnamesStateName = symbol (char '{') *> cnameCharacterName <* symbol terminator
     terminator :: (MonadParsec e s m, Token s ~ Char) => m Char
     terminator         = char ';'
     lineToken :: (MonadParsec e s m, Token s ~ Char) => m String
-    lineToken          = symbol $ somethingTill (inlinedSpaceChar <|> terminator)
+    lineToken          = symbol $ somethingTill (hspace1 <|> void terminator)
     cnameCharacterName = CharacterName
                      <$> symbol (flexibleNonNegativeInt "character name's sequence index")
                      <*> lineToken

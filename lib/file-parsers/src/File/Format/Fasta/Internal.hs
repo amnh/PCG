@@ -61,9 +61,9 @@ type CharacterSequence = Vector (Vector Symbol)
 identifierLine :: (MonadParsec e s m, Token s ~ Char) => m Identifier
 identifierLine = do
     _ <- char '>'
-    _ <- inlinedSpace
+    _ <- hspace
     x <- identifier
-    _ <- inlinedSpace
+    _ <- hspace
     _ <- optional (try commentBody <?> commentMessage x)
     _ <- endOfLine <?> lineEndMessage x
     pure $ fromString x
@@ -97,9 +97,9 @@ validIdentifierChar c = (not . isSpace) c && c /= '$' && c /= ';'
 {-# SPECIALISE commentBody :: Parsec Void  String  String #-}
 commentBody :: (MonadParsec e s m, Token s ~ Char) => m (Tokens s)
 commentBody  = do
-    _  <- inlinedSpace
+    _  <- hspace
     _  <- optional $ char '$'
-    _  <- inlinedSpace
+    _  <- hspace
     commentLine
   where
     -- |

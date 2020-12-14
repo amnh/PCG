@@ -433,7 +433,9 @@ powerSet = filterM (const [False,True])
 
 
 parseInternal
-  :: Stream s
+  :: ( TraversableStream s
+     , VisualStream s
+     )
   => Parsec Void s a
   -> s
   -> Either String a

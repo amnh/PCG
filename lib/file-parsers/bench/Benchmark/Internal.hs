@@ -16,7 +16,8 @@ import Weigh
 
 measureParserSpace
   :: ( NFData a
-     , Stream s
+     , TraversableStream s
+     , VisualStream s
      )
   => String
   -> FilePath
@@ -30,7 +31,8 @@ measureParserSpace prefix filePath streamReader streamParser =
 measureParserTime
   :: ( NFData a
      , NFData s
-     , Stream s
+     , TraversableStream s
+     , VisualStream s
      )
   => String
   -> FilePath
@@ -43,7 +45,8 @@ measureParserTime prefix filePath streamReader streamParser =
 
 forceParser
   :: ( NFData a
-     , Stream s
+     , TraversableStream s
+     , VisualStream s
      )
   => ParsecT Void s Identity a
   -> FilePath

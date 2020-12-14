@@ -114,24 +114,24 @@ tcmDefinition = do
 
 -- |
 -- Shorthand for the expected format of the alphabet lin in a TCM file.
--- The same as 'alphabetLine inlinedSpace'.
+-- The same as 'alphabetLine hspace'.
 {-# INLINEABLE tcmAlphabet #-}
 {-# SPECIALISE tcmAlphabet :: Parsec Void  T.Text (Vector ShortText) #-}
 {-# SPECIALISE tcmAlphabet :: Parsec Void LT.Text (Vector ShortText) #-}
 {-# SPECIALISE tcmAlphabet :: Parsec Void  String (Vector ShortText) #-}
 tcmAlphabet :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
-tcmAlphabet = alphabetLine inlinedSpace
+tcmAlphabet = alphabetLine hspace
 
 
 -- |
 -- Shorthand for the expected format of the matrix block in a TCM file
--- The same as 'matrixBlock inlinedSpace'.
+-- The same as 'matrixBlock hspace'.
 {-# INLINEABLE tcmMatrix #-}
 {-# SPECIALISE tcmMatrix :: Parsec Void  T.Text (Matrix Rational) #-}
 {-# SPECIALISE tcmMatrix :: Parsec Void LT.Text (Matrix Rational) #-}
 {-# SPECIALISE tcmMatrix :: Parsec Void  String (Matrix Rational) #-}
 tcmMatrix :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Matrix Rational)
-tcmMatrix = matrixBlock inlinedSpace
+tcmMatrix = matrixBlock hspace
 
 
 -- |
@@ -142,10 +142,10 @@ tcmMatrix = matrixBlock inlinedSpace
 --
 -- Basic usage:
 --
--- >>> parse (alphabetLine inlinedSpace) "" "a b c d\n"
+-- >>> parse (alphabetLine hspace) "" "a b c d\n"
 -- Right ["a","b","c","d"]
 --
--- >>> parse (alphabetLine (inlinedSpace *> char '|' <* inlinedSpace)) "" "2 | 3 | 5 | 7\n"
+-- >>> parse (alphabetLine (hspace *> char '|' <* hspace)) "" "2 | 3 | 5 | 7\n"
 -- Right ["2","3","5","7"]
 {-# INLINEABLE alphabetLine #-}
 {-# SPECIALISE alphabetLine :: Parsec Void  T.Text () -> Parsec Void  T.Text (Vector ShortText) #-}
@@ -165,7 +165,7 @@ alphabetLine spacing = validateAlphabet =<< ((alphabetSymbol <* spacing) `someTi
 --
 -- Basic usage:
 --
--- >>> parse (matrixBlock inlinedSpace) "" "1 2 3 \n 4 5 6\n7 8 9\n"
+-- >>> parse (matrixBlock hspace) "" "1 2 3 \n 4 5 6\n7 8 9\n"
 -- Right (( 1 2 3 )
 --        ( 4 5 6 )
 --        ( 7 8 9 ))
