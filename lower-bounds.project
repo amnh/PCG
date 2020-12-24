@@ -84,7 +84,7 @@ constraints:
   any.vector-builder ==0.3.7.*,
   any.vector-instances ==3.4.*,
   any.weigh ==0.0.16.*,
-  any.xml ==1.3.14.*,
+  any.xml ==1.3.14.*
 
 package *
   ghc-options: -fwrite-ide-info -hiedir=.hie
