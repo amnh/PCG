@@ -115,9 +115,38 @@ jobs:
           path: |
             ~/.cabal/store
             dist-newstyle
-          key: ${{ runner.os }}-tests-${{ hashFiles('cabal.project.freeze') }}
+          key: ${{ runner.os }}-file-parsers-${{ hashFiles('cabal.project.freeze') }}
 
       - run: cabal run file-tests
+
+
+  # Check that the project builds with the specified lower bounds.
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-haskell@v1
+        name: Setup Haskell
+        with:
+          cabal-version: latest
+          ghc-version:   8.10.2
+
+      - run: cabal update
+      - run: cabal clean
+      - run: cabal configure --enable-tests --with-compiler=ghc
+      - run: cabal freeze    --enable-tests
+      - uses: actions/cache@v2
+        name: caching lower bounds check
+        with:
+          path: |
+            ~/.cabal/store
+            dist-newstyle
+          key: ${{ runner.os }}-integration-${{ hashFiles('cabal.project.freeze') }}
+
+      - run: cabal install exe:pcg --overwrite-policy=always --installdir=./bin
+      - run: cabal run integration-tests
 
 
   # Cabal build matrix

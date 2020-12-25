@@ -26,6 +26,24 @@ extra-source-files:
     CHANGELOG.md
     FUNDING.md
     README.md
+    -- Specify the header files as required source files here.
+    -- Do not specify them in the c-sources or cxx-sources stanzas.
+    -- This is required for sdist and install commands to work correctly.
+    lib/core/ffi/external-direct-optimization/alignCharacters.h
+    lib/core/ffi/external-direct-optimization/alignmentMatrices.h
+    lib/core/ffi/external-direct-optimization/c_alignment_interface.h
+    lib/core/ffi/external-direct-optimization/c_code_alloc_setup.h
+    lib/core/ffi/external-direct-optimization/costMatrix.h
+    lib/core/ffi/external-direct-optimization/debug_constants.h
+    lib/core/ffi/external-direct-optimization/dyn_character.h
+    lib/core/ffi/external-direct-optimization/ukkCheckPoint.h
+    lib/core/ffi/external-direct-optimization/ukkCommon.h
+    lib/tcm-memo/ffi/memoized-tcm/costMatrix_2d.hpp
+    lib/tcm-memo/ffi/memoized-tcm/costMatrix_3d.hpp
+    lib/tcm-memo/ffi/memoized-tcm/costMatrixWrapper_2d.h
+    lib/tcm-memo/ffi/memoized-tcm/costMatrixWrapper_3d.h
+    lib/tcm-memo/ffi/memoized-tcm/costMatrixWrapper.h
+    lib/tcm-memo/ffi/memoized-tcm/dynamicCharacterOperations.h
 
 
 -- Group of buildinfo specifications to correctly build and link to the C & C++:
@@ -178,6 +196,7 @@ library alphabet
 library analysis
 
   import:
+    ffi-buildinfo,
     ghc-flags,
     language-specs
 
