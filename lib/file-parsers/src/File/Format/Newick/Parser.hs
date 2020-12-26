@@ -37,9 +37,11 @@ import           Data.Foldable
 import           Data.Functor                             (void)
 import           Data.List                                (intercalate)
 import           Data.List.NonEmpty                       (NonEmpty (..), some1)
-import           Data.Map                                 hiding (filter, fold, foldl', fromList, null, toList)
+import           Data.Map                                 hiding (filter, fold, foldl', fromList, notMember, null, toList)
 import           Data.Maybe                               (fromJust, fromMaybe, isJust)
 import           Data.Proxy
+import           Data.Set                                 (notMember)
+import qualified Data.Set                                 as Set
 import           Data.String
 import qualified Data.Text                                as T
 import qualified Data.Text.Lazy                           as LT
@@ -162,14 +164,20 @@ quotedLabel = do
       [] -> fail $ fold ["Blank quoted identifier found. The identifier '", x, "' is not valid"]
       _  -> pure $ fromString x
   where
+    labelBlob = takeWhileP Nothing (`notMember` badChars)
+      where
+        badChars = Set.fromList $ '\'':invalidQuotedLabelChars
+
     quotedLabelData = do
-      prefix <- noneOfThese $ '\'':invalidQuotedLabelChars
+      prefix <- labelBlob
+      let p = chunkToTokens (Proxy :: Proxy s) prefix
       _      <- char '\''
-      suffix <- optional . try $ char '\'' *> quotedLabelData
-      pure $ let p = chunkToTokens (Proxy :: Proxy s) prefix
-             in  case suffix of
-                   Just y  -> p <> ('\'' : y)
-                   Nothing -> p
+      suffix <- optional . void $ char '\''
+      case suffix of
+        Nothing -> pure p
+        Just _  -> do
+            rest <- quotedLabelData
+            pure $ p <> "\'" <> rest
 
 
 -- |
@@ -263,16 +271,6 @@ whitespace = skipMany $ choice [ hidden spChar, hidden block ]
     block  = skipBlockCommentNested (tokenToChunk proxy '[') (tokenToChunk proxy ']')
     proxy  = Proxy :: Proxy s
 
-
-{-
-whitespace = try commentDefinition <|> space
-  where
-    commentDefinition :: (MonadParsec e s m, Token s ~ Char) => m ()
-    commentDefinition = space *> some (comment commentStart commentEnd *> space) >> pure ()
-    commentStart, commentEnd :: (MonadParsec e s m, Token s ~ Char) => m String
-    commentStart = string "[" <?> "\"[\" comment start"
-    commentEnd   = string "]" <?> "\"]\" comment end"
--}
 
 -- |
 -- Joins the nodes of an extended Newick tree which share the same label.

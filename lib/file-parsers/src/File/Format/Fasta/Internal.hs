@@ -12,14 +12,16 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE ApplicativeDo    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE ApplicativeDo       #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module File.Format.Fasta.Internal where
 
 import           Data.Char              (isSpace)
 import           Data.Map               (Map)
+import           Data.Proxy
 import           Data.String
 import qualified Data.Text              as T
 import qualified Data.Text.Lazy         as LT
@@ -92,17 +94,17 @@ validIdentifierChar c = (not . isSpace) c && c /= '$' && c /= ';'
 -- |
 -- Defines the comment format which can be expected after an identifier
 {-# INLINE commentBody #-}
-{-# SPECIALISE commentBody :: Parsec Void  T.Text  T.Text #-}
-{-# SPECIALISE commentBody :: Parsec Void LT.Text LT.Text #-}
-{-# SPECIALISE commentBody :: Parsec Void  String  String #-}
-commentBody :: (MonadParsec e s m, Token s ~ Char) => m (Tokens s)
+{-# SPECIALISE commentBody :: Parsec Void  T.Text String #-}
+{-# SPECIALISE commentBody :: Parsec Void LT.Text String #-}
+{-# SPECIALISE commentBody :: Parsec Void  String String #-}
+commentBody :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m String
 commentBody  = do
     _  <- hspace
-    _  <- optional $ char '$'
-    _  <- hspace
+    _  <- optional $ char '$' *> hspace
     commentLine
   where
     -- |
     -- Defines the line of a comment
-    commentLine :: (MonadParsec e s m, Token s ~ Char) => m (Tokens s)
-    commentLine = takeWhile1P (Just "Taxon comment content") $ \x -> x /= '\n' && x /= '\r'
+    commentLine =
+        let result = takeWhile1P (Just "Taxon comment content") $ \x -> x /= '\n' && x /= '\r'
+        in  unwords . words . chunkToTokens (Proxy :: Proxy s) <$> result
