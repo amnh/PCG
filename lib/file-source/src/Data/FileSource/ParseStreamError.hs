@@ -144,7 +144,8 @@ instance TextShow ParseStreamError where
 -- Remark that a parsing error occurred when reading the file. Note that the 'ParseError' should contain the 'FileSource' information.
 makeUnparsableFile
   :: ( ShowErrorComponent e
-     , Stream s
+     , TraversableStream s
+     , VisualStream s
      )
   => FileSource
   -> ParseErrorBundle s e

@@ -55,13 +55,25 @@ newtype Computation = Computation (NonEmpty Command)
 
 -- |
 -- Parse a series of PCG commands.
-computationalStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Computation
+computationalStreamParser
+  :: ( FoldCase (Tokens s)
+     , MonadParsec e s m
+     , Token s ~ Char
+     , VisualStream s
+     )
+  => m Computation
 computationalStreamParser = Computation <$> some1 commandStreamParser <* eof
 
 
 -- |
 -- Parse a single, well defined PCG command.
-commandStreamParser :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => m Command
+commandStreamParser
+  :: ( FoldCase (Tokens s)
+     , MonadParsec e s m
+     , Token s ~ Char
+     , VisualStream s
+     )
+  => m Command
 commandStreamParser = whitespace *> choice
     [ BUILD   <$> parseCommand   buildCommandSpecification
     , ECHO    <$> parseCommand    echoCommandSpecification

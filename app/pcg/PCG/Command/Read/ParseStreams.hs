@@ -65,7 +65,14 @@ import           Text.Megaparsec
 
 -- |
 -- Used as a simplified binding of the parser action, with specific error handling.
-parse' :: Stream s => Parsec Void s a -> FileSource -> s -> Validation ReadCommandError a
+parse'
+  :: ( TraversableStream s
+     , VisualStream s
+     )
+  => Parsec Void s a
+  -> FileSource
+  -> s
+  -> Validation ReadCommandError a
 parse' parser fp = fromEither . first (unparsable fp) . runStreamParser parser fp
 
 
