@@ -20,11 +20,6 @@ packages: .
 
 source-repository-package
   type: git
-  location: https://github.com/diagrams/active
-  tag: 3976b0e7bfd5c3e83a828bbc7164cd640261e12c
-
-source-repository-package
-  type: git
   location: https://github.com/recursion-ninja/bv-little
   tag: 44b1626f8f53ddc23b32e96125cf76ddc960b6c9
 
@@ -36,18 +31,13 @@ source-repository-package
 
 source-repository-package
   type: git
-  location: https://github.com/diagrams/diagrams-lib
-  tag: 1c90e5db40792d4a641aa2cb14e17b4b96930766
-
-source-repository-package
-  type: git
   location: https://github.com/Gabriel439/Haskell-Pipes-Library
   tag: 49ed267dc95df7254b5776d0fa7bc988197dd810
 
 source-repository-package
   type: git
   location: https://github.com/ekmett/lens
-  tag: 0679c15cce599dfc8802cf77b2c6f90c3cfe83ea
+  tag: 60b1e9f089fedffa7a89c21fa5ace92e834d25a2
 
 source-repository-package
   type: git
@@ -56,6 +46,16 @@ source-repository-package
 
 -- Forked pins
   
+source-repository-package
+  type: git
+  location: https://github.com/recursion-ninja/active                                                   
+  tag: dad79b0de5fdc05a8feb2f08a22d9d32c47b77f2
+
+source-repository-package
+  type: git
+  location: https://github.com/recursion-ninja/diagrams-lib
+  tag: 4bc3105c4b21f84fbd8313fae0639768bd06103c
+
 source-repository-package
   type: git
   location: https://github.com/recursion-ninja/modern-uri
