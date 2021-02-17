@@ -1,3 +1,4 @@
+#include <cstdio>  //for stdout;
 #include <cstring> //for memcpy;
 #include <inttypes.h>
 
