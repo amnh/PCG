@@ -7,7 +7,7 @@ Releases are available [on GitHub][2].
 
 ## _0.4.0_ - Unreleased Changes
 
-* Updated to GHC-8.10.3
+* Updated to GHC-9.0.1
 * Added GitHub Actions workflows for CI
 * Corrected build error in benchmarking suite
 * Corrected defect in unboxed Ukkonen string alignment
