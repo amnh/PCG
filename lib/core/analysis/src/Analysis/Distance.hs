@@ -42,7 +42,7 @@ import qualified Data.Matrix.Unboxed                           as Matrix
 import           Data.MonoTraversable
 import           Data.Monoid
 import           Data.TCM.Dense
-import           Data.Vector                                   hiding (length)
+import           Data.Vector                                   hiding (foldMap, length)
 import           Numeric.Extended.Real
 
 

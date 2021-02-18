@@ -754,7 +754,7 @@ getSeqFromMatrix seqBlock taxaLst =
             | head eqStr /= "" && not tkns && not isCont = -- TODO: Also don't do on custom alphabets?
                 M.map (replaceEquates eqMap) matchCharsReplaced
             | otherwise = matchCharsReplaced
-        eqStr = either (const [""]) id $ getEquates seqBlock
+        eqStr = fromRight [""] $ getEquates seqBlock
         eqMap = M.fromList $ fmap (\xs -> (head xs, tail $ dropWhile (/= '=') xs) ) eqStr -- TODO: force equates string to be properly formatted
         isCont = characterType == Continuous
 
