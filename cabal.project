@@ -6,10 +6,11 @@ allow-newer:
     integer-gmp,
     lens,
     optparse-applicative,
+    QuickCheck,
     template-haskell,
-    th-abstraction,
+    th-abstraction
 
-constraints: th-abstraction >= 0.4.0.0,
+constraints: th-abstraction >= 0.4.0.0
     
 package *
     ghc-options: -fwrite-ide-info -hiedir=.hie
@@ -20,51 +21,17 @@ packages: .
 
 source-repository-package
   type: git
+  location: https://github.com/diagrams/active
+  tag: ca23431a8dfa013992f9164ccc882a3277361f17
+
+source-repository-package
+  type: git
   location: https://github.com/recursion-ninja/bv-little
   tag: 44b1626f8f53ddc23b32e96125cf76ddc960b6c9
 
 source-repository-package
   type: git
-  location: https://github.com/snoyberg/conduit
-  tag: 2f9e8682014c77ba6372742f2e2be8b24ed9d3e9
-  subdir: conduit
+  location: https://github.com/diagrams/diagrams-lib
+  tag: 6f66ce6bd5aed81d8a1330c143ea012724dbac3c
 
-source-repository-package
-  type: git
-  location: https://github.com/Gabriel439/Haskell-Pipes-Library
-  tag: 49ed267dc95df7254b5776d0fa7bc988197dd810
-
-source-repository-package
-  type: git
-  location: https://github.com/ekmett/lens
-  tag: 60b1e9f089fedffa7a89c21fa5ace92e834d25a2
-
-source-repository-package
-  type: git
-  location: https://github.com/bennofs/th-lift-instances
-  tag: 06a134c5119fbd6e938a4048fde03904d202039b
-
--- Forked pins
-  
-source-repository-package
-  type: git
-  location: https://github.com/recursion-ninja/active                                                   
-  tag: dad79b0de5fdc05a8feb2f08a22d9d32c47b77f2
-
-source-repository-package
-  type: git
-  location: https://github.com/recursion-ninja/diagrams-lib
-  tag: 4bc3105c4b21f84fbd8313fae0639768bd06103c
-
-source-repository-package
-  type: git
-  location: https://github.com/recursion-ninja/modern-uri
-  tag: f84e5c3093cb74272b3382ab1425f453f14b10b0
-
-source-repository-package
-  type: git
-  location: https://github.com/recursion-ninja/validation
-  tag: e2bca5a9bafdaa7bd33629fa4d7a0ef26f8e0943
-
-with-compiler: ghc-9.0-rc1
-with-hc-pkg: ghc-pkg-9.0-rc1
+with-compiler: ghc-9.0.1

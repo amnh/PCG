@@ -27,8 +27,8 @@ jobs:
     name: HLint Check
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-haskell@v1
+    - uses: actions/checkout@v2.3.4
+    - uses: haskell/actions/setup@v1.1.5
     - run: |
         curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s app bench test lib -j
 
@@ -41,8 +41,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-haskell@v1
+      - uses: actions/checkout@v2.3.4
+      - uses: haskell/actions/setup@v1.1.5
         name: Setup Haskell
         with:
           cabal-version: latest
@@ -70,12 +70,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-haskell@v1
+      - uses: actions/checkout@v2.3.4
+      - uses: haskell/actions/setup@v1.1.5
         name: Setup Haskell
         with:
           cabal-version: latest
-          ghc-version:   8.10.2
+          ghc-version:   latest
 
       - run: cabal update
       - run: cabal clean
@@ -98,12 +98,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-haskell@v1
+      - uses: actions/checkout@v2.3.4
+      - uses: haskell/actions/setup@v1.1.5
         name: Setup Haskell
         with:
           cabal-version: latest
-          ghc-version:   8.10.2
+          ghc-version:   latest
 
       - run: cabal update
       - run: cabal clean
@@ -126,12 +126,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-haskell@v1
+      - uses: actions/checkout@v2.3.4
+      - uses: haskell/actions/setup@v1.1.5
         name: Setup Haskell
         with:
           cabal-version: latest
-          ghc-version:   8.10.2
+          ghc-version:   latest
 
       - run: cabal update
       - run: cabal clean
@@ -145,6 +145,7 @@ jobs:
             dist-newstyle
           key: ${{ runner.os }}-integration-${{ hashFiles('cabal.project.freeze') }}
 
+      - run: cabal clean
       - run: cabal install exe:pcg --overwrite-policy=always --installdir=./bin
       - run: cabal run integration-tests
 
@@ -156,14 +157,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ghc:   [ '8.8.4', '8.10.2', 'latest' ]
-        cabal: [ '3.2.0.0', 'latest' ]
+        ghc:   [ '8.8.4', '8.10.4', '9.0.1' ]
+        cabal: [ '3.2.0.0', '3.4.0.0' ]
         os:    [ ubuntu-latest ] # , macOS-latest ]
+        include:
+          - ghc:   latest
+            cabal: latest
+            os:    ubuntu-latest
+            experimental: true
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2.3.4
       - name: Setup Haskell
-        uses: actions/setup-haskell@v1
+        uses: haskell/actions/setup@v1.1.5
         with:
           ghc-version:   ${{ matrix.ghc   }}
           cabal-version: ${{ matrix.cabal }}
