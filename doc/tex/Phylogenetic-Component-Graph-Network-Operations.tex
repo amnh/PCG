@@ -47,7 +47,7 @@
 
 \maketitle
 \begin{abstract}
-	Algorithmic Descriptions and Pseudo-Code for Phylogenetic Component Graphs (PCG) code base.
+	Algorithmic Descriptions and Pseudo-Code for network operations on Phylogenetic Component Graphs (PCG).
 \end{abstract}
 %\newpage
 \tableofcontents
@@ -62,85 +62,6 @@ We have tried to keep the style as consistent as possible, Functional-type state
 We should expand this section to include a motivation for phylogenetic networks, a brief history of their development by biologists and mathematicians, and give a brief summary of our unique construction and contributions.
 
 \section{Definitions and Nomenclature}
-
-\subsection{Exact Character}
-
-A character whose score is optimal for a display tree.
-
-\subsection{Non-exact Character}
-
-A character whose score is heuristically determined and not necessarily optimal for a display tree.
-
-\subsection{Character Type}
-
-A character can have numerous different types. 
-A character could take on discrete values, continuous values, have a particular metric etc. 
-The characters currnetly supported in PCG are: [TO DO: Have a separate document explaining what each of these types represents]
-
-\begin{itemize}
-
-	\item continuous [defined ???]
-	\item non-additive [defined ???]
-	\item additive [defined ???]
-	\item metric [defined ???]
-	\item non-metric [defined ???]
-	\item dynamic [defined ???]
-	
-\end{itemize}
-
-
-\subsection{Character Block}
-
-A character block consists of a collection of characters which are to be treated as a single group which is optimized atomically across a phylogenetic network i.e. this group is to be assigned a single topology from the collection of network display trees.
-
-\subsection{Character Sequence}
-
-A character sequence is a collection of character blocks each of which may be treated non-atomically during optimization meaning that we can assign different display trees of a phylogenetic network to each block in the character sequence.
-
-\subsection{Graph Traversal}
-
-A graph traversal aims to take a phylogenetic network with character sequences assigned to each of the leaves and to assign character sequences to each
-
-\subsection{Resolution}
-
-During a postorder pass we we wish to assign to each node the lowest cost character sequence from its one or two children along with information that we propagate up the network including for instance the cost of the descendant subtrees, those leaf nodes in this resolution etc. 
-Importantly a resolution makes sense only in the context of a display tree. 
-We do not propagate information from a network node to its two parents (see Resolution Cache).
-
-\subsection{Resolution Cache}
-
-A resolution cache is a non-empty collection of resolutions. 
-Such a collection represents each of the possible resolutions along each of the possible display trees that are descendant from the node.
-
-
-\section{Labeling of a single graph} \label{Labelling of a single graph}
-One of the fundamental procedures is in the labeling of individual graphs,  his is the determination of various aspects (including preliminary, final, and single assignments) of vertices and edges.   
-
-The basic PCG graph is a forest of directed acyclic graphs (DAG). 
-These DAGs may be trees in the sense of having vertices with (indegree, outdegree): (0, 1) the unique root, (1,0) leaves, and (1,2) ``internal'' vertices.; or networks adding (2,1) vertices as ``network'' vertices.
-Individual components may have more than one root vertex.
-All trees or networks are \textit{components} of a forest. 
-A forest is a list of components, $F = [N]$, where $N = (V, E)$ (conventionally $V$ is a set of vertices and $E$ a set of edges).
-One or more vertex in each component is a root. 
-Vertices with indegree and outdegree 1 may be maintained for computational convenience, but would normally be contracted.
- 
-Following \cite{moretetal2004}, the above would be described as a ``model'' phylogenetic network.
-This has two additional constraints.
-First, that all edges must begin or end in a tree vertex (no network vertex to network vertex edges).  
-Second,  the parents of a network vertex must, at least potentially, be contemporaneous. 
-[Insert path conditions here]  
- 
-A less restrictive form of network (``reconstructable'') is defined by \cite{moretetal2004} with vertices (indegree, outdegree): 
-(0, $\ge 1$) the unique root, (1, 0) leaves, and (1, $\ge$1) ``internal'' vertices, and networks adding ($\ge 2$, 1) vertices as ``network'' vertices.  For purposes of searching, outdegree of internal nodes is restricted to at most 2. Since edges may have zero length, networks may be output with vertices of outdegree $> 2$.
- 
-\section{Optimization of a single graph}\label{Optimization of a single graph}
-
-Optimization is a function that takes a graph ($G$), here a forest $F$, and data ($D$) as inputs and returns a numerical value.  
-This value can be referred to as its score ($S$)
- 	\begin{eqnarray*}
- 		f & : &  \{\mathcal{F}, D\} \rightarrow \mathbb{R}\\
-		g & : & \{  \mathbb{R},  \mathbb{R} \} \rightarrow \mathbb{R}
-	 \end{eqnarray*}
  
 \section{Forest Optimization/Labelling}\label{Forest Optimization/Labelling}
 

@@ -1,0 +1,147 @@
+\documentclass[11pt]{article}
+\usepackage{setspace}
+\usepackage{graphicx}
+\graphicspath{{../diagrams/networks/}{../diagrams/display-trees/}}
+\usepackage{subfigure}
+\usepackage{lscape}
+\usepackage{flafter}  % Don't place floats before their definition
+\usepackage{bm}  % Define \bm{} to use bold math fonts
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{MnSymbol}
+\usepackage{url}
+\usepackage{natbib}
+\usepackage{pmboxdraw}
+\usepackage{float}
+\usepackage{fancyvrb}
+\usepackage{bera}
+\usepackage[section]{placeins}
+%\usepackage{fullpage}
+\bibliographystyle{cbe}
+\citestyle{aa}
+%\usepackage{algorithmic}
+%\usepackage[vlined,algochapter,ruled]{algorithm2e}
+\usepackage[vlined,ruled]{algorithm2e}
+\usepackage{listings}% http://ctan.org/pkg/listings
+\lstset{
+  basicstyle=\ttfamily,
+  mathescape
+}
+\SetKwComment{Comment}{$\triangleright\ $}{}
+
+%ROOT PRIORS?
+%Add Giribet and Wheeler arth, ratchet cite, Arango sea spiders
+
+\title{Algorithmic Descriptions and Pseudo-Code for Phylogenetic Component Graphs}
+\author{Ward C. Wheeler\\
+		%Richard Gilder Graduate School,\\
+		Division of Invertebrate Zoology,\\
+		American Museum of Natural History,\\
+		Central Park West @ 79th Street,\\
+		New York, NY 10024-5192,\\
+		USA,\\
+		wheeler@amnh.org}
+	%\date{}
+\begin{document}
+
+\maketitle
+\begin{abstract}
+	Algorithmic Descriptions and Pseudo-Code for Phylogenetic Component Graphs (PCG) code base.
+\end{abstract}
+%\newpage
+\tableofcontents
+%\newpage
+
+%\doublespacing
+\section{Introduction} \label{Introduction}
+This document contains the descriptions and pseudo-code for core  Phylogenetic Component Graphs (PCG) algorithms.  
+This is designed to serve both as documentation for the code and a development tool. 
+We have tried to keep the style as consistent as possible, Functional-type statements (\textit{e.g.} map and fold) and structures (\textit{e.g.} lists, tuples) are employed.
+
+We should expand this section to include a motivation for phylogenetic networks, a brief history of their development by biologists and mathematicians, and give a brief summary of our unique construction and contributions.
+
+\section{Definitions and Nomenclature}
+
+\subsection{Exact Character}
+
+A character whose score is optimal for a display tree.
+
+\subsection{Non-exact Character}
+
+A character whose score is heuristically determined and not necessarily optimal for a display tree.
+
+\subsection{Character Block}
+
+A character block consists of a collection of characters which are to be treated as a single group which is optimized atomically across a phylogenetic network i.e. this group is to be assigned a single topology from the collection of network display trees.
+
+\subsection{Character Sequence}
+
+A character sequence is a collection of character blocks each of which may be treated non-atomically during optimization meaning that we can assign different display trees of a phylogenetic network to each block in the character sequence.
+
+\subsection{Graph Traversal}
+
+A graph traversal aims to take a phylogenetic network with character sequences assigned to each of the leaves and to assign character sequences to each
+
+\subsection{Resolution}
+
+During a postorder pass we we wish to assign to each node the lowest cost character sequence from its one or two children along with information that we propagate up the network including for instance the cost of the descendant subtrees, those leaf nodes in this resolution etc. 
+Importantly a resolution makes sense only in the context of a display tree. 
+We do not propagate information from a network node to its two parents (see Resolution Cache).
+
+\subsection{Resolution Cache}
+
+A resolution cache is a non-empty collection of resolutions. 
+Such a collection represents each of the possible resolutions along each of the possible display trees that are descendant from the node.
+
+
+\section{Labeling of a single graph} \label{Labelling of a single graph}
+One of the fundamental procedures is in the labeling of individual graphs,  his is the determination of various aspects (including preliminary, final, and single assignments) of vertices and edges.   
+
+The basic PCG graph is a forest of directed acyclic graphs (DAG). 
+These DAGs may be trees in the sense of having vertices with (indegree, outdegree): (0, 1) the unique root, (1,0) leaves, and (1,2) ``internal'' vertices.; or networks adding (2,1) vertices as ``network'' vertices.
+Individual components may have more than one root vertex.
+All trees or networks are \textit{components} of a forest. 
+A forest is a list of components, $F = [N]$, where $N = (V, E)$ (conventionally $V$ is a set of vertices and $E$ a set of edges).
+One or more vertex in each component is a root. 
+Vertices with indegree and outdegree 1 may be maintained for computational convenience, but would normally be contracted.
+ 
+Following \cite{moretetal2004}, the above would be described as a ``model'' phylogenetic network.
+This has two additional constraints.
+First, that all edges must begin or end in a tree vertex (no network vertex to network vertex edges).  
+Second,  the parents of a network vertex must, at least potentially, be contemporaneous. 
+[Insert path conditions here]  
+ 
+A less restrictive form of network (``reconstructable'') is defined by \cite{moretetal2004} with vertices (indegree, outdegree): 
+(0, $\ge 1$) the unique root, (1, 0) leaves, and (1, $\ge$1) ``internal'' vertices, and networks adding ($\ge 2$, 1) vertices as ``network'' vertices.  For purposes of searching, outdegree of internal nodes is restricted to at most 2. Since edges may have zero length, networks may be output with vertices of outdegree $> 2$.
+ 
+\section{Optimization of a single graph}\label{Optimization of a single graph}
+
+Optimization is a function that takes a graph ($G$), here a forest $F$, and data ($D$) as inputs and returns a numerical value.  
+This value can be referred to as its score ($S$)
+ 	\begin{eqnarray*}
+ 		f & : &  \{\mathcal{F}, D\} \rightarrow \mathbb{R}\\
+		g & : & \{  \mathbb{R},  \mathbb{R} \} \rightarrow \mathbb{R}
+	 \end{eqnarray*}
+ 
+
+\newpage
+\singlespacing
+\bibliography{/users/ward/home/biblio/ward_new}
+%\bibliography{ward_new}
+
+%cost of root for pars = insert all characters, good first aapprox
+
+%
+%Algorithm basic template
+%	\begin{algorithm}
+%		\caption{Blah}
+%		\label{alg:Blah}
+%		\SetAlgoLined
+%		\KwData{Input data $D$}
+%		\KwResult{Blah}
+%		\Comment{Blah Comment}
+%		\Return{Bleh} 					
+%	\end{algorithm}
+
+\end{document}
