@@ -28,28 +28,29 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenFull
   ( unboxedUkkonenFullSpaceDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal        (DOCharConstraint,
-                                                                                         Direction (..),
-                                                                                         OverlapFunction,
-                                                                                         handleMissingCharacter,
-                                                                                         measureAndUngapCharacters,
-                                                                                         measureCharacters)
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping (unboxedSwappingDO)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal               (DOCharConstraint,
+                                                                                                Direction (..),
+                                                                                                OverlapFunction,
+                                                                                                handleMissingCharacter,
+                                                                                                measureAndUngapCharacters,
+                                                                                                measureCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping        (unboxedSwappingDO)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenSwapping (ukkonenConstants)
 import           Bio.Character.Encodable
-import           Control.Monad                                                          (unless, when)
-import           Control.Monad.Loops                                                    (iterateUntilM, whileM_)
+import           Control.Monad                                                                 (unless, when)
+import           Control.Monad.Loops                                                           (iterateUntilM, whileM_)
+import           Control.Monad.Primitive
 import           Control.Monad.ST
 import           Data.Bits
-import           Data.DList                                                             (snoc)
+import           Data.DList                                                                    (snoc)
 import           Data.Foldable
-import qualified Data.List.NonEmpty                                                     as NE
-import           Data.Matrix.Unboxed                                                    (Matrix, unsafeFreeze,
-                                                                                         unsafeIndex)
-import           Data.Matrix.Unboxed.Mutable                                            (MMatrix)
-import qualified Data.Matrix.Unboxed.Mutable                                            as M
+import qualified Data.List.NonEmpty                                                            as NE
+import           Data.Matrix.Unboxed                                                           (Matrix, unsafeFreeze,
+                                                                                                unsafeIndex)
+import           Data.Matrix.Unboxed.Mutable                                                   (MMatrix)
+import qualified Data.Matrix.Unboxed.Mutable                                                   as M
 import           Data.MonoTraversable
 import           Data.STRef
-
 
 -- |
 -- Performs a naive direct optimization.
@@ -67,18 +68,18 @@ unboxedUkkonenFullSpaceDO
   -> s
   -> s
   -> (Word, s)
-unboxedUkkonenFullSpaceDO overlapFunction char1 char2
+unboxedUkkonenFullSpaceDO overlapλ char1 char2
   | noGainFromUkkonenMethod = buildFullMatrix
-  | otherwise               = directOptimization overlapFunction buildPartialMatrixMaybe char1 char2
+  | otherwise               = directOptimization overlapλ buildPartialMatrixMaybe char1 char2
   where
     (_, longer, lesser) = measureCharacters char1 char2
 
     gap = getMedian $ gapOfStream char1
-    cost x y = snd $ overlapFunction x y
+    cost x y = snd $ overlapλ x y
 
-    buildFullMatrix = unboxedSwappingDO overlapFunction char1 char2
+    buildFullMatrix = unboxedSwappingDO overlapλ char1 char2
 
-    buildPartialMatrixMaybe = createUkkonenMethodMatrix coefficient gapsPresentInInputs overlapFunction
+    buildPartialMatrixMaybe = createUkkonenMethodMatrix coefficient gapsPresentInInputs overlapλ
 
     -- /O(1)/
     --
@@ -169,7 +170,7 @@ createUkkonenMethodMatrix
   -> a    -- ^ Longer dynamic character
   -> a    -- ^ Shorter dynamic character
   -> (Word, Matrix Direction)
-createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs overlapFunction longerTop lesserLeft = finalMatrix
+createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs overlapλ longerTop lesserLeft = finalMatrix
   where
     -- General values that need to be in scope for the recursive computations.
     longerLen   = olength longerTop
@@ -199,13 +200,13 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs overlapFunction l
                 pure $ threshold <= alignmentCost
 
     finalMatrix = runST $ do
-        (mCost, mDir) <- buildInitialBandedMatrix overlapFunction longerTop lesserLeft startOffset
+        (mCost, mDir) <- buildInitialBandedMatrix overlapλ longerTop lesserLeft startOffset
         offsetRef <- newSTRef startOffset
         whileM_ (needToResizeBand mCost offsetRef) $ do
           previousOffset <- readSTRef offsetRef
           let currentOffset = previousOffset `shiftL` 1 -- Multiply by 2
           writeSTRef offsetRef currentOffset
-          expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir previousOffset currentOffset
+          expandBandedMatrix overlapλ longerTop lesserLeft mCost mDir previousOffset currentOffset
 
         c <- M.unsafeRead mCost (lesserLen, longerLen)
         m <- unsafeFreeze mDir
@@ -220,20 +221,9 @@ buildInitialBandedMatrix
   -> a
   -> Word
   -> ST s (MMatrix s Word, MMatrix s Direction)
-buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
+buildInitialBandedMatrix overlapλ longerTop lesserLeft o = fullMatrix
   where
-    -- Note: "offset" cannot cause "width" to exceed "cols"
-    offset      = let o' = fromEnum o in  min o' $ cols - quasiDiagonalWidth
-    gap         = getMedian $ gapOfStream longerTop
-    cost x y    = snd $ overlapFunction x y
-    longerLen   = olength longerTop
-    lesserLen   = olength lesserLeft
-    rows        = olength lesserLeft + 1
-    cols        = olength longerTop  + 1
-    width       = quasiDiagonalWidth + (offset `shiftL` 1) -- Multiply by 2
-    quasiDiagonalWidth = differenceInLength + 1
-      where
-        differenceInLength = longerLen - lesserLen
+    (offset, gap, cost, rows, cols, width, quasiDiagonalWidth) = ukkonenConstants overlapλ lesserLeft longerTop o
 
     fullMatrix = do
 
@@ -247,101 +237,7 @@ buildInitialBandedMatrix overlapFunction longerTop lesserLeft o = fullMatrix
       ---------------------------------------
       -- Define some generalized functions --
       ---------------------------------------
-
-      -- Write to a single cell of the current vector and directional matrix simultaneously
-      let write !p ~(!c, !d) = M.unsafeWrite mCost p c *> M.unsafeWrite mDir p d
-
-      -- Write to an internal cell (not on a boundary) of the matrix.
-      let internalCell leftElement insertCost i j
-            -- Preserve the gap in the left (lesser) string
-            | leftElement == gap = (\x -> (x, UpArrow)) <$> M.unsafeRead mCost (i - 1, j)
-            | otherwise = {-# SCC internalCell_expanding #-}
-              let topElement = getMedian $ longerTop `indexStream` (j - 1)
-                  -- Preserve the gap in the top (longer) string
-{-
-              in  if topElement == gap
-                  then (\x -> (x, LeftArrow)) <$> M.unsafeRead mCost (i, j - 1)
-                  else let  deleteCost = cost topElement    gap
-                            alignCost   = cost topElement leftElement
-                       in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                              topCost  <- M.unsafeRead mCost (i - 1, j    )
-                              leftCost <- M.unsafeRead mCost (i    , j - 1)
-                              pure $ minimum
-                                  [ ( alignCost + diagCost, DiagArrow)
-                                  , (deleteCost + leftCost, LeftArrow)
-                                  , (insertCost +  topCost, UpArrow  )
-                                  ]
--}
-              in  let deleteCost = cost topElement    gap
-                      (alignElem, alignCost) = overlapFunction topElement leftElement
-                  in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                         topCost  <- M.unsafeRead mCost (i - 1, j    )
-                         leftCost <- M.unsafeRead mCost (i    , j - 1)
-                         pure $ getMinimalResult gap alignElem
-                             [ ( alignCost + diagCost, DiagArrow)
-                             , (deleteCost + leftCost, LeftArrow)
-                             , (insertCost +  topCost, UpArrow  )
-                             ]
-
-
-      -- Define how to compute the first cell of the first "offest" rows.
-      -- We need to ensure that there are only Up Arrow values in the directional matrix.
-      -- We can also reduce the number of comparisons the first row makes from 3 to 1,
-      -- since the diagonal and leftward values are "out of bounds."
-      let leftColumn _leftElement insertCost i j = {-# SCC leftColumn #-} do
-            firstPrevCost <- M.unsafeRead mCost (i - 1, j)
-            pure (insertCost + firstPrevCost, UpArrow)
-
-      -- Define how to compute the first cell of the remaining rows.
-      -- We need to ensure that there are no Left Arrow values in the directional matrix.
-      -- We can also reduce the number of comparisons the first row makes from 3 to 2,
-      -- since the leftward values are "out of bounds."
-      let leftBoundary leftElement insertCost i j =
-            -- Preserve the gap in the left (lesser) string
---            | leftElement == gap = (\x -> (x, UpArrow)) <$> M.unsafeRead mCost (i - 1, j)
---            | otherwise = {-# SCC leftBoundary #-}
-              let topElement = getMedian $ longerTop `indexStream` (j - 1)
-                  (alignElem, alignCost) = overlapFunction topElement leftElement
-              in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                     topCost  <- M.unsafeRead mCost (i - 1, j    )
-                     pure $ getMinimalResult gap alignElem
-                         [ ( alignCost + diagCost, DiagArrow)
-                         , (insertCost +  topCost, UpArrow  )
-                         ]
-
-      -- Define how to compute the last cell of the first "rows - offest" rows.
-      -- We need to ensure that there are only Left Arrow values in the directional matrix.
-      -- We can also reduce the number of comparisons the first row makes from 3 to 1,
-      -- since the diagonal and upward values are "out of bounds."
-      let rightBoundary leftElement _insertCost i j = {-# SCC rightBoundary #-}
-            let topElement = getMedian $ longerTop `indexStream` (j - 1)
-            -- Preserve the gap in the top (longer) string
-{-
-            in  if topElement == gap
-                then (\x -> (x, LeftArrow)) <$> M.unsafeRead mCost (i, j - 1)
-                else let deleteCost = cost topElement    gap
-                         alignCost  = cost topElement leftElement
-                     in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                            leftCost <- M.unsafeRead mCost (i    , j - 1)
-                            pure $ minimum
-                                [ ( alignCost + diagCost, DiagArrow)
-                                , (deleteCost + leftCost, LeftArrow)
-                                ]
--}
-            in  let deleteCost = cost topElement    gap
-                    (alignElem, alignCost) = overlapFunction topElement leftElement
-                in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                       leftCost <- M.unsafeRead mCost (i    , j - 1)
-                       pure $ getMinimalResult gap alignElem
-                           [ ( alignCost + diagCost, DiagArrow)
-                           , (deleteCost + leftCost, LeftArrow)
-                           ]
-
-      -- Define how to compute the last cell of the last "offest" rows.
-      -- We need to ensure that there are no Up Arrow values in the directional matrix.
-      -- We can also reduce the number of comparisons the first row makes from 3 to 2,
-      -- since the upward values are "out of bounds."
-      let rightColumn = {-# SCC rightColumn #-} internalCell
+      let (write, internalCell, leftColumn, leftBoundary, rightBoundary, rightColumn) = edgeCellDefinitions mCost mDir overlapλ cost longerTop gap
 
       -- Define how to compute values to an entire row of the Ukkonen matrix.
       let writeRow i =
@@ -461,24 +357,10 @@ expandBandedMatrix
   -> Word
   -> Word
   -> ST s ()
-expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updatedBand
+expandBandedMatrix overlapλ longerTop lesserLeft mCost mDir po co = updatedBand
   where
-
-    -- Note: "offset" cannot cause "width + quasiDiagonalWidth" to exceed "2 * cols"
-    offset      = let o' = fromEnum co in  min o' $ cols - quasiDiagonalWidth
+    (offset, gap, cost, rows, cols, width, qd) = ukkonenConstants overlapλ lesserLeft longerTop co
     prevOffset  = fromEnum po
-    cost x y    = snd $ overlapFunction x y
-    gap         = getMedian $ gapOfStream longerTop
-    longerLen   = olength longerTop
-    lesserLen   = olength lesserLeft
-    rows        = olength lesserLeft + 1
-    cols        = olength longerTop  + 1
-    width       = quasiDiagonalWidth + (offset `shiftL` 1) -- Multiply by 2
-    quasiDiagonalWidth = differenceInLength + 1
-      where
-        differenceInLength = longerLen - lesserLen
-
-    qd = quasiDiagonalWidth
 
     updatedBand = do
 
@@ -494,84 +376,12 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
       ---------------------------------------
       -- Define some generalized functions --
       ---------------------------------------
-
-      -- Write to a single cell of the current vector and directional matrix simultaneously
-      let write !p ~(!c, !d) = M.unsafeWrite mCost p c *> M.unsafeWrite mDir p d
-
-      -- Write to an internal cell (not on a boundary) of the matrix.
-      let internalCell leftElement insertCost i j
-            -- Preserve the gap in the left (lesser) string
---            | leftElement == gap = (\x -> (x, UpArrow)) <$> M.unsafeRead mCost (i - 1, j)
-            | otherwise = {-# SCC internalCell_expanding #-}
-              let topElement = getMedian $ longerTop `indexStream` (j - 1)
-                  -- Preserve the gap in the top (longer) string
-              in  if topElement == gap
-                  then (\x -> (x, LeftArrow)) <$> M.unsafeRead mCost (i, j - 1)
-                  -- Normal Needleman-Wunsch Logic
-                  else let  deleteCost = cost topElement    gap
-                            (alignElem, alignCost) = overlapFunction topElement leftElement
-                       in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                              topCost  <- M.unsafeRead mCost (i - 1, j    )
-                              leftCost <- M.unsafeRead mCost (i    , j - 1)
-                              pure $ getMinimalResult gap alignElem
-                                  [ ( alignCost + diagCost, DiagArrow)
-                                  , (deleteCost + leftCost, LeftArrow)
-                                  , (insertCost +  topCost, UpArrow  )
-                                  ]
-
-      -- Define how to compute the first cell of the first "offest" rows.
-      -- We need to ensure that there are only Up Arrow values in the directional matrix.
-      -- We can also reduce the number of comparisons the first row makes from 3 to 1,
-      -- since the diagonal and leftward values are "out of bounds."
-      let leftColumn _leftElement insertCost i j = {-# SCC leftColumn #-} do
-            firstPrevCost <- M.unsafeRead mCost (i - 1, j)
-            pure (insertCost + firstPrevCost, UpArrow)
-
-      -- Define how to compute the first cell of the remaining rows.
-      -- We need to ensure that there are no Left Arrow values in the directional matrix.
-      -- We can also reduce the number of comparisons the first row makes from 3 to 2,
-      -- since the leftward values are "out of bounds."
-      -- Define how to compute the first cell of the remaining rows.
-      -- We need to ensure that there are no Left Arrow values in the directional matrix.
-      -- We can also reduce the number of comparisons the first row makes from 3 to 2,
-      -- since the leftward values are "out of bounds."
-      let leftBoundary leftElement insertCost i j
-            -- Preserve the gap in the left (lesser) string
---            | leftElement == gap = (\x -> (x, UpArrow)) <$> M.unsafeRead mCost (i - 1, j)
-            | otherwise = {-# SCC leftBoundary #-}
-              let topElement = getMedian $ longerTop `indexStream` (j - 1)
-                  (alignElem, alignCost) = overlapFunction topElement leftElement
-              in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                     topCost  <- M.unsafeRead mCost (i - 1, j    )
-                     pure $ getMinimalResult gap alignElem
-                         [ ( alignCost + diagCost, DiagArrow)
-                         , (insertCost +  topCost, UpArrow  )
-                         ]
-
-      -- Define how to compute the last cell of the first "rows - offest" rows.
-      -- We need to ensure that there are only Left Arrow values in the directional matrix.
-      -- We can also reduce the number of comparisons the first row makes from 3 to 1,
-      -- since the diagonal and upward values are "out of bounds."
-      let rightBoundary leftElement _insertCost i j = {-# SCC rightBoundary #-}
-            let topElement = getMedian $ longerTop `indexStream` (j - 1)
-            -- Preserve the gap in the top (longer) string
-            in  if False && topElement == gap
-                then (\x -> (x, LeftArrow)) <$> M.unsafeRead mCost (i, j - 1)
-                else let deleteCost = cost topElement    gap
-                         (alignElem, alignCost) = overlapFunction topElement leftElement
-                     in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
-                            leftCost <- M.unsafeRead mCost (i    , j - 1)
-                            pure $ getMinimalResult gap alignElem
-                                [ ( alignCost + diagCost, DiagArrow)
-                                , (deleteCost + leftCost, LeftArrow)
-                                ]
-
-      let rightColumn = {-# SCC rightColumn #-} internalCell
+      let (write, internalCell, leftColumn, leftBoundary, rightBoundary, rightColumn) = edgeCellDefinitions mCost mDir overlapλ cost longerTop gap
 
       let computeCell leftElement insertCost i j = {-# SCC recomputeCell #-}
             let topElement = getMedian $ longerTop `indexStream` (j - 1)
                 deleteCost = cost topElement    gap
-                (alignElem, alignCost) = overlapFunction topElement leftElement
+                (alignElem, alignCost) = overlapλ topElement leftElement
             in do
                   diagCost <- M.unsafeRead mCost (i - 1, j - 1)
                   topCost  <- M.unsafeRead mCost (i - 1, j    )
@@ -607,7 +417,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
                   | otherwise   = leftBoundary
 
                 lastCell
-                  | i <= cols - quasiDiagonalWidth - offset = rightBoundary
+                  | i <= cols - qd - offset = rightBoundary
                   | otherwise = rightColumn
 
                 b0 = start0
@@ -819,7 +629,7 @@ expandBandedMatrix overlapFunction longerTop lesserLeft mCost mDir po co = updat
       -- Compute all values of the matrix  --
       ---------------------------------------
 
-      let start = quasiDiagonalWidth + prevOffset
+      let start = qd + prevOffset
 
       -- Extend the first row to seed subsequent rows.
       for_ [start .. min (cols - 1) (width - offset - 1)] $ \j ->
@@ -886,9 +696,9 @@ traceback
   -> s
   -> s
   -> s
-traceback overlapFunction alignMatrix longerChar lesserChar = alignmentContext
+traceback overlapλ alignMatrix longerChar lesserChar = alignmentContext
   where
-    f x y = fst $ overlapFunction x y
+    f x y = fst $ overlapλ x y
     gap = getMedian $ gapOfStream longerChar
 
     alignmentContext = dlistToDynamic $ go startPoint
@@ -926,3 +736,86 @@ traceback overlapFunction alignMatrix longerChar lesserChar = alignmentContext
                                in  (# i', j', e #)
         in  previousSequence `snoc` localContext
 
+
+edgeCellDefinitions
+  :: ( DOCharConstraint s
+     , PrimMonad m
+     )
+  => MMatrix (PrimState m) Word
+  -> MMatrix (PrimState m) Direction
+  -> OverlapFunction (Subcomponent (Element s))
+  -> (Subcomponent (Element s) -> Subcomponent (Element s) -> Word)
+  -> s
+  -> Subcomponent (Element s)
+  -> ( (Int, Int) -> (Word, Direction) -> m ()
+     , Subcomponent (Element s) -> Word -> Int -> Int -> m (Word, Direction)
+     , Subcomponent (Element s) -> Word -> Int -> Int -> m (Word, Direction)
+     , Subcomponent (Element s) -> Word -> Int -> Int -> m (Word, Direction)
+     , Subcomponent (Element s) -> Word -> Int -> Int -> m (Word, Direction)
+     , Subcomponent (Element s) -> Word -> Int -> Int -> m (Word, Direction)
+     )
+edgeCellDefinitions mCost mDir overlapλ cost longerTop gap = (write, internalCell, leftColumn, leftBoundary, rightBoundary, rightColumn)
+  where
+    -- Write to a single cell of the current vector and directional matrix simultaneously
+    write !p ~(!c, !d) = M.unsafeWrite mCost p c *> M.unsafeWrite mDir p d
+
+    -- Write to an internal cell (not on a boundary) of the matrix.
+    internalCell leftElement insertCost i j = {-# SCC internalCell_expanding #-}
+        let topElement = getMedian $ longerTop `indexStream` (j - 1)
+            -- Preserve the gap in the top (longer) string
+        in  if topElement == gap
+            then (\x -> (x, LeftArrow)) <$> M.unsafeRead mCost (i, j - 1)
+            -- Normal Needleman-Wunsch Logic
+            else let  deleteCost = cost topElement    gap
+                      (alignElem, alignCost) = overlapλ topElement leftElement
+                 in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+                        topCost  <- M.unsafeRead mCost (i - 1, j    )
+                        leftCost <- M.unsafeRead mCost (i    , j - 1)
+                        pure $ getMinimalResult gap alignElem
+                            [ ( alignCost + diagCost, DiagArrow)
+                            , (deleteCost + leftCost, LeftArrow)
+                            , (insertCost +  topCost, UpArrow  )
+                            ]
+
+    -- Define how to compute the first cell of the first "offest" rows.
+    -- We need to ensure that there are only Up Arrow values in the directional matrix.
+    -- We can also reduce the number of comparisons the first row makes from 3 to 1,
+    -- since the diagonal and leftward values are "out of bounds."
+    leftColumn _leftElement insertCost i j = {-# SCC leftColumn #-} do
+        firstPrevCost <- M.unsafeRead mCost (i - 1, j)
+        pure (insertCost + firstPrevCost, UpArrow)
+
+    -- Define how to compute the first cell of the remaining rows.
+    -- We need to ensure that there are no Left Arrow values in the directional matrix.
+    -- We can also reduce the number of comparisons the first row makes from 3 to 2,
+    -- since the leftward values are "out of bounds."
+    -- Define how to compute the first cell of the remaining rows.
+    -- We need to ensure that there are no Left Arrow values in the directional matrix.
+    -- We can also reduce the number of comparisons the first row makes from 3 to 2,
+    -- since the leftward values are "out of bounds."
+    leftBoundary leftElement insertCost i j = {-# SCC leftBoundary #-}
+        let topElement = getMedian $ longerTop `indexStream` (j - 1)
+            (alignElem, alignCost) = overlapλ topElement leftElement
+        in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+               topCost  <- M.unsafeRead mCost (i - 1, j    )
+               pure $ getMinimalResult gap alignElem
+                   [ ( alignCost + diagCost, DiagArrow)
+                   , (insertCost +  topCost, UpArrow  )
+                   ]
+
+    -- Define how to compute the last cell of the first "rows - offest" rows.
+    -- We need to ensure that there are only Left Arrow values in the directional matrix.
+    -- We can also reduce the number of comparisons the first row makes from 3 to 1,
+    -- since the diagonal and upward values are "out of bounds."
+    rightBoundary leftElement _insertCost i j = {-# SCC rightBoundary #-}
+        let topElement = getMedian $ longerTop `indexStream` (j - 1)
+            deleteCost = cost topElement    gap
+            (alignElem, alignCost) = overlapλ topElement leftElement
+        in  do diagCost <- M.unsafeRead mCost (i - 1, j - 1)
+               leftCost <- M.unsafeRead mCost (i    , j - 1)
+               pure $ getMinimalResult gap alignElem
+                   [ ( alignCost + diagCost, DiagArrow)
+                   , (deleteCost + leftCost, LeftArrow)
+                   ]
+
+    rightColumn = {-# SCC rightColumn #-} internalCell

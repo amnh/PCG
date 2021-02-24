@@ -23,7 +23,7 @@ module File.Format.TNT.Command.CNames
 
 import           Data.CaseInsensitive     (FoldCase)
 import           Data.Foldable            (toList)
-import           Data.Functor             (($>), void)
+import           Data.Functor             (void, ($>))
 import           Data.IntMap              (insertWith)
 import           Data.List                (sort, sortOn)
 import qualified Data.List.NonEmpty       as NE (fromList)
