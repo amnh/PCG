@@ -50,51 +50,103 @@
 	Algorithmic Descriptions and Pseudo-Code for Phylogenetic Component Graphs (PCG) code base.
 \end{abstract}
 %\newpage
-%\tableofcontents
+\tableofcontents
 %\newpage
 
 %\doublespacing
 \section{Introduction} \label{Introduction}
-This document contains the descriptions and pseudo-code for core  Phylogenetic Component Graphs (PCG)
-algorithms.  This is designed to serve both as documentation for the code and a development tool.  We have tried to keep
-the style as consistent as possible,  Functional-type statements (\textit{e.g.} map and fold) and structures (\textit{e.g.} lists, tuples)
-are employed.
+This document contains the descriptions and pseudo-code for core  Phylogenetic Component Graphs (PCG) algorithms.  
+This is designed to serve both as documentation for the code and a development tool. 
+We have tried to keep the style as consistent as possible, Functional-type statements (\textit{e.g.} map and fold) and structures (\textit{e.g.} lists, tuples) are employed.
 
-\section{Labelling of a single graph} \label{Labelling of a single graph}
-One of the fundamental procedures is in the labelling of individual graphs,  This is the determination of various 
-aspects (including preliminary, final, and single assignments) of vertices and edges.   
+We should expand this section to include a motivation for phylogenetic networks, a brief history of their development by biologists and mathematicians, and give a brief summary of our unique construction and contributions.
 
-The basic PCG graph is a forest of directed acyclic graphs (DAG).  These DAGs may be trees in the sense of having
- vertices with (indegree, outdegree): (0, 1) the unique root, (1,0) leaves, and (1,2) ``internal'' vertices.; or
- networks adding (2,1) vertices as ``network'' vertices.  Individual components may have more than one 
- root vertex.   All trees or networks are \textit{components} of a forest.  A forest
- is a list of components,
- $F = [N]$, where $N = (V, E)$ (conventionally $V$ is a set of vertices and $E$ a set of edges).  One or more vertex in each component is a root.
- Vertices with indegree and outdegree 1 may be maintained for computational convenience, but would normally be contracted.
+\section{Definitions and Nomenclature}
+
+\subsection{Exact Character}
+
+A character whose score is optimal for a display tree.
+
+\subsection{Non-exact Character}
+
+A character whose score is heuristically determined and not necessarily optimal for a display tree.
+
+\subsection{Character Type}
+
+A character can have numerous different types. 
+A character could take on discrete values, continuous values, have a particular metric etc. 
+The characters currnetly supported in PCG are: [TO DO: Have a separate document explaining what each of these types represents]
+
+\begin{itemize}
+
+	\item continuous [defined ???]
+	\item non-additive [defined ???]
+	\item additive [defined ???]
+	\item metric [defined ???]
+	\item non-metric [defined ???]
+	\item dynamic [defined ???]
+	
+\end{itemize}
+
+
+\subsection{Character Block}
+
+A character block consists of a collection of characters which are to be treated as a single group which is optimized atomically across a phylogenetic network i.e. this group is to be assigned a single topology from the collection of network display trees.
+
+\subsection{Character Sequence}
+
+A character sequence is a collection of character blocks each of which may be treated non-atomically during optimization meaning that we can assign different display trees of a phylogenetic network to each block in the character sequence.
+
+\subsection{Graph Traversal}
+
+A graph traversal aims to take a phylogenetic network with character sequences assigned to each of the leaves and to assign character sequences to each
+
+\subsection{Resolution}
+
+During a postorder pass we we wish to assign to each node the lowest cost character sequence from its one or two children along with information that we propagate up the network including for instance the cost of the descendant subtrees, those leaf nodes in this resolution etc. 
+Importantly a resolution makes sense only in the context of a display tree. 
+We do not propagate information from a network node to its two parents (see Resolution Cache).
+
+\subsection{Resolution Cache}
+
+A resolution cache is a non-empty collection of resolutions. 
+Such a collection represents each of the possible resolutions along each of the possible display trees that are descendant from the node.
+
+
+\section{Labeling of a single graph} \label{Labelling of a single graph}
+One of the fundamental procedures is in the labeling of individual graphs,  his is the determination of various aspects (including preliminary, final, and single assignments) of vertices and edges.   
+
+The basic PCG graph is a forest of directed acyclic graphs (DAG). 
+These DAGs may be trees in the sense of having vertices with (indegree, outdegree): (0, 1) the unique root, (1,0) leaves, and (1,2) ``internal'' vertices.; or networks adding (2,1) vertices as ``network'' vertices.
+Individual components may have more than one root vertex.
+All trees or networks are \textit{components} of a forest. 
+A forest is a list of components, $F = [N]$, where $N = (V, E)$ (conventionally $V$ is a set of vertices and $E$ a set of edges).
+One or more vertex in each component is a root. 
+Vertices with indegree and outdegree 1 may be maintained for computational convenience, but would normally be contracted.
  
- Following \cite{moretetal2004}, the above would be described as a ``model'' phylogenetic network. This has two additional constraints.
- First, that all edges must begin or end in a tree vertex (no network vertex to network vertex edges).  
- Second,  the parents of a network vertex must, at least potentially, be 
- contemporaneous. [Insert path conditions here]  
+Following \cite{moretetal2004}, the above would be described as a ``model'' phylogenetic network.
+This has two additional constraints.
+First, that all edges must begin or end in a tree vertex (no network vertex to network vertex edges).  
+Second,  the parents of a network vertex must, at least potentially, be contemporaneous. 
+[Insert path conditions here]  
  
- A less restrictive form of network (``reconstructable'') is defined by \cite{moretetal2004} with vertices (indegree, outdegree): 
- (0, $\ge 1$) the unique root, (1, 0) leaves, and (1, $\ge$1) ``internal'' vertices, and 
- networks adding ($\ge 2$, 1) vertices as ``network'' vertices.  For purposes of searching,
- outdegree of internal nodes is restricted to at most 2. Since edges may have zero length, networks may be output 
- with vertices of outdegree $> 2$.
+A less restrictive form of network (``reconstructable'') is defined by \cite{moretetal2004} with vertices (indegree, outdegree): 
+(0, $\ge 1$) the unique root, (1, 0) leaves, and (1, $\ge$1) ``internal'' vertices, and networks adding ($\ge 2$, 1) vertices as ``network'' vertices.  For purposes of searching, outdegree of internal nodes is restricted to at most 2. Since edges may have zero length, networks may be output with vertices of outdegree $> 2$.
  
- \section{Optimization of a single graph}\label{Optimization of a single graph}
- Optimization is a function that takes a graph ($G$), here a forest $F$, and data ($D$) as inputs and returns a numerical value.  
- This value can be referred to as its score ($S$)
+\section{Optimization of a single graph}\label{Optimization of a single graph}
+
+Optimization is a function that takes a graph ($G$), here a forest $F$, and data ($D$) as inputs and returns a numerical value.  
+This value can be referred to as its score ($S$)
  	\begin{eqnarray*}
  		f & : &  \{\mathcal{F}, D\} \rightarrow \mathbb{R}\\
 		g & : & \{  \mathbb{R},  \mathbb{R} \} \rightarrow \mathbb{R}
 	 \end{eqnarray*}
  
- \section{Forest Optimization/Labelling}\label{Forest Optimization/Labelling}
- The optimization is simply the optimization of each constituent component and their optimization values 
- combined through $f$ (summed for parisomy, if likelihood or such then add logs).  Both local (vertex  specific) and subtree costs (local cost of a vertex plus
- the subtree costs of its descendants) are stored.  The overall component cost is stored at the traversal root.
+\section{Forest Optimization/Labelling}\label{Forest Optimization/Labelling}
+
+The optimization is simply the optimization of each constituent component and their optimization values combined through $f$ (summed for parisomy, if likelihood or such then add logs). 
+Both local (vertex  specific) and subtree costs (local cost of a vertex plus the subtree costs of its descendants) are stored.
+The overall component cost is stored at the traversal root.
      \begin{eqnarray*}
      	\mathcal{F} & = & [C]\\
 	\mathcal{F}_{labelled} & = & \text{ map } labelNetwork \text{ } [C]\\
@@ -102,24 +154,21 @@ The basic PCG graph is a forest of directed acyclic graphs (DAG).  These DAGs ma
 	\mathcal{F}_{optValue} &=& \text{ fold } g \text{ } \left[ S_{\mathcal{F}} \right] 
     \end{eqnarray*}
  
- Define a 4-tuple $L = (a, b, c, d)$ with $a$ a bitvector of the length of leaves, $b$ a tree representation, $c$ a 
- character assignment (of appropriate character type), and $d$ a real (likely double). Each vertex will have a list of these
- tuples, $\left[L\right]$, one element for each network node resolution, created during a postorder traversal of a component.
+Define a 4-tuple $L = (a, b, c, d)$ with $a$ a bitvector of the length of leaves, $b$ a tree representation, $c$ a character assignment (of appropriate character type), and $d$ a real (likely double).
+Each vertex will have a list of these tuples, $\left[L\right]$, one element for each network node resolution, created during a postorder traversal of a component.
  
- Define a function $h$ that takes as input two labellings (state sets of a character) and character metadata, returning 
- a labelling and a real denoting the cost of creating the returned labelling.
+Define a function $h$ that takes as input two labelings (state sets of a character) and character metadata, returning a labelling and a real denoting the cost of creating the returned labelling.
  
      \begin{eqnarray*}
      	h : \left(l , l \right) \rightarrow \left( l ,  \mathbb{R} \right)
     \end{eqnarray*}
 
-Define a tree representation (e.g. Newick) and a function to ``join'' the tree representations of two descendant vertices
-into the representation of the subtree for that vertex.  For a newick representation this would be the string operation
-joining representations $A$ and $B$ into $\left( A, B \right)$.
+Define a tree representation (e.g. Newick) and a function to ``join'' the tree representations of two descendant vertices into the representation of the subtree for that vertex.
+For a newick representation this would be the string operation joining representations $A$ and $B$ into $\left( A, B \right)$.
 
- A full optimization of a forest results in a fully ``decorated'' graph (all vertex and edge information present).  This normally
- proceeds via a map of the optimization operations over the components of a forest.  The forest components are optimized in turn
- by a series of traversals over the vertex and edge sets.
+A full optimization of a forest results in a fully ``decorated'' graph (all vertex and edge information present).
+This normally proceeds via a map of the optimization operations over the components of a forest.
+The forest components are optimized in turn by a series of traversals over the vertex and edge sets.
  
 % However, multiple components may share vertices.  A vertex with indegree $\ge 2$ where there are $\ge 2$ edges
 % that are members of different components are referred to as multi-network edges and the vertices multi-network
@@ -209,14 +258,16 @@ joining representations $A$ and $B$ into $\left( A, B \right)$.
  %keep track of simple and reticulate forests for optimization purposes.
  
  \section{Forest Rearrangement} \label{Forest Rearrangement}
- There are two operations in forest rearrangements.  The first is the operation which splits network components into
- multiple components and the second joins separate components into network components.
+ There are two operations in forest rearrangements.
+ The first is the operation which splits network components into multiple components and the second joins separate components into network components.
  
  \subsection{Break} \label{Break}
- Each tree edge is deleted in turn.  There are two possible outcomes.  The resulting two components
- may or may not be connected (have vertices in common).  The neighborhood can be generated and evaluated
- for overall minimum or breaks evaluated seriatim.   In either case, the new forest elements 
- are diagnosed and compared to the current best.  If better cost, then kept, else discarded.  
+ Each tree edge is deleted in turn.
+ There are two possible outcomes.
+ The resulting two components may or may not be connected (have vertices in common).
+ The neighborhood can be generated and evaluated for overall minimum or breaks evaluated seriatim. 
+ In either case, the new forest elements are diagnosed and compared to the current best. 
+ If better cost, then kept, else discarded.  
  
 	\begin{algorithm}
 		\caption{forestBreak}
@@ -232,8 +283,8 @@ joining representations $A$ and $B$ into $\left( A, B \right)$.
 
  \subsection{Join} \label{Join}
  Pairs of components are joined by creating a new edge between each pair of edges in the input networks,
- subject to the time consistency constraint of network edges.  This basically proceeds as SPR/TBR joins
- with added complexity of network edge issues (ie. time consistency. 
+ subject to the time consistency constraint of network edges.
+ This basically proceeds as SPR/TBR joins with added complexity of network edge issues (ie. time consistency. 
 
 	\begin{algorithm}
 		\caption{forestJoin}
@@ -251,14 +302,12 @@ joining representations $A$ and $B$ into $\left( A, B \right)$.
  rearranged vis NNI, SPR, TBR etc.
  
  \subsection{Network edge removal} \label{Network edge removal}
- The optimization of networks identifies 
- unused edges, so these can be removed during optimization.  Standardly, networks with unused edges are attached an
- infinite cost.  Another option would be to output a new network with the offending edge deleted.  Remaining 
- network edges can be removed in turn.
+ The optimization of networks identifies unused edges, so these can be removed during optimization.  Standardly, networks with unused edges are attached an infinite cost.
+ Another option would be to output a new network with the offending edge deleted.
+ Remaining network edges can be removed in turn.
  
  \subsection{Network edge addition} \label{Network edge addition}
- Subject to edge time constraints and that each edge must have at least one tree vertex, new edges are added
- between each pair of edges (except for those where both are network edges).
+ Subject to edge time constraints and that each edge must have at least one tree vertex, new edges are added between each pair of edges (except for those where both are network edges).
  
  	\begin{algorithm}
 		\caption{networkEdgeAdd}
@@ -355,7 +404,9 @@ Various combinations of forest, network, tree rearrangements.
 \newpage 
 
 \section{Candidate Network Edges}\label{Candidate Network Edges}
- As mentioned in \ref{Labelling of a single graph}, a PCG Network is a ``model'' phylogenetic network. This places incident degree constraints (see Display Tree Constraint) on the edges as well as ordering constraints on network edges. In order to formalise this we can think of a PCG network as having an implicit preordering  on the vertices $(N, \leq )$. 
+ As mentioned in \ref{Labelling of a single graph}, a PCG Network is a ``model'' phylogenetic network.
+ This places incident degree constraints (see Display Tree Constraint) on the edges as well as ordering constraints on network edges.
+ In order to formalise this we can think of a PCG network as having an implicit preordering  on the vertices $(N, \leq )$. 
 
 
 \vspace{2mm}
@@ -420,7 +471,8 @@ In order for this to be the case we require the following conditions to be satis
  
 
 \item \textbf{Network Node Partner Condition: }
-Suppose that either $e_1=(\mathrm{src1}, \mathrm{tgt1})$ is a network edge i.e. that $\mathrm{tfgt1}$ is a network node or that $\mathrm{src2}$ is the parent of the network node (though not necessarily $\mathrm{tgt2}$, as ths is already covered by the \textbf{Network Incident Node Condition}). We shall denote the corresponding network parent to node $\mathrm{s}$ by $\mathrm{NetPar}(\mathrm{src})$. In order for the implied ordering to be compatible we must have that the following does not hold:
+Suppose that either $e_1=(\mathrm{src1}, \mathrm{tgt1})$ is a network edge i.e. that $\mathrm{tfgt1}$ is a network node or that $\mathrm{src2}$ is the parent of the network node (though not necessarily $\mathrm{tgt2}$, as the is already covered by the \textbf{Network Incident Node Condition}).
+We shall denote the corresponding network parent to node $\mathrm{s}$ by $\mathrm{NetPar}(\mathrm{src})$. In order for the implied ordering to be compatible we must have that the following does not hold:
  \[ (\mathrm{NetPar(src2)} < \mathrm{tgt1})\; \bigvee \; (\mathrm{NetPar(src1)} < \mathrm{tgt2}) \]
 
 \end{itemize}
@@ -492,7 +544,8 @@ Suppose that either $e_1=(\mathrm{src1}, \mathrm{tgt1})$ is a network edge i.e. 
 
 
 \subsection{Examples}
-In this section we provide some diagrams in order to explain the network edge conditions outlines in the previous section. Suppose we start with the following base network:
+In this section we provide some diagrams in order to explain the network edge conditions outlines in the previous section.
+Suppose we start with the following base network:
 
 \begin{figure}
   \begin{center}
@@ -505,7 +558,7 @@ In this section we provide some diagrams in order to explain the network edge co
 
 
 \begin{figure}
-\noindent The following diagram illustrates a siutation ruled out by the \textbf{Ancestral Edge Condition} wherein we try to add an edge between two edges which are ancestral to one another:
+\noindent The following diagram illustrates a situation ruled out by the \textbf{Ancestral Edge Condition} wherein we try to add an edge between two edges which are ancestral to one another:
 \vspace{2mm}
   \begin{center}
   \includegraphics[width=30mm, height=55mm]{e2AncestralEdgeNetwork.png}
@@ -518,7 +571,7 @@ In this section we provide some diagrams in order to explain the network edge co
 
 
 \begin{figure}
-\noindent Obversely we show the  \textbf{Ancestral Edge Condition} wherein the target edge has a node ancestral to the source edge.
+\noindent Obversely we show the \textbf{Ancestral Edge Condition} wherein the target edge has a node ancestral to the source edge.
 \vspace{2mm}
   \begin{center}
   \includegraphics[width=30mm, height=55mm]{e1HasE2SrcDescendantNodeNetwork.png}
@@ -528,7 +581,7 @@ In this section we provide some diagrams in order to explain the network edge co
 \end{figure}
 
 \begin{figure}
-\noindent This diagram illustrates an attempt to add a network edge where the target edge is incident to a network node i.e. a siutation rules out by the \textbf{Network Incident Node Condition}:
+\noindent This diagram illustrates an attempt to add a network edge where the target edge is incident to a network node i.e. a situation rules out by the \textbf{Network Incident Node Condition}:
 \vspace{2mm}
   \begin{center}
   \includegraphics[width=30mm, height=45mm]{hasE2IncidentNetworkNode.png}
@@ -551,7 +604,8 @@ In this section we provide some diagrams in order to explain the network edge co
 
 \begin{figure}
 \subsubsection{Network Incident Node Condition}
-It is worth explaining this condition further. Suppose we were to allow such an edge to be added as follows:
+It is worth explaining this condition further. 
+Suppose we were to allow such an edge to be added as follows:
 
   \begin{center}
   \includegraphics[width=40mm, height=65mm]{disallowed-display-network1.png}
@@ -569,7 +623,7 @@ This would then have the following display tree:
   \label{fig:disallowed-display-tree1.png}
   \end{center}
 
-Note in partiucular that we have \textit{added} a new leaf node in this diaplay tree, something we wish to rule out.
+Note in particular that we have \textit{added} a new leaf node in this display tree, something we wish to rule out.
 \end{figure}
 
 \newpage
