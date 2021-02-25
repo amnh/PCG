@@ -40,7 +40,7 @@ import           Data.Function                      ((&))
 import qualified Data.IntMap                        as IM
 import           Data.IntSet                        (IntSet)
 import           Data.Key
-import           Data.List.NonEmpty                 (NonEmpty ((:|)))
+import           Data.List.NonEmpty                 (NonEmpty((:|)))
 import qualified Data.List.NonEmpty                 as NE
 import           Data.MonoTraversable
 import           Data.UnionSet                      (UnionSet)

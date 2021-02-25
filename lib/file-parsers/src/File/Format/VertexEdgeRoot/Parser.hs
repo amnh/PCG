@@ -46,7 +46,7 @@ import           Data.Foldable
 import           Data.Functor           (($>))
 import           Data.Key
 import           Data.List              (intercalate, partition)
-import           Data.List.NonEmpty     (NonEmpty ((:|)))
+import           Data.List.NonEmpty     (NonEmpty((:|)))
 import qualified Data.List.NonEmpty     as NE
 import           Data.List.Utility      (duplicates)
 import           Data.Map               (Map)

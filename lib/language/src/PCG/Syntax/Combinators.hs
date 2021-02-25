@@ -69,9 +69,9 @@ import           Data.Foldable
 import           Data.Functor                     (void)
 import           Data.Kind                        (Type)
 import           Data.List                        (intercalate)
-import           Data.List.NonEmpty               (NonEmpty (..), some1)
+import           Data.List.NonEmpty               (NonEmpty(..), some1)
 import           Data.Proxy
-import           Data.String                      (IsString (..))
+import           Data.String                      (IsString(..))
 import           Data.Text.Short                  (ShortText)
 import           Data.Time.Clock                  (DiffTime)
 import           PCG.Syntax.Primitive             (PrimitiveValue, parsePrimitive, whitespace)

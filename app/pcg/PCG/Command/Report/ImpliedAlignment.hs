@@ -50,7 +50,7 @@ import           Data.Coerce
 import           Data.Foldable
 import           Data.Key
 --import           Data.List                           (intersperse)
-import           Data.List.NonEmpty                  (NonEmpty ((:|)))
+import           Data.List.NonEmpty                  (NonEmpty((:|)))
 import qualified Data.List.NonEmpty                  as NonEmpty
 import           Data.List.Utility
 import           Data.Map                            (Map)
@@ -60,7 +60,7 @@ import qualified Data.Map                            as Map
 import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.NodeLabel
-import           Data.Semigroup.Foldable             (Foldable1 (..))
+import           Data.Semigroup.Foldable             (Foldable1(..))
 import           Data.String
 import           Data.Text.Lazy                      (Text)
 import qualified Data.Text.Lazy                      as Text

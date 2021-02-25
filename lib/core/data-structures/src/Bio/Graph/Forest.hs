@@ -37,7 +37,7 @@ import Data.Binary
 import Data.Foldable
 import Data.GraphViz.Printing
 import Data.Key
-import Data.List.NonEmpty      (NonEmpty (..))
+import Data.List.NonEmpty      (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable

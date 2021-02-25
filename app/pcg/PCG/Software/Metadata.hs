@@ -7,7 +7,7 @@ module PCG.Software.Metadata
   , fullVersionInformation
   ) where
 
-import Data.List.NonEmpty                 (NonEmpty (..))
+import Data.List.NonEmpty                 (NonEmpty(..))
 import Data.Semigroup.Foldable
 import Data.String
 import Data.Version                       (showVersion)

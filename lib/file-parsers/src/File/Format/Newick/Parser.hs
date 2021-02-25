@@ -36,7 +36,7 @@ import           Data.Char                                (isSpace)
 import           Data.Foldable
 import           Data.Functor                             (void)
 import           Data.List                                (intercalate)
-import           Data.List.NonEmpty                       (NonEmpty (..), some1)
+import           Data.List.NonEmpty                       (NonEmpty(..), some1)
 import           Data.Map                                 hiding (filter, fold, foldl', fromList, notMember, null, toList)
 import           Data.Maybe                               (fromJust, fromMaybe, isJust)
 import           Data.Proxy

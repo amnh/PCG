@@ -31,7 +31,7 @@ import           Data.Bits
 import           Data.Foldable
 import           Data.Foldable.Custom               (sum')
 import           Data.Key
-import           Data.List.NonEmpty                 (NonEmpty ((:|)))
+import           Data.List.NonEmpty                 (NonEmpty((:|)))
 import qualified Data.List.NonEmpty                 as NE
 import           Data.List.Utility
 import           Data.Maybe                         (fromJust)

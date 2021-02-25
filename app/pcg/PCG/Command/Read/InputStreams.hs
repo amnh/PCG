@@ -33,7 +33,7 @@ module PCG.Command.Read.InputStreams
 import Control.Monad.Trans.Validation
 import Data.FileSource
 import Data.FileSource.IO
-import Data.List.NonEmpty                (NonEmpty (..))
+import Data.List.NonEmpty                (NonEmpty(..))
 import Data.Semigroup.Foldable
 import Data.Text.Lazy                    (Text)
 import PCG.Command.Read

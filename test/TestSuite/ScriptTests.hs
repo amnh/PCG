@@ -13,14 +13,14 @@ module TestSuite.ScriptTests
 import Bio.Graph
 import Bio.Graph.ReferenceDAG  (_dagCost, _graphData)
 import Control.Lens            (Getter, (^.))
-import Control.Monad.Except    (ExceptT (..), runExceptT)
+import Control.Monad.Except    (ExceptT(..), runExceptT)
 import Data.Bimap              (toMap)
 import Data.Binary             (decodeOrFail)
 import Data.ByteString.Lazy    (ByteString)
 import Data.Foldable
 import Data.Key
 import Data.List               (intercalate)
-import Data.List.NonEmpty      (NonEmpty (..))
+import Data.List.NonEmpty      (NonEmpty(..))
 import Data.List.Utility       (equalityOf)
 import Data.Semigroup.Foldable
 import Numeric.Extended.Real

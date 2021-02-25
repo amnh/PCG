@@ -40,17 +40,17 @@ import           Control.DeepSeq
 import           Control.Evaluation.Notification
 import           Control.Evaluation.Result
 import           Control.Monad                   ((<=<))
-import           Control.Monad.Fix               (MonadFix (..))
+import           Control.Monad.Fix               (MonadFix(..))
 import           Control.Monad.IO.Class
 import           Control.Monad.Logger
-import           Control.Monad.Reader            (MonadReader (..))
+import           Control.Monad.Reader            (MonadReader(..))
 import           Control.Monad.Trans.Class
 import           Control.Monad.Trans.RWS.CPS     (RWST, evalRWST, runRWST, rwsT)
 import qualified Control.Monad.Trans.RWS.CPS     as RWS
-import           Control.Monad.Zip               (MonadZip (..))
-import           Data.Functor.Alt                (Alt (..))
-import           Data.Functor.Apply              (Apply (..))
-import           Data.Functor.Bind               (Bind (..))
+import           Control.Monad.Zip               (MonadZip(..))
+import           Data.Functor.Alt                (Alt(..))
+import           Data.Functor.Apply              (Apply(..))
+import           Data.Functor.Bind               (Bind(..))
 import           Data.Functor.Identity
 import           Data.Sequence                   (Seq, fromList)
 import           Data.String

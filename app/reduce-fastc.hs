@@ -13,7 +13,7 @@ module Main where
 
 import Data.Foldable
 import Data.Key
-import Data.List.NonEmpty           (NonEmpty (..))
+import Data.List.NonEmpty           (NonEmpty(..))
 import Data.Map                     (Map, findMin, singleton)
 import Data.Scientific
 import Data.Semigroup.Foldable

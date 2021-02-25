@@ -24,7 +24,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.List                                              (intercalate)
-import           Data.List.NonEmpty                                     (NonEmpty (..))
+import           Data.List.NonEmpty                                     (NonEmpty(..))
 import           Data.MonoTraversable
 import           Data.TCM.Dense
 import           Data.TCM.Memoized

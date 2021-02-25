@@ -36,7 +36,7 @@ import Data.Range
 import GHC.Generics
 import Numeric.Extended
 import Text.XML
-import TextShow                          (TextShow (showb), unlinesB)
+import TextShow                          (TextShow(showb), unlinesB)
 
 
 -- |

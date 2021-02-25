@@ -28,14 +28,14 @@ import Control.Arrow            ((***))
 import Control.DeepSeq
 import Control.Evaluation
 import Control.Monad            (void)
-import Control.Monad.Logger     (Logger (..))
-import Control.Monad.Trans      (MonadTrans (..))
-import Control.Monad.Zip        (MonadZip (..))
+import Control.Monad.Logger     (Logger(..))
+import Control.Monad.Trans      (MonadTrans(..))
+import Control.Monad.Zip        (MonadZip(..))
 import Data.Bifunctor           (bimap)
 import Data.Foldable
-import Data.Functor.Alt         (Alt (..))
-import Data.Functor.Apply       (Apply (..))
-import Data.Functor.Bind        (Bind (..))
+import Data.Functor.Alt         (Alt(..))
+import Data.Functor.Apply       (Apply(..))
+import Data.Functor.Bind        (Bind(..))
 import Data.Functor.Compose
 import Data.Functor.Identity
 import Data.Semigroup

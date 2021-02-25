@@ -36,14 +36,14 @@ import           Data.Bits
 import           Data.Foldable
 import           Data.Key
 import           Data.List                               (delete)
-import           Data.List.NonEmpty                      (NonEmpty (..))
+import           Data.List.NonEmpty                      (NonEmpty(..))
 import qualified Data.List.NonEmpty                      as NE
 import           Data.Map                                (Map)
 import           Data.MetricRepresentation
 import           Data.MonoTraversable
 import           Data.String                             (fromString)
 import           Prelude                                 hiding (lookup)
-import           Test.QuickCheck                         (Arbitrary (..))
+import           Test.QuickCheck                         (Arbitrary(..))
 import           Test.SmallCheck.Series                  hiding (NonEmpty)
 
 

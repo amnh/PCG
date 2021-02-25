@@ -32,7 +32,7 @@ import           Control.Arrow                     ((&&&))
 import           Control.Monad.Fail
 import           Control.Monad.State
 import           Data.Foldable
-import           Data.GraphViz.Attributes.Complete (Attribute (Label), Label (..))
+import           Data.GraphViz.Attributes.Complete (Attribute(Label), Label(..))
 import           Data.GraphViz.Parsing
 import           Data.GraphViz.Types
 import           Data.GraphViz.Types.Canonical

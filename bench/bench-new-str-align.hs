@@ -14,7 +14,7 @@ import           Bio.Metadata.Dynamic
 import           Control.DeepSeq
 import           Criterion.Main                                hiding (defaultConfig)
 import qualified Criterion.Main                                as Crit
-import           Criterion.Types                               (Config (..))
+import           Criterion.Types                               (Config(..))
 import           Data.Alphabet
 import           Data.Bifunctor
 import           Data.Bits
@@ -35,8 +35,8 @@ import           Data.TCM.Dense
 import           Data.Text.Short                               (ShortText, toString)
 import           Data.Void
 import           Data.Word
-import           File.Format.Fasta                             hiding (FastaSequenceType (..))
-import qualified File.Format.Fasta                             as Fasta (FastaSequenceType (..))
+import           File.Format.Fasta                             hiding (FastaSequenceType(..))
+import qualified File.Format.Fasta                             as Fasta (FastaSequenceType(..))
 import           Prelude                                       hiding (lookup, zip, zipWith)
 import           Text.Megaparsec                               (ParseErrorBundle, errorBundlePretty, parse)
 import           Weigh

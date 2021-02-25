@@ -21,7 +21,7 @@ module Bio.Graph.ReferenceDAG.Network where
 import           Bio.Graph.Node.Context
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.ReferenceDAG.Traversal
-import           Control.Applicative              as Alt (Alternative (empty, (<|>)))
+import           Control.Applicative              as Alt (Alternative(empty, (<|>)))
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad                    (guard)

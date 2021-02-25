@@ -32,7 +32,7 @@ import           Data.IntMap                      (insertWith)
 import qualified Data.IntSet                      as IS
 import           Data.Key                         hiding (zipWith)
 import           Data.List                        (intercalate)
-import           Data.List.NonEmpty               (NonEmpty ((:|)))
+import           Data.List.NonEmpty               (NonEmpty((:|)))
 import qualified Data.List.NonEmpty               as NE
 import           Data.List.Utility                (chunksOf)
 import           Data.Maybe

@@ -28,12 +28,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenSwap
   , unboxedUkkonenSwappingDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal        (DOCharConstraint,
-                                                                                         Direction (..),
-                                                                                         OverlapFunction,
-                                                                                         handleMissingCharacter,
-                                                                                         measureAndUngapCharacters,
-                                                                                         measureCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal        (DOCharConstraint, Direction(..), OverlapFunction, handleMissingCharacter, measureAndUngapCharacters, measureCharacters)
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping (unboxedSwappingDO)
 import           Bio.Character.Encodable
 import           Control.Monad.ST
@@ -41,8 +36,7 @@ import           Data.Bits
 import           Data.DList                                                             (snoc)
 import           Data.Foldable
 import qualified Data.List.NonEmpty                                                     as NE
-import           Data.Matrix.Unboxed                                                    (Matrix, unsafeFreeze,
-                                                                                         unsafeIndex)
+import           Data.Matrix.Unboxed                                                    (Matrix, unsafeFreeze, unsafeIndex)
 import qualified Data.Matrix.Unboxed.Mutable                                            as M
 import           Data.Maybe                                                             (fromMaybe)
 import           Data.MonoTraversable

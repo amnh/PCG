@@ -58,7 +58,7 @@ import           Control.Parallel.Strategies
 import           Data.Bifunctor
 import           Data.Binary
 import           Data.Foldable
-import           Data.List.NonEmpty           (NonEmpty (..))
+import           Data.List.NonEmpty           (NonEmpty(..))
 import           Data.MonoTraversable         (Element)
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
@@ -67,7 +67,7 @@ import           Data.Vector                  (Vector)
 import           Data.Vector.Instances        ()
 import           GHC.Generics
 import           Text.XML
-import           TextShow                     (TextShow (showb, showt), fromText)
+import           TextShow                     (TextShow(showb, showt), fromText)
 import qualified VectorBuilder.Vector         as VB
 
 

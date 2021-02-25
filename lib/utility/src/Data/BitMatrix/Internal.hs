@@ -33,7 +33,7 @@ import Data.MonoTraversable
 import Data.Ord
 import GHC.Generics
 import Test.QuickCheck                       hiding ((.&.))
-import TextShow                              (TextShow (showb), singleton, unlinesB, unwordsB)
+import TextShow                              (TextShow(showb), singleton, unlinesB, unwordsB)
 
 
 -- |

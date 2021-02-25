@@ -49,7 +49,7 @@ import           Data.Monoid
 import           Data.NodeLabel
 import qualified Data.Set                         as Set
 import           Data.ShortText.Custom            (intToShortText)
-import           Data.String                      (IsString (fromString))
+import           Data.String                      (IsString(fromString))
 import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc                hiding (Identifier)

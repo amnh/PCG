@@ -74,7 +74,7 @@ import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances            ()
 import           Text.XML
-import           TextShow                                       (TextShow (showb))
+import           TextShow                                       (TextShow(showb))
 
 
 -- |

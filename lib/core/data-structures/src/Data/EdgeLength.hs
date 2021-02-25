@@ -29,9 +29,9 @@ import Control.Applicative (liftA2)
 import Control.DeepSeq
 import Data.Binary         (Binary)
 import Data.Default
-import Data.Monoid         (Sum (..))
+import Data.Monoid         (Sum(..))
 import GHC.Generics
-import TextShow            (TextShow (showb))
+import TextShow            (TextShow(showb))
 
 
 -- |

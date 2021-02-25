@@ -23,9 +23,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping
   ( unboxedSwappingDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (DOCharConstraint, Direction (..),
-                                                                                  OverlapFunction,
-                                                                                  measureAndUngapCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (DOCharConstraint, Direction(..), OverlapFunction, measureAndUngapCharacters)
 import           Bio.Character.Encodable
 import           Control.Monad.ST
 import           Data.DList                                                      (snoc)

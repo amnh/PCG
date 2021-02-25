@@ -39,7 +39,7 @@ import Data.Hashable
 import Data.MonoTraversable
 import GHC.Generics
 import Text.XML
-import TextShow                               (Builder, TextShow (showb), toString, unlinesB, unwordsB)
+import TextShow                               (Builder, TextShow(showb), toString, unlinesB, unwordsB)
 
 
 -- |

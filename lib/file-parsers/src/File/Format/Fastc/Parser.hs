@@ -37,7 +37,7 @@ import           Control.DeepSeq                    (NFData, force)
 import           Control.Monad.Combinators.NonEmpty
 import           Data.Char                          (isSpace)
 import           Data.Data
-import           Data.List.NonEmpty                 (NonEmpty (..))
+import           Data.List.NonEmpty                 (NonEmpty(..))
 import           Data.Semigroup.Foldable
 import           Data.String
 import qualified Data.Text                          as T

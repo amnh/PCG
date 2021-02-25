@@ -18,7 +18,7 @@ import           Data.Maybe
 import           Data.Pair.Strict
 import           Data.Set                   (Set)
 import qualified Data.Set                   as S
-import           Data.Tree                  (Forest, Tree (..), drawForest, unfoldForestM)
+import           Data.Tree                  (Forest, Tree(..), drawForest, unfoldForestM)
 
 
 type Size = Int

@@ -56,7 +56,7 @@ import Data.String                                    (fromString)
 import GHC.Generics
 import Test.QuickCheck
 import Test.QuickCheck.Arbitrary.Instances            ()
-import TextShow                                       (TextShow (showb), toString)
+import TextShow                                       (TextShow(showb), toString)
 
 
 -- |

@@ -51,7 +51,7 @@ import Control.Parallel.Custom
 import Control.Parallel.Strategies
 import Data.Foldable
 import Data.Key
-import Data.Monoid                         (Sum (..))
+import Data.Monoid                         (Sum(..))
 import Data.Vector.Instances               ()
 import Prelude                             hiding (zip)
 

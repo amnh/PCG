@@ -56,8 +56,8 @@ import Data.Binary
 import Data.EdgeSet
 import Data.Foldable
 import Data.Functor.Apply
-import Data.List.NonEmpty          (NonEmpty (..))
-import Data.List.Utility           (HasHead (..))
+import Data.List.NonEmpty          (NonEmpty(..))
+import Data.List.Utility           (HasHead(..))
 import Data.Ord                    (comparing)
 import Data.Text.Lazy              (Text, pack)
 import Data.TopologyRepresentation
@@ -65,7 +65,7 @@ import Data.UnionSet
 import GHC.Generics
 import Text.Newick.Class
 import Text.XML
-import TextShow                    (TextShow (showb, showt), toString, unlinesB)
+import TextShow                    (TextShow(showb, showt), toString, unlinesB)
 
 
 -- |

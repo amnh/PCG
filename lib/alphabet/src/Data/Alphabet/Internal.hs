@@ -49,7 +49,7 @@ import           Data.Data
 import           Data.Foldable
 import           Data.Key
 import           Data.List                           (elemIndex, intercalate, sort)
-import           Data.List.NonEmpty                  (NonEmpty (..), unzip)
+import           Data.List.NonEmpty                  (NonEmpty(..), unzip)
 import qualified Data.List.NonEmpty                  as NE
 import qualified Data.Map                            as Map
 import           Data.Matrix.NotStupid               (Matrix, matrix)
@@ -70,7 +70,7 @@ import           Prelude                             hiding (lookup, unzip, zip)
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances ()
 import           Text.XML
-import           TextShow                            (TextShow (showb))
+import           TextShow                            (TextShow(showb))
 
 
 -- |

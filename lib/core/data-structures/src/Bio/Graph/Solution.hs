@@ -51,7 +51,7 @@ import qualified Data.Text.Lazy            as TL
 import           GHC.Generics
 import           Text.Newick.Class
 import           Text.XML
-import           TextShow                  (TextShow (showb, showtl), fromLazyText)
+import           TextShow                  (TextShow(showb, showtl), fromLazyText)
 import           Type.Reflection           (Typeable)
 
 
