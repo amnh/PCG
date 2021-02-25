@@ -29,6 +29,8 @@ module Bio.Graph
   , GlobalSettings
   , GraphState
   , HasColumnMetadata(..)
+  , HasPhylogeneticComponents(..)
+  , HasPhylogeneticForests(..)
   , HasPhylogeneticForest(..)
   , PhylogeneticFreeDAG(..)
   , PhylogeneticDAG(..)

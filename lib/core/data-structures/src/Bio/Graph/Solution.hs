@@ -15,6 +15,7 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MonoLocalBinds             #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
@@ -25,6 +26,8 @@
 module Bio.Graph.Solution
   ( PhylogeneticSolution(..)
   , PhylogeneticForest(..)
+  , HasPhylogeneticForests(..)
+  , HasPhylogeneticComponents(..)
   , phylogeneticForests
   , extractPhylogeneticForest
   , extractSolution
@@ -83,8 +86,23 @@ extractSolution :: PhylogeneticSolution a -> a
 extractSolution = NE.head . getPhylogeneticForest . NE.head . getPhylogeneticSolution
 
 
+-- |
+-- A 'Lens' for the 'phylogeneticForests' field.
+{-# SPECIALISE _phylogeneticForests :: Lens (PhylogeneticSolution a) (PhylogeneticSolution a') (NonEmpty (PhylogeneticForest a)) (NonEmpty (PhylogeneticForest a')) #-}
+class HasPhylogeneticForests s t a b | s -> a, t -> b,  s b -> t, t a -> s where
+
+    _phylogeneticForests :: Lens s t a b
+
+
 instance Functor PhylogeneticSolution where
+
   fmap f = PhylogeneticSolution . fmap (fmap f) . getPhylogeneticSolution
+
+
+instance HasPhylogeneticForests (PhylogeneticSolution a) (PhylogeneticSolution a') (NonEmpty (PhylogeneticForest a)) (NonEmpty (PhylogeneticForest a')) where
+
+    {-# INLINE _phylogeneticForests #-}
+    _phylogeneticForests = lens getPhylogeneticSolution (\s fs -> s {getPhylogeneticSolution = fs})
 
 
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticSolution a) b where
