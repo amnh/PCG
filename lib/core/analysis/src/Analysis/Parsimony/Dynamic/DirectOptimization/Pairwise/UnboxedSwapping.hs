@@ -150,7 +150,7 @@ directOptimization overlapλ matrixFunction char1 char2
               else let (cost, dirMatrix) = matrixFunction overlapλ longerChar shorterChar
                    in  (cost, traceback overlapλ dirMatrix longerChar shorterChar)
           transformation    = if swapped then omap swapContext else id
-          regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+          regappedAlignment = insertGaps gapsLesser gapsLonger ungappedAlignment
           alignmentContext  = transformation regappedAlignment
       in (alignmentCost, alignmentContext)
 

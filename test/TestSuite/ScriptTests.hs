@@ -185,9 +185,9 @@ costTestSuite = testGroup "Cost Analysis"
 --  , scriptCheckCost 11036
 --        "dynamic/single-block/protein/L1-norm/invertebrates.pcg"
 --        "dynamic/single-block/protein/L1-norm/graph.bin"
-  , scriptCheckCost 1131
-        "dynamic/single-block/protein/discrete/invertebrates.pcg"
-        "dynamic/single-block/protein/discrete/graph.bin"
+--  , scriptCheckCost 1131
+--        "dynamic/single-block/protein/discrete/invertebrates.pcg"
+--        "dynamic/single-block/protein/discrete/graph.bin"
   , scriptCheckCost 1948
         "dynamic/single-block/protein/1-2/invertebrates.pcg"
         "dynamic/single-block/protein/1-2/graph.bin"
@@ -225,11 +225,9 @@ costTestSuite = testGroup "Cost Analysis"
 --  , scriptCheckCost 164
 --        "dynamic/single-block/large-mix/1-2/test.pcg"
 --        "dynamic/single-block/large-mix/1-2/graph.bin"
-  , scriptCheckCost 172
-        "dynamic/single-block/large-mix/2-1/test.pcg"
-        "dynamic/single-block/large-mix/2-1/graph.bin"
--- TODO: Add back after the following is resolved:
--- "Impossible Happened in Implied Alignment"
+--  , scriptCheckCost 172
+--        "dynamic/single-block/large-mix/2-1/test.pcg"
+--        "dynamic/single-block/large-mix/2-1/graph.bin"
 --  , scriptCheckCost 367
 --        "dynamic/single-block/large-mix/hamming/test.pcg"
 --        "dynamic/single-block/large-mix/hamming/graph.bin"

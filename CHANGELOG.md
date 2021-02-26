@@ -11,6 +11,7 @@ Releases are available [on GitHub][2].
 * Updated integration test suite
 * Added GitHub Actions workflows for CI
 * Corrected build error in benchmarking suite
+* Corrected defect in string alignment commutativity
 * Corrected defect in unboxed Ukkonen string alignment
 
 

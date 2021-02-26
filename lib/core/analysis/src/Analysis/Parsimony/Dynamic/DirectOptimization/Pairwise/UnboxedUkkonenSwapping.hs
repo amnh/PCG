@@ -368,7 +368,7 @@ directOptimization overlapλ matrixFunction char1 char2 =
          Nothing -> Nothing
          Just (alignmentCost, ungappedAlignment) ->
             let transformation    = if swapped then omap swapContext else id
-                regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+                regappedAlignment = insertGaps gapsLesser gapsLonger ungappedAlignment
                 alignmentContext  = transformation regappedAlignment
             in  Just $ handleMissingCharacter char1 char2 (alignmentCost, alignmentContext)
 
