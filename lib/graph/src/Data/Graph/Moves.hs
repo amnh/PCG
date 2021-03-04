@@ -1,15 +1,15 @@
-{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE BlockArguments   #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Data.Graph.Moves where
 
 
-import Data.Graph.Type
-import Data.Graph.Hash
-import Control.Lens
-import Data.Graph.NodeContext
-import qualified Data.Vector as V
-import qualified Data.Vector.Mutable as MV
+import           Control.Lens
+import           Data.Graph.Hash
+import           Data.Graph.NodeContext
+import           Data.Graph.Type
+import qualified Data.Vector            as V
+import qualified Data.Vector.Mutable    as MV
 
 
 interchangeSubGraphs

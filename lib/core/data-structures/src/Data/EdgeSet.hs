@@ -27,7 +27,7 @@ import           Control.DeepSeq
 import           Data.Binary
 import           Data.Foldable
 import           Data.IntSet          (IntSet)
-import           Data.MonoTraversable (MonoFoldable (..))
+import           Data.MonoTraversable (MonoFoldable(..))
 import           Data.Set             (Set)
 import qualified Data.Set             as Set
 import           GHC.Generics         (Generic)

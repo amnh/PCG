@@ -14,7 +14,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -31,7 +30,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal
   , OverlapFunction
   -- * Direct Optimization primitive construction functions
   , directOptimization
-  , filterGaps
   , handleMissingCharacter
   , handleMissingCharacterThreeway
   , measureCharacters
@@ -47,7 +45,6 @@ import           Data.DList                  (snoc)
 import           Data.Foldable
 import           Data.IntMap                 (IntMap)
 import           Data.Key
-import           Data.List.NonEmpty          (NonEmpty (..))
 import qualified Data.List.NonEmpty          as NE
 import           Data.Matrix.NotStupid       (Matrix)
 import           Data.Maybe                  (fromMaybe)
@@ -124,10 +121,10 @@ type MatrixFunction m s = OverlapFunction (Subcomponent (Element s)) -> s -> s -
 type OverlapFunction e = e -> e -> (e, Word)
 
 
-data instance U.MVector s Direction = MV_Direction (P.MVector s Word8)
+newtype instance U.MVector s Direction = MV_Direction (P.MVector s Word8)
 
 
-data instance U.Vector   Direction  = V_Direction  (P.Vector    Word8)
+newtype instance U.Vector   Direction  = V_Direction  (P.Vector    Word8)
 
 
 instance U.Unbox Direction
@@ -236,24 +233,9 @@ directOptimization overlapλ char1 char2 matrixFunction =
           else let traversalMatrix = matrixFunction overlapλ longerChar shorterChar
                in  traceback overlapλ traversalMatrix longerChar shorterChar
         transformation    = if swapped then omap swapContext else id
-        regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+        regappedAlignment = insertGaps gapsLesser gapsLonger ungappedAlignment
         alignmentContext  = transformation regappedAlignment
     in  handleMissingCharacter char1 char2 (alignmentCost, alignmentContext)
-    
-
--- |
--- Strips the gap elements from the supplied character.
---
--- If the character contains /only/ gaps, a missing character is returned.
-{-# INLINE filterGaps #-}
-{-# SPECIALISE filterGaps ::  DynamicCharacter -> DynamicCharacter #-}
-filterGaps :: EncodableDynamicCharacter s => s -> s
-filterGaps char =
-    case filter (/= gap) $ otoList char of
-      []   -> toMissing char
-      x:xs -> constructDynamic $ x:|xs
-  where
-    gap = gapOfStream char
 
 
 -- |
@@ -321,7 +303,7 @@ handleMissingCharacterThreeway f a b c v =
 --
 -- Handles equality of inputs by /not/ swapping.
 {-# INLINE measureCharacters #-}
-{-# SPECIALISE measureCharacters :: DynamicCharacter -> DynamicCharacter -> (Bool, DynamicCharacter, DynamicCharacter) #-}
+{-# SPECIALISE measureCharacters :: DynamicCharacter -> DynamicCharacter -> (Ordering, DynamicCharacter, DynamicCharacter) #-}
 measureCharacters
   :: ( EncodableDynamicCharacterElement (Element s)
      , MonoFoldable s
@@ -330,10 +312,10 @@ measureCharacters
      )
   => s
   -> s
-  -> (Bool, s, s)
+  -> (Ordering, s, s)
 measureCharacters lhs rhs
-  | lhsOrdering == GT = ( True, rhs, lhs)
-  | otherwise         = (False, lhs, rhs)
+  | lhsOrdering == GT = (lhsOrdering, rhs, lhs)
+  | otherwise         = (lhsOrdering, lhs, rhs)
   where
     lhsOrdering =
         -- First, compare inputs by length.
@@ -390,15 +372,13 @@ measureAndUngapCharacters char1 char2
   | swapInputs = (True , gapsChar2, gapsChar1, ungappedChar2, ungappedChar1)
   | otherwise  = (False, gapsChar1, gapsChar2, ungappedChar1, ungappedChar2)
   where
+    swapInputs = measure == GT
     (gapsChar1, ungappedChar1) = deleteGaps char1
     (gapsChar2, ungappedChar2) = deleteGaps char2
-    swapInputs =
-      let needToSwap (x,_,_) = x
-          ungappedLen1 = olength ungappedChar1
-          ungappedLen2 = olength ungappedChar2
-      in  case ungappedLen1 `compare` ungappedLen2 of
-            EQ | ungappedLen1 == 0 -> needToSwap $ measureCharacters char1 char2
-            _                      -> needToSwap $ measureCharacters ungappedChar1 ungappedChar2
+    (measure, _, _) =
+        case measureCharacters ungappedChar1 ungappedChar2 of
+          (EQ,_,_) -> measureCharacters char1 char2
+          x        -> x
 
 
 -- |

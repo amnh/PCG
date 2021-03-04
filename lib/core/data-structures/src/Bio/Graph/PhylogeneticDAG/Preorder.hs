@@ -46,7 +46,7 @@ import           Data.HashMap.Lazy                  (HashMap)
 import qualified Data.IntMap                        as IM
 import qualified Data.IntSet                        as IS
 import           Data.Key
-import           Data.List.NonEmpty                 (NonEmpty ((:|)))
+import           Data.List.NonEmpty                 (NonEmpty((:|)))
 import qualified Data.List.NonEmpty                 as NE
 import qualified Data.Matrix.NotStupid              as MAT
 import           Data.Maybe
@@ -581,9 +581,9 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                                   $ (nodeDatumContext .!>. i) .!>. (p,i)
 
                                 currentDecoration =
-                                    (!k)
+                                    (! k)
                                   . (^. dynamicBin)
-                                  . (!j)
+                                  . (! j)
                                   . (^. blockSequence)
                                   . characterSequence
                                   $ currentContext
@@ -601,7 +601,7 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                                     [c] -> (c,i) `elem` excludedEdges || (i,c) `elem` excludedEdges
                                     _   -> False
                                 currentContext     = selectApplicableResolutions topology $ (nodeDatumContext .!>. i) .!>. (p,i)
-                                currentDecoration  = (!k) . (^. dynamicBin) . (!j) . (^. blockSequence) . characterSequence $ currentContext
+                                currentDecoration  = (! k) . (^. dynamicBin) . (! j) . (^. blockSequence) . characterSequence $ currentContext
                                 parentalDecoration = getDynCharDecoration . NE.head . resolutions $ memo ! p
                             in  if   isDeadEndNode
                                 then parentalDecoration
@@ -621,7 +621,7 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                         -- Stupid monomorphisms prevent elegant code reuse
 
                         getDynCharDecoration =
-                          (!k) . (^. dynamicBin) . (!j) . (^. blockSequence) . characterSequence
+                          (! k) . (^. dynamicBin) . (! j) . (^. blockSequence) . characterSequence
 
 (.!>.) :: (Lookup f, Show (Key f)) => f a -> Key f -> a
 (.!>.) s k = fromMaybe (error $ "Could not index: " <> show k) $ k `lookup` s

@@ -24,10 +24,11 @@ benchTime = fold
 
 
 parserBenchmark
-  :: ( NFData s
-     , Stream s
+  :: ( Monoid (Tokens s)
+     , NFData s
      , Token s ~ Char
-     , Monoid (Tokens s)
+     , TraversableStream s
+     , VisualStream s
      )
   => (String, FilePath -> IO s)
   -> FilePath

@@ -50,7 +50,7 @@ import Numeric.Extended.Internal
 import Numeric.Natural
 import Prelude                   hiding (reverse, splitAt)
 import Test.QuickCheck
-import TextShow                  (TextShow (showb))
+import TextShow                  (TextShow(showb))
 
 
 -- |

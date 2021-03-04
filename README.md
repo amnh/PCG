@@ -3,6 +3,7 @@
 Haskell program and libraries for general phylogenetic graph search
 
 [![Build Status][   travis-img]][   travis-ref]
+[![CI    Status][  actions-img]][  actions-ref]
 [![Maintained  ][ maintain-img]][ maintain-ref]
 
 [![Release     ][  release-img]][latest-release]
@@ -56,6 +57,8 @@ Haskell program and libraries for general phylogenetic graph search
 [latest-release]: https://github.com/amnh/PCG/releases/latest
 [install]: https://github.com/amnh/PCG/blob/master/doc/tutorials/Installation.md
 
+[  actions-img]: https://github.com/amnh/PCG/workflows/build/badge.svg?branch=master
+[  actions-ref]: https://github.com/amnh/PCG/actions
 [   author-img]: https://img.shields.io/badge/author-Ward%20Wheeler-blue.svg?color=134EA2
 [   author-ref]: https://www.amnh.org/research/staff-directory/ward-wheeler
 [  license-img]: https://img.shields.io/badge/license-BSD3-blue.svg?color=134EA2
@@ -69,5 +72,5 @@ Haskell program and libraries for general phylogenetic graph search
 [  release-img]: https://img.shields.io/github/release-pre/amnh/PCG.svg?style=popout&color=orange
 [ tag-date-img]: https://img.shields.io/github/release-date-pre/amnh/PCG.svg?style=popout&color=orange
 
-[ maintain-img]: https://img.shields.io/maintenance/no/2020.svg?style=popout
+[ maintain-img]: https://img.shields.io/maintenance/no/2021.svg?style=popout
 [ maintain-ref]: https://github.com/amnh/PCG/graphs/contributors

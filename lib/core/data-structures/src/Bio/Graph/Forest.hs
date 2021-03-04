@@ -20,6 +20,7 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE OverloadedStrings          #-}
@@ -28,6 +29,7 @@
 
 module Bio.Graph.Forest
   ( PhylogeneticForest(..)
+  , HasPhylogeneticComponents(..)
   ) where
 
 import Bio.Graph.LeafSet
@@ -37,7 +39,7 @@ import Data.Binary
 import Data.Foldable
 import Data.GraphViz.Printing
 import Data.Key
-import Data.List.NonEmpty      (NonEmpty (..))
+import Data.List.NonEmpty      (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
@@ -58,6 +60,14 @@ newtype PhylogeneticForest a
 
 
 type instance Key PhylogeneticForest = Int
+
+
+-- |
+-- A 'Lens' for the 'phylogeneticComponents' field.
+{-# SPECIALISE _phylogeneticComponents :: Lens (PhylogeneticForest a) (PhylogeneticForest a') (NonEmpty a) (NonEmpty a') #-}
+class HasPhylogeneticComponents s t a b | s -> a, t -> b,  s b -> t, t a -> s where
+
+    _phylogeneticComponents :: Lens s t a b
 
 
 instance Adjustable PhylogeneticForest where
@@ -95,6 +105,12 @@ instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticForest a) b wh
     leafSet = Lens.to getter
       where
         getter = foldMap1 (^. leafSet) . unwrap
+
+
+instance HasPhylogeneticComponents  (PhylogeneticForest a) (PhylogeneticForest a') (NonEmpty a) (NonEmpty a') where
+
+    {-# INLINE _phylogeneticComponents #-}
+    _phylogeneticComponents = lens getPhylogeneticForest (\f cs -> f {getPhylogeneticForest = cs})
 
 
 instance Indexable PhylogeneticForest where

@@ -101,10 +101,10 @@ networkGraphParameters = G.defaultParams {
         (_, BadNode       ) -> colorAttribute  red   <> point
     ,
     G.fmtEdge = \case
-        (_, _, Edge       )  -> colorAttribute black
-        (_, _, KeptEdge   )  -> colorAttribute green
-        (_, _, DeletedEdge)  -> noArrow <> dotted <> colorAttribute blue
-        (_, _, NetEdge    )  -> colorAttribute black <> dotted <> noArrow
+        (_, _, Edge       ) -> colorAttribute black
+        (_, _, KeptEdge   ) -> colorAttribute green
+        (_, _, DeletedEdge) -> noArrow <> dotted <> colorAttribute blue
+        (_, _, NetEdge    ) -> colorAttribute black <> dotted <> noArrow
         }
   where
     colorAttribute color = [ G.Color $ G.toColorList [color] ]

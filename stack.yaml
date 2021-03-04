@@ -1,6 +1,6 @@
 allow-newer: true
 
-compiler: ghc-8.10.1
+compiler: ghc-8.10.3
 
 compiler-check: match-exact
 
@@ -8,10 +8,14 @@ dump-logs: all
 
 extra-deps:
   - bench-show-0.3.1
+  - binary-instances-1.0.0.1
   - clustering-0.4.1
   - compact-0.2.0.0
+  - lens-4.19.1
   - pretty-tree-0.1.0.0
-
+  - github: recursion-ninja/bv-little
+    commit: fd45919da9e4066f92ef51cfb22b5006af931bf8
+  
 ghc-options:
   "$everything": -j -fdiagnostics-color=always
   "$locals": -fhide-source-paths
@@ -23,4 +27,4 @@ packages:
 
 require-stack-version: ">=2.3.1"
 
-resolver: lts-16.3
+resolver: lts-16.26

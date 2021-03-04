@@ -31,14 +31,14 @@ module Data.Normalization.Character.Class
 import           Control.Arrow                         ((***))
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty                    (NonEmpty (..))
+import           Data.List.NonEmpty                    (NonEmpty(..))
 import qualified Data.List.NonEmpty                    as NE
 import           Data.Map                              (Map)
 import qualified Data.Map                              as M
 import           Data.Maybe
 import           Data.Normalization.Character.Internal
 import           Data.Semigroup.Foldable               ()
-import           Data.String                           (IsString (fromString))
+import           Data.String                           (IsString(fromString))
 import           Data.Text.Short                       (ShortText)
 import           Data.Vector                           (Vector)
 import qualified Data.Vector.NonEmpty                  as VNE
@@ -72,7 +72,7 @@ class HasNormalizedCharacters a where
 
 instance HasNormalizedCharacters (DotGraph GraphID) where
 
-    getNormalizedCharacters = const mempty
+    getNormalizedCharacters = mempty
 
 
 instance HasNormalizedCharacters FastaParseResult where
@@ -100,7 +100,7 @@ instance HasNormalizedCharacters TaxonSequenceMap where
 
 instance HasNormalizedCharacters (NonEmpty NewickForest) where
 
-    getNormalizedCharacters = const mempty
+    getNormalizedCharacters = mempty
 
 
 instance HasNormalizedCharacters Nexus where
@@ -159,12 +159,12 @@ instance HasNormalizedCharacters TntResult where
 
 instance HasNormalizedCharacters TCM where
 
-    getNormalizedCharacters = const mempty
+    getNormalizedCharacters = mempty
 
 
 instance HasNormalizedCharacters VertexEdgeRoot where
 
-    getNormalizedCharacters = const mempty
+    getNormalizedCharacters = mempty
 {-
     getNormalizedCharacters (VER _ e r) =
         mergeMaps $ f . buildTree <$> toList r

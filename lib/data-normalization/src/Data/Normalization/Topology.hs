@@ -49,7 +49,7 @@ import           Data.Monoid
 import           Data.NodeLabel
 import qualified Data.Set                         as Set
 import           Data.ShortText.Custom            (intToShortText)
-import           Data.String                      (IsString (fromString))
+import           Data.String                      (IsString(fromString))
 import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc                hiding (Identifier)
@@ -111,8 +111,8 @@ instance HasNormalizedTopology (DotGraph GraphID) where
         f x = (parents, marker, kids)
            where
             kids, parents :: [(EdgeLength, GraphID)]
-            kids    = fmap (const mempty &&& id) . toList $ cMapping ! x
-            parents = fmap (const mempty &&& id) . toList $ pMapping ! x
+            kids    = fmap (mempty &&& id) . toList $ cMapping ! x
+            parents = fmap (mempty &&& id) . toList $ pMapping ! x
 
             marker
               | null kids = Just . fromString . toIdentifier $ x
@@ -223,7 +223,7 @@ instance HasNormalizedTopology TntResult where
             f i = (g $ toList parentMay, datum, g children)
               where
                 (parentMay, datum, children) = mapping ! i
-                g = fmap (const mempty &&& id)
+                g = fmap (mempty &&& id)
 
         -- | We assign a unique index to each node and create an adjcency matrix.
         enumerate :: (n -> NodeLabel) -> LeafyTree n -> IntMap (Maybe Int, Maybe NodeLabel, [Int])
@@ -292,5 +292,5 @@ instance HasNormalizedTopology VER.VertexEdgeRoot where
           where
             f label = (pValues, Just . nodeLabel . fromString $ label, cValues)
               where
-                pValues = maybe [] toList (label `lookup` parentMapping)
-                cValues = maybe [] toList (label `lookup`  childMapping)
+                pValues = foldMap toList (label `lookup` parentMapping)
+                cValues = foldMap toList (label `lookup`  childMapping)

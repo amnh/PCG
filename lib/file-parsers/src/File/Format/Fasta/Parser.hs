@@ -130,10 +130,10 @@ fastaSequence = space *> fullSequence
     --
     --   * One or more sequence data symbools, possibly separated by spaces,
     --       followed by a newline or the end of the file.
-    taxonContentLine = inlinedSpace *> (sequenceLine <|> (endOfLine $> mempty))
+    taxonContentLine = hspace *> (sequenceLine <|> (endOfLine $> mempty))
 
     -- Defines the contents of a taxon line which contains sequence data
-    sequenceLine = fold <$> ((seqChunk <* inlinedSpace) `someTill` flexEOL)
+    sequenceLine = fold <$> ((seqChunk <* hspace) `someTill` flexEOL)
       where
         seqChunk = someOfThese alphabet
 

@@ -23,17 +23,17 @@ module Data.BitMatrix.Internal where
 
 import Control.DeepSeq
 import Data.Binary
-import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.BitVector.LittleEndian.Instances ()
+import Data.Bits
 import Data.Foldable
 import Data.Hashable
-import Data.List.Utility           (equalityOf, invariantTransformation)
+import Data.List.Utility                     (equalityOf, invariantTransformation)
 import Data.MonoTraversable
 import Data.Ord
 import GHC.Generics
-import Test.QuickCheck             hiding ((.&.))
-import TextShow                    (TextShow (showb), singleton, unlinesB, unwordsB)
+import Test.QuickCheck                       hiding ((.&.))
+import TextShow                              (TextShow(showb), singleton, unlinesB, unwordsB)
 
 
 -- |

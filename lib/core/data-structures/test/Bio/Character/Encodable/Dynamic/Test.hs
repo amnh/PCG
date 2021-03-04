@@ -10,13 +10,13 @@ module Bio.Character.Encodable.Dynamic.Test
   ( testSuite
   ) where
 
-import           Bio.Character
-import           Data.Bits
-import           Data.MonoTraversable
-import           Data.Semigroup
-import           Test.Tasty
-import           Test.Tasty.HUnit
-import           Test.Tasty.QuickCheck   hiding ((.&.))
+import Bio.Character
+import Data.Bits
+import Data.MonoTraversable
+import Data.Semigroup
+import Test.Tasty
+import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck hiding ((.&.))
 
 
 testSuite :: TestTree
@@ -131,11 +131,11 @@ bitsProperties = testGroup "Properties of Bits"
     leftShiftPositiveShift :: NonNegative Int -> f -> Property
     leftShiftPositiveShift (NonNegative i) bv =
         bv `shiftL` i === bv `shift` i
-        
+
     rightShiftNegativeShift :: NonNegative Int -> f -> Property
     rightShiftNegativeShift (NonNegative i) bv =
         bv `shiftR` i === bv `shift` (-i)
-        
+
     leftRotatePositiveRotate :: NonNegative Int -> f -> Property
     leftRotatePositiveRotate (NonNegative i) bv =
         bv `rotateL` i === bv `rotate` i
@@ -143,7 +143,7 @@ bitsProperties = testGroup "Properties of Bits"
     rightRotateNegativeRotate :: NonNegative Int -> f -> Property
     rightRotateNegativeRotate (NonNegative i) bv =
         bv `rotateR` i === bv `rotate` (-i)
-       
+
     leftRightRotateIdentity :: NonNegative Int -> f -> Property
     leftRightRotateIdentity (NonNegative i) bv =
         ((`rotateR` i) . (`rotateL` i)) bv === bv
@@ -176,7 +176,7 @@ finiteBitsProperties = testGroup "Properties of FiniteBits"
     finiteBitSizeIsBitSizeMaybe :: f -> Property
     finiteBitSizeIsBitSizeMaybe bv =
         bitSizeMaybe bv === (Just . finiteBitSize) bv
-    
+
     finiteBitSizeIsSymbolCount :: f -> Property
     finiteBitSizeIsSymbolCount bv =
         (fromEnum . symbolCount) bv === finiteBitSize bv
@@ -542,5 +542,5 @@ testLaw f lawName lawExpression = testGroup lawName [testProperty lawExpression 
 
 
 infix 0 -=>
-(-=>) :: Testable p => Bool -> p -> Property 
+(-=>) :: Testable p => Bool -> p -> Property
 (-=>) p q = not p .||. q

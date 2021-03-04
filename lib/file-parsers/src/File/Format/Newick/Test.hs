@@ -103,20 +103,21 @@ newickBranchLength' = testGroup "newickBranchLengthDefinition" [invariant]
   where
     invariant = testProperty "Injective invariant" f
       where
-        f x = parserSatisfies (branchLengthDefinition <* eof) (':' : show x) (== x)
+        f :: NonNegative Double -> Bool
+        f (NonNegative x) =
+            parserSatisfies (fromRational <$> branchLengthDefinition <* eof) (':' : show x) (== x)
 
 
 newickLeaf' :: TestTree
 newickLeaf' = testGroup "newickLeafDefinition'" [invariant]
   where
     invariant = testProperty "Injective invariant" f
-    f :: (String, Rational) -> Property
-    f (str,num) = validLabel ==> validLeaf
+    f :: String -> Property
+    f str = validLabel ==> validLeaf
       where
-        validLabel = parserSatisfies (newickLabelDefinition <* eof) str (const True)
+        validLabel = parserSatisfies (newickLabelDefinition <* eof) str $ const True
         labelValue = rightToMaybe $ parse (newickLabelDefinition <* eof :: Parsec Void String ShortText) "" str
-        validLeaf  = parserSatisfies newickLeafDefinition target (== NewickNode mempty labelValue (Just num))
-        target     = str <> ":" <> show num
+        validLeaf  = parserSatisfies newickLeafDefinition str (== NewickNode mempty labelValue Nothing)
 
         rightToMaybe (Left  _) = mempty
         rightToMaybe (Right x) = x

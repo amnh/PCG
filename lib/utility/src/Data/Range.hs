@@ -46,7 +46,7 @@ import Data.Binary
 import Data.Foldable
 import Data.Kind
 import GHC.Generics
-import TextShow        (TextShow (showb))
+import TextShow        (TextShow(showb))
 
 -- |
 -- A range between two bounds. The lower bound will always be less than or equal

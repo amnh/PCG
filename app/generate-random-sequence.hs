@@ -14,15 +14,15 @@ import           Control.Monad
 import           Data.Alphabet
 import           Data.Alphabet.IUPAC
 import qualified Data.Bimap                   as BM
-import           Data.Bits
 import           Data.BitVector.LittleEndian
+import           Data.Bits
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty           (NonEmpty (..))
+import           Data.List.NonEmpty           (NonEmpty(..))
 import qualified Data.List.NonEmpty           as NE
 import           Data.Maybe
 import           Data.Scientific
-import           Data.String                  (IsString (fromString))
+import           Data.String                  (IsString(fromString))
 import           Data.Text.Lazy               (Text, unlines, unwords)
 import qualified Data.Text.Lazy               as T
 import           Data.Text.Lazy.IO            (putStrLn, writeFile)

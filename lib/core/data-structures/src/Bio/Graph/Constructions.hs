@@ -47,7 +47,6 @@ module Bio.Graph.Constructions
   , UnifiedMetadataBlock
   , UnifiedMetadataSequence
   , UnReifiedCharacterDAG
-  , extractReferenceDAG
   ) where
 
 import Bio.Character
@@ -63,10 +62,7 @@ import Bio.Graph.ReferenceDAG.Internal
 import Bio.Graph.Solution
 import Bio.Sequence
 import Control.Evaluation
-import Control.Lens.Combinators            (mapped)
-import Control.Lens.Operators              ((%~), (.~), (^.))
 import Data.EdgeLength
-import Data.Function                       ((&))
 import Data.Kind
 import Data.List.NonEmpty
 import Data.NodeLabel
@@ -358,12 +354,14 @@ type EdgeAnnotation =
 -}
 
 
+{-
 extractReferenceDAG
   :: Either TopologicalResult DecoratedCharacterResult
   -> ReferenceDAG () EdgeLength (Maybe NodeLabel)
 extractReferenceDAG = either extractTopResult extractRefDAGfromDec
   where
     extractTopResult = extractSolution
+
 
 
 extractRefDAGfromDec
@@ -376,3 +374,4 @@ extractRefDAGfromDec finalDecDAG =
     refDAG           = refDAGNoEdgeData &
                          (_references . mapped . _nodeDecoration) %~ Just . nodeDecorationDatum2
   in refDAG
+-}

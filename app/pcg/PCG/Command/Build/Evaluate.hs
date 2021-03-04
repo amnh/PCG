@@ -32,7 +32,7 @@ import           Bio.Sequence
 import           Control.Arrow                                 (first, second, (&&&))
 import           Control.DeepSeq
 import           Control.Evaluation
-import           Control.Lens                                  hiding (snoc, _head)
+import           Control.Lens                                  hiding (_head, snoc)
 import           Control.Monad.IO.Class
 import           Control.Monad.State.Strict
 import           Control.Parallel.Custom
@@ -43,9 +43,9 @@ import           Data.GraphViz.Printing
 import qualified Data.IntMap                                   as IM
 import qualified Data.IntSet                                   as IS
 import           Data.Key
-import           Data.List.NonEmpty                            (NonEmpty (..))
+import           Data.List.NonEmpty                            (NonEmpty(..))
 import qualified Data.List.NonEmpty                            as NE
-import           Data.List.Utility                             (HasHead (_head))
+import           Data.List.Utility                             (HasHead(_head))
 import qualified Data.Map                                      as M
 import           Data.Monoid
 import           Data.NodeLabel

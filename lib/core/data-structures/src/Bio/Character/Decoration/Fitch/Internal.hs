@@ -31,7 +31,7 @@ import Data.Binary
 import Data.Bits
 import GHC.Generics
 import Text.XML
-import TextShow                             (TextShow (showb), unlinesB)
+import TextShow                             (TextShow(showb), unlinesB)
 
 
 -- |

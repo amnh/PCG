@@ -3,12 +3,8 @@ module PCG.Command.Version.Evaluate
   ) where
 
 import Bio.Graph
---import Control.Evaluation
-import Control.Monad.IO.Class         (liftIO)
---import Control.Monad.Trans.Validation
---import Data.FileSource                (FileSource)
---import Data.FileSource.IO
-import Data.Functor                   (($>))
+import Control.Monad.IO.Class (liftIO)
+import Data.Functor           (($>))
 import PCG.Command.Version
 import PCG.Software.Metadata
 

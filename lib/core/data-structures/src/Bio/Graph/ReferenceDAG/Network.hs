@@ -21,7 +21,7 @@ module Bio.Graph.ReferenceDAG.Network where
 import           Bio.Graph.Node.Context
 import           Bio.Graph.ReferenceDAG.Internal
 import           Bio.Graph.ReferenceDAG.Traversal
-import           Control.Applicative              as Alt (Alternative (empty, (<|>)))
+import           Control.Applicative              as Alt (Alternative(empty, (<|>)))
 import           Control.DeepSeq
 import           Control.Lens
 import           Control.Monad                    (guard)
@@ -32,8 +32,8 @@ import           Data.IntSet                      (IntSet, notMember)
 import qualified Data.IntSet                      as IS
 import           Data.Key
 import           Data.List                        (tails)
-import           Data.Monoid                      hiding ((<>))
 import           Data.MonoTraversable
+import           Data.Monoid                      hiding ((<>))
 import           Data.Set                         (Set)
 import qualified Data.Set                         as S
 import           Data.Vector                      (Vector)

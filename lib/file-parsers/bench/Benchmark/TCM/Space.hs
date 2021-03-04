@@ -23,8 +23,9 @@ benchSpace = fold
 
 
 parserBenchmark
-  :: ( Stream s
-     , Token s ~ Char
+  :: ( Token s ~ Char
+     , TraversableStream s
+     , VisualStream s
      )
   => (String, FilePath -> IO s)
   -> FilePath

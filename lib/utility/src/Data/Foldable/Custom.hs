@@ -28,9 +28,9 @@ module Data.Foldable.Custom
 
 import Control.DeepSeq (NFData, ($!!))
 import Data.Coerce     (Coercible, coerce)
-import Data.Foldable   (Foldable (foldl'))
+import Data.Foldable   (Foldable(foldl'))
 import Data.Maybe      (fromMaybe)
-import Data.Monoid     (Sum (..))
+import Data.Monoid     (Sum(..))
 
 
 -- |

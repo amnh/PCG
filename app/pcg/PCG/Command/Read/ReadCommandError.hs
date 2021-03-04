@@ -31,7 +31,7 @@ import Data.Data
 import Data.FileSource                  (FileSource)
 import Data.FileSource.InputStreamError
 import Data.FileSource.ParseStreamError
-import Data.List.NonEmpty               (NonEmpty (..))
+import Data.List.NonEmpty               (NonEmpty(..))
 import Data.Semigroup.Foldable
 import Data.Unification
 import GHC.Generics                     (Generic)
@@ -98,5 +98,12 @@ unaligned path = ParseError . makeInvalidPrealigned path
 -- |
 -- Create a 'ReadCommandError' representing that a file's contents could not be
 -- parsed.
-unparsable :: (ShowErrorComponent e, Stream s) => FileSource -> ParseErrorBundle s e -> ReadCommandError
+unparsable
+  :: ( ShowErrorComponent e
+     , TraversableStream s
+     , VisualStream s
+     )
+  => FileSource
+  -> ParseErrorBundle s e
+  -> ReadCommandError
 unparsable path = ParseError . makeUnparsableFile path

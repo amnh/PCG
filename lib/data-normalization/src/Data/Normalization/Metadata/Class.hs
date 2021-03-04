@@ -26,13 +26,13 @@ import           Control.Applicative
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty                   (NonEmpty (..))
+import           Data.List.NonEmpty                   (NonEmpty(..))
 import           Data.Matrix.NotStupid                (Matrix, nrows)
 import           Data.Monoid
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata.Internal
-import           Data.String                          (IsString (fromString))
-import           Data.TCM                             (TCMStructure (..))
+import           Data.String                          (IsString(fromString))
+import           Data.TCM                             (TCMStructure(..))
 import qualified Data.TCM                             as TCM
 import qualified Data.Vector                          as V
 import           Data.Vector.Instances                ()
@@ -42,8 +42,7 @@ import           File.Format.Dot
 import           File.Format.Fasta                    (FastaParseResult, TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus                    hiding (CharacterMetadata (..), DNA, Nucleotide, RNA,
-                                                       TaxonSequenceMap)
+import           File.Format.Nexus                    hiding (CharacterMetadata(..), DNA, Nucleotide, RNA, TaxonSequenceMap)
 import qualified File.Format.Nexus                    as Nex
 import qualified File.Format.TNT                      as TNT
 import qualified File.Format.TransitionCostMatrix     as F
@@ -61,7 +60,7 @@ class HasNormalizedMetadata a where
 
 instance HasNormalizedMetadata (DotGraph n) where
 
-    getNormalizedMetadata = const mempty
+    getNormalizedMetadata = mempty
 
 
 instance HasNormalizedMetadata FastaParseResult where
@@ -81,7 +80,7 @@ instance HasNormalizedMetadata FastcParseResult where
 
 instance HasNormalizedMetadata (NonEmpty NewickForest) where
 
-    getNormalizedMetadata = const mempty
+    getNormalizedMetadata = mempty
 
 
 instance HasNormalizedMetadata TNT.TntResult where
@@ -125,7 +124,7 @@ instance HasNormalizedMetadata TNT.TntResult where
                           | null stateNameValues = getMetadataFromInputSymbolsAndTCM initialSymbolSet (undefined :: Matrix Word)
                           | otherwise            = getMetadataFromInputSymbolsStatesAndTCM (zip initialSymbolSet stateNameValues) (undefined :: Matrix Word)
                     in  (1, alphabet', Nothing)
-                    
+
                   Just mat ->
                     let truncatedSymbols = V.take (nrows mat - 1) initialSymbolSet
                         stateNameValues  = TNT.characterStates inMeta
@@ -193,7 +192,7 @@ instance HasNormalizedMetadata F.TCM where
 
 instance HasNormalizedMetadata VertexEdgeRoot where
 
-    getNormalizedMetadata = const mempty
+    getNormalizedMetadata = mempty
 
 
 instance HasNormalizedMetadata Nexus where
@@ -213,7 +212,7 @@ instance HasNormalizedMetadata Nexus where
             }
           where
             suppliedWeight = fromIntegral $ Nex.weight inMeta
-            
+
             (finalAlphabet, chosenWeight, chosenTCM)
               | Nex.additive inMeta =
                 let (alphabet', _, _, _) = getMetadataFromInputSymbolsAndTCM developedAlphabet (undefined :: Matrix Word)

@@ -10,18 +10,18 @@ module Control.Monad.Trans.Validation.Test
   ( testSuite
   ) where
 
-import Control.Applicative            (Applicative (..))
+import Control.Applicative            (Applicative(..))
 import Control.Arrow                  ((***))
 import Control.DeepSeq
 import Control.Monad                  (void)
-import Control.Monad.Fail             (MonadFail (..))
-import Control.Monad.Trans            (MonadTrans (..))
+import Control.Monad.Fail             (MonadFail(..))
+import Control.Monad.Trans            (MonadTrans(..))
 import Control.Monad.Trans.Validation
-import Control.Monad.Zip              (MonadZip (..))
+import Control.Monad.Zip              (MonadZip(..))
 import Data.Foldable
-import Data.Functor.Alt               (Alt (..))
-import Data.Functor.Apply             (Apply (..))
-import Data.Functor.Bind              (Bind (..))
+import Data.Functor.Alt               (Alt(..))
+import Data.Functor.Apply             (Apply(..))
+import Data.Functor.Bind              (Bind(..))
 import Data.Functor.Compose
 import Data.Functor.Identity
 import Data.Semigroup

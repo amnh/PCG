@@ -37,7 +37,7 @@ import           Control.DeepSeq                    (NFData, force)
 import           Control.Monad.Combinators.NonEmpty
 import           Data.Char                          (isSpace)
 import           Data.Data
-import           Data.List.NonEmpty                 (NonEmpty (..))
+import           Data.List.NonEmpty                 (NonEmpty(..))
 import           Data.Semigroup.Foldable
 import           Data.String
 import qualified Data.Text                          as T
@@ -107,8 +107,8 @@ fastcTaxonSequenceDefinition = do
 fastcSymbolSequence :: (MonadParsec e s m, Token s ~ Char) => m [Vector ShortText]
 fastcSymbolSequence = space *> fullSequence
   where
-    fullSequence = fold1 <$> some (inlinedSpace *> sequenceLine)
-    sequenceLine = (symbolGroup <* inlinedSpace) `manyTill` endOfLine
+    fullSequence = fold1 <$> some (hspace *> sequenceLine)
+    sequenceLine = (symbolGroup <* hspace) `manyTill` endOfLine
 
 
 -- |
@@ -132,9 +132,9 @@ symbolGroup = ambiguityGroup <|> (pure <$> validSymbol)
 ambiguityGroup :: (MonadParsec e s m, Token s ~ Char) => m (Vector ShortText)
 ambiguityGroup = start *> group <* close
   where
-    start = char '[' <* inlinedSpace
-    close = char ']' <* inlinedSpace
-    group = force . V.fromNonEmpty <$> (validSymbol `sepBy1` inlinedSpace)
+    start = char '[' <* hspace
+    close = char ']' <* hspace
+    group = force . V.fromNonEmpty <$> (validSymbol `sepBy1` hspace)
 
 
 -- |
@@ -145,7 +145,7 @@ ambiguityGroup = start *> group <* close
 {-# SPECIALISE validSymbol :: Parsec Void LT.Text ShortText #-}
 {-# SPECIALISE validSymbol :: Parsec Void  String ShortText #-}
 validSymbol :: forall e s m. (MonadParsec e s m, Token s ~ Char) => m ShortText
-validSymbol = validSymbolChars <* inlinedSpace
+validSymbol = validSymbolChars <* hspace
   where
     validSymbolChars = fromString . chunkToTokens (Proxy :: Proxy s) <$> symbolStr
       where

@@ -268,18 +268,18 @@ exampleTree2 = ReferenceDAG{..}
     referenceFn :: Int -> IndexData () ()
     referenceFn =
       \case
-        0 -> IndexData ()  [2]  []
-        1 -> IndexData ()  [2]  []
-        2 -> IndexData ()  [6]  [(0, ()), (1, ())]
-        3 -> IndexData ()  [5]  []
-        4 -> IndexData ()  [5]  []
-        5 -> IndexData ()  [6]  [(3, ()), (4, ())]
-        6 -> IndexData ()  [10] [(2, ()), (5, ())]
-        7 -> IndexData ()  [9]  []
-        8 -> IndexData ()  [9]  []
-        9 -> IndexData ()  [10] [(7, ()), (8, ())]
+        0  -> IndexData ()  [2]  []
+        1  -> IndexData ()  [2]  []
+        2  -> IndexData ()  [6]  [(0, ()), (1, ())]
+        3  -> IndexData ()  [5]  []
+        4  -> IndexData ()  [5]  []
+        5  -> IndexData ()  [6]  [(3, ()), (4, ())]
+        6  -> IndexData ()  [10] [(2, ()), (5, ())]
+        7  -> IndexData ()  [9]  []
+        8  -> IndexData ()  [9]  []
+        9  -> IndexData ()  [10] [(7, ()), (8, ())]
         10 -> IndexData () []   [(6, ()), (9, ())]
-        _ -> error "Access value outside of network"
+        _  -> error "Access value outside of network"
 
 
 renderExampleNetwork2 :: String

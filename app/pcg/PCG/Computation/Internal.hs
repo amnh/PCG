@@ -14,7 +14,7 @@ import           Control.Evaluation
 import           Data.Bits
 import           Data.Char                    (isSpace)
 import           Data.Foldable
-import           Data.List.NonEmpty           (NonEmpty (..))
+import           Data.List.NonEmpty           (NonEmpty(..))
 import           Data.Text.Lazy               (Text)
 import qualified Data.Text.Lazy               as T
 import qualified PCG.Command.Build.Evaluate   as Build
@@ -103,10 +103,10 @@ renderError = evaluateResult (\p -> Left . err p) Right
 errorPhaseToCode :: ErrorPhase -> ExitCode
 errorPhaseToCode = ExitFailure .
     \case
-      Inputing  -> bit 2
-      Parsing   -> bit 3
-      Unifying  -> bit 2 .|. bit 3
-      Computing -> bit 4
+      Inputing   -> bit 2
+      Parsing    -> bit 3
+      Unifying   -> bit 2 .|. bit 3
+      Computing  -> bit 4
       Outputting -> bit 5
 
 

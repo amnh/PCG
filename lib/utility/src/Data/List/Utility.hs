@@ -20,9 +20,9 @@ module Data.List.Utility where
 
 import           Control.Lens            (Lens', lens)
 import           Data.Foldable
-import           Data.Key                (Zip (..))
+import           Data.Key                (Zip(..))
 import           Data.List               (sort, sortBy)
-import           Data.List.NonEmpty      (NonEmpty (..), nonEmpty)
+import           Data.List.NonEmpty      (NonEmpty(..), nonEmpty)
 import qualified Data.List.NonEmpty      as NE
 import           Data.Map                (assocs, empty, insertWith)
 import           Data.Maybe              (catMaybes)

@@ -28,7 +28,7 @@ module File.Format.Nexus.Parser
 import           Data.CaseInsensitive                    (FoldCase)
 import           Data.Char                               (isSpace, toLower)
 import           Data.Functor
-import           Data.Maybe                              (fromMaybe, isJust)
+import           Data.Maybe                              (isJust)
 import           Data.Proxy
 import qualified Data.Set                                as S
 import           File.Format.Newick
@@ -423,7 +423,7 @@ whitespace = (space *> optional (try . some $ commentDefinition *> space) $> ())
 -- Consumes whitespace (including multi-line comments) but not newlines outside
 -- of a comment definition.
 whitespaceNoNewlines :: (MonadParsec e s m, Token s ~ Char {- , Show s -}) => m ()
-whitespaceNoNewlines = (inlinedSpace *> optional (try . some $ commentDefinition *> inlinedSpace) $> ())
+whitespaceNoNewlines = (hspace *> optional (try . some $ commentDefinition *> hspace) $> ())
           <?> "comments or non-newline whitespace"
 
 

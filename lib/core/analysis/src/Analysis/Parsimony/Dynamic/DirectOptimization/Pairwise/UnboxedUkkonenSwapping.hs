@@ -24,22 +24,23 @@
 {-# LANGUAGE UnboxedTuples      #-}
 
 module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedUkkonenSwapping
-  ( unboxedUkkonenSwappingDO
+  ( ukkonenConstants
+  , unboxedUkkonenSwappingDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, handleMissingCharacter, measureAndUngapCharacters, measureCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal        (DOCharConstraint, Direction(..), OverlapFunction, handleMissingCharacter, measureAndUngapCharacters, measureCharacters)
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedSwapping (unboxedSwappingDO)
 import           Bio.Character.Encodable
 import           Control.Monad.ST
 import           Data.Bits
-import           Data.DList                  (snoc)
+import           Data.DList                                                             (snoc)
 import           Data.Foldable
-import qualified Data.List.NonEmpty          as NE
-import           Data.Matrix.Unboxed         (Matrix, unsafeFreeze, unsafeIndex)
-import qualified Data.Matrix.Unboxed.Mutable as M
-import           Data.Maybe                  (fromMaybe)
+import qualified Data.List.NonEmpty                                                     as NE
+import           Data.Matrix.Unboxed                                                    (Matrix, unsafeFreeze, unsafeIndex)
+import qualified Data.Matrix.Unboxed.Mutable                                            as M
+import           Data.Maybe                                                             (fromMaybe)
 import           Data.MonoTraversable
-import qualified Data.Vector.Unboxed.Mutable as V
+import qualified Data.Vector.Unboxed.Mutable                                            as V
 
 
 -- |
@@ -58,21 +59,21 @@ unboxedUkkonenSwappingDO
   -> s
   -> s
   -> (Word, s)
-unboxedUkkonenSwappingDO overlapFunction char1 char2
+unboxedUkkonenSwappingDO overlapλ char1 char2
   | noGainFromUkkonenMethod = buildFullMatrix
   | otherwise               = fromMaybe buildFullMatrix ukkonenMethodResult
   where
     (_, lesser, longer) = measureCharacters char1 char2
 
     gap = getMedian $ gapOfStream char1
-    cost x y = snd $ overlapFunction x y
+    cost x y = snd $ overlapλ x y
 
-    ukkonenMethodResult     = directOptimization overlapFunction buildPartialMatrixMaybe char1 char2
+    ukkonenMethodResult     = directOptimization overlapλ buildPartialMatrixMaybe char1 char2
 
-    buildFullMatrix         = unboxedSwappingDO overlapFunction char1 char2
+    buildFullMatrix         = unboxedSwappingDO overlapλ char1 char2
 
     buildPartialMatrixMaybe = createUkkonenMethodMatrix coefficient gapsPresentInInputs $
-                                  buildDirectionMatrix cost longer lesser
+                                  buildDirectionMatrix overlapλ longer lesser
 
     -- /O(1)/
     --
@@ -183,31 +184,25 @@ createUkkonenMethodMatrix minimumIndelCost gapsPresentInInputs matrixBuilder lon
         computedValue = coefficient * (quasiDiagonalWidth + fromEnum offset - fromEnum gapsPresentInInputs)
         threshold     = toEnum $ max 0 computedValue -- The threshold value must be non-negative
 
-               
+
 {-# SCC buildDirectionMatrix #-}
 buildDirectionMatrix
   :: DOCharConstraint s
-  => (Subcomponent (Element s) -> Subcomponent (Element s) -> Word)
+  => OverlapFunction (Subcomponent (Element s))
   -> s
   -> s
   -> Word
   -> Maybe (Word, Matrix Direction)
-buildDirectionMatrix cost longerTop lesserLeft o
-  | cols <= longerLen + 1 = Just fullMatrix
-  | otherwise             = Nothing
+buildDirectionMatrix overlapλ longerTop lesserLeft o
+  | cols <= olength longerTop + 1 = Just fullMatrix
+  | otherwise                     = Nothing
   where
-    offset      = fromEnum o    
-    gap         = getMedian $ gapOfStream longerTop
-    longerLen   = olength longerTop
-    lesserLen   = olength lesserLeft
-    rows        = olength lesserLeft + 1
-    cols        = quasiDiagonalWidth + (offset `shiftL` 1) -- Multiply by 2
-    quasiDiagonalWidth = differenceInLength + 1
-      where
-        differenceInLength = longerLen - lesserLen
+    offset = fromEnum o
+    cols   = quasiDiagonalWidth + (offset `shiftL` 1) -- Multiply by 2
+    (_, gap, cost, rows, _, _, quasiDiagonalWidth) = ukkonenConstants overlapλ lesserLeft longerTop o
 
     fullMatrix = runST $ do
-      
+
       ---------------------------------------
       -- Allocate required space           --
       ---------------------------------------
@@ -219,28 +214,25 @@ buildDirectionMatrix cost longerTop lesserLeft o
       ---------------------------------------
       -- Define some generalized functions --
       ---------------------------------------
-      
+
       -- Write to a single cell of the current vector and directional matrix simultaneously
       let write v !p@(~(_,!j)) ~(!c, !d) = V.unsafeWrite v j c *> M.unsafeWrite mDir p d
 
       -- Write to an internal cell (not on a boundary) of the matrix.
-      let internalCell prev curr leftElement insertCost i j
-            -- Preserve the gap in the left (lesser) string
-            | leftElement == gap = (\x -> (x, UpArrow)) <$> V.unsafeRead prev (j + 1)
-            | otherwise = {-# SCC internalCell_expanding #-}
-              let topElement = getMedian $ longerTop `indexStream` (i + j - offset - 1) 
-              in  if topElement == gap
-                  then (\x -> (x, LeftArrow)) <$> V.unsafeRead curr (j - 1)
-                  else let deleteCost = cost topElement    gap
-                           alignCost  = cost topElement leftElement
-                       in  do diagCost <- V.unsafeRead prev   j
-                              topCost  <- V.unsafeRead prev $ j + 1
-                              leftCost <- V.unsafeRead curr $ j - 1
-                              pure $ minimum
-                                  [ ( alignCost + diagCost, DiagArrow)
-                                  , (deleteCost + leftCost, LeftArrow)
-                                  , (insertCost +  topCost, UpArrow  )
-                                  ]
+      let internalCell prev curr leftElement insertCost i j =
+            let topElement = getMedian $ longerTop `indexStream` (i + j - offset - 1)
+            in  if topElement == gap
+                then (\x -> (x, LeftArrow)) <$> V.unsafeRead curr (j - 1)
+                else let deleteCost = cost topElement    gap
+                         alignCost  = cost topElement leftElement
+                     in  do diagCost <- V.unsafeRead prev   j
+                            topCost  <- V.unsafeRead prev $ j + 1
+                            leftCost <- V.unsafeRead curr $ j - 1
+                            pure $ minimum
+                                [ ( alignCost + diagCost, DiagArrow)
+                                , (deleteCost + leftCost, LeftArrow)
+                                , (insertCost +  topCost, UpArrow  )
+                                ]
 
       -- Define how to compute values to an entire row of the Ukkonen matrix
       -- Takes parameterized functions which describe
@@ -274,18 +266,15 @@ buildDirectionMatrix cost longerTop lesserLeft o
       -- We need to ensure that there are no Left Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 2,
       -- since the leftward values are "out of bounds."
-      let leftBoundary prev _curr leftElement insertCost i j
-            -- Preserve the gap in the left (lesser) string
-            | leftElement == gap = (\x -> (x, UpArrow)) <$> V.unsafeRead prev (j + 1)
-            | otherwise = {-# SCC leftBoundary #-}
-              let topElement = getMedian $ longerTop  `indexStream` (i - offset - 1)
-                  alignCost  = cost topElement leftElement
-              in  do diagCost <- V.unsafeRead prev   j
-                     topCost  <- V.unsafeRead prev $ j + 1
-                     pure $  minimum
-                         [ ( alignCost + diagCost, DiagArrow)
-                         , (insertCost +  topCost, UpArrow  )
-                         ]
+      let leftBoundary prev _curr leftElement insertCost i j =
+            let topElement = getMedian $ longerTop  `indexStream` (i - offset - 1)
+                alignCost  = cost topElement leftElement
+            in  do diagCost <- V.unsafeRead prev   j
+                   topCost  <- V.unsafeRead prev $ j + 1
+                   pure $  minimum
+                       [ ( alignCost + diagCost, DiagArrow)
+                       , (insertCost +  topCost, UpArrow  )
+                       ]
 
       -- Define how to compute the last cell of the first "rows - offest" rows.
       -- We need to ensure that there are only Left Arrow values in the directional matrix.
@@ -293,35 +282,21 @@ buildDirectionMatrix cost longerTop lesserLeft o
       -- since the diagonal and upward values are "out of bounds."
       let rightBoundary prev curr leftElement _insertCost i j = {-# SCC rightBoundary #-}
             let topElement = getMedian $ longerTop `indexStream` (i + j - offset - 1)
-            -- Preserve the gap in the top (longer) string
-            in  if topElement == gap
-                then (\x -> (x, LeftArrow)) <$> V.unsafeRead curr (j - 1)
-                else let deleteCost = cost topElement    gap
-                         alignCost  = cost topElement leftElement
+                deleteCost = cost topElement    gap
+                alignCost  = cost topElement leftElement
 
-                     in  do diagCost <- V.unsafeRead prev   j
-                            leftCost <- V.unsafeRead curr $ j - 1
-                            pure $ minimum
-                                [ ( alignCost + diagCost, DiagArrow)
-                                , (deleteCost + leftCost, LeftArrow)
-                                ]
+            in  do diagCost <- V.unsafeRead prev   j
+                   leftCost <- V.unsafeRead curr $ j - 1
+                   pure $ minimum
+                       [ ( alignCost + diagCost, DiagArrow)
+                       , (deleteCost + leftCost, LeftArrow)
+                       ]
 
       -- Define how to compute the last cell of the last "offest" rows.
       -- We need to ensure that there are no Up Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 2,
       -- since the upward values are "out of bounds."
-      let rightColumn prev curr leftElement insertCost i j = {-# SCC rightColumn #-}  do
-            let topElement  = getMedian $  longerTop `indexStream` (i + j - offset - 1)
-            let deleteCost  = cost topElement    gap
-            let alignCost   = cost topElement leftElement
-            diagCost <- V.unsafeRead prev   j
-            topCost  <- V.unsafeRead prev $ j + 1
-            leftCost <- V.unsafeRead curr $ j - 1
-            pure $ minimum
-                [ ( alignCost + diagCost, DiagArrow)
-                , (deleteCost + leftCost, LeftArrow)
-                , (insertCost +  topCost, UpArrow  )
-                ]
+      let rightColumn = {-# SCC rightColumn #-} internalCell
 
       ---------------------------------------
       -- Compute all values of the matrix  --
@@ -378,7 +353,7 @@ directOptimization overlapλ matrixFunction char1 char2 =
         alignmentResult =
           if      olength shorterChar == 0
           then if olength  longerChar == 0
-             -- Niether character was Missing, but both are empty when gaps are removed          
+             -- Niether character was Missing, but both are empty when gaps are removed
              then Just (0, toMissing char1)
              -- Niether character was Missing, but one of them is empty when gaps are removed
              else let gap = getMedian $ gapOfStream char1
@@ -393,7 +368,7 @@ directOptimization overlapλ matrixFunction char1 char2 =
          Nothing -> Nothing
          Just (alignmentCost, ungappedAlignment) ->
             let transformation    = if swapped then omap swapContext else id
-                regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+                regappedAlignment = insertGaps gapsLesser gapsLonger ungappedAlignment
                 alignmentContext  = transformation regappedAlignment
             in  Just $ handleMissingCharacter char1 char2 (alignmentCost, alignmentContext)
 
@@ -407,9 +382,9 @@ traceback
   -> s
   -> s
   -> s
-traceback overlapFunction o alignMatrix longerChar lesserChar = alignmentContext
+traceback overlapλ o alignMatrix longerChar lesserChar = alignmentContext
   where
-    f x y = fst $ overlapFunction x y
+    f x y = fst $ overlapλ x y
     gap = getMedian $ gapOfStream longerChar
 
     offset = fromEnum o
@@ -455,6 +430,30 @@ traceback overlapFunction o alignMatrix longerChar lesserChar = alignmentContext
         in  previousSequence `snoc` localContext
 
 
+ukkonenConstants
+  :: ( EncodableDynamicCharacterElement (Element s)
+     , EncodableStream s
+     )
+  => (Subcomponent (Element s) -> Subcomponent (Element s) -> (Subcomponent (Element s), Word))
+  -> s
+  -> s
+  -> Word
+  -> (Int, Subcomponent (Element s), Subcomponent (Element s) -> Subcomponent (Element s) -> Word, Int, Int, Int, Int)
+ukkonenConstants overlapλ lesserLeft longerTop o =
+    (offset, gap, cost, rows, cols, width, quasiDiagonalWidth)
+  where
+    -- Note: "offset" cannot cause "width + quasiDiagonalWidth" to exceed "2 * cols"
+    offset      = let o' = fromEnum o in  min o' $ cols - quasiDiagonalWidth
+    gap         = getMedian $ gapOfStream longerTop
+    cost x y    = snd $ overlapλ x y
+    longerLen   = olength longerTop
+    lesserLen   = olength lesserLeft
+    rows        = olength lesserLeft + 1
+    cols        = olength longerTop  + 1
+    width       = quasiDiagonalWidth + (offset `shiftL` 1) -- Multiply by 2
+    quasiDiagonalWidth = differenceInLength + 1
+      where
+        differenceInLength = longerLen - lesserLen
 {--
 renderMatricies :: (Show a, Show b, V.Unbox a, V.Unbox b) => Word -> Matrix a -> Matrix b -> String
 renderMatricies o mDir mCost = unlines [ x, y ]

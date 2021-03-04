@@ -37,7 +37,7 @@ import           Bio.Graph.Node.Context
 import           Bio.Metadata                                           hiding (DenseTransitionCostMatrix)
 import           Control.Lens                                           hiding ((<|), (|>))
 import           Data.Bits
-import           Data.Either (isLeft)
+import           Data.Either                                            (isLeft)
 import           Data.Foldable
 import qualified Data.List.NonEmpty                                     as NE
 import           Data.MonoTraversable

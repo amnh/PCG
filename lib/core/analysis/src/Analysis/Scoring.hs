@@ -338,7 +338,7 @@ performPostorderDecoration x = (context, postorderResult)
         , rerootingEdgeMapping   = edgeCostMapping
         , rerootingVectorMapping = contextualNodeDatum
         }
-      
+
     (unusedEdges, minBlockContext, postorderResult) = assignPunitiveNetworkEdgeCost post
     (post, edgeCostMapping, contextualNodeDatum) =
          assignOptimalDynamicCharacterRootEdges adaptiveDirectOptimizationPostorder
@@ -406,8 +406,8 @@ performPreorderDecoration postorderState = dynamicCharacterPreorder . staticChar
           (const sankoffPreorder )
           (const sankoffPreorder )
           (const extractPreNode  )
-      
+
     adaptiveDirectOptimizationPreorder meta decorationPreContext =
         let pairwiseAlignmentFunction = selectDynamicMetric meta
         in  directOptimizationPreorder pairwiseAlignmentFunction meta decorationPreContext
-        
+

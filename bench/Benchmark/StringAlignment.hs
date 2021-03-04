@@ -22,7 +22,7 @@ import           Control.Monad.Trans.Validation
 import           Control.Parallel.Custom
 import           Control.Parallel.Strategies
 import           Criterion.Main
-import           Criterion.Types                               (Config (..))
+import           Criterion.Types                               (Config(..))
 import           Data.Alphabet
 import           Data.Bifunctor
 import           Data.Char

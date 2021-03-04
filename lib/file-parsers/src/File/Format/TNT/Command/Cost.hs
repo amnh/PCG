@@ -44,7 +44,7 @@ import Text.Megaparsec.Custom   (double)
 data  TransitionCost
     = TransitionCost
     { origins   :: NonEmpty Char
-    , symmetric  :: Bool
+    , symmetric :: Bool
     , terminals :: NonEmpty Char
     , costValue :: Double
     }

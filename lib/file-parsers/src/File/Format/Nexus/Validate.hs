@@ -24,7 +24,7 @@ import           Data.Char               (isSpace)
 import           Data.Either
 import           Data.Foldable
 --import           Data.List                 (sort, sortBy)
-import           Data.List.NonEmpty      (NonEmpty ((:|)))
+import           Data.List.NonEmpty      (NonEmpty((:|)))
 --import qualified Data.List.NonEmpty as NE
 --import           Data.List.Split           (splitOn)
 import           Data.Map.Lazy           (Map)
@@ -754,7 +754,7 @@ getSeqFromMatrix seqBlock taxaLst =
             | head eqStr /= "" && not tkns && not isCont = -- TODO: Also don't do on custom alphabets?
                 M.map (replaceEquates eqMap) matchCharsReplaced
             | otherwise = matchCharsReplaced
-        eqStr = either (const [""]) id $ getEquates seqBlock
+        eqStr = fromRight [""] $ getEquates seqBlock
         eqMap = M.fromList $ fmap (\xs -> (head xs, tail $ dropWhile (/= '=') xs) ) eqStr -- TODO: force equates string to be properly formatted
         isCont = characterType == Continuous
 

@@ -41,7 +41,6 @@ testSuite = testGroup "Custom Parsec Combinator Tests" tests
 -- A list of all tests in represented as TestTrees
 tests :: [TestTree]
 tests = [ testGroup "Double Parsing"             [decimalProperties]
-        , testGroup "Inline Space Parsing"       [inlinedSpaceCharAssertions, inlinedSpaceAssertions]
         , testGroup "Combinator 'anythingTill'"  [ anythingTillProperties]
         , testGroup "Combinator 'somethingTill'" [somethingTillProperties]
         , testGroup "Combinator 'endOfLine'"     [endOfLineAssertions]
@@ -73,40 +72,6 @@ decimalInjection x =
     case readMay x :: Maybe Double of
       Nothing  -> True
       Just res -> testingParse (space *> double <* space <* eof) "" x == Right res
-
-
-inlinedSpaceCharAssertions :: TestTree
-inlinedSpaceCharAssertions = testGroup "Inline Space Char Assertions" [validInlineSpace, invalidInlineSpace]
-  where
-    validInlineSpace = testGroup "Valid inlinedSpaceChar"
-        [ testCase "space" $ parseEquals (inlinedSpaceChar <* eof) " "  ' '
-        , testCase "tab"   $ parseEquals (inlinedSpaceChar <* eof) "\t" '\t'
-        , testCase "vtab"  $ parseEquals (inlinedSpaceChar <* eof) "\v" '\v'
-        ]
-
-    invalidInlineSpace = testGroup "Invalid inlinedSpaceChar"
-        [ testCase "newline"        $ parseFailure (inlinedSpaceChar <* eof) "\n"
-        , testCase "caraige return" $ parseFailure (inlinedSpaceChar <* eof) "\r"
-        ]
-
-
-inlinedSpaceAssertions :: TestTree
-inlinedSpaceAssertions = testGroup "Inline Space Assertions" [validInlineSpace, invalidInlineSpace]
-  where
-    validInlineSpace = testGroup "Valid inlinedSpace"
-        [ testCase "Consumes multiple spaces" $ parseSuccess (inlinedSpace <* eof) " \t\v"
-        , testCase "Consumes spaces up to a newline" $ mapM_ parseIt exampleInputs
-        ]
-
-    invalidInlineSpace = testGroup "Invalid inlinedSpace"
-        [ testCase "newline"        $ parseFailure (inlinedSpace <* eof) "\n"
-        , testCase "caraige return" $ parseFailure (inlinedSpace <* eof) "\r"
-        ]
-
-    parseIt (inlines,line) = parseSuccess (inlinedSpace <* string line <* eof) (inlines <> line)
-    exampleSpaces     = "\t\v "
-    exampleNewlines   = "\n\r"
-    exampleInputs = [ ([x,y],[z]) | x <- exampleSpaces, y <- exampleSpaces, z <- exampleNewlines ]
 
 
 anythingTillProperties :: TestTree

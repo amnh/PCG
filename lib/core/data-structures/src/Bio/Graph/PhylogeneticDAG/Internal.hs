@@ -61,37 +61,37 @@ import           Bio.Metadata.Discrete
 import           Bio.Metadata.DiscreteWithTCM
 import           Bio.Metadata.Dynamic
 import           Bio.Sequence
-import           Control.Arrow                   ((***))
+import           Control.Arrow                             ((***))
 import           Control.DeepSeq
-import           Control.Lens                    as Lens hiding ((<.>))
+import           Control.Lens                              as Lens hiding ((<.>))
 import           Data.Binary
 import           Data.Binary.Instances.UnorderedContainers ()
 import           Data.Bits
 import           Data.Foldable
-import           Data.Foldable.Custom            (sum')
-import           Data.Functor.Apply              (Apply ((<.>)))
+import           Data.Foldable.Custom                      (sum')
+import           Data.Functor.Apply                        (Apply((<.>)))
 import           Data.GraphViz.Printing
 import           Data.GraphViz.Types
-import           Data.HashMap.Lazy               (HashMap)
-import qualified Data.IntMap                     as IM
-import           Data.IntSet                     (IntSet)
-import qualified Data.IntSet                     as IS
+import           Data.HashMap.Lazy                         (HashMap)
+import qualified Data.IntMap                               as IM
+import           Data.IntSet                               (IntSet)
+import qualified Data.IntSet                               as IS
 import           Data.Key
-import           Data.List                       (zip4)
-import           Data.List.NonEmpty              (NonEmpty (..))
-import qualified Data.List.NonEmpty              as NE
+import           Data.List                                 (zip4)
+import           Data.List.NonEmpty                        (NonEmpty(..))
+import qualified Data.List.NonEmpty                        as NE
 import           Data.MonoTraversable
-import           Data.Set                        (Set, notMember)
+import           Data.Set                                  (Set, notMember)
 import           Data.String
-import qualified Data.Text                       as T (Text, filter, length, unlines)
+import qualified Data.Text                                 as T (Text, filter, length, unlines)
 import           Data.TopologyRepresentation
-import           Data.Vector                     (Vector)
+import           Data.Vector                               (Vector)
 import           GHC.Generics
-import           Prelude                         hiding (zip)
+import           Prelude                                   hiding (zip)
 import           Text.Newick.Class
 import           Text.XML
-import           TextShow                        (Builder, TextShow (showb, showt), fromText, toString, unlinesB)
-import           Type.Reflection                 (Typeable)
+import           TextShow                                  (Builder, TextShow(showb, showt), fromText, toString, unlinesB)
+import           Type.Reflection                           (Typeable)
 
 
 -- |

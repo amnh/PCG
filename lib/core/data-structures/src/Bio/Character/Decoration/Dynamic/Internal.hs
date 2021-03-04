@@ -39,7 +39,7 @@ import Data.Hashable
 import Data.MonoTraversable
 import GHC.Generics
 import Text.XML
-import TextShow                               (Builder, TextShow (showb), toString, unlinesB, unwordsB)
+import TextShow                               (Builder, TextShow(showb), toString, unlinesB, unwordsB)
 
 
 -- |
@@ -47,12 +47,12 @@ import TextShow                               (Builder, TextShow (showb), toStri
 -- polymorphic character type.
 data  DynamicDecorationDirectOptimization d
     = DynamicDecorationDirectOptimization
-    { dynamicDecorationDirectOptimizationCharacterCost            :: {-# UNPACK #-} !Word
-    , dynamicDecorationDirectOptimizationCharacterLocalCost       :: {-# UNPACK #-} !Word
-    , dynamicDecorationDirectOptimizationCharacterAverageLength   :: {-# UNPACK #-} !AverageLength
-    , dynamicDecorationDirectOptimizationAlignmentContext         :: !d
-    , dynamicDecorationDirectOptimizationImpliedAlignment         :: !d
-    , dynamicDecorationDirectOptimizationSingleDisambiguation     :: !d
+    { dynamicDecorationDirectOptimizationCharacterCost          :: {-# UNPACK #-} !Word
+    , dynamicDecorationDirectOptimizationCharacterLocalCost     :: {-# UNPACK #-} !Word
+    , dynamicDecorationDirectOptimizationCharacterAverageLength :: {-# UNPACK #-} !AverageLength
+    , dynamicDecorationDirectOptimizationAlignmentContext       :: !d
+    , dynamicDecorationDirectOptimizationImpliedAlignment       :: !d
+    , dynamicDecorationDirectOptimizationSingleDisambiguation   :: !d
     }
     deriving anyclass (Binary, NFData)
     deriving stock    (Eq, Generic)
@@ -259,7 +259,7 @@ instance (EncodableStream d, TextShow d) => Show (DynamicDecorationDirectOptimiz
 
 instance (EncodableStream d, TextShow d) => Show (DynamicDecorationDirectOptimizationPostorderResult d) where
 
-    show = toString . showb 
+    show = toString . showb
 
 
 instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOptimization d) where

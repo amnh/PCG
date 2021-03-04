@@ -25,7 +25,7 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Sequence
 import           Control.Lens
-import           Data.Monoid                (Sum (..))
+import           Data.Monoid                (Sum(..))
 import           Data.Vector
 import qualified Data.Vector.NonEmpty       as NE
 import           VectorBuilder.Builder      (Builder)
@@ -91,7 +91,7 @@ dendroToVector =
   where
     vectorBuilder :: Dendrogram a -> Builder a
     vectorBuilder = \case
-      Leaf a -> VB.singleton a
+      Leaf a           -> VB.singleton a
       Branch _ _ d1 d2 -> vectorBuilder d1 <> vectorBuilder d2
 
 

@@ -39,13 +39,13 @@ import           Data.Binary
 import           Data.Foldable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import qualified Data.Text                   as T (Text, lines, unlines)
-import           Data.Vector                 (Vector, fromListN)
-import           Data.Vector.Binary          ()
-import           Data.Vector.Instances       ()
+import qualified Data.Text               as T (Text, lines, unlines)
+import           Data.Vector             (Vector, fromListN)
+import           Data.Vector.Binary      ()
+import           Data.Vector.Instances   ()
 import           GHC.Generics
 import           Text.XML
-import           TextShow                    (TextShow (showb, showt), fromText)
+import           TextShow                (TextShow(showb, showt), fromText)
 
 
 -- |

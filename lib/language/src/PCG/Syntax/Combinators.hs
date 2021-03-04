@@ -69,9 +69,9 @@ import           Data.Foldable
 import           Data.Functor                     (void)
 import           Data.Kind                        (Type)
 import           Data.List                        (intercalate)
-import           Data.List.NonEmpty               (NonEmpty (..), some1)
+import           Data.List.NonEmpty               (NonEmpty(..), some1)
 import           Data.Proxy
-import           Data.String                      (IsString (..))
+import           Data.String                      (IsString(..))
 import           Data.Text.Short                  (ShortText)
 import           Data.Time.Clock                  (DiffTime)
 import           PCG.Syntax.Primitive             (PrimitiveValue, parsePrimitive, whitespace)
@@ -223,13 +223,25 @@ withDefault arg def = liftAp $ DefaultValue arg def
 
 -- |
 -- Parse a command specification.
-parseCommand :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => CommandSpecification a -> m a
+parseCommand
+  :: ( FoldCase (Tokens s)
+     , MonadParsec e s m
+     , Token s ~ Char
+     , VisualStream s
+     )
+  => CommandSpecification a -> m a
 parseCommand (CommandSpec commandName definition) = string'' commandName *> runSyntax definition
 
 
 -- |
 -- Create a 'MonadParsec' parser matching the specified semantics of the command.
-runSyntax :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Ap SyntacticArgument a -> m a
+runSyntax
+  :: ( FoldCase (Tokens s)
+     , MonadParsec e s m
+     , VisualStream s
+     , Token s ~ Char
+     )
+  => Ap SyntacticArgument a -> m a
 runSyntax = intercalateEffect comma . runAp' noEffect apRunner
   where
     noEffect = toPermutation voidEffect
@@ -241,7 +253,14 @@ runSyntax = intercalateEffect comma . runAp' noEffect apRunner
 -- |
 -- The \"natural transformation\" used to convert the Free Alternative to the
 -- 'MonadParsec' parser result.
-apRunner :: forall a e m s. (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => Permutation m () -> SyntacticArgument a -> Permutation m a
+apRunner
+  :: forall a e m s.
+     ( FoldCase (Tokens s)
+     , MonadParsec e s m
+     , Token s ~ Char
+     , VisualStream s
+     )
+  => Permutation m () -> SyntacticArgument a -> Permutation m a
 apRunner effect (PrimitiveArg p  ) = toPermutation $ runPermutation effect *> F.iterM parsePrimitive p
 apRunner effect (ExactlyOneOf ps ) = toPermutation $ runPermutation effect *> choice (runPermutation . runAp (apRunner voidEffect) <$> ps)
 apRunner effect (ArgumentList p  ) = toPermutation $ runPermutation effect *> runPermutation (parseArgumentList p)
@@ -271,7 +290,13 @@ apRunner effect (ArgIdNamedArg p ids) = toPermutation $ do
 -- |
 -- Part of the recursively defined evaluation where the argument permutations
 -- are enumerated and evaluated.
-parseArgumentList :: (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char) => ArgList a -> Permutation m a
+parseArgumentList
+  :: ( FoldCase (Tokens s)
+     , MonadParsec e s m
+     , VisualStream s
+     , Token s ~ Char
+     )
+  => ArgList a -> Permutation m a
 parseArgumentList argListVal = toPermutation $ begin *> datum <* close
   where
     bookend

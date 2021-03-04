@@ -21,7 +21,7 @@ import System.IO.Unsafe
 main :: IO ()
 main = do
    let !memo =  memoize delayWork -- expensiveFunction
-   let !gen  =  sequenceA $ replicate 16 randomIO :: IO [Word]
+   let !gen  =  replicateM 16 randomIO :: IO [Word]
    args      <- zip3 <$> gen <*> gen <*> gen
    args'     <- force <$> shuffleM args
    !t0       <- getCurrentTime

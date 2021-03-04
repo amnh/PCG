@@ -10,7 +10,6 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE BangPatterns           #-}
 {-# LANGUAGE ConstraintKinds        #-}
 {-# LANGUAGE DeriveAnyClass         #-}
 {-# LANGUAGE DeriveGeneric          #-}
@@ -60,11 +59,11 @@ import           Data.Bits
 import           Data.CharacterName
 import           Data.FileSource
 import           Data.Foldable
-import           Data.Functor                 (($>), void)
+import           Data.Functor                 (void, ($>))
 import           Data.Hashable
 import           Data.Hashable.Memoize
 import           Data.List                    (intercalate)
-import           Data.List.NonEmpty           (NonEmpty (..))
+import           Data.List.NonEmpty           (NonEmpty(..))
 import           Data.MetricRepresentation
 import           Data.Range
 import           Data.TCM                     hiding (size, (!))

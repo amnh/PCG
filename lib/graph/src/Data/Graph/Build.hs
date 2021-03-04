@@ -17,7 +17,7 @@ import           Data.Graph.Indices
 import           Data.Graph.NodeContext
 import           Data.Graph.Sequence.Class
 import           Data.Graph.Type
-import           Data.List.NonEmpty        (NonEmpty (..))
+import           Data.List.NonEmpty        (NonEmpty(..))
 import qualified Data.List.NonEmpty        as NE
 import           Data.Pair.Strict
 import           Data.Semigroup.Foldable

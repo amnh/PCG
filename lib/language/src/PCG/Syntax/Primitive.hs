@@ -48,7 +48,7 @@ import           Data.Foldable              (fold)
 import           Data.Functor               (void, ($>))
 import           Data.Key
 import           Data.Kind                  (Type)
-import           Data.List.NonEmpty         (NonEmpty (..))
+import           Data.List.NonEmpty         (NonEmpty(..))
 import qualified Data.List.NonEmpty         as NE
 import qualified Data.Map                   as M
 import           Data.Maybe                 (fromMaybe)
@@ -208,7 +208,11 @@ whitespace = Lex.space spChar line block
 -- |
 -- A contextual primitive value parser that will return type errors.
 parsePrimitive
-  :: (FoldCase (Tokens s), MonadParsec e s m,  Token s ~ Char)
+  :: ( FoldCase (Tokens s)
+     , MonadParsec e s m
+     , VisualStream s
+     , Token s ~ Char
+     )
   => PrimitiveValue (m a)
   -> m a
 parsePrimitive (PBool      x) = typeMismatchContext boolValue TypeOfBool >>= x
@@ -274,7 +278,11 @@ realValue = label (getPrimitiveName TypeOfReal)
 
 
 textValue
-  :: forall e s m. (MonadParsec e s m, Token s ~ Char)
+  :: forall e s m.
+     ( MonadParsec e s m
+     , VisualStream s
+     , Token s ~ Char
+     )
   => m ShortText -- (Tokens s)
 textValue = fmap pack $ openQuote *> many (escaped <|> nonEscaped) <* closeQuote
   where
@@ -353,7 +361,11 @@ valueValue = void . string' . tokensToChunk (Proxy :: Proxy s)
 
 typeMismatchContext
   :: forall e s m a
-  .  (FoldCase (Tokens s), MonadParsec e s m, Token s ~ Char)
+  .  ( FoldCase (Tokens s)
+     , MonadParsec e s m
+     , VisualStream s
+     , Token s ~ Char
+     )
   => m a
   -> PrimitiveType
   -> m a

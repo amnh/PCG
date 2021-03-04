@@ -19,7 +19,7 @@ import           Bio.Graph.ReferenceDAG
 import           Bio.Graph.ReferenceDAG.Utility     (incrementRefVector)
 import           Bio.Sequence
 import           Control.Lens                       hiding (_head)
-import           Control.Monad.State.Strict         (MonadState (..), State)
+import           Control.Monad.State.Strict         (MonadState(..), State)
 import           Data.Foldable
 import           Data.IntMap.Lazy                   (IntMap, keys)
 import qualified Data.IntMap.Lazy                   as IM
@@ -28,7 +28,7 @@ import qualified Data.IntSet                        as IS
 import           Data.Key                           (foldrWithKeyM)
 import           Data.List.Utility
 import qualified Data.Map                           as M
-import           Data.Monoid                        (First (..))
+import           Data.Monoid                        (First(..))
 import           Data.Vector                        (Vector, (!))
 import qualified Data.Vector                        as V
 import           Prelude                            hiding (length)
@@ -77,6 +77,7 @@ getIndexFromName dag name =
     fst <$> ind
 
 
+{-
 substituteNode
   :: Int
   -> PhylogeneticDAG m e n u v w x y z
@@ -84,6 +85,8 @@ substituteNode
   -> State (M.Map n Int) (PhylogeneticDAG m e n u v w x y z)
 substituteNode _ _ _ = do
   pure undefined
+-}
+
 
 substituteSingle
   :: forall m e n u v w x y z .

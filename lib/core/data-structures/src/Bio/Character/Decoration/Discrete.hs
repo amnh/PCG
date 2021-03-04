@@ -48,7 +48,7 @@ import Data.Range
 import GHC.Generics
 import Numeric.Extended
 import Text.XML
-import TextShow                                (TextShow (showb))
+import TextShow                                (TextShow(showb))
 
 -- |
 

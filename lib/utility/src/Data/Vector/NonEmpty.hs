@@ -184,7 +184,7 @@ singleton = NEV . V.singleton
 -- Construct a 'Vector' from a non-empty structure.
 {-# INLINE fromNonEmpty #-}
 fromNonEmpty :: Foldable1 f => f a -> Vector a
-fromNonEmpty xs = 
+fromNonEmpty xs =
     let !n = length xs
     in  NEV . V.fromListN n . NE.toList $ toNonEmpty xs
 

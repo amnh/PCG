@@ -25,11 +25,11 @@ module Data.UnionSet
 
 import Control.DeepSeq
 import Data.Binary
-import Data.Bits
 import Data.BitVector.LittleEndian
 import Data.BitVector.LittleEndian.Instances ()
+import Data.Bits
 import GHC.Generics
-import TextShow                    (TextShow)
+import TextShow                              (TextShow)
 
 
 -- |

@@ -12,7 +12,7 @@ import           Data.Foldable
 import           Data.Functor.Compose
 import           Data.Functor.Identity
 import           Data.Key              ((!))
-import           Data.List.NonEmpty    (NonEmpty ((:|)))
+import           Data.List.NonEmpty    (NonEmpty((:|)))
 import qualified Data.List.NonEmpty    as NE
 import           Data.MonoTraversable
 import           Data.Semigroup

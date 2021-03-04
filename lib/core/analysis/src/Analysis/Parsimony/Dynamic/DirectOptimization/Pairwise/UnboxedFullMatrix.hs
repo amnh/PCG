@@ -24,13 +24,13 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedFullMatrix
   ( unboxedFullMatrixDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (Direction(..), DOCharConstraint, OverlapFunction, measureAndUngapCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (DOCharConstraint, Direction(..), OverlapFunction, measureAndUngapCharacters)
 import           Bio.Character.Encodable
-import           Data.DList                  (snoc)
+import           Data.DList                                                      (snoc)
 import           Data.Foldable
-import qualified Data.List.NonEmpty          as NE
-import           Data.Matrix.Unboxed         (Matrix, (!), create, unsafeIndex)
-import qualified Data.Matrix.Unboxed.Mutable as M
+import qualified Data.List.NonEmpty                                              as NE
+import           Data.Matrix.Unboxed                                             (Matrix, create, unsafeIndex, (!))
+import qualified Data.Matrix.Unboxed.Mutable                                     as M
 import           Data.MonoTraversable
 import           Numeric.Extended.Natural
 
@@ -69,9 +69,9 @@ buildFullUnboxedMatrix overlapFunction topChar leftChar = fullMatrix
 
     fullMatrix = create $ do
       m <- M.new (rows, cols)
-      
+
       let ref = fmap fst . M.unsafeRead m
-      
+
       -- Write to the origin to seed the first row.
       M.unsafeWrite m (0,0) (0, DiagArrow)
 
@@ -109,10 +109,10 @@ buildFullUnboxedMatrix overlapFunction topChar leftChar = fullMatrix
         let leftElement = maybe gap getMedian $ leftChar `lookupStream` (i - 1)
             topElement  = maybe gap getMedian $  topChar `lookupStream` (j - 1)
         in  -- Preserve the gap in the left (lesser) string
-            if      leftElement == gap 
+            if      leftElement == gap
             then ref (i - 1, j    ) >>= (\c -> M.unsafeWrite m (i, j) (c,   UpArrow))
             -- Preserve the gap in the top  (longer) string
-            else if topElement == gap 
+            else if topElement == gap
             then ref (i    , j - 1) >>= (\c -> M.unsafeWrite m (i, j) (c, LeftArrow))
             else let deleteCost  = fromFinite $ cost topElement         gap
                      alignCost   = fromFinite $ cost topElement leftElement
@@ -170,7 +170,7 @@ directOptimization overlapλ matrixFunction char1 char2
               else let traversalMatrix = matrixFunction overlapλ longerChar shorterChar
                    in  traceback overlapλ traversalMatrix longerChar shorterChar
           transformation    = if swapped then omap swapContext else id
-          regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+          regappedAlignment = insertGaps gapsLesser gapsLonger ungappedAlignment
           alignmentContext  = transformation regappedAlignment
       in  (alignmentCost, alignmentContext)
 
@@ -198,7 +198,7 @@ traceback overlapFunction alignMatrix longerChar lesserChar = (cost, alignmentCo
 
     go p@(~(i, j))
       | p == (0,0) = mempty
-      | otherwise  = 
+      | otherwise  =
         let previousSequence = go (row', col')
 
             (_, directionArrow) = unsafeIndex alignMatrix p

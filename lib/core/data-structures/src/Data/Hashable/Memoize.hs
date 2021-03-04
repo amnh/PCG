@@ -34,7 +34,7 @@ import Data.Hashable
 import Data.HashTable.IO
 --import Data.HashTable.ST.Basic
 import Data.IORef
-import Prelude                hiding (lookup)
+import Prelude           hiding (lookup)
 import System.IO.Unsafe
 
 

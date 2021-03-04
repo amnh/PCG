@@ -17,11 +17,11 @@ module Data.Alphabet.IUPAC
   ) where
 
 
-import           Control.Arrow          ((***))
-import           Data.Bimap             (Bimap)
-import qualified Data.Bimap             as BM
-import           Data.List.NonEmpty     (NonEmpty)
-import qualified Data.List.NonEmpty     as NE
+import           Control.Arrow      ((***))
+import           Data.Bimap         (Bimap)
+import qualified Data.Bimap         as BM
+import           Data.List.NonEmpty (NonEmpty)
+import qualified Data.List.NonEmpty as NE
 import           Data.String
 
 

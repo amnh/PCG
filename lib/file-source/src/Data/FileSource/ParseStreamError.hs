@@ -32,7 +32,7 @@ import           Data.Data
 import           Data.FileSource
 import           Data.Foldable
 import           Data.List               (sortOn)
-import           Data.List.NonEmpty      (NonEmpty (..))
+import           Data.List.NonEmpty      (NonEmpty(..))
 import           Data.Maybe              (catMaybes)
 import           Data.Semigroup.Foldable
 import           Data.String
@@ -144,7 +144,8 @@ instance TextShow ParseStreamError where
 -- Remark that a parsing error occurred when reading the file. Note that the 'ParseError' should contain the 'FileSource' information.
 makeUnparsableFile
   :: ( ShowErrorComponent e
-     , Stream s
+     , TraversableStream s
+     , VisualStream s
      )
   => FileSource
   -> ParseErrorBundle s e

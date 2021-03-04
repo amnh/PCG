@@ -23,8 +23,8 @@ module Data.Alphabet.Special
   , isAlphabetDiscrete
   ) where
 
-import           Data.Alphabet.Internal
 import           Data.Alphabet.IUPAC
+import           Data.Alphabet.Internal
 import           Data.Bimap             (Bimap)
 import qualified Data.Bimap             as BM
 import           Data.Char              (isUpper)

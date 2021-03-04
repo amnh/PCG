@@ -143,7 +143,7 @@ steps:
       #   > import Data.Foldable (Foldable(fold, foldl, foldMap))
       #
       # Default: true
-      separate_lists: true
+      separate_lists: false
 
       # Space surround option affects formatting of import lists on a single
       # line. The only difference is single space after the initial
@@ -205,7 +205,7 @@ steps:
 
 # A common setting is the number of columns (parts of) code will be wrapped
 # to. Different steps take this into account. Default: 80.
-columns: 120
+columns: 256
 
 # By default, line endings are converted according to the OS. You can override
 # preferred format here.
