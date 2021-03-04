@@ -39,7 +39,7 @@ import qualified Data.HashMap.Lazy                  as HM
 import qualified Data.IntMap                        as IM
 import qualified Data.IntSet                        as IS
 import           Data.Key
-import           Data.List.NonEmpty                 (NonEmpty (..))
+import           Data.List.NonEmpty                 (NonEmpty(..))
 import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Semigroup

@@ -48,7 +48,7 @@ import           Data.Foldable              (fold)
 import           Data.Functor               (void, ($>))
 import           Data.Key
 import           Data.Kind                  (Type)
-import           Data.List.NonEmpty         (NonEmpty (..))
+import           Data.List.NonEmpty         (NonEmpty(..))
 import qualified Data.List.NonEmpty         as NE
 import qualified Data.Map                   as M
 import           Data.Maybe                 (fromMaybe)

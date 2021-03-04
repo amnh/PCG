@@ -74,7 +74,7 @@ class ( Bits (Subcomponent (Element s))
 
     deleteGaps :: s -> (IntMap Word, s)
 
-    insertGaps :: IntMap Word -> IntMap Word -> s -> s -> s -> s
+    insertGaps :: IntMap Word -> IntMap Word -> s -> s
 
 
 class EncodableDynamicCharacterElement e where

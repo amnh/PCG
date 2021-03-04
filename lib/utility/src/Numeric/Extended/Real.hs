@@ -33,7 +33,7 @@ import Data.Binary
 import GHC.Generics
 import Numeric.Extended.Internal
 import Test.QuickCheck
-import TextShow                  (TextShow (showb))
+import TextShow                  (TextShow(showb))
 
 
 -- |

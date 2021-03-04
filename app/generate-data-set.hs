@@ -18,7 +18,7 @@ import           Control.Monad.State.Strict
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty           (NonEmpty (..))
+import           Data.List.NonEmpty           (NonEmpty(..))
 import qualified Data.Map                     as M
 import           Data.Ratio
 import           Data.Scientific
@@ -26,7 +26,7 @@ import           Data.Sequence                (Seq)
 import qualified Data.Sequence                as Seq
 import           Data.Set                     (Set, singleton)
 import qualified Data.Set                     as S
-import           Data.String                  (IsString (fromString))
+import           Data.String                  (IsString(fromString))
 import           Data.Text.Lazy               (Text, intercalate, unlines, unwords)
 import qualified Data.Text.Lazy               as T
 import           Data.Text.Lazy.Builder       hiding (fromString, singleton)
@@ -40,7 +40,7 @@ import           Prelude                      hiding (putStrLn, unlines, unwords
 import           System.Random.MWC
 import           System.Random.Shuffle
 import           Text.PrettyPrint.ANSI.Leijen (string)
-import           TextShow                     (TextShow (showtl))
+import           TextShow                     (TextShow(showtl))
 
 
 data  Specification

@@ -57,12 +57,12 @@ import           Data.IntSet                   (IntSet)
 import qualified Data.IntSet                   as IS
 import           Data.Key
 import           Data.List                     (intercalate)
-import           Data.List.NonEmpty            (NonEmpty (..), intersperse)
+import           Data.List.NonEmpty            (NonEmpty(..), intersperse)
 import qualified Data.List.NonEmpty            as NE
 import           Data.List.Utility             (isSingleton)
 import           Data.MonoTraversable
 import           Data.Monoid                   hiding ((<>))
-import           Data.Semigroup                hiding (First (..))
+import           Data.Semigroup                hiding (First(..))
 import           Data.Semigroup.Foldable
 import qualified Data.Set                      as S
 import           Data.String
@@ -82,7 +82,7 @@ import           Numeric.Extended.Real
 import           Prelude                       hiding (lookup, zipWith)
 import           Text.Newick.Class
 import           Text.XML.Custom
-import           TextShow                      (TextShow (..), toString, unlinesB)
+import           TextShow                      (TextShow(..), toString, unlinesB)
 
 
 -- |

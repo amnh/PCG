@@ -24,7 +24,7 @@ import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Encodable
 import           Data.Alphabet
 import           Data.List                                              (intercalate)
-import           Data.List.NonEmpty                                     (NonEmpty (..))
+import           Data.List.NonEmpty                                     (NonEmpty(..))
 import           Data.MonoTraversable
 import           Data.TCM.Dense
 import           Data.TCM.Memoized
@@ -211,7 +211,8 @@ isValidPairwiseAlignment
   -> (DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter))
   -> TestTree
 isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
-    [  testProperty "alignment function is commutative"               commutivity
+    [  localOption (QuickCheckTests 1000) $
+       testProperty "alignment function is commutative"               commutivity
      , testProperty "output length is >= input length"                greaterThanOrEqualToInputLength
      , testProperty "alignment length is =< sum of input lengths"     totalAlignmentLengthLessThanOrEqualToSumOfLengths
 --     , testProperty "output alignments were not erroneously swapped"  outputsCorrespondToInputs
@@ -223,7 +224,7 @@ isValidPairwiseAlignment testLabel alignmentFunction = testGroup testLabel
     commutivity _input@(NS lhs, NS rhs) =
         let x@(a,b) = alignmentFunction lhs rhs
             y@(c,d) = alignmentFunction rhs lhs
-        in  x === (c, omap swapContext d) .&&. (a, omap swapContext b) === y
+        in  x === y .||. (x === (c, omap swapContext d) .&&. (a, omap swapContext b) === y)
 
     greaterThanOrEqualToInputLength :: (NucleotideSequence, NucleotideSequence) -> Bool
     greaterThanOrEqualToInputLength (NS lhs, NS rhs) =

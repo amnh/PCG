@@ -25,7 +25,7 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.Node
 import           Bio.Sequence
 import           Control.Lens
-import           Data.Monoid                (Sum (..))
+import           Data.Monoid                (Sum(..))
 import           Data.Vector
 import qualified Data.Vector.NonEmpty       as NE
 import           VectorBuilder.Builder      (Builder)

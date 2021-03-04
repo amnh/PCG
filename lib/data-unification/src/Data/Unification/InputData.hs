@@ -37,7 +37,7 @@ import           Data.Coerce                  (coerce)
 import           Data.FileSource
 import           Data.Foldable
 import           Data.Functor
-import           Data.List.NonEmpty           (NonEmpty (..), nonEmpty)
+import           Data.List.NonEmpty           (NonEmpty(..), nonEmpty)
 import qualified Data.List.NonEmpty           as NE
 import           Data.List.Utility            (duplicates)
 import qualified Data.Map                     as Map
@@ -49,7 +49,7 @@ import           Data.Normalization.Topology
 import           Data.Semigroup.Foldable
 import           Data.Set                     (Set, (\\))
 import qualified Data.Set                     as Set
-import           Data.TCM                     (TCM, TCMStructure (..))
+import           Data.TCM                     (TCM, TCMStructure(..))
 import           Data.Unification.Error
 import           Data.Validation
 import           Data.Vector.NonEmpty         (Vector)

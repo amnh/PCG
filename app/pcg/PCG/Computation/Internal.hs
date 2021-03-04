@@ -14,7 +14,7 @@ import           Control.Evaluation
 import           Data.Bits
 import           Data.Char                    (isSpace)
 import           Data.Foldable
-import           Data.List.NonEmpty           (NonEmpty (..))
+import           Data.List.NonEmpty           (NonEmpty(..))
 import           Data.Text.Lazy               (Text)
 import qualified Data.Text.Lazy               as T
 import qualified PCG.Command.Build.Evaluate   as Build

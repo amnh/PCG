@@ -29,7 +29,7 @@ import           Data.FileSource
 import           Data.Foldable
 import           Data.Key
 import           Data.List                         (sortOn)
-import           Data.List.NonEmpty                (NonEmpty (..))
+import           Data.List.NonEmpty                (NonEmpty(..))
 import qualified Data.List.NonEmpty                as NE
 import           Data.List.Utility                 (occurrences)
 import           Data.Map                          (Map, updateLookupWithKey)
@@ -41,15 +41,15 @@ import           Data.Normalization.Metadata
 import           Data.Normalization.Topology
 import           Data.Ord                          (comparing)
 import           Data.Semigroup.Foldable
-import           Data.TCM                          (TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
+import           Data.TCM                          (TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM                          as TCM
 import           Data.Unification
 import           Data.Validation
 import qualified Data.Vector.NonEmpty              as VNE
 import           Data.Void
 import           File.Format.Dot
-import           File.Format.Fasta                 hiding (FastaSequenceType (..))
-import qualified File.Format.Fasta                 as Fasta (FastaSequenceType (..))
+import           File.Format.Fasta                 hiding (FastaSequenceType(..))
+import qualified File.Format.Fasta                 as Fasta (FastaSequenceType(..))
 import           File.Format.Fastc                 hiding (Identifier)
 import           File.Format.Newick
 import           File.Format.Nexus                 (nexusStreamParser)
@@ -402,4 +402,4 @@ removeGapsFromDynamicCharactersNotMarkedAsAligned pid =
   where
     removeGapsFromUnalignedDynamicCharacters :: NormalizedCharacter -> NormalizedCharacter
     removeGapsFromUnalignedDynamicCharacters (NormalizedDynamicCharacter (Just xs)) = NormalizedDynamicCharacter . NE.nonEmpty $ NE.filter (/= pure "-") xs
-    removeGapsFromUnalignedDynamicCharacters e = e
+    removeGapsFromUnalignedDynamicCharacters e                                      = e

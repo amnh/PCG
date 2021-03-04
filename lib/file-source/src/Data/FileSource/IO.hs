@@ -53,7 +53,7 @@ import           Data.FileSource.OutputStreamError
 import           Data.FileSource.ParseStreamError
 import           Data.Foldable
 import           Data.List                         (isPrefixOf)
-import           Data.List.NonEmpty                (NonEmpty (..))
+import           Data.List.NonEmpty                (NonEmpty(..))
 import           Data.MonoTraversable
 import           Data.String
 import           Data.Text.Lazy                    (Text)

@@ -49,7 +49,7 @@ import           Data.Monoid
 import           Data.NodeLabel
 import qualified Data.Set                         as Set
 import           Data.ShortText.Custom            (intToShortText)
-import           Data.String                      (IsString (fromString))
+import           Data.String                      (IsString(fromString))
 import           File.Format.Dot
 import           File.Format.Fasta
 import           File.Format.Fastc                hiding (Identifier)
@@ -292,5 +292,5 @@ instance HasNormalizedTopology VER.VertexEdgeRoot where
           where
             f label = (pValues, Just . nodeLabel . fromString $ label, cValues)
               where
-                pValues = maybe [] toList (label `lookup` parentMapping)
-                cValues = maybe [] toList (label `lookup`  childMapping)
+                pValues = foldMap toList (label `lookup` parentMapping)
+                cValues = foldMap toList (label `lookup`  childMapping)

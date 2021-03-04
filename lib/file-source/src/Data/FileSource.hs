@@ -49,9 +49,9 @@ import           Data.Text.Short           (ShortText, pack, unpack)
 import qualified Data.Text.Short           as TS
 import           GHC.Generics              (Generic)
 import           System.FilePath.Posix     (takeExtension)
-import           Test.QuickCheck           (Arbitrary (..), CoArbitrary (..))
+import           Test.QuickCheck           (Arbitrary(..), CoArbitrary(..))
 import           Text.Printf               (PrintfArg)
-import           TextShow                  (TextShow (..), fromText)
+import           TextShow                  (TextShow(..), fromText)
 
 
 -- |

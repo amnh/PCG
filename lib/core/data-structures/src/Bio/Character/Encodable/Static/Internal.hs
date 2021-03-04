@@ -50,7 +50,7 @@ import           Data.Maybe
 import           Data.MonoTraversable
 import           Data.Monoid                           ()
 import           Data.Range
-import           Data.Semigroup.Foldable               (Foldable1 (..))
+import           Data.Semigroup.Foldable               (Foldable1(..))
 import           Data.String                           (fromString)
 import           GHC.Generics
 import           Test.QuickCheck

@@ -31,15 +31,15 @@ module Control.Monad.Trans.Validation
 
 import Control.Applicative
 import Control.DeepSeq
-import Control.Monad.Fix         (MonadFix (..))
+import Control.Monad.Fix         (MonadFix(..))
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
-import Control.Monad.Zip         (MonadZip (..))
+import Control.Monad.Zip         (MonadZip(..))
 import Data.Bifunctor
-import Data.Functor.Alt          (Alt (..))
-import Data.Functor.Apply        (Apply (..))
-import Data.Functor.Bind         (Bind (..))
-import Data.Functor.Classes      (Eq1 (..), Ord1 (..), Show1 (..))
+import Data.Functor.Alt          (Alt(..))
+import Data.Functor.Apply        (Apply(..))
+import Data.Functor.Bind         (Bind(..))
+import Data.Functor.Classes      (Eq1(..), Ord1(..), Show1(..))
 import Data.String
 import Data.Validation
 import GHC.Generics

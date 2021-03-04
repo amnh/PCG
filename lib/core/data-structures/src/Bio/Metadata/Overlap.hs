@@ -34,7 +34,7 @@ module Bio.Metadata.Overlap
 import Bio.Character.Encodable
 import Data.Bits
 import Data.Foldable.Custom
-import Data.List.NonEmpty      (NonEmpty (..))
+import Data.List.NonEmpty      (NonEmpty(..))
 import Data.Semigroup
 import Data.Semigroup.Foldable
 

@@ -31,7 +31,7 @@ import Data.Data
 import Data.FileSource                  (FileSource)
 import Data.FileSource.InputStreamError
 import Data.FileSource.ParseStreamError
-import Data.List.NonEmpty               (NonEmpty (..))
+import Data.List.NonEmpty               (NonEmpty(..))
 import Data.Semigroup.Foldable
 import Data.Unification
 import GHC.Generics                     (Generic)

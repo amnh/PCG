@@ -254,7 +254,7 @@ algn2d computeUnion computeMedians denseTCMs char1 char2 =
           | swapped   = (gapsChar2, gapsChar1, omap swapContext)
           | otherwise = (gapsChar1, gapsChar2, id)
 -}
-        regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+        regappedAlignment = insertGaps gapsLesser gapsLonger ungappedAlignment
         alignmentContext  = transformation regappedAlignment
     in  handleMissingCharacter char1 char2 (alignmentCost, alignmentContext)
   where

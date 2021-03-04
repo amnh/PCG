@@ -63,7 +63,7 @@ import           Data.Functor                 (void, ($>))
 import           Data.Hashable
 import           Data.Hashable.Memoize
 import           Data.List                    (intercalate)
-import           Data.List.NonEmpty           (NonEmpty (..))
+import           Data.List.NonEmpty           (NonEmpty(..))
 import           Data.MetricRepresentation
 import           Data.Range
 import           Data.TCM                     hiding (size, (!))

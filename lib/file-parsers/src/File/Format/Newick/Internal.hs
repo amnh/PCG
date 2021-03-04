@@ -37,8 +37,8 @@ module File.Format.Newick.Internal
 import           Control.DeepSeq    (NFData)
 import           Data.Data
 import           Data.Foldable
-import           Data.List.NonEmpty (NonEmpty (..))
-import           Data.String        (IsString (fromString))
+import           Data.List.NonEmpty (NonEmpty(..))
+import           Data.String        (IsString(fromString))
 import           Data.Text          (Text)
 import           Data.Text.Short    (ShortText, toString)
 import qualified Data.Text.Short    as T

@@ -32,7 +32,7 @@ import Data.Binary
 import GHC.Generics
 import Numeric.Extended.Natural
 import Text.XML
-import TextShow                              (TextShow (showb))
+import TextShow                              (TextShow(showb))
 
 
 -- |

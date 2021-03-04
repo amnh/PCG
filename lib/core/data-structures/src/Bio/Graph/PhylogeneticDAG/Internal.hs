@@ -69,7 +69,7 @@ import           Data.Binary.Instances.UnorderedContainers ()
 import           Data.Bits
 import           Data.Foldable
 import           Data.Foldable.Custom                      (sum')
-import           Data.Functor.Apply                        (Apply ((<.>)))
+import           Data.Functor.Apply                        (Apply((<.>)))
 import           Data.GraphViz.Printing
 import           Data.GraphViz.Types
 import           Data.HashMap.Lazy                         (HashMap)
@@ -78,7 +78,7 @@ import           Data.IntSet                               (IntSet)
 import qualified Data.IntSet                               as IS
 import           Data.Key
 import           Data.List                                 (zip4)
-import           Data.List.NonEmpty                        (NonEmpty (..))
+import           Data.List.NonEmpty                        (NonEmpty(..))
 import qualified Data.List.NonEmpty                        as NE
 import           Data.MonoTraversable
 import           Data.Set                                  (Set, notMember)
@@ -90,8 +90,7 @@ import           GHC.Generics
 import           Prelude                                   hiding (zip)
 import           Text.Newick.Class
 import           Text.XML
-import           TextShow                                  (Builder, TextShow (showb, showt), fromText, toString,
-                                                            unlinesB)
+import           TextShow                                  (Builder, TextShow(showb, showt), fromText, toString, unlinesB)
 import           Type.Reflection                           (Typeable)
 
 

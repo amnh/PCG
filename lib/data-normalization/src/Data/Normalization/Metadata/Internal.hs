@@ -39,9 +39,9 @@ import           Data.Key
 import           Data.List.Utility            (transpose)
 import           Data.Matrix.NotStupid        (Matrix)
 import           Data.Normalization.Character
-import           Data.Semigroup.Foldable      (Foldable1 (..))
+import           Data.Semigroup.Foldable      (Foldable1(..))
 import           Data.String                  (IsString)
-import           Data.TCM                     (TCM, TCMDiagnosis (..), TCMStructure (..), diagnoseTcm)
+import           Data.TCM                     (TCM, TCMDiagnosis(..), TCMStructure(..), diagnoseTcm)
 import qualified Data.TCM                     as TCM
 import           Data.Text.Short              (ShortText)
 import           Data.Vector.NonEmpty         (Vector)

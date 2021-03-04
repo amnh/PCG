@@ -45,7 +45,7 @@ import           Bio.Character.Encodable.Stream
 import           Bio.Character.Exportable
 import           Control.DeepSeq
 import           Control.Lens                                   ((^.))
-import           Control.Monad                                  (when)
+import           Control.Monad                                  (unless, when)
 import           Control.Monad.Loops                            (whileM)
 import           Control.Monad.ST
 import           Data.Alphabet
@@ -74,7 +74,7 @@ import           GHC.Generics
 import           Test.QuickCheck
 import           Test.QuickCheck.Arbitrary.Instances            ()
 import           Text.XML
-import           TextShow                                       (TextShow (showb))
+import           TextShow                                       (TextShow(showb))
 
 
 -- |
@@ -86,7 +86,7 @@ import           TextShow                                       (TextShow (showb
 data  DynamicCharacter
     = Missing {-# UNPACK #-} !Word
     | DC      {-# UNPACK #-} !(Vector (BitVector, BitVector, BitVector))
-    deriving stock    (Eq, Generic, Ord, Show)
+    deriving stock    (Eq, Generic, Ord, Show, Read)
     deriving anyclass (Binary, NFData)
 
 
@@ -180,28 +180,13 @@ instance EncodableDynamicCharacter DynamicCharacter where
                         writeSTRef  gapLen 0
                         writeSTRef prevGap False
                       modifySTRef nonGaps succ
-{-
-              else do gapBefore <- readSTRef prevGap
-                      when gapBefore $ do
-                        j <- readSTRef nonGaps
-                        g <- readSTRef gapLen
-                        modifySTRef gapRefs ( (j,g): )
-                        writeSTRef  gapLen 0
-                        writeSTRef prevGap False
-                      modifySTRef nonGaps succ
 
-            gapBefore <- readSTRef prevGap
-            when gapBefore $ do
-              j <- readSTRef nonGaps
-              g <- readSTRef gapLen
-              modifySTRef gapRefs ( (j,g): )
--}
             handleGapBefore $ pure ()
             readSTRef gapRefs
 
     -- |
     -- Adds gaps elements to the supplied character.
-    insertGaps lGaps rGaps _ _ meds
+    insertGaps lGaps rGaps meds
       | null lGaps && null rGaps = meds -- No work needed
       | otherwise                = force . DC . coerce $ newVector
       where
@@ -211,6 +196,9 @@ instance EncodableDynamicCharacter DynamicCharacter where
         lGapCount = totalGaps lGaps
         rGapCount = totalGaps rGaps
         newLength = lGapCount + rGapCount + olength meds
+
+        ins = splitElement $ insertElement gap gap
+        del = splitElement $ deleteElement gap gap
 
         newVector = EV.create $ do
           mVec <- MV.unsafeNew newLength
@@ -225,33 +213,30 @@ instance EncodableDynamicCharacter DynamicCharacter where
           for_ (IM.toAscList rGaps) $ uncurry (MUV.unsafeWrite rVec)
 
           let align i = do
-                    m <- readSTRef mPtr
-                    let e = meds `indexStream` m
-                    let v = coerce e
-                    MV.unsafeWrite mVec i v
-                    modifySTRef mPtr succ
-                    when (isAlign e || isDelete e) $ do
-                      modifySTRef lGap succ
-                    when (isAlign e || isInsert e) $ do
-                      modifySTRef rGap succ
+                m <- readSTRef mPtr
+                let e = meds `indexStream` m
+                let v = coerce e
+                MV.unsafeWrite mVec i v
+                modifySTRef mPtr succ
+                when (isAlign e || isDelete e) $ do
+                  modifySTRef lGap succ
+                when (isAlign e || isInsert e) $ do
+                  modifySTRef rGap succ
 
-          let checkRightGapReinsertion i = do
-                rg <- readSTRef rGap
-                v  <- if rg >= MUV.length rVec then pure 0 else MUV.unsafeRead rVec rg
+          let insertGapWith i e gapRef gapVec = do
+                rg <- readSTRef gapRef
+                v  <- if rg >= MUV.length gapVec then pure 0 else MUV.unsafeRead gapVec rg
                 if   v == 0
-                then do -- when (k + o + fromEnum v <= p) $ modifySTRef lOff (+ fromEnum v)
-                        align i
-                else do MV.unsafeWrite mVec i . splitElement $ insertElement gap gap
-                        MUV.unsafeWrite rVec rg $ v - 1
+                then pure False
+                else do MV.unsafeWrite mVec i e
+                        MUV.unsafeWrite gapVec rg $ v - 1
+                        pure True
 
           for_ [0 .. newLength - 1] $ \i -> do
-            -- Check if we need to insert a gap from the left char
-            lg <- readSTRef lGap
-            v  <- if lg >= MUV.length lVec then pure 0 else MUV.unsafeRead lVec lg
-            if   v == 0
-            then do checkRightGapReinsertion i
-            else do MV.unsafeWrite mVec i . splitElement $ deleteElement gap gap
-                    MUV.unsafeWrite lVec lg $ v - 1
+            written <- insertGapWith i ins lGap lVec
+            unless written $ do
+              written' <- insertGapWith i del rGap rVec
+              unless written' $ align i
 
           pure mVec
 

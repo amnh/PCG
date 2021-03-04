@@ -26,13 +26,13 @@ import           Control.Applicative
 import           Data.Alphabet
 import           Data.Foldable
 import           Data.Key
-import           Data.List.NonEmpty                   (NonEmpty (..))
+import           Data.List.NonEmpty                   (NonEmpty(..))
 import           Data.Matrix.NotStupid                (Matrix, nrows)
 import           Data.Monoid
 import           Data.Normalization.Character
 import           Data.Normalization.Metadata.Internal
-import           Data.String                          (IsString (fromString))
-import           Data.TCM                             (TCMStructure (..))
+import           Data.String                          (IsString(fromString))
+import           Data.TCM                             (TCMStructure(..))
 import qualified Data.TCM                             as TCM
 import qualified Data.Vector                          as V
 import           Data.Vector.Instances                ()
@@ -42,8 +42,7 @@ import           File.Format.Dot
 import           File.Format.Fasta                    (FastaParseResult, TaxonSequenceMap)
 import           File.Format.Fastc
 import           File.Format.Newick
-import           File.Format.Nexus                    hiding (CharacterMetadata (..), DNA, Nucleotide, RNA,
-                                                       TaxonSequenceMap)
+import           File.Format.Nexus                    hiding (CharacterMetadata(..), DNA, Nucleotide, RNA, TaxonSequenceMap)
 import qualified File.Format.Nexus                    as Nex
 import qualified File.Format.TNT                      as TNT
 import qualified File.Format.TransitionCostMatrix     as F

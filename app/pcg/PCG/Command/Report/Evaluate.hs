@@ -16,10 +16,10 @@ import Data.FileSource                     (FileSource, toFileSource)
 import Data.FileSource.IO
 import Data.Foldable                       (traverse_)
 import Data.Functor                        (($>))
-import Data.List.NonEmpty                  (NonEmpty (..))
+import Data.List.NonEmpty                  (NonEmpty(..))
 import Data.Map                            (toAscList)
 import Data.MonoTraversable
-import Data.String                         (IsString (fromString))
+import Data.String                         (IsString(fromString))
 import Data.Validation
 import PCG.Command.Report
 import PCG.Command.Report.Distance
@@ -28,7 +28,7 @@ import PCG.Command.Report.ImpliedAlignment
 import PCG.Command.Report.Metadata
 import Prelude                             hiding (appendFile, writeFile)
 import Text.XML
-import TextShow                            (TextShow (showtl))
+import TextShow                            (TextShow(showtl))
 
 
 data FileStreamContext

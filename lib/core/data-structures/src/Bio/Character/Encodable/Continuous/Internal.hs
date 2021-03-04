@@ -33,7 +33,7 @@ import Data.Range
 import GHC.Generics
 import Numeric.Extended.Real
 import Text.XML.Class
-import TextShow                                 (TextShow (showb))
+import TextShow                                 (TextShow(showb))
 
 
 -- |

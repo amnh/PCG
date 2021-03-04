@@ -58,7 +58,7 @@ import qualified Data.IntMap                         as IM
 import qualified Data.IntSet                         as IS
 import           Data.Key
 import           Data.List                           (zip5)
-import           Data.List.NonEmpty                  (NonEmpty (..))
+import           Data.List.NonEmpty                  (NonEmpty(..))
 import qualified Data.List.NonEmpty                  as NE
 import           Data.List.Utility                   (catMaybes1)
 import           Data.Map                            (Map)
@@ -70,7 +70,7 @@ import           Data.Normalization.Character
 import           Data.Normalization.Metadata
 import           Data.Normalization.Topology
 import           Data.Semigroup.Foldable
-import           Data.TCM                            (TCM, TCMStructure (..))
+import           Data.TCM                            (TCM, TCMStructure(..))
 import qualified Data.TCM                            as TCM
 import           Data.Text.Short                     (ShortText, toString)
 import qualified Data.Text.Short                     as TS

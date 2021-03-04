@@ -70,7 +70,7 @@ import qualified Data.Text.Short          as TS
 import           Data.Traversable
 import           GHC.Generics             (Generic)
 import           Prelude                  hiding (lookup)
-import           TextShow                 (TextShow (showb, showbList), toString)
+import           TextShow                 (TextShow(showb, showbList), toString)
 import           TextShow.Data.List       (showbListWith)
 import           TextShow.Data.ShortText  ()
 

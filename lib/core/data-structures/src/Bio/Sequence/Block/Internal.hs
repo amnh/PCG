@@ -45,7 +45,7 @@ import           Data.Vector.Binary      ()
 import           Data.Vector.Instances   ()
 import           GHC.Generics
 import           Text.XML
-import           TextShow                (TextShow (showb, showt), fromText)
+import           TextShow                (TextShow(showb, showt), fromText)
 
 
 -- |

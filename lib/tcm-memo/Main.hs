@@ -22,10 +22,10 @@ instance ExportableBuffer MyStruct where
         ExportableCharacterBuffer
         { exportedElementCountBuffer = 5
         , exportedElementWidthBuffer = toEnum $ length xs
-        , exportedBufferChunks         = xs
+        , exportedBufferChunks       = xs
         }
 
-    fromExportableBuffer   = T . exportedBufferChunks
+    fromExportableBuffer = T . exportedBufferChunks
 
 
 main :: IO ()

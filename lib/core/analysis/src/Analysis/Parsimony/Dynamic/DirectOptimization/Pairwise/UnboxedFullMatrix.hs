@@ -24,9 +24,7 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.UnboxedFullMatrix
   ( unboxedFullMatrixDO
   ) where
 
-import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (DOCharConstraint, Direction (..),
-                                                                                  OverlapFunction,
-                                                                                  measureAndUngapCharacters)
+import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Internal (DOCharConstraint, Direction(..), OverlapFunction, measureAndUngapCharacters)
 import           Bio.Character.Encodable
 import           Data.DList                                                      (snoc)
 import           Data.Foldable
@@ -172,7 +170,7 @@ directOptimization overlapλ matrixFunction char1 char2
               else let traversalMatrix = matrixFunction overlapλ longerChar shorterChar
                    in  traceback overlapλ traversalMatrix longerChar shorterChar
           transformation    = if swapped then omap swapContext else id
-          regappedAlignment = insertGaps gapsLesser gapsLonger shorterChar longerChar ungappedAlignment
+          regappedAlignment = insertGaps gapsLesser gapsLonger ungappedAlignment
           alignmentContext  = transformation regappedAlignment
       in  (alignmentCost, alignmentContext)
 

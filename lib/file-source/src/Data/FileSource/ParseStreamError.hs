@@ -32,7 +32,7 @@ import           Data.Data
 import           Data.FileSource
 import           Data.Foldable
 import           Data.List               (sortOn)
-import           Data.List.NonEmpty      (NonEmpty (..))
+import           Data.List.NonEmpty      (NonEmpty(..))
 import           Data.Maybe              (catMaybes)
 import           Data.Semigroup.Foldable
 import           Data.String

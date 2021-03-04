@@ -29,7 +29,7 @@ module Text.XML.Custom
 
 import Data.Foldable
 import Data.Key
-import Text.XML.Class       (ToXML (..))
+import Text.XML.Class       (ToXML(..))
 import Text.XML.Light.Types
 
 
