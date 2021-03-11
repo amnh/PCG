@@ -19,6 +19,7 @@
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 
@@ -75,6 +76,9 @@ module File.Format.TNT.Internal
   ) where
 
 import           Control.Monad              ((<=<))
+import           Data.Alphabet.IUPAC
+import           Data.Bimap                 (Bimap)
+import qualified Data.Bimap                 as BM
 import           Data.Bits
 import           Data.CaseInsensitive       (FoldCase)
 import           Data.Char                  (isAlpha, isLower, isUpper, toLower, toUpper)
@@ -83,8 +87,9 @@ import           Data.Functor               (($>))
 import           Data.Key                   (lookup, (!))
 import           Data.List                  (inits)
 import           Data.List.NonEmpty         (NonEmpty)
-import           Data.Map                   (Map, assocs, insert, insertWith, keys, union)
-import qualified Data.Map                   as M (fromList)
+import qualified Data.List.NonEmpty         as NE
+import           Data.Map                   (Map, assocs, insert, insertWith, keys)
+import qualified Data.Map                   as M
 import           Data.Matrix.NotStupid      (Matrix)
 import           Data.Proxy
 import           Data.Scientific            (floatingOrInteger)
@@ -641,30 +646,17 @@ serializeStateDna = swapMap deserializeStateDna
 -- |
 -- A map for deserializing dna state chatracters.
 deserializeStateDna :: Map Char TntDnaCharacter
-deserializeStateDna = casei core
+deserializeStateDna =  buildFromBimap f $ BM.filter g iupacToDna
   where
-    ref  = (core !)
-    core = M.fromList
-         [ ('A', bit 0   )
-         , ('G', bit 1   )
-         , ('C', bit 2   )
-         , ('T', bit 3   )
-         , ('-', bit 4   ) -- assume 5th state
-         , ('U', ref 'T' )
-         , ('R', ref 'A' .|. ref 'G')
-         , ('M', ref 'A' .|. ref 'C')
-         , ('W', ref 'A' .|. ref 'T')
-         , ('S', ref 'G' .|. ref 'C')
-         , ('K', ref 'G' .|. ref 'T')
-         , ('T', ref 'C' .|. ref 'T')
-         , ('V', ref 'A' .|. ref 'G' .|. ref 'C')
-         , ('D', ref 'A' .|. ref 'G' .|. ref 'T')
-         , ('H', ref 'A' .|. ref 'C' .|. ref 'T')
-         , ('B', ref 'G' .|. ref 'C' .|. ref 'T')
-         , ('N', ref 'A' .|. ref 'G' .|. ref 'C' .|. ref 'T')
-         , ('X', ref 'N')
-         , ('?', ref 'A' .|. ref 'G' .|. ref 'C' .|. ref 'T' .|. ref '-')
-         ]
+    f = \case
+          'A' -> 0
+          'G' -> 1
+          'C' -> 2
+          'T' -> 3
+          '-' -> 4
+          _   -> error "Fatal construction error in TNT parser's DNA IUPAC deserializer"
+
+    g x _ = not . isLower . head $ NE.head x
 
 
 -- |
@@ -676,13 +668,55 @@ serializeStateProtein = swapMap deserializeStateProtein
 -- |
 -- A map for deserializing protein state chatracters.
 deserializeStateProtein :: Map Char TntProteinCharacter
+deserializeStateProtein = buildFromBimap f iupacToDna
+  where
+    f = \case
+          'A' ->  0
+          'C' ->  1
+          'D' ->  2
+          'E' ->  3
+          'F' ->  4
+          'G' ->  5
+          'H' ->  6
+          'I' ->  7
+          'K' ->  8
+          'L' ->  9
+          'M' -> 10
+          'N' -> 11
+          'P' -> 12
+          'Q' -> 13
+          'R' -> 14
+          'S' -> 15
+          'T' -> 16
+          'V' -> 17
+          'W' -> 18
+          'Y' -> 19
+          '-' -> 20
+          _   -> error "Fatal construction error in TNT parser's IUPAC deserializer"
+
+
+buildFromBimap
+  :: Bits b
+  => (Char -> Int)
+  -> Bimap (NonEmpty String) (NonEmpty String)
+  -> Map Char b
+buildFromBimap f = casei . M.fromDistinctAscList . fmap convert . BM.toAscList
+  where
+    convert :: Bits b => (NonEmpty String, NonEmpty String) -> (Char, b)
+    convert (x,y) = (key, val)
+      where
+        key = head $ NE.head x
+        val = foldl (\b -> (b .|.) . bit . f . head) zeroBits y
+
+{-
 deserializeStateProtein = insert '?' allBits . casei $ core `union` multi
   where
     core    = M.fromList $ zip "ACDEFGHIKLMNPQRSTVWY-" (bit <$> [0..])
-    multi   = M.fromList [('B', ref 'D' .|. ref 'N'), ('Z', ref 'E' .|. ref 'Q'), ('X', allBits `clearBit` gapBit )]
+    multi   = M.fromList [('B', ref 'D' .|. ref 'N')'Z', ref 'E' .|. ref 'Q'), ('X', allBits `clearBit` gapBit )]
     ref     = (core !)
     allBits = foldl (.|.) zeroBits core
     gapBit  = findFirstSet $ core ! '-'
+-}
 
 
 -- |
