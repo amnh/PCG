@@ -17,13 +17,13 @@ testSuite = testGroup "nexusStreamParser" <$> sequence [validNexusFiles, invalid
 validNexusFiles :: IO TestTree
 validNexusFiles = validateFileContents <$> validContents
   where
-    validContents          = getFileContentsInDirectory "test/data-sets/nexus/valid"
+    validContents          = getFileContentsInDirectory "nexus/valid"
     validateFileContents   = testGroup "Valid files" . fmap success . toList
     success (path,content) = testCase (show path) $ parseSuccess nexusStreamParser content
 
 invalidNexusFiles :: IO TestTree
 invalidNexusFiles = validateFileContents <$> validContents
   where
-    validContents          = getFileContentsInDirectory "test/data-sets/nexus/invalid"
+    validContents          = getFileContentsInDirectory "nexus/invalid"
     validateFileContents   = testGroup "Invalid files" . fmap failure . toList
     failure (path,content) = testCase (show path) $ parseFailure nexusStreamParser content

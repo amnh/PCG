@@ -17,13 +17,13 @@ testSuite = testGroup "tntStreamParser" <$> sequence [validTNTFiles, invalidTNTF
 validTNTFiles :: IO TestTree
 validTNTFiles = validateFileContents <$> validContents
   where
-    validContents          = getFileContentsInDirectory "test/data-sets/tnt/valid"
+    validContents          = getFileContentsInDirectory "tnt/valid"
     validateFileContents   = testGroup "Valid files" . fmap success . toList
     success (path,content) = testCase (show path) $ parseSuccess tntStreamParser content
 
 invalidTNTFiles :: IO TestTree
 invalidTNTFiles = validateFileContents <$> validContents
   where
-    validContents          = getFileContentsInDirectory "test/data-sets/tnt/invalid"
+    validContents          = getFileContentsInDirectory "tnt/invalid"
     validateFileContents   = testGroup "Invalid files" . fmap failure . toList
     failure (path,content) = testCase (show path) $ parseFailure tntStreamParser content

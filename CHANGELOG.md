@@ -9,6 +9,7 @@ Releases are available [on GitHub][2].
 
 * Updated to GHC-9.0.1
 * Updated integration test suite
+* Updated file parser test suite
 * Added GitHub Actions workflows for CI
 * Corrected build error in benchmarking suite
 * Corrected defect in string alignment commutativity

@@ -17,13 +17,13 @@ testSuite = testGroup "fastaStreamParser" <$> sequence [validFastaFiles, invalid
 validFastaFiles :: IO TestTree
 validFastaFiles = validateFileContents <$> validContents
   where
-    validContents          = getFileContentsInDirectory "test/data-sets/fasta/valid"
+    validContents          = getFileContentsInDirectory "fasta/valid"
     validateFileContents   = testGroup "Valid files" . fmap success . toList
     success (path,content) = testCase (show path) $ parseSuccess fastaStreamParser content
 
 invalidFastaFiles :: IO TestTree
 invalidFastaFiles = validateFileContents <$> validContents
   where
-    validContents          = getFileContentsInDirectory "test/data-sets/fasta/invalid"
+    validContents          = getFileContentsInDirectory "fasta/invalid"
     validateFileContents   = testGroup "Invalid files" . fmap failure . toList
     failure (path,content) = testCase (show path) $ parseFailure fastaStreamParser content

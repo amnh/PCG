@@ -18,6 +18,6 @@ testSuite = testGroup "fastcStreamParser" . pure <$> validFastaFiles
 validFastaFiles :: IO TestTree
 validFastaFiles = validateFileContents <$> validContents
   where
-    validContents          = getFileContentsInDirectory "test/data-sets/fastc/valid"
+    validContents          = getFileContentsInDirectory "fastc/valid"
     validateFileContents   = testGroup "Valid files" . fmap success . toList
     success (path,content) = testCase (show path) $ parseSuccess fastcStreamParser content
