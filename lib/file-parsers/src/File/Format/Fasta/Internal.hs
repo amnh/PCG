@@ -106,5 +106,5 @@ commentBody  = do
     -- |
     -- Defines the line of a comment
     commentLine =
-        let result = takeWhile1P (Just "Taxon comment content") $ \x -> x /= '\n' && x /= '\r'
+        let result = takeWhileP (Just "Taxon comment content") $ \x -> x /= '\n' && x /= '\r'
         in  unwords . words . chunkToTokens (Proxy :: Proxy s) <$> result
