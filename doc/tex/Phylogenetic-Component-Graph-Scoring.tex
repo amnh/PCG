@@ -115,6 +115,14 @@ Second,  the parents of a network vertex must, at least potentially, be contempo
 A less restrictive form of network (``reconstructable'') is defined by \cite{moretetal2004} with vertices (indegree, outdegree): 
 (0, $\ge 1$) the unique root, (1, 0) leaves, and (1, $\ge$1) ``internal'' vertices, and networks adding ($\ge 2$, 1) vertices as ``network'' vertices.  For purposes of searching, outdegree of internal nodes is restricted to at most 2. Since edges may have zero length, networks may be output with vertices of outdegree $> 2$.
  
+\subsection{Postorder scoring characters}
+
+All characters are scored an have their preliminary assignments derived from a post-order traversal over the graph components.
+ 
+\subsection{Rerooting non-exact characters}
+
+Rerooting is the method of considering every edge in a rooted tree to be the potential root, determining the cost and character states for the tree if that edge was selected as the root. A precondition is that a postorder scoring of the tree has already occurred with an arbitrary edge in the unrooted tree selected as the root.
+ 
 \section{Optimization of a single graph}\label{Optimization of a single graph}
 
 Optimization is a function that takes a graph ($G$), here a forest $F$, and data ($D$) as inputs and returns a numerical value.  
