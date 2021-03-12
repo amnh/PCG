@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.Parsimony.Dynmaic.DirectOptimization.Pairwise.Test
+-- Module      :  Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --

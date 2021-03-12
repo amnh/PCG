@@ -54,7 +54,7 @@ type Commands = ([CCode], [CNames], [Cost], [NStates], [TRead], [XRead])
 
 -- |
 -- Collects the subset of the TNT commands related to processing character
--- sequences. Returns the relavent commands in a tuple.
+-- sequences. Returns the relevant commands in a tuple.
 gatherCommands :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m Commands
 gatherCommands = partition <$> many commands
   where
@@ -82,7 +82,7 @@ gatherCommands = partition <$> many commands
 
 -- |
 -- A parser for consuming a command that is not part of the subset of TNT
--- commands relavent to Character sequence processing.
+-- commands relevant to Character sequence processing.
 ignoredCommand :: (MonadParsec e s m, Token s ~ Char) => m String
 ignoredCommand = commandKeyword <* optional commandBody <* terminal
   where

@@ -41,7 +41,7 @@ invalidSetLabels :: [String]
 invalidSetLabels =
     [ ""          -- empty string
     , "Roots"     -- Not right
-    , "Verticies" -- Neither is this
+    , "Vertices" -- Neither is this
     ]
 
 

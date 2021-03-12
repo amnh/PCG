@@ -29,7 +29,7 @@ import           Data.Monoid                      ((<>))
 
 
 -- |
--- Outputs tabluar data of the first dynamic character of the first network in
+-- Outputs tabular data of the first dynamic character of the first network in
 -- the first forest of the solution.
 outputDynamicCharacterTablularData
 --  :: DirectOptimizationDecoration z a

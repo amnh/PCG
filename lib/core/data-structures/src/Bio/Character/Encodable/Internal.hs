@@ -26,7 +26,7 @@ import Foreign.C.Types
 
 
 -- |
--- Represents a type which stores one or more abiguity groups from an alphabet.
+-- Represents a type which stores one or more ambiguity groups from an alphabet.
 -- Allows /O(1)/ derivation of the number of possibly-present symbols in the
 -- ambiguity group.
 class EncodedAmbiguityGroupContainer b where

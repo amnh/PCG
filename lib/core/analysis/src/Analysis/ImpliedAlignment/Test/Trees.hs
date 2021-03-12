@@ -595,7 +595,7 @@ testInsertedDeletion = testCase "Insertion event of an deletion event" $ decorat
 
 {- |
   This tree should contain one deletion event on rhe edge between node 5 and
-  node 7. Thre should also be an insertion event on the edge between node 11
+  node 7. There should also be an insertion event on the edge between node 11
   and node 13.
 
   We should note that the insertion event is /non-homologous/ with the similar
@@ -1378,7 +1378,7 @@ testTwoAdjacentInsertionsSeperateDeletions = testCase "Delete two     adjacent i
                             `-26: AAGTT
 -}
 testTwoNonAdjacentSymetricInsertionsSeperateDeletions :: TestTree
-testTwoNonAdjacentSymetricInsertionsSeperateDeletions = testCase "Delete two non-adjacent insertion events on different edges (symetric)" $ decorationTest tree
+testTwoNonAdjacentSymetricInsertionsSeperateDeletions = testCase "Delete two non-adjacent insertion events on different edges (symmetric)" $ decorationTest tree
   where
     tree = [ ( 0, ""       , [""       ], [ 1, 2])
            , ( 1, "AAGTT"  , ["AA-G-TT"], []     )

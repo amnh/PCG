@@ -2,7 +2,7 @@
 -- |
 -- TODO: Document module.
 --
--- Exports C types for dynamic characters and their constructors allong with
+-- Exports C types for dynamic characters and their constructors along with
 -- an FFI binding for the memoizing TCM structure.
 -----------------------------------------------------------------------------
 

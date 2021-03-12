@@ -124,16 +124,16 @@ verStreamParser = validateForest =<< verDefinition
 -- We have a complicated definition here because we do not want to restrict
 -- the order of the set definitions, and yet we must enforce that there is
 -- only one edge set and two vertex sets. One vertex set is the set of all
--- verticies and the other is a subset consisting of the root nodes. To
+-- vertices and the other is a subset consisting of the root nodes. To
 -- enforce this for proper parsing, and provide robust error messages we
 -- read zero or more set definitions and separate each set as either a vertex
 -- set or an edge set by checking the type constructor for a Left or Right
 -- value. We then assert that we have received exactly one edge set and
 -- exactly two vertex sets. If not we generate meaningful error messages based
 -- on the missing or multiple requisite sets. Once all sets have been parsed
--- we disambiguate the vertex sets to the set of verticies and the set of root
+-- we disambiguate the vertex sets to the set of vertices and the set of root
 -- nodes by inspecting the possibly provided set labels or in the absence of
--- labels by comparing the size of the sets; as the set of all verticies is
+-- labels by comparing the size of the sets; as the set of all vertices is
 -- surely a superset of the set of root nodes.
 -- |
 -- Parses exactly one vertex set, one edge set, and one root set.
@@ -174,7 +174,7 @@ verDefinition = do
 
 -- |
 -- We read a set from the input. The set can be an edge set or a vertex set.
--- If it is a vertex set, it may be labeled as a specific set of verticies or
+-- If it is a vertex set, it may be labeled as a specific set of vertices or
 -- a set of roots. We use the Either type as a return type to denote the
 -- conditional type of the result.
 setDefinition :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Either (Set EdgeInfo) (Maybe VertexSetType, Set VertexLabel))
@@ -216,7 +216,7 @@ vertexSetType = do
 
 -- |
 -- A vertex set with an optional set label enclosed in braces. A vertex set
--- cannot have duplicate verticies.
+-- cannot have duplicate vertices.
 unlabeledVertexSetDefinition :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Maybe VertexSetType, Set VertexLabel)
 unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinition'
   where
@@ -232,7 +232,7 @@ unlabeledVertexSetDefinition = validateVertexSet =<< unlabeledVertexSetDefinitio
       | otherwise  = fail errorMessage
       where
         dupes = duplicates vs
-        errorMessage = "The following verticies were defined multiple times: " <> show dupes
+        errorMessage = "The following vertices were defined multiple times: " <> show dupes
 
 
 -- |
@@ -269,17 +269,17 @@ edgeSetDefinition = validateEdgeSet =<< edgeSetDefinition'
       where
         edges' = toTuple <$> es
         dupes  = duplicates edges'
-        selfs  = filter (uncurry (==)) edges'
+        self  = filter (uncurry (==)) edges'
         biDirs :: [(EdgeInfo, EdgeInfo)]
         biDirs = filter (uncurry isReflexive) [(x,y) | x <- es, y <- es, x /= y ]
         errors = snd <$> filter (not . fst)
             [ (null  dupes,         dupesErrorMessage)
-            , (null  selfs,         selfsErrorMessage)
+            , (null  self,         selfsErrorMessage)
             , (null biDirs, biDirectionalErrorMessage)
             ]
           where
             dupesErrorMessage = "Duplicate edges detected. The following edges were defined multiple times: "    <> show dupes
-            selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self-referencing: " <> show selfs
+            selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self-referencing: " <> show self
             biDirectionalErrorMessage = "One or more bidirectional edges detected: " <> biDirectionShow biDirs
             biDirectionShow :: [(EdgeInfo, EdgeInfo)] -> String
             biDirectionShow = (\x -> "[" <> x <> "]") . intercalate ", " . fmap g
@@ -318,7 +318,7 @@ edgeDefinition = symbol $ do
 
 
 -- |
--- Convinence combinator to consume trailing whitespace.
+-- Convenience combinator to consume trailing whitespace.
 symbol :: (MonadParsec e s m, Token s ~ Char) => m a -> m a
 symbol x = x <* space
 
@@ -362,7 +362,7 @@ validateForest ver@(VER vs es rs ) =
       where
         resultList = catMaybes $ findCycle <$> rootList
 
-        -- We merge cycles to provide nice error messages when a netowrk has multiple roots.
+        -- We merge cycles to provide nice error messages when a network has multiple roots.
         mergeCycles ((r1,cycle1), (r2,cycle2))
           | cycle1 == cycle2 && r1 /= r2 = [(r1:|[r2], cycle1)]
           | otherwise                    = [(r1:|[]  , cycle1), (r2:|[], cycle2)]
@@ -400,7 +400,7 @@ validateForest ver@(VER vs es rs ) =
 
     manyRootsErrorMessage xs = concat
       [ "Multiple root nodes detected in a single tree. "
-      , "The following root nodes should form different trees, but thay are part of the same tree: "
+      , "The following root nodes should form different trees, but they are part of the same tree: "
       , show xs
       ]
 -}
@@ -432,7 +432,7 @@ validateForest ver@(VER vs es rs ) =
 
 
 -- |
--- Convience method for building a connection 'Map' based on the existing edges
+-- Convenience method for building a connection 'Map' based on the existing edges
 -- in the graph.
 buildEdgeMap :: Set VertexLabel -> Set EdgeInfo -> Map VertexLabel (Set VertexLabel)
 buildEdgeMap vs es = foldMap buildMap vs

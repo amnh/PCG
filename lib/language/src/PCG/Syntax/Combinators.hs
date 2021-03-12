@@ -88,7 +88,7 @@ data  ArgList z
 
 
 -- |
--- Specifcation for a command in the PCG scripting language syntax.
+-- Specification for a command in the PCG scripting language syntax.
 data  CommandSpecification z
     = CommandSpec !String (Ap SyntacticArgument z)
 
@@ -186,14 +186,14 @@ choiceFrom opts =
 
 
 -- |
--- Require a prefix on an agrument value to disambiguate it from other argument
+-- Require a prefix on an argument value to disambiguate it from other argument
 -- values.
 argId :: String -> Ap SyntacticArgument a -> Ap SyntacticArgument a
 argId str x = liftAp $ ArgIdNamedArg x (ArgId str :|[])
 
 
 -- |
--- Require a prefix on an agrument value to disambiguate it from other argument
+-- Require a prefix on an argument value to disambiguate it from other argument
 -- values. Accepts multiple aliases for the prefix used to disambiuate the
 -- argument.
 argIds :: Foldable f => f String -> Ap SyntacticArgument a -> Ap SyntacticArgument a

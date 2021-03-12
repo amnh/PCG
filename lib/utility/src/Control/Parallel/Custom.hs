@@ -27,19 +27,19 @@ import Prelude                     hiding (zipWith)
 
 
 -- |
--- Map a function over a traversable structure in parrallel.
--- Should be prefered over 'parMap' which is fixed to lists.
+-- Map a function over a traversable structure in parallel.
+-- Should be preferred over 'parMap' which is fixed to lists.
 parmap :: Traversable t => Strategy b -> (a -> b) -> t a -> t b
-parmap strat f = withStrategy (parTraversable strat) . fmap f
+parmap strategy f = withStrategy (parTraversable strategy) . fmap f
 
 
 -- |
--- Zip two traversable, zippable structures in parrallel with a function.
+-- Zip two traversable, zippable structures in parallel with a function.
 parZipWith :: (Traversable t , Zip t) => Strategy c -> (a -> b -> c) -> t a -> t b -> t c
-parZipWith strat f lhs rhs = withStrategy (parTraversable strat) $ zipWith f lhs rhs
+parZipWith strategy f lhs rhs = withStrategy (parTraversable strategy) $ zipWith f lhs rhs
 
 
 -- |
--- Zip three traversable, zippable structures in parrallel with a function.
+-- Zip three traversable, zippable structures in parallel with a function.
 parZipWith3 :: (Traversable t, Zip t) => Strategy d -> (a -> b -> c -> d) -> t a -> t b -> t c -> t d
-parZipWith3 strat f x y z = withStrategy (parTraversable strat) $ zap (zipWith f x y) z
+parZipWith3 strategy f x y z = withStrategy (parTraversable strategy) $ zap (zipWith f x y) z

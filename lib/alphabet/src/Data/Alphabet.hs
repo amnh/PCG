@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- An 'Alphabet' represents an /ordered/ list of unique symbols with constant
--- time random access. Symbols are any data type which are coercable from a
+-- time random access. Symbols are any data type which are coercible from a
 -- 'String' through the 'Data.String.IsString' type-class.
 --
 -- An 'Alphabet' is constructed in one of two ways:
@@ -43,7 +43,7 @@ module Data.Alphabet
   , fromSymbolsWithStateNames
   , fromSymbolsWithStateNamesAndTCM
   , fromSymbolsWithTCM
-  -- * Querries
+  -- * Queries
   , alphabetStateNames
   , alphabetSymbols
   , getSubsetIndex
@@ -56,7 +56,7 @@ module Data.Alphabet
   , dnaAlphabet
   , rnaAlphabet
   , discreteAlphabet
-  -- * Special Alphabet Querries
+  -- * Special Alphabet Queries
   , isAlphabetAminoAcid
   , isAlphabetDna
   , isAlphabetRna

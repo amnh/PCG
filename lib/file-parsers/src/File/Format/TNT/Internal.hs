@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Internal types and functions for TNT parseing. Only a subset of types
+-- Internal types and functions for TNT parsing. Only a subset of types
 -- should be exported from top level module.
 -----------------------------------------------------------------------------
 
@@ -135,12 +135,12 @@ data  WithTaxa
 
 -- |
 -- Parse result from a CCODE command that represents a list of augmentations to
--- the default metatdata state for some characters.
+-- the default metadata state for some characters.
 type  CCode = NonEmpty CCodeAugment
 
 
 -- |
--- The specifcation of which chracters need which metadata mutations.
+-- The specification of which characters need which metadata mutations.
 data  CCodeAugment
     = CCodeAugment
     { charState :: NonEmpty CharacterState
@@ -184,7 +184,7 @@ type  CNames = NonEmpty CharacterName
 
 
 -- |
--- A specifcation for the state names of a given character in the taxon's sequence.
+-- A specification for the state names of a given character in the taxon's sequence.
 data  CharacterName
     = CharacterName
     { sequenceIndex       :: Int
@@ -319,7 +319,7 @@ type  TntContinuousCharacter = Maybe Double
 -- values are serialized textualy as one of the 64  values:
 -- '[0..9] <> [\'A\'..\'B\'] <> [\'a\'..\'z\'] <> "-?"'.
 -- Missing \'?\' represents the empty ambiguity group.
--- Each value coresponds to it's respective bit in the 'Word64'. Ambiguity groups
+-- Each value corresponds to it's respective bit in the 'Word64'. Ambiguity groups
 -- are represented by 'Word64' values with multiple set bits.
 newtype TntDiscreteCharacter = TntDis Word64
     deriving newtype (Bits, Eq, Ord, FiniteBits)
@@ -553,7 +553,7 @@ keyword x y = abreviatable x y $> ()
   where
     abreviatable fullName minimumChars
       | minimumChars < 1           = fail $ "Nonpositive abbreviation prefix (" <> show minimumChars <> ") supplied to abreviatable combinator"
-      | not $ all isAlpha fullName = fail $ "A keywork containing a non alphabetic character: '" <> show fullName <> "' supplied to abreviateable combinator"
+      | not $ all isAlpha fullName = fail $ "A keyword containing a non alphabetic character: '" <> show fullName <> "' supplied to abreviateable combinator"
       | otherwise                  = combinator <?> "keyword '" <> fullName <> "'"
       where
         combinator     = choice partialOptions $> fullName

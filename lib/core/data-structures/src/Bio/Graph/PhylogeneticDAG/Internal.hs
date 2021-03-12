@@ -574,7 +574,7 @@ localResolutionApplication dynFunction meta leftResolutions rightResolutions =
 -- |
 -- Remove all edges in the given edgeset from the PhylogeneticDAG.
 --
--- *Note:* No saftey checks are performed to ensure that the reulsting graph is connected.
+-- *Note:* No safety checks are performed to ensure that the reulsting graph is connected.
 pruneEdgeSet
   :: Set EdgeReference
   -> PhylogeneticDAG m e n u v w x y z

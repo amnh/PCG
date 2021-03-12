@@ -78,7 +78,7 @@ duplicateIndexMessages cnames = duplicateIndexErrors
 
 -- |
 -- Consumes the CNAMES string identifier and zero or more comments
--- preceding the taxa count and character cound parameters
+-- preceding the taxa count and character count parameters
 cnamesHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 cnamesHeader = symbol (keyword "cnames" 2)
             *> many (symbol simpleComment)
@@ -101,7 +101,7 @@ cnamesBody = NE.fromList . normalize <$> some cnamesStateName
 
 -- |
 -- Parses an individual CNAMES character name specification for a character
--- index allong with the character name and names of the state values for the
+-- index along with the character name and names of the state values for the
 -- character.
 cnamesStateName :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m CharacterName
 cnamesStateName = symbol (char '{') *> cnameCharacterName <* symbol terminator

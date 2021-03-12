@@ -33,7 +33,7 @@ module Data.TCM.Dense.FFI
   -- * Accessor functions
   , lookupPairwise
   , lookupThreeway
-  -- * Querries
+  -- * Queries
   , getAlignmentStrategy
   ) where
 
@@ -410,7 +410,7 @@ getAlignmentStrategy = toEnum . fromEnum . costModelType
 -- |
 -- /O(1)/
 --
--- Retreive the first 8 bits of the value.
+-- Retrieve the first 8 bits of the value.
 --
 -- Performs 8 individual bit checks.
 toByteValue :: Bits b => b -> Int

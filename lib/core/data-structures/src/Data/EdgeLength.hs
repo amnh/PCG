@@ -43,7 +43,7 @@ import TextShow            (TextShow(showb))
 -- The associative semigroup operation is isomorphic to addition over the real
 -- numbers when both operands have specified edge lengths. When one or more of
 -- the edge lengths are unspecified (the identity element), the semigroup
--- operation returns a specified edge length if possible, satifying the monoid
+-- operation returns a specified edge length if possible, satisfying the monoid
 -- laws regarding the identity element.
 newtype EdgeLength = C (Maybe (Sum Rational))
     deriving stock    (Eq, Generic, Ord)

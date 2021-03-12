@@ -210,7 +210,7 @@ validateIdentifierConsistency xs =
 
 
 -- |
--- Ensures that the charcters are all from a consistent alphabet
+-- Ensures that the characters are all from a consistent alphabet
 {-# INLINE validateSequenceConsistency #-}
 {-# SPECIALISE validateSequenceConsistency :: FastaParseResult -> Parsec Void  T.Text FastaParseResult #-}
 {-# SPECIALISE validateSequenceConsistency :: FastaParseResult -> Parsec Void LT.Text FastaParseResult #-}
@@ -243,7 +243,7 @@ validateConsistentAlphabet xs =
         [ "Error in sequence for taxon name: '"
         , toString n
         , "' the sequence data includes characters from multiple data formats. "
-        , "Check this taxon's sequence to ensure that it contains characted codes "
+        , "Check this taxon's sequence to ensure that it contains character codes "
         , "from only one data format."
         ]
 

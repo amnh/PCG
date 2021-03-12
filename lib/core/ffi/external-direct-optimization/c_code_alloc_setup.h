@@ -53,7 +53,7 @@ void initializeAlignmentMtx( alignment_matrices_t *retMtx
 
 /** Does internal allocation for a character struct. Also sets character pointers within array to correct positions.
  *
- *  resChar must be alloced before this call. This is because allocation must be done on other side of FFI for pass
+ *  resChar must be allocated before this call. This is because allocation must be done on other side of FFI for pass
  *  by ref to be correct.
  */
 void initializeChar( dyn_character_t *retChar

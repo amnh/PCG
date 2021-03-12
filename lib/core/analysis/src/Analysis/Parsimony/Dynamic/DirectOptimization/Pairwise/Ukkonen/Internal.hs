@@ -72,7 +72,7 @@ instance Lookup UkkonenMethodMatrix where
 -- /O( (n - m + 1 ) * log(n - m + 1) )/, /n/ >= /m/
 --
 -- Compute the alignment of two dynamic characters and the median states by
--- using Ukkonen's string edit distance algorthim to improve space and time
+-- using Ukkonen's string edit distance algorithm to improve space and time
 -- complexity.
 {-# INLINE ukkonenDO #-}
 {-# SPECIALISE ukkonenDO :: OverlapFunction AmbiguityGroup -> DynamicCharacter -> DynamicCharacter -> (Word, DynamicCharacter) #-}
@@ -98,7 +98,7 @@ ukkonenDO overlapFunction char1 char2
     -- initial barrier will be set adjacent to or beyond the lower left and
     -- upper right corners.
     --
-    -- Lastly, a threshold coeffcient is computed as the minimal indel cost from
+    -- Lastly, a threshold coefficient is computed as the minimal indel cost from
     -- any symbol in the alphabet to gap. However, if the indel cost for any
     -- symbol is zero, the algorithm will hang, and a naive approach must be taken.
     --
@@ -118,7 +118,7 @@ ukkonenDO overlapFunction char1 char2
 
     -- /O(2*(a - 1))/
     --
-    -- This was taken from Ukkonen's original 1985 paper wherein the coeffcient
+    -- This was taken from Ukkonen's original 1985 paper wherein the coefficient
     -- delta @(Δ)@ was defined by the minimum transition cost from any symbol in
     -- the alphabet @(Σ)@ to the gap symbol @'-'@.
     --

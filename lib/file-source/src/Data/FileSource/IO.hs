@@ -172,7 +172,7 @@ writeFile filePath str = ValidationT $ catch
 -- |
 -- Write textual stream to the to the file.
 --
--- If the specified file already exisits, rename the existing file, so that the
+-- If the specified file already exists, rename the existing file, so that the
 -- specified file can be written to without overwriting existing data.
 --
 -- The existing file is renamed, adding a numeric suffix to the end. The

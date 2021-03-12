@@ -78,7 +78,7 @@ instance Arbitrary BitMatrix where
 
 
 -- |
--- Performs a row-wise monomporphic fold over ther 'BitMatrix'.
+-- Performs a row-wise monomporphic fold over the 'BitMatrix'.
 instance MonoFoldable BitMatrix where
 
     -- |
@@ -359,7 +359,7 @@ numRows (BitMatrix n bv)
 -- |
 -- \( \mathcal{O} \left( 1 \right) \)
 --
--- Retreives a single row of the 'BitMatrix'. Allows for unsafe indexing.
+-- Retrieves a single row of the 'BitMatrix'. Allows for unsafe indexing.
 row :: BitMatrix -> Word -> BitVector
 row bm@(BitMatrix nCols bv) i
   | i < nRows = (lower, upper) `subRange` bv

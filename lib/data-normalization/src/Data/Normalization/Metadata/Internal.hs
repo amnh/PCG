@@ -92,7 +92,7 @@ makeEncodeInfo = Just . fmap makeOneInfo . developAlphabets
 -- |
 -- Make a single info given an alphabet without state names
 makeOneInfo :: Alphabet ShortText -> NormalizedMetadata
-makeOneInfo alph =
+makeOneInfo alpha =
     NormalizedMetadata
     { alphabet      = sortedAlphabet
     , characterName = ""
@@ -102,7 +102,7 @@ makeOneInfo alph =
     , isIgnored     = False
     }
   where
-    (sortedAlphabet, _, _, _) = getMetadataFromInputSymbolsAndTCM alph (undefined :: Matrix Word)
+    (sortedAlphabet, _, _, _) = getMetadataFromInputSymbolsAndTCM alpha (undefined :: Matrix Word)
 
 
 getMetadataFromInputSymbolsAndTCM :: (IsString a, FoldableWithKey t, Ord a, Real b) => t a -> Matrix b -> (Alphabet a, Double, TCM, TCMStructure)

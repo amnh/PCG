@@ -46,7 +46,7 @@ import           Text.Megaparsec.Custom
 
 
 -- Because some errors are dependent on passing some other validation, they've been split into
--- dependant and independent errors. Errors are enumerated below, along with their dependancies.
+-- dependant and independent errors. Errors are enumerated below, along with their dependencies.
 -- Comments are included in the code that explain which of the below errors are caught at various points.
 -- Note that nos. 4--6, below, are only dependent on 3, so are simply done as nested ifs. This may
 -- or may not be best practice.                                                             coded as
@@ -354,7 +354,7 @@ translateTrees taxaList treeSet =
             -- Construct the leaf node symbol to taxon label mapping when there
             -- is a single translation specification present in the TREES block.
             --
-            -- Depending on the supplied transation specification either a mapping
+            -- Depending on the supplied translation specification either a mapping
             -- from Z+ to the permuted taxon set or a mapping from a symbol set to
             -- the taxon set will be constructed.
             --
@@ -367,7 +367,7 @@ translateTrees taxaList treeSet =
                   -- Allegedly permuted taxaList
                   (xs, [])
                     | Set.fromList xs `Set.isSubsetOf` taxaSet -> Right . M.fromList $ zip (show <$> [(1::Int)..]) xs
-                    | otherwise -> Left $ "Translation specifcation: " <> show xs <> " is not a subset of: " <> show (toList taxaList)
+                    | otherwise -> Left $ "Translation specification: " <> show xs <> " is not a subset of: " <> show (toList taxaList)
                   -- Alleged /total/ symbol to taxa mapping
                   ([], xs)
                     | not $ Set.fromList (snd <$> xs) `Set.isSubsetOf` taxaSet -> Left $ "There was an element in the co-domain of the Translation specifaction " <>
@@ -493,13 +493,13 @@ taxaDimsMissing taxas inputSeqBlocks = taxaProblems <> seqProblems
 -- Capture
 getCharMetadata :: Maybe StepMatrix -> PhyloSequence -> V.Vector CharacterMetadata
 getCharMetadata mayMtx seqBlock =
-    V.replicate len $ CharacterMetadata "" aligned cType alph False mayTCM additivity wt
+    V.replicate len $ CharacterMetadata "" aligned cType alpha False mayTCM additivity wt
     where
         -- All the `case form of` statements are to handle the possibly missing format values.
         -- I think I appropriately use default values... but maybe not!
         aligned     = alignedSeq seqBlock
         cType       = maybe Standard charDataType form
-        alph        =
+        alpha        =
           case form of
             Nothing -> g $ headMay syms
             Just fm ->

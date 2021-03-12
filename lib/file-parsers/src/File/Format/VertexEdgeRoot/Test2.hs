@@ -28,7 +28,7 @@ testSuite = testGroup "VER Format"
 validSetLabels :: [(VertexSetType,String)]
 validSetLabels =
     [ (Roots,"RootSet")
-    , (Verticies,"VertexSet")
+    , (Vertices,"VertexSet")
     , (Roots,"rOotsEt")
     ]
 
@@ -37,7 +37,7 @@ invalidSetLabels :: [String]
 invalidSetLabels =
     [ ""          -- empty string
     , "Roots"     -- Not right
-    , "Verticies" -- Neither is this
+    , "Vertices" -- Neither is this
     ]
 
 

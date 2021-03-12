@@ -517,7 +517,7 @@ scriptsAllSucceed xs =
 
 
 -- |
--- Takes multiple file pathes and combines their base names tinto a shorter title.
+-- Takes multiple file paths and combines their base names tinto a shorter title.
 makeTitle :: NonEmpty FilePath -> String
 makeTitle (x:|xs) = (prefix <>) . intercalate "," . (name:) $ takeFileName <$> xs
    where

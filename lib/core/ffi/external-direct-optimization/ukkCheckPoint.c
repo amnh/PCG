@@ -710,7 +710,7 @@ int withinMatrix( int ab, int ac, int d )
   h = aval[1];
 
   if (sStateG == 0) {
-    // We know a good boudary check if the start state is MMM
+    // We know a good boundary check if the start state is MMM
     cheapest = ( g == 0 ? 0
                         : startInsert_g + g * continueInsert_g )
              + ( h == 0 ? 0
@@ -840,7 +840,7 @@ int calcUkk(int ab, int ac, int d, int toState, characters_t *inputs)
                 }
             }
 
-            // Check if this is an improvment
+            // Check if this is an improvement
             if (bestDist < dist) {
                 bestDist = dist;
 
@@ -859,7 +859,7 @@ int calcUkk(int ab, int ac, int d, int toState, characters_t *inputs)
     // Insure that we have how we can reach for AT MOST cost d
     {
         int dist = Ukk(ab, ac, d - 1, toState, inputs);
-        // Check if this is an improvment
+        // Check if this is an improvement
         if (     okIndex(dist, 0, endA)
               && okIndex(dist - ab, 0, endB)
               && okIndex(dist - ac, 0, endC)

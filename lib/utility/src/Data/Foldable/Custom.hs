@@ -94,7 +94,7 @@ minimumBy' cmp = foldl1' min'
 
 
 -- |
--- Strictly folds over the structure and returns the maximim value.
+-- Strictly folds over the structure and returns the maximum value.
 {-# INLINE maximumBy' #-}
 maximumBy' :: Foldable t => (a -> a -> Ordering) -> t a -> a
 maximumBy' cmp = foldl1' max'

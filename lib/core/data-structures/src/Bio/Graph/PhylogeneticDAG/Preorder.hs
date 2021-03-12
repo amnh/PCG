@@ -139,7 +139,7 @@ preorderSequence f1 f2 f3 f4 f5 f6 pdag2@(PDAG2 dag meta) = pdag2 & _phylogeneti
             --
             -- In the tree node case where there is only one parent, we grab the
             -- parent context via memoization and match each parent block with
-            -- it's corresponding topology reprsentation.
+            -- it's corresponding topology representation.
             --
             -- In the network node case where there are two parents, we grab both
             -- of the parent contexts via memoization and then select the block

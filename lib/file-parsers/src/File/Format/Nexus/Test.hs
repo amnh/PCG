@@ -166,7 +166,6 @@ ignoredSubBlockDef' = testGroup "ignoredSubBlockDef"
     , emptyStringTest
     ]
   where
---    justDelimiter = tesCase
     endTest = testProperty "END;" f
       where
         f :: Bool

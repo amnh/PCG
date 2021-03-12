@@ -103,7 +103,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
     -- Step 1: Construct a hashmap of all the *unrooted* edges.
     unrootedEdges = rootEdgeReferences <> otherUnrootedEdges
 
-    -- Step 2: Create a lazy, memoized hashmap of the edge costs for each dynmaic character.
+    -- Step 2: Create a lazy, memoized hashmap of the edge costs for each dynamic character.
     edgeCostMapping = referenceEdgeMapping
 
     -- Step 3: For each display tree, for each dynamic character, find the
@@ -303,7 +303,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
                     ]
 
             -- Given the three adjacent edges, generate the subtree resolutions
-            -- defined by the first element of the tuple being an incomming edge.
+            -- defined by the first element of the tuple being an incoming edge.
 --            deriveDirectedEdgeDatum :: (Int, Int, Int) -> Map EdgeReference (ResolutionCache (CharacterSequence u v w x y z))
 --            deriveDirectedEdgeDatum (i,j,k) | trace ("derive directional: " <> show (i,j,k)) False = undefined
             deriveDirectedEdgeDatum (i,j,k) = [((i, n), subtreeResolutions)]
@@ -485,7 +485,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
         -- a lot of time by not folding over the entirely of the "Edge Cost
         -- Mapping" and instead folding over only the root nodes of the DAG.
         --
-        -- The expected diffrence is between /O(n)/ and /O(e * n)/ where
+        -- The expected difference is between /O(n)/ and /O(e * n)/ where
         -- /n/ is the number of network nodes in the DAG and /e/ is the number
         -- of edges in the DAG.
         displayTreeSet :: NonEmpty TraversalTopology
@@ -509,7 +509,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
         -- For each block in the sequence of character we perform a
         -- multi-dimensional minimization. We must determine the minimal spanning
-        -- tree (TopologyRepresentation) for each blockand it's corresponsing
+        -- tree (TopologyRepresentation) for each blockand it's corresponding
         -- cost.
         --
         -- The cost of a given spanning tree is defined by the sum of the costs
@@ -660,7 +660,7 @@ assignOptimalDynamicCharacterRootEdges extensionTransformation pdag@(PDAG2 input
 
                 -- We take the first of the minimal contexts and distribute the
                 -- associated spanning tree over the dynamic character vector
-                -- to create a vector of associated "traveral foci" for each
+                -- to create a vector of associated "traversal foci" for each
                 -- dynamic character in the block.
                 --
                 -- We use this vector to zip against the original dynamic

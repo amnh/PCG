@@ -61,14 +61,14 @@ import TextShow                                       (TextShow(showb), toString
 
 -- |
 -- Represents a single element of a dynamic character, which holds two
--- 'AmbiguityGroup' compoents and is tagged with an "alignment context,"
+-- 'AmbiguityGroup' components and is tagged with an "alignment context,"
 -- describing the relationship between the two components.
 --
 -- *NOTE:* That the 'DynamicCharacterElement' will require a number of bits equal
 -- to /twice/ the size of the alphabet to represent the power-set of possible
 -- symbols for two 'AmbiguityGroup's. 'AmbiguityGroup' values must be non-empty.
 -- This means that a valid 'AmbiguityGroup' value has at least one bit set. We
--- utilize this fact as part of our 'DynamicCharacterElement' encoding, decribed
+-- utilize this fact as part of our 'DynamicCharacterElement' encoding, described
 -- below.
 --
 -- There he four alignment contexts the element has can be tagegd as:

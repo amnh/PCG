@@ -60,7 +60,7 @@ import           Text.XML
 -- A sequence is partitioned into blocks, each block contains block-level metadata
 -- and also separate metadata for each column in the block.
 --
--- Blocks are optimized atomically with resepect to network resolutions.
+-- Blocks are optimized atomically with respect to network resolutions.
 newtype MetadataSequence m
     = MetaSeq (Vector (MetadataBlock m))
     deriving anyclass (NFData)

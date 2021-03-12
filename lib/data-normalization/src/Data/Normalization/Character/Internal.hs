@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Module holding the data type for a parsed character, which is the type
--- that comes from the parsers, and is then coverted into our various internal
+-- that comes from the parsers, and is then converted into our various internal
 -- character types
 --
 -----------------------------------------------------------------------------

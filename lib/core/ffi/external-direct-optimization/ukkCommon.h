@@ -388,8 +388,8 @@ static inline void allocFinal(AllocInfo_t *a, void *flag, void *top)
  *
  *  Note that alphabet size does not include gap.
  */
-int powell_3D_align ( characters_t *inputSeqs     // lengths set correctly; idices set to 0
-                    , characters_t *outputSeqs    // lengths set correctly; idices set to 0
+int powell_3D_align ( characters_t *inputSeqs     // lengths set correctly; indices set to 0
+                    , characters_t *outputSeqs    // lengths set correctly; indices set to 0
                     , size_t        alphabetSize  // not including gap
                     , int           mm            // mismatch cost, must be > 0
                     , int           go            // gap open cost, must be >= 0

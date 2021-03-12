@@ -48,7 +48,7 @@ constructionCases :: TestTree
 constructionCases = testGroup "construction specific cases"
     [ testGroup "constructions"
       [ testCase "sanity construction"        sanityConstruction
-      , testCase "indempotent construction"   indempotentConstruction
+      , testCase "idempotent construction"   indempotentConstruction
       , testCase "simple semigroup operation" simpleConstruction
       ]
     , testGroup "paradoxes"
@@ -112,7 +112,7 @@ semigroupProperties = testGroup "Properties of this semigroup operator"
         $ testProperty "(<>) is associative" operationAssocativity
     , localOption (QuickCheckTests  1000)
         $ testProperty "(<>) is commutative" operationCommutativity
-    , testProperty "stimes is indempotent" operationIsIndempotent
+    , testProperty "stimes is idempotent" operationIsIndempotent
     ]
   where
     operationAssocativity :: (MutualExclusionSet Word8, MutualExclusionSet Word8, MutualExclusionSet Word8) -> Property

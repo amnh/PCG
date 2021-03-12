@@ -32,7 +32,7 @@ import qualified VectorBuilder.Builder as VB
 
 
 -- |
--- Represents a block of charcters which are optimized atomically together across
+-- Represents a block of characters which are optimized atomically together across
 -- networks. The 'CharacterBlock' is polymorphic over static and dynamic character
 -- definitions.
 --

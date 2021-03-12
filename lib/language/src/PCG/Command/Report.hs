@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Provides the types fot the \"REPORT\" command allong with a semantic definition
+-- Provides the types for the \"REPORT\" command along with a semantic definition
 -- to be consumed by the stream parser.
 --
 -----------------------------------------------------------------------------

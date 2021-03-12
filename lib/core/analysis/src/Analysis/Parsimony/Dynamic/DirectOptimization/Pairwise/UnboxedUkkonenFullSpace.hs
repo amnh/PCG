@@ -85,7 +85,7 @@ unboxedUkkonenFullSpaceDO overlapλ char1 char2
     -- initial barrier will be set adjacent to or beyond the lower left and
     -- upper right corners.
     --
-    -- Also, a threshold coeffcient is computed as the minimal indel cost from
+    -- Also, a threshold coefficient is computed as the minimal indel cost from
     -- any symbol in the alphabet to gap. However, if the indel cost for any
     -- symbol is zero, the algorithm will hang, and a naive approach must be taken.
     --
@@ -112,7 +112,7 @@ unboxedUkkonenFullSpaceDO overlapλ char1 char2
 
     -- /O(2*(a - 1))/
     --
-    -- This was taken from Ukkonen's original 1985 paper wherein the coeffcient
+    -- This was taken from Ukkonen's original 1985 paper wherein the coefficient
     -- delta @(Δ)@ was defined by the minimum transition cost from any symbol in
     -- the alphabet @(Σ)@ to the gap symbol @'-'@.
     --
@@ -493,7 +493,7 @@ expandBandedMatrix overlapλ longerTop lesserLeft mCost mDir po co = updatedBand
                    -- before we stopped.
                    -- If the cost is not the same, we update cell (s0 + 1) and
                    -- move on to (s0 + 2).
-                   -- This proceedure continues until (s0 + n) has the same cost
+                   -- This procedure continues until (s0 + n) has the same cost
                    -- as before, or *until we reach b1.*
                    -- We remember the cell (s0 + n - 1) as t0 for the next row.
                    --  ⊗ ┃  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16
@@ -771,7 +771,7 @@ edgeCellDefinitions mCost mDir overlapλ cost longerTop gap = (write, internalCe
                             , (insertCost +  topCost, UpArrow  )
                             ]
 
-    -- Define how to compute the first cell of the first "offest" rows.
+    -- Define how to compute the first cell of the first "offset" rows.
     -- We need to ensure that there are only Up Arrow values in the directional matrix.
     -- We can also reduce the number of comparisons the first row makes from 3 to 1,
     -- since the diagonal and leftward values are "out of bounds."
@@ -797,7 +797,7 @@ edgeCellDefinitions mCost mDir overlapλ cost longerTop gap = (write, internalCe
                    , (insertCost +  topCost, UpArrow  )
                    ]
 
-    -- Define how to compute the last cell of the first "rows - offest" rows.
+    -- Define how to compute the last cell of the first "rows - offset" rows.
     -- We need to ensure that there are only Left Arrow values in the directional matrix.
     -- We can also reduce the number of comparisons the first row makes from 3 to 1,
     -- since the diagonal and upward values are "out of bounds."

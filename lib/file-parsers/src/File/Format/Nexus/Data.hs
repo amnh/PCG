@@ -112,7 +112,7 @@ type Sequence = V.Vector Character
 
 
 -- |
--- Mapping of taxon identifiers (typically names) to thier corresponding
+-- Mapping of taxon identifiers (typically names) to their corresponding
 -- sequence data.
 type TaxonSequenceMap = M.Map TaxonIdentifier Sequence
 
@@ -142,7 +142,7 @@ data  AssumptionField
 -- |
 -- The different subfields of the Format field in the sequence blocks.
 -- As with SeqSubBlock, listed simply so that it can be "looped" over. Will eventually be
--- coverted to CharacterFormat data type for export
+-- converted to CharacterFormat data type for export
 -- TODO: better documentation on the use of each field below
 data  CharFormatField
     = CharDT      CharDataType

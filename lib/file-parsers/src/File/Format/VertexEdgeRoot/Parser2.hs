@@ -23,7 +23,7 @@ import Text.Megaparsec.Prim   (MonadParsec)
 
 
 data  VertexSetType
-    = Verticies
+    = Vertices
     | Edges
     | Roots
     deriving (Eq, Generic, NFData, Show)
@@ -36,7 +36,7 @@ data  EdgeInfo
 
 data  VertexEdgeRoot
     = VER
-    { verticies :: Set VertexLabel
+    { vertices :: Set VertexLabel
     , edges     :: Set EdgeInfo
     , roots     :: Set VertexLabel
     } deriving (Generic, NFData, Show)
@@ -85,16 +85,16 @@ verStreamParser = validateForest =<< verDefinition
 -- We have a complicated definition here because we do not want to restrict
 -- the order of the set definitions, and yet we must enforce that there is
 -- only one edge set and two vertex sets. One vertex set is the set of all
--- verticies and the other is a subset consisting of the root nodes. To
+-- vertices and the other is a subset consisting of the root nodes. To
 -- enforce this for proper parsing, and provide robust error messages we
 -- read zero or more set definitions and separate each set as either a vertex
 -- set or an edge set by checking the type constructor for a Left or Right
 -- value. We then assert that we have received exactly one edge set and
 -- exactly two vertex sets. If not we generate meaningful error messages based
 -- on the missing or multiple requisite sets. Once all sets have been parsed
--- we disambiguate the vertex sets to the set of verticies and the set of root
+-- we disambiguate the vertex sets to the set of vertices and the set of root
 -- nodes by inspecting the possibly provided set labels or in the absence of
--- labels by comparing the size of the sets; as the set of all verticies is
+-- labels by comparing the size of the sets; as the set of all vertices is
 -- surely a superset of the set of root nodes.
 verDefinition :: (MonadParsec e s m, Token s ~ Char) => m VertexEdgeRoot
 verDefinition = perm
@@ -112,12 +112,12 @@ verDefinition = do
       case (typeA, typeB) of
         (Nothing       , Nothing       ) -> let [m,n] = sortBy (comparing size) [setA,setB]
                                             in pure $ VER n    edges' m
-        (Nothing       , Just Verticies) ->    pure $ VER setB edges' setA
+        (Nothing       , Just Vertices) ->    pure $ VER setB edges' setA
         (Nothing       , Just Roots    ) ->    pure $ VER setA edges' setB
-        (Just Verticies, Nothing       ) ->    pure $ VER setA edges' setB
+        (Just Vertices, Nothing       ) ->    pure $ VER setA edges' setB
         (Just Roots    , Nothing       ) ->    pure $ VER setB edges' setA
-        (Just Verticies, Just Roots    ) ->    pure $ VER setA edges' setB
-        (Just Roots    , Just Verticies) ->    pure $ VER setB edges' setA
+        (Just Vertices, Just Roots    ) ->    pure $ VER setA edges' setB
+        (Just Roots    , Just Vertices) ->    pure $ VER setB edges' setA
         (_             , _             ) -> runFail $ vertexSetMessages [x,y]
     runFail [x] = fail x
     runFail xs  = fails xs
@@ -168,7 +168,7 @@ vertexSet = (labeledNodeSet "VertexSet" <|> unlabeledNodeSet) <?> "vertex set de
 
 
 -- A vertex set with an optional set label enclosed in braces.
--- A vertex set cannot have duplicate verticies
+-- A vertex set cannot have duplicate vertices
 unlabeledNodeSet :: (MonadParsec e s m, Token s ~ Char) => m NodeSet
 unlabeledNodeSet = validateNodeSet =<< unlabeledNodeSet'
   where
@@ -184,7 +184,7 @@ unlabeledNodeSet = validateNodeSet =<< unlabeledNodeSet'
       | otherwise  = fail errorMessage
       where
         dupes = duplicates ns
-        errorMessage = "The following verticies were defined multiple times: " <> show dupes
+        errorMessage = "The following vertices were defined multiple times: " <> show dupes
 
 
 -- A vertex label is any non-space character that is also not a brace, paren, or comma.
@@ -219,14 +219,14 @@ edgeSet = validateEdgeSet =<< (edgeSet' <?> "edge set definition")
       where
         edges' = edgeConnection <$> es
         dupes  = duplicates edges'
-        selfs  = filter (uncurry (==)) edges'
-        errors = case (dupes,selfs) of
+        points = filter (uncurry (==)) edges'
+        errors = case (dupes,points) of
                    ([] ,[] ) -> []
                    (_:_,[] ) -> [dupesErrorMessage]
-                   ([] ,_:_) -> [selfsErrorMessage]
-                   (_:_,_:_) -> [dupesErrorMessage,selfsErrorMessage]
+                   ([] ,_:_) -> [pointsErrorMessage]
+                   (_:_,_:_) -> [dupesErrorMessage,pointsErrorMessage]
         dupesErrorMessage = "Duplicate edges detected. The following edges were defined multiple times: "    <> show dupes
-        selfsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self=referencing: " <> show selfs
+        pointsErrorMessage = "Self-referencing edge(s) detected.The following edge(s) are self=referencing: " <> show points
 
 
 edgeDefinition :: (MonadParsec e s m, Token s ~ Char) => m EdgeInfo
@@ -305,7 +305,7 @@ validateForest ver@(VER vs es rs )
       ]
     manyRootsErrorMessage xs = concat
       [ "Multiple root nodes detected in a single tree. "
-      , "The following root nodes should form different trees, but thay are part of the same tree: "
+      , "The following root nodes should form different trees, but they are part of the same tree: "
       , show xs
       ]
 

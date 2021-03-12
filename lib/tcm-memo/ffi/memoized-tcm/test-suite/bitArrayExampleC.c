@@ -112,7 +112,7 @@ int main() {
     }
     freeDCElem( dcElem1 );
 
-    /** alph size is now set inside fn **/
+    /** alpha size is now set inside fn **/
     // // now fail because alphabet sizes aren't the same
     // char3.alphSize = 7;
     // if ( getDCElement( (size_t) 13, &char1, dcElem2) ) {
@@ -142,7 +142,7 @@ int main() {
     }
     // freeDCElem( dcElem2 );
 
-    /** alph size is now set inside fn **/
+    /** alpha size is now set inside fn **/
     // // fail because alphabets are different lengths
     // char3.alphSize = 7;
     // if ( setDCElement( (size_t) 13, dcElem2, &char3) ) {

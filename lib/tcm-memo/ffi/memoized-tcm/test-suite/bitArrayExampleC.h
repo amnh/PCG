@@ -11,7 +11,7 @@
 void printBits( dynChar_t* input );
 
 /**
- *  A sample program that takes in two dynamic characters, and writes the result of any copmutations to a third
+ *  A sample program that takes in two dynamic characters, and writes the result of any computations to a third
  *  dynamic character. The third character is allocated on Haskell side and passed in by reference.
  *  Returns 0 on correct exit, 1 on allocation failure. This was used to test the Haskell FFI.
  */

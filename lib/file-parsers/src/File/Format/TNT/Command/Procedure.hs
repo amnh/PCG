@@ -31,7 +31,7 @@ import Text.Megaparsec.Custom
 
 
 -- |
--- Parses an PROCEDURE command that consisits of exacty one of the following:
+-- Parses an PROCEDURE command that consisits of exactly one of the following:
 --
 --  * Close file directive
 --
@@ -49,7 +49,7 @@ procedureCommand =  procHeader *> procBody
 
 
 -- |
--- Consumes the superflous heading for a PROCEDURE command.
+-- Consumes the superfluous heading for a PROCEDURE command.
 procHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 procHeader = symbol $ keyword "procedure" 4
 

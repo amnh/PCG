@@ -19,7 +19,7 @@ module Data.BitMatrix
   -- * Construction
   , bitMatrix
   , fromRows
-  -- * Querries
+  -- * Queries
   , isSet
   , isZeroMatrix
   , numCols

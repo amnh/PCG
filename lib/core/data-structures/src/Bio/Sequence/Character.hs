@@ -52,14 +52,14 @@ import           TextShow.Instances      ()
 -- A multi-level partitioned, non-empty sequence of characters.
 --
 -- A sequence is partitioned into blocks, each block is partitioned into static
--- and dynamic charcters, with the static characters partitioned by optimization
+-- and dynamic characters, with the static characters partitioned by optimization
 -- routines.
 --
--- Blocks are optimized atomically with resepect to network resolutions.
+-- Blocks are optimized atomically with respect to network resolutions.
 --
 -- Some blocks may not exist on a given node after performing a pre-order traversal.
 -- This occurs when the minimal display tree for a given block does not include
--- all the nodes in the DAG. In this case the nodes not incldued in the topology
+-- all the nodes in the DAG. In this case the nodes not included in the topology
 -- will have "missing" final assignments for all blocks for which that topology
 -- was minimal.
 newtype CharacterSequence u v w x y z

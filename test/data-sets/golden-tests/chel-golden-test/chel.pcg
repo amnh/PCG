@@ -1,5 +1,5 @@
 read ("chel.fasta")
-read ("chel.tre")
+read ("chel.tree")
 report(data,"chel.data")
 report(dot ,"chel.dot")
 report(xml ,"chel.xml")

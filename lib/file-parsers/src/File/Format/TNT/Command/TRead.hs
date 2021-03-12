@@ -47,9 +47,9 @@ treadCommand = treadValidation =<< treadDefinition
 
 
 -- |
--- The superflous information of an XREAD command. Consumes the XREAD string
+-- The superfluous information of an XREAD command. Consumes the XREAD string
 -- identifier and zero or more comments preceding the taxa count and character
--- cound parameters
+-- count parameters
 treadHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 treadHeader =  symbol (keyword "tread" 2)
             *> many simpleComment
@@ -87,7 +87,7 @@ treadLeaf = Leaf <$> choice [try index, try prefix, name]
 
 
 -- |
--- A branch of the TREAD tree. each brach can be either a leaf or a sub tree.
+-- A branch of the TREAD tree. each branch can be either a leaf or a sub tree.
 treadSubtree :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m TReadTree
 treadSubtree = between open close body
   where

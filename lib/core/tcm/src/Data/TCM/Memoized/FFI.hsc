@@ -2,7 +2,7 @@
 -- |
 -- TODO: Document module.
 --
--- Exports C types for dynamic characters and their constructors allong with
+-- Exports C types for dynamic characters and their constructors along with
 -- an FFI binding for the memoizing TCM structure.
 -----------------------------------------------------------------------------
 
@@ -343,7 +343,7 @@ constructElement exChar = do
 -- /O(1)/
 --
 -- Malloc and populate a pointer to a C representation of a dynamic character.
--- The buffer of the resulting value is intentially zeroed out.
+-- The buffer of the resulting value is intentionally zeroed out.
 --
 -- Call 'destructElement' to free the resulting pointer.
 constructEmptyElement :: Word -- ^ Bit width of a dynamic character element.

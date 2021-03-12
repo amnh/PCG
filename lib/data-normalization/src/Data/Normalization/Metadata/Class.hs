@@ -162,10 +162,10 @@ instance HasNormalizedMetadata TNT.TntResult where
                 --   proper character type checking later, we will never attempt
                 --   to reference the undefined value.
                 --
-                -- * If the charcter type is Discrete (not DNA or Amino Acid), then
+                -- * If the character type is Discrete (not DNA or Amino Acid), then
                 --   we must check for supplied state names.
                 --
-                -- * If the charcter has a Sankoff TCM defined, we truncate the
+                -- * If the character has a Sankoff TCM defined, we truncate the
                 --   character alphabet.
                 initialSymbolSet =
                     case inChar of
@@ -177,7 +177,7 @@ instance HasNormalizedMetadata TNT.TntResult where
 
 instance HasNormalizedMetadata F.TCM where
 
-    getNormalizedMetadata (F.TCM alph mat) =
+    getNormalizedMetadata (F.TCM alpha mat) =
         Just $ pure NormalizedMetadata
         { alphabet      = alphabet'
         , characterName = ""
@@ -187,7 +187,7 @@ instance HasNormalizedMetadata F.TCM where
         , isIgnored     = False -- Maybe this should be True?
         }
       where
-        (alphabet', coefficient, resultTCM, structure) = getMetadataFromInputSymbolsAndTCM alph mat
+        (alphabet', coefficient, resultTCM, structure) = getMetadataFromInputSymbolsAndTCM alpha mat
 
 
 instance HasNormalizedMetadata VertexEdgeRoot where

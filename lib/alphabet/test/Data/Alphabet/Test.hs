@@ -91,8 +91,8 @@ truncateAtMaxSymbolProperties = testGroup "Properties of truncateAtMaxSymbol"
     ]
   where
     truncatePreserve :: [String] -> Property
-    truncatePreserve strs = let alph = fromSymbols strs in
-        truncateAtMaxSymbol strs alph === alph
+    truncatePreserve strs = let alpha = fromSymbols strs in
+        truncateAtMaxSymbol strs alpha === alpha
 
 
 -- Cases for unit tests

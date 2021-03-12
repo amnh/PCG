@@ -29,7 +29,7 @@ import Data.String                      (IsString)
 
 
 -- |
--- Represents a single static character encoded in binary and coercable to
+-- Represents a single static character encoded in binary and coercible to
 -- `Int` values.
 --
 -- Binary encoding must allow for the nth symbol in the 'Alphabet' to be tested
@@ -48,7 +48,7 @@ class ( EncodableStreamElement c
 
 
 -- |
--- Represents a fixed number of static charcters encoded over 'Alphabet's of the
+-- Represents a fixed number of static characters encoded over 'Alphabet's of the
 -- same size and with the same cost structure.
 class ( EncodableStaticCharacter (Element s)
       , EncodableStream s

@@ -113,7 +113,7 @@ int getCostAndMedian_3d( dcElement_t *elem1
     elem2copy->alphSize    = alphSize;
     dcElement_t *elem3copy = malloc(sizeof(dcElement_t));
     elem3copy->alphSize    = alphSize;
-    //printf("We alloced!\n"), fflush(stdout);
+    //printf("We allocated!\n"), fflush(stdout);
 
     elem1copy->element = makePackedCharCopy( elem1->element, alphSize, 1 );
     elem2copy->element = makePackedCharCopy( elem2->element, alphSize, 1 );

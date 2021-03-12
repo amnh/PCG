@@ -56,7 +56,7 @@
  */
 
 
-/*  TODO: for this to be useable on |alphabet including gap| > 64, various uint64_t types below
+/*  TODO: for this to be usable on |alphabet including gap| > 64, various uint64_t types below
  *  will have to be exchanged for packedChar* (i.e. arrays of 64-bit ints).
  */
 
@@ -263,7 +263,7 @@ void intArrToDynChar( size_t alphSize, size_t arrayLen, uint64_t *input, dynChar
 packedChar *allocatePackedChar( size_t alphSize, size_t numElems );
 
 
-/** Allocates new packedCharCopy input values to already alloced output and return a pointer
+/** Allocates new packedCharCopy input values to already allocated output and return a pointer
  *  to output
  */
 packedChar *makePackedCharCopy( const packedChar *inChar, size_t alphSize, size_t numElems );
@@ -273,7 +273,7 @@ packedChar *makePackedCharCopy( const packedChar *inChar, size_t alphSize, size_
  *  creates a new buffer and copies the value of the provided dynamic
  *  character element buffer into the newly allocated buffer.
  *
- *  Uses the TCM's elementSize vairable to avoid recomputation of buffer
+ *  Uses the TCM's elementSize variable to avoid recomputation of buffer
  *  size and reduces the number of function call parameters compared to
  *  the function makePackedCharCopy. Less noisy, slightly more efficient.
  *

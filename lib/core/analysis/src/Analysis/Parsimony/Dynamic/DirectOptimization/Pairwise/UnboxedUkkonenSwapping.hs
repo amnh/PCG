@@ -85,7 +85,7 @@ unboxedUkkonenSwappingDO overlapλ char1 char2
     -- initial barrier will be set adjacent to or beyond the lower left and
     -- upper right corners.
     --
-    -- Lastly, a threshold coeffcient is computed as the minimal indel cost from
+    -- Lastly, a threshold coefficient is computed as the minimal indel cost from
     -- any symbol in the alphabet to gap. However, if the indel cost for any
     -- symbol is zero, the algorithm will hang, and a naive approach must be taken.
     --
@@ -105,7 +105,7 @@ unboxedUkkonenSwappingDO overlapλ char1 char2
 
     -- /O(2*(a - 1))/
     --
-    -- This was taken from Ukkonen's original 1985 paper wherein the coeffcient
+    -- This was taken from Ukkonen's original 1985 paper wherein the coefficient
     -- delta @(Δ)@ was defined by the minimum transition cost from any symbol in
     -- the alphabet @(Σ)@ to the gap symbol @'-'@.
     --
@@ -254,7 +254,7 @@ buildDirectionMatrix overlapλ longerTop lesserLeft o
                    -- Write to the last cell of the Ukkonen band
                    lastCell prev curr leftElement insertCost i stop >>= write curr (i, stop)
 
-      -- Define how to compute the first cell of the first "offest" rows.
+      -- Define how to compute the first cell of the first "offset" rows.
       -- We need to ensure that there are only Up Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 1,
       -- since the diagonal and leftward values are "out of bounds."
@@ -276,7 +276,7 @@ buildDirectionMatrix overlapλ longerTop lesserLeft o
                        , (insertCost +  topCost, UpArrow  )
                        ]
 
-      -- Define how to compute the last cell of the first "rows - offest" rows.
+      -- Define how to compute the last cell of the first "rows - offset" rows.
       -- We need to ensure that there are only Left Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 1,
       -- since the diagonal and upward values are "out of bounds."
@@ -292,7 +292,7 @@ buildDirectionMatrix overlapλ longerTop lesserLeft o
                        , (deleteCost + leftCost, LeftArrow)
                        ]
 
-      -- Define how to compute the last cell of the last "offest" rows.
+      -- Define how to compute the last cell of the last "offset" rows.
       -- We need to ensure that there are no Up Arrow values in the directional matrix.
       -- We can also reduce the number of comparisons the first row makes from 3 to 2,
       -- since the upward values are "out of bounds."

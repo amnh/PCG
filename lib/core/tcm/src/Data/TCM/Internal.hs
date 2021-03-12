@@ -236,7 +236,7 @@ instance MonoFunctor TCM where
 
 
 -- |
--- Performs a row-major monomporphic traversal over ther 'TCM'.
+-- Performs a row-major monomporphic traversal over the 'TCM'.
 instance MonoTraversable TCM where
 
     -- |
@@ -506,7 +506,7 @@ generate n f
     singletonErrorMessage = fold
       [ "The call to 'generate 1 f' is malformed, "
       , "the dimension is one. "
-      , "Cannot construct a singlton TCM with a dimension of one!"
+      , "Cannot construct a singleton TCM with a dimension of one!"
       ]
 
 
@@ -535,7 +535,7 @@ diagnoseTcm tcm
 -- Precondition of the list having a square number of elements was already
 -- checked in the function wrapping calls to this method.
 --
--- This method take a list of values coercable to 'Rational' values via the
+-- This method take a list of values coercible to 'Rational' values via the
 -- 'Real' type-class and produces an integral valued TCM with a rational weight.
 fromListUnsafe :: (Foldable t, Real a) => t a -> (Rational, TCM)
 fromListUnsafe xs
@@ -553,10 +553,10 @@ fromListUnsafe xs
 
 
 -- |
--- Determines if a constant positve multiplicative factor can be extracted from
+-- Determines if a constant positive multiplicative factor can be extracted from
 -- every non-zero value of the TCM. Returns the multiplicive factor and the 'TCM'
 -- with reduced values. The least factor that can be found is the multipliative
--- identiy /one/ when all values in the 'TCM' are reletively prime.
+-- identity /one/ when all values in the 'TCM' are relatively prime.
 factorTCM :: TCM -> (Int, TCM)
 factorTCM tcm
   | factor <= 1 = (x,                       tcm)
@@ -578,7 +578,7 @@ isAdditive tcm = all isAdditiveIndex $ tcmPoints2D tcm
 
 -- |
 -- Determines if the 'TCM' has an non-additive structure.
--- This is also colloquially reffered to as as unordered characters as originally
+-- This is also colloquially referred to as as unordered characters as originally
 -- named by Fitch.
 --
 -- /Assumes/ the 'TCM' has already been factored with 'factorTCM'.
@@ -653,7 +653,7 @@ zeroDiagonalOnly tcm = all zeroDiagonalIndex $ tcmPoints2D tcm
 
 -- |
 -- Takes a "list" of conditions to be satisfied and a element upon which to query
--- And returns whether *all* the conditions were satified.
+-- And returns whether *all* the conditions were satisfied.
 allSatisfiedBy :: Foldable t => t (a -> Bool) -> a -> Bool
 allSatisfiedBy conditions element = foldl' (&&) True $ toList conditions <*> pure element
 

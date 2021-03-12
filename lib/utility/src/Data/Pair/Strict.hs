@@ -47,7 +47,7 @@ type (:!:) = Pair
 
 
 -- |
--- View pattern for convienence when pattern matching on a 'Pair'.
+-- View pattern for convenience when pattern matching on a 'Pair'.
 pattern Pair :: a -> b -> Pair a b
 pattern Pair a b <- (a :!: b)
   where

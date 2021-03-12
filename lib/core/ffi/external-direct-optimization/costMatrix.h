@@ -143,7 +143,7 @@ void cm_print_matrix_2d (elem_t *costMatrix, size_t height, size_t alphSize);
  * Creates a cost matrix with memory allocated for an alphabet of size alphSize
  * (not including the gap representation which is internally chosen), and whose
  * size must consider all possible combinations of characters in the alphabet
- * iff combinations != 0. Set the affine gap model paramters to the values
+ * iff combinations != 0. Set the affine gap model parameters to the values
  * stored in do_aff, gap_open, in the cost matrix res.
  * In case of error the function fails with the message "Memory error.".
  */

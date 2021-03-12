@@ -63,7 +63,7 @@ costCommand = costHeader *> costBody <* symbol (char ';')
 
 
 -- |
--- Consumes the superflous heading for a CCODE command.
+-- Consumes the superfluous heading for a CCODE command.
 costHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 costHeader = symbol $ keyword "costs" 2
 

@@ -8,7 +8,7 @@
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Internal functions for constucting, amnipulating, and deconstructing a
+-- Internal functions for constructing, amnipulating, and deconstructing a
 -- 'MutualExclusionSet'.
 --
 -----------------------------------------------------------------------------
@@ -372,7 +372,7 @@ unsafeFromList xs = MES incMap' excMap' incMap excMap
 -- |
 -- Nicely render the 'Data.MutualExclusionSet' in a multi-line 'String'.
 --
--- Shows the internal state inluding bijectivity and mutual exclusivity
+-- Shows the internal state including bijectivity and mutual exclusivity
 -- violations.
 prettyPrintMutualExclusionSet :: (Ord a, Show a) => MutualExclusionSet a -> String
 prettyPrintMutualExclusionSet mes = fold

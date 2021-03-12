@@ -768,7 +768,7 @@ expandVertexMapping unexpandedMap = snd . foldl' expandEdges (initialCounter+1, 
                   0 -> acc
                   1 -> collapseEdge
                   2 -> acc
-                  -- One too many childern
+                  -- One too many children
                   3 -> expandOutExtraChild
                   -- Far too many children
                   _ -> handleTooManyChildren

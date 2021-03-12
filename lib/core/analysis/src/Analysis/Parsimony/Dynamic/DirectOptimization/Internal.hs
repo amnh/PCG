@@ -206,7 +206,7 @@ disambiguateElement x = alignElement val val val
 
 
 -- |
--- Use the decoration(s) of the ancestral nodes to calculate the corrent node
+-- Use the decoration(s) of the ancestral nodes to calculate the current node
 -- decoration. The recursive logic of the pre-order traversal.
 updateFromParent
   :: ( DirectOptimizationPostorderDecoration d c

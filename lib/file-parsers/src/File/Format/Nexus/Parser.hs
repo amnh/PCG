@@ -417,7 +417,7 @@ whitespace = (space *> optional (try . some $ commentDefinition *> space) $> ())
 
 
 -- |
--- Consumes whitspace in the stream without moving to the next line, unless
+-- Consumes whitespace in the stream without moving to the next line, unless
 -- there were newlines present in a comment contained in the whitespace.
 --
 -- Consumes whitespace (including multi-line comments) but not newlines outside

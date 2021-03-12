@@ -90,7 +90,7 @@ instance TextShow OutputStreamError where
           case missingPaths of
             []  -> Nothing
             [x] -> Just $ "The output file path " <> showb x <> " could not be found"
-            xs  -> Just $ "The following output file paths cound not be found:\n" <> unlinesB  (showb <$> xs)
+            xs  -> Just $ "The following output file paths could not be found:\n" <> unlinesB  (showb <$> xs)
 
         badPermissionMessage =
           case badPermissions of

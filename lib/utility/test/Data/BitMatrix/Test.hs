@@ -306,7 +306,7 @@ testRow = testProperty "row returns correct value" f
     f :: DependantFromRowsParameters -> Bool
     f params = retVal
       where
-        -- at each item in the list of bvs, test it againts what ought to be at that index, and accumulate
+        -- at each item in the list of bvs, test it against what ought to be at that index, and accumulate
         (retVal, _)    = foldl' (\(bool, i) bv -> ((bv == row testBM i) && bool, i + 1)) (True, 0) bvList
         (_, _, bvList) = getParameters params
         testBM         = fromRows bvList

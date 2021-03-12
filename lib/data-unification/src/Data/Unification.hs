@@ -198,8 +198,8 @@ matchToChars meta charMapping = fmap (PDAG meta . fmap f)
 --   should be safe, though it is the burden of the caller to ensure this input
 --   invariant.
 --
--- * Lastly we collapse the many parse results into a single map of charcter
---   blocks wrapped together as a charcter sequence. This will properly add
+-- * Lastly we collapse the many parse results into a single map of character
+--   blocks wrapped together as a character sequence. This will properly add
 --   missing character values to taxa provided in other files.
 joinSequences
   :: ( Foldable1 t
@@ -343,7 +343,7 @@ collapseAndMerge xs = extractResult $ foldlM sequenceMerge initialMap ms
           -- If the map was empty, do no work
           -- This case should never occur in practice, but handling it is trivial.
           Nothing    -> pure accumCharMap
-          -- With an characeter sequence selected WLOG,
+          -- With an character sequence selected WLOG,
           -- we proceed to merge the new map with the accumulated map
           -- and update the state with a long pad and longer metadata sequence
           Just (_,v) -> do

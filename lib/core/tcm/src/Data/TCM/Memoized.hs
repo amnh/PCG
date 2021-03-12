@@ -27,7 +27,7 @@ import qualified Data.TCM.Memoized.FFI as FFI
 -- /O(n^2)/ where @n@ is the alphabet size.
 --
 -- Generate a memoized TCM by supplying the size of the symbol alphabet and the
--- generating function for unambiguous symbol change transistions.
+-- generating function for unambiguous symbol change transitions.
 -- When this function is invoked it *strictly* constructs transition matrix for a set of *unambiguous*
 -- singleton symbols, where the cells of the matrix hold the costs and medians of transitions
 -- between unambiguous symbols.

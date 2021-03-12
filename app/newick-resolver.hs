@@ -106,7 +106,7 @@ collapse (Branch lhs rhs) = Branch (collapse lhs) $ collapse rhs
 -- Given a non-empty set of subtrees, this function returns a list of
 -- all the ways to join the subtrees together into a single tree.
 --
--- Note, that the newly created internal verticies are decorated with
+-- Note, that the newly created internal vertices are decorated with
 -- the 'mempty' value of the monoidal decoration type.
 joinSubtrees :: NonEmpty a -> NonEmpty (BinaryTree a)
 joinSubtrees (x:|[])  = pure $ Leaf x

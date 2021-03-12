@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Exposes memoization combinators. Assumes that the supplied functions are
--- side effect free. If this assumtion is violated, undefined and unexpected
+-- side effect free. If this assumption is violated, undefined and unexpected
 -- behavior may result.
 -----------------------------------------------------------------------------
 
@@ -119,7 +119,7 @@ memoize f = unsafePerformIO $ do
             in  atomically $
                   -- Don't use writeTVar or use a reference to the HashTable from above.
                   -- It may have been concurrently modified before reaching this point!
-                  -- We *atomically* insert the new key-value pair into the exisiting
+                  -- We *atomically* insert the new key-value pair into the existing
                   -- HashTable behind the TVar, modifying the results of the TVar.
                   modifyTVar' htRef
                     (\st -> st                 -- Get the ST state from the TVar
@@ -180,7 +180,7 @@ memoize' f = unsafePerformIO $ do
             in  atomically $
                   -- Don't use writeTVar or use a reference to the HashTable from above.
                   -- It may have been concurrently modified before reaching this point!
-                  -- We *atomically* insert the new key-value pair into the exisiting
+                  -- We *atomically* insert the new key-value pair into the existing
                   -- HashTable behind the TVar, modifying the results of the TVar.
                   modifyTVar' htRef
                     (\st -> st                 -- Get the ST state from the TVar

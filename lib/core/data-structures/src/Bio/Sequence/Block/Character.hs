@@ -382,7 +382,7 @@ hexmap f1 f2 f3 f4 f5 f6 = CB . (
 -- the different character types in the character block.
 --
 -- Assumes that the 'CharacterBlock' values have the same number of each character
--- type. If this assumtion is violated, the result will be truncated.
+-- type. If this assumption is violated, the result will be truncated.
 hexZipWith
   :: (u -> u' -> u'')
   -> (v -> v' -> v'')
@@ -409,7 +409,7 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs rhs = CB
 -- the different character types in the character block.
 --
 -- Assumes that the 'CharacterBlock' values have the same number of each character
--- type. If this assumtion is violated, the result will be truncated.
+-- type. If this assumption is violated, the result will be truncated.
 hexZipWithMeta
   :: (ContinuousCharacterMetadataDec                      -> u -> u' -> u'')
   -> (DiscreteCharacterMetadataDec                        -> v -> v' -> v'')
@@ -436,7 +436,7 @@ hexZipWithMeta f1 f2 f3 f4 f5 f6 meta lhs rhs = CB
 -- the different character types in the character block.
 --
 -- Assumes that the 'CharacterBlock' values have the same number of each character
--- type. If this assumtion is violated, the result will be truncated.
+-- type. If this assumption is violated, the result will be truncated.
 hexZipMeta
   :: (ContinuousCharacterMetadataDec                         -> u -> u')
   -> (DiscreteCharacterMetadataDec                           -> v -> v')

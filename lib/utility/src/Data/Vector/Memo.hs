@@ -78,7 +78,7 @@ class Cartesian f where
 
 
 -- |
--- An expressable functor.
+-- An expressible functor.
 class ExpFunctor f where
 
     xmap :: (a -> b) -> (b -> a) -> f a -> f b

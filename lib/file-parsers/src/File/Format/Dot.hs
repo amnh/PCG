@@ -206,7 +206,7 @@ sharedWork logic dot = fromSet getAdjacency setOfNodes
     edgeMap      = foldr logic mempty . dotEdgeSet
 
     -- fold here has type :: Maybe (Set n) -> Set n
-    -- returing the empty set in Nothing case.
+    -- returning the empty set in Nothing case.
     getAdjacency = fold . (`lookup` setOfEdges)
 
     setOfEdges   = edgeMap    dot

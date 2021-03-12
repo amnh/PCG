@@ -125,7 +125,7 @@ subtreeDefinition = newickNodeDefinition <|> newickLeafDefinition
 
 
 -- |
--- Definition of a sigle leaf node in a Newick tree. Must contain a node label.
+-- Definition of a single leaf node in a Newick tree. Must contain a node label.
 -- Has no descendants be definition.
 {-# INLINEABLE newickLeafDefinition #-}
 {-# SPECIALISE newickLeafDefinition :: Parsec Void  T.Text NewickNode #-}
@@ -237,7 +237,7 @@ branchLengthDefinition = symbol (char ':') *> (toRational <$> symbol scientific)
 
 
 -- |
--- Convinience combinator for stripping /leading and trailing/ whitespace from a
+-- Convenience combinator for stripping /leading and trailing/ whitespace from a
 -- combinator.
 {-# INLINE trimmed #-}
 {-# SPECIALISE trimmed :: Parsec Void  T.Text a -> Parsec Void  T.Text a #-}
@@ -248,7 +248,7 @@ trimmed x = whitespace *> x <* whitespace
 
 
 -- |
--- Convinience combinator for stripping /trailing/ whitespace from a combinator.
+-- Convenience combinator for stripping /trailing/ whitespace from a combinator.
 {-# INLINE symbol #-}
 {-# SPECIALISE symbol :: Parsec Void  T.Text a -> Parsec Void  T.Text a #-}
 {-# SPECIALISE symbol :: Parsec Void LT.Text a -> Parsec Void LT.Text a #-}

@@ -34,7 +34,7 @@ parseArgs args =
 
 performCounterExampleSearch :: IO ()
 performCounterExampleSearch = do
-    putStrLn "Performing stocastic counter-example search:"
+    putStrLn "Performing stochastic counter-example search:"
     quickCheckWith stdArgs { maxSuccess = 10000000 } counterExampleCheck
 
 

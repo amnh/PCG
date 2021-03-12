@@ -675,5 +675,5 @@ resetEdgeData ref = ref & _references . (mapped . _childRefs . mapped) %~ fst
 
 
 parMapBuffer :: Int -> Strategy b -> (a -> b) -> [a] -> [b]
-parMapBuffer buffer strat f =
-  withStrategy (parBuffer buffer strat) . fmap f
+parMapBuffer buffer strategy f =
+  withStrategy (parBuffer buffer strategy) . fmap f

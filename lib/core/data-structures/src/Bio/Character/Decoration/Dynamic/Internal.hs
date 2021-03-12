@@ -272,7 +272,7 @@ instance (EncodableStream d, TextShow d) => TextShow (DynamicDecorationDirectOpt
 
         pairs =
             [ ("Single Disambiguation: ", singleDisambiguation)
-            , ("Alignemnt Context    : ", alignmentContext    )
+            , ("Alignment Context    : ", alignmentContext    )
             , ("Implied Alignment    : ", impliedAlignment    )
             ]
 

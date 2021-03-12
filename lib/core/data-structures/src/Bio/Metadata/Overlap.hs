@@ -58,7 +58,7 @@ overlap
      , Foldable1 f
      , Functor f
      )
-  => (Word -> Word -> Word) -- ^ Symbol change matrix (SCM) to determin cost
+  => (Word -> Word -> Word) -- ^ Symbol change matrix (SCM) to determine cost
   -> f e                    -- ^ List of elements for of which to find the k-median and cost
   -> (e, Word)              -- ^ K-median and cost
 overlap sigma xs = go size maxBound zero

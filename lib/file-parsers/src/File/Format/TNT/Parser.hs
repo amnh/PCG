@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Parser for the entire TNT file which returns a colated result of TNT
--- taxa and their possible corresponding character sequences allong with a
+-- taxa and their possible corresponding character sequences along with a
 -- possible forest of trees defined for the taxa set.
 -----------------------------------------------------------------------------
 

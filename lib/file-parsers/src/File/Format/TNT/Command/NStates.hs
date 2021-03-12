@@ -42,7 +42,7 @@ nstatesCommand =  nstatesHeader *> nstatesBody <* symbol (char ';')
 
 
 -- |
--- Consumes the superflous heading for a NSTATES command.
+-- Consumes the superfluous heading for a NSTATES command.
 nstatesHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 nstatesHeader = symbol $ keyword "nstates" 2
 

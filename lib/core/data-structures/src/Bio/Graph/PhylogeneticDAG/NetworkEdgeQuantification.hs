@@ -135,7 +135,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (unusedEdges, outputConte
     -- numerator of the network edge cost.
     networkEdgeSet = referenceNetworkEdgeSet dag
 
-    -- We also need the size fo the edge set of the DAG to calculate the
+    -- We also need the size of the edge set of the DAG to calculate the
     -- denominator of the network edge cost.
     edgeSetSize = toEnum . length $ referenceEdgeSet dag
 
@@ -148,7 +148,7 @@ assignPunitiveNetworkEdgeCost input@(PDAG2 dag meta) = (unusedEdges, outputConte
           mostParsimoniousDisplayForest
           minimalDisplayForestPerBlock
 
-    -- We also accumulate the cost of all the character blocks accros the display forests.
+    -- We also accumulate the cost of all the character blocks across the display forests.
     cumulativeCharacterCost = sum' $ (\(_,_,c) -> c) <$> minimalDisplayForestPerBlock
 
     -- And accumulate the root cost of all the blocks across the display forests.
@@ -294,7 +294,7 @@ calculatePunitiveNetworkEdgeCost edgeSetCardinality networkEdgeSet parsimoniousC
     -- First we determine if there are extraneous network edges in the DAG.
     --
     -- We calculate the extraneous network edges by taking the difference between
-    -- the complete netowrk edge set and the "used" network edge set.
+    -- the complete network edge set and the "used" network edge set.
     extraneousEdges   = totalNetworkEdges `difference` usedNetworkEdges
     totalNetworkEdges = S.fromList $ toList networkEdgeSet
     usedNetworkEdges  = foldMap1 (\(x,_,_) -> includedNetworkEdges x) minimalContexts
@@ -398,7 +398,7 @@ filterResolutionCombinationsBy predicate = filter predicate . toList . sequenceA
 -- * For each root node in the input DAG there is a corresponding display tree
 --   with that root.
 --
--- * No diplay tree in the display forest is connected to another display
+-- * No display tree in the display forest is connected to another display
 --   tree. Equivelently, no two roots on the input DAG are connected.
 --
 -- * Each taxon in the input DAG is connected to exactly one root.

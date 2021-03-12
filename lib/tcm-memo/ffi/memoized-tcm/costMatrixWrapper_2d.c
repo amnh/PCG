@@ -90,7 +90,7 @@ int getCostAndMedian_2d(dcElement_t *elem1, dcElement_t *elem2, dcElement_t *ret
     elem1copy->alphSize    = alphSize;
     dcElement_t *elem2copy = malloc(sizeof(dcElement_t));
     elem2copy->alphSize    = alphSize;
-    //printf("We alloced!\n"), fflush(stdout);
+    //printf("We allocated!\n"), fflush(stdout);
 
     elem1copy->element = makePackedCharCopy( elem1->element, alphSize, 1 );
     elem2copy->element = makePackedCharCopy( elem2->element, alphSize, 1 );

@@ -71,7 +71,7 @@ performFileDiff (lhs, rhs) = maybe (Right fileDiffResult) Left errorMessage
       | null lhsUnique &&
         null rhsUnique = Nothing
       | otherwise      = Just $ fold
-          [ "The taxa from the two files do not exacly match!\n"
+          [ "The taxa from the two files do not exactly match!\n"
           , "Found the following unique taxa in the first file\n:"
           , show lhsUnique
           , "Found the following unique taxa in the second file:\n"

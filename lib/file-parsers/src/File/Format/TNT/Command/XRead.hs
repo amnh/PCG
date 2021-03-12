@@ -94,9 +94,9 @@ xreadPreamble = xreadHeader *> ((,) <$> xreadCharCount <*> xreadTaxaCount)
 
 
 -- |
--- The superflous information of an XREAD command.
+-- The superfluous information of an XREAD command.
 -- Consumes the XREAD string identifier and zero or more comments
--- preceding the taxa count and character cound parameters
+-- preceding the taxa count and character count parameters
 xreadHeader :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m ()
 xreadHeader =  symbol (keyword "xread" 2)
             *> many simpleComment
@@ -158,7 +158,7 @@ taxonSequence = NE.fromList . toList . DL.concat <$> some taxonSequenceSegment
 -- |
 -- Parses the taxon name prepending a taxon sequence. A taxon name cannot begin
 -- with with the prefix '"&["' as this make the taxon name ambiguous with a
--- character type segmentation specifcation. Taxon names cannot contain the
+-- character type segmentation specification. Taxon names cannot contain the
 -- characters '"().;"' as this makes it impossible to parse other things that I
 -- forget. Maybe I'll remember and add that info some day.
 taxonName :: (MonadParsec e s m, Token s ~ Char) => m String
@@ -232,7 +232,7 @@ coreDiscreteSequenceThatGetsReused = many discreteCharacter
 --
 -- Remember that you can never have the character literal \'-\' mean gap. It means
 -- missing. Why not use \'?\' and just say what you mean? We'll never know.
--- So we substitute gaps for missing in discrete charcters.
+-- So we substitute gaps for missing in discrete characters.
 discreteSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
 discreteSequence = substituteGapForMissingBecauseOfReasonsIllNeverUnderstand coreDiscreteSequenceThatGetsReused
   where
@@ -247,7 +247,7 @@ discreteSequence = substituteGapForMissingBecauseOfReasonsIllNeverUnderstand cor
 
 -- |
 -- A sequence segment containing dna character states. This sequence segment
--- can contain IUPAC codes which will be converted to abiguity groups, or
+-- can contain IUPAC codes which will be converted to ambiguity groups, or
 -- explicit ambiguity group notation with braces. Ambiguity groups are
 -- bitpacked into 8 bit structures with the bit ordering specified by
 -- 'TntDnaCharacter'.
@@ -257,7 +257,7 @@ dnaSequence = mapM discreteToDna =<< coreDiscreteSequenceThatGetsReused
 
 -- |
 -- A sequence segment containing protein character states. This sequence segment
--- can contain IUPAC codes which will be converted to abiguity groups, or
+-- can contain IUPAC codes which will be converted to ambiguity groups, or
 -- explicit ambiguity group notation with braces. Ambiguity groups are bitpacked
 -- into 8 bit structures with the bit ordering specified by 'TntProteinCharacter'.
 proteinSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntProteinCharacter]
@@ -299,7 +299,7 @@ discreteToProtein character = foldl (.|.) zeroBits <$> mapM f flags
 
 
 -- |
--- Represents the terminal character sequence for a chatacter sequence.
+-- Represents the terminal character sequence for a character sequence.
 -- Nomenclature ambiguities /are fun!/
 segmentTerminal :: (MonadParsec e s m, Token s ~ Char) => m ()
 segmentTerminal = whitespaceInline *> endOfLine <* whitespace
@@ -412,7 +412,7 @@ segmentsOf seqDef = DL.fromList <$> symbol (segment `sepEndBy1` segmentTerminal)
 
 
 -- |
--- Replaces gap chracters with missing characters. Correctly handles ambiguity
+-- Replaces gap characters with missing characters. Correctly handles ambiguity
 -- groups.
 gapsToMissings :: DList TaxonInfo -> DList TaxonInfo
 gapsToMissings = fmap (second (fmap gapToMissing))

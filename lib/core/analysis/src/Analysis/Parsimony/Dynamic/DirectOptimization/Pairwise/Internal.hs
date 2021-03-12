@@ -9,7 +9,7 @@
 -- Portability :  portable
 --
 -- Defines the primitive operations for standard Needleman-Wunsch and Ukkonen
--- algorithms for performing a direct optimization heuristic alignmnet between
+-- algorithms for performing a direct optimization heuristic alignment between
 -- two dynamic characters.
 --
 -----------------------------------------------------------------------------
@@ -321,7 +321,7 @@ measureCharacters lhs rhs
         -- First, compare inputs by length.
         case comparing olength lhs rhs of
           -- If the inputs are equal length,
-          -- Then compare by the (arbitary) lexicographical ordering of the median states.
+          -- Then compare by the (arbitrary) lexicographical ordering of the median states.
           EQ -> let x = otoList lhs
                     y = otoList rhs
                     f = fmap getMedian
@@ -348,7 +348,7 @@ measureCharacters lhs rhs
 -- First remove the gaps from the input characters.
 --
 -- If both "ungapped" inputs are empty, we measure the original "gapped" inputs to
--- determine if the inputs need to be swapped. This is requried to ensure comutativity
+-- determine if the inputs need to be swapped. This is required to ensure comutativity
 -- of subsequent operations which use this method.
 --
 -- Returns the "ungapped" dynamic character that is "shorter" first, "longer" second,

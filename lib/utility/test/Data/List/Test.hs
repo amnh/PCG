@@ -16,7 +16,7 @@ testSuite = testGroup "List Tests"
     ]
 
 testExampleCases :: TestTree
-testExampleCases = testGroup "Example cases from documenation"
+testExampleCases = testGroup "Example cases from documentation"
     [ transposeCases
     , isSingletonCases
     , duplicatesCases

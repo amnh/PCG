@@ -65,7 +65,7 @@ performCounterExampleSearch' valueMay =
           Nothing   -> makeMain . testProperty preamble $ uncurry counterExampleCheck
           Just char -> makeMain . testProperty preamble $ counterExampleCheck (NS char)
   where
-    preamble = "Performing stocastic counter-example search"
+    preamble = "Performing stochastic counter-example search"
     makeMain = defaultMain . localOption (QuickCheckTests 1000000) . localOption (QuickCheckShowReplay True)
 
 

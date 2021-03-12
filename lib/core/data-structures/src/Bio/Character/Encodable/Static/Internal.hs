@@ -318,7 +318,7 @@ instance Semigroup StaticCharacterBlock where
 
     (SCB lhs) <> (SCB rhs)
       | m == n    = SCB . factorRows m $ expandRows lhs `mappend` expandRows rhs
-      | otherwise = error $ unwords ["Attempt to concatentate two StaticCharacterBlock of differing stateCounts:", show m, show n]
+      | otherwise = error $ unwords ["Attempt to concatenate two StaticCharacterBlock of differing stateCounts:", show m, show n]
       where
         m = numCols lhs
         n = numCols rhs

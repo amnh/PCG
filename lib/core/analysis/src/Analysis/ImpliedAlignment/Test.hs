@@ -125,14 +125,14 @@ testNumerate = testGroup "Numeration properties"
 -- | Useful function to convert encoding information to two encoded seqs
 encodeArbSameLen :: (GoodParsedChar, GoodParsedChar) -> (DynamicCharacter, DynamicCharacter)
 encodeArbSameLen (parse1, parse2) =
-    ( encodeStream alph . NE.fromList $ NE.take minLen p1
-    , encodeStream alph . NE.fromList $ NE.take minLen p2
+    ( encodeStream alpha . NE.fromList $ NE.take minLen p1
+    , encodeStream alpha . NE.fromList $ NE.take minLen p2
     )
   where
     (p1,p2) = (getGoodness parse1, getGoodness parse2)
     minLen  = minimum [length p1, length p2]
     oneAlph = foldMap (S.fromList . toList)
-    alph    = fromSymbols $ oneAlph p1 `S.union` oneAlph p2
+    alpha    = fromSymbols $ oneAlph p1 `S.union` oneAlph p2
 
 
 -- | Newtyping ensures that the sequence and ambiguity groups are both non-empty.

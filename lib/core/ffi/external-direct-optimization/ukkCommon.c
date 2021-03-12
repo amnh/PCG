@@ -70,8 +70,8 @@ int numStates_g;
 int maxSingleStep_g;
 
 
-int powell_3D_align ( characters_t *inputSeqs     // lengths set correctly; idices set to 0
-                    , characters_t *outputSeqs    // lengths set correctly; idices set to 0
+int powell_3D_align ( characters_t *inputSeqs     // lengths set correctly; indices set to 0
+                    , characters_t *outputSeqs    // lengths set correctly; indices set to 0
                     , size_t        alphabetSize  // not including gap
                     , int           mm            // mismatch cost, must be > 0
                     , int           go            // gap open cost, must be >= 0
@@ -415,7 +415,7 @@ int alignmentCost(          int  states[]
 
 //    if (i > 0) fprintf(stderr, "% - 2d  ", cost);
 
-        // Pay for begining of gaps.
+        // Pay for beginning of gaps.
         for (s = 0; s < 3; s++) {
             if (st[s] != match && st[s] != last_st[s])   cost += startInsert_g;
         }

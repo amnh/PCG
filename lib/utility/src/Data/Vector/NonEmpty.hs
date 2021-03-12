@@ -172,7 +172,7 @@ instance Show a => Show (Vector a) where
 -- |
 -- /O(1)/
 --
--- A synomym for 'point'.
+-- A synonym for 'point'.
 {-# INLINE singleton #-}
 singleton :: a -> Vector a
 singleton = NEV . V.singleton

@@ -98,7 +98,7 @@ fastcTaxonSequenceDefinition = do
 
 
 -- |
--- Parses a sequence of 'Symbol's represneted by a 'CharacterSequence'.
+-- Parses a sequence of 'Symbol's represented by a 'CharacterSequence'.
 -- Symbols can be multi-character and are assumed to be separated by whitespace.
 {-# INLINEABLE fastcSymbolSequence #-}
 {-# SPECIALISE fastcSymbolSequence :: Parsec Void  T.Text [Vector ShortText] #-}
@@ -154,7 +154,7 @@ validSymbol = validSymbolChars <* hspace
 
     -- Technically we could relax the grammar in the following ways:
     --   * To only reject '>' and '[' only as the first character of a symbol
-    --   * To only reject ']' as the last charcter of a symbol
+    --   * To only reject ']' as the last character of a symbol
     --   * Always reject ';'
     --
     -- This would assume that once a symbol has been started with a printable

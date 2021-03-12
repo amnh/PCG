@@ -38,7 +38,7 @@ import GHC.Generics                     (Generic)
 
 
 -- |
--- The four cases for an alignment type of a dynmaic character element
+-- The four cases for an alignment type of a dynamic character element
 data  AlignmentContext
     = Gapping
     | Insertion

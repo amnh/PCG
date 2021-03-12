@@ -406,7 +406,7 @@ minimaBy cmp = foldr f []
 -- |
 -- /O(min(n,m))/
 --
--- Perform a simulatanous zipWith and fold where the zip function takes values
+-- Perform a simultaneous zipWith and fold where the zip function takes values
 -- in some monoid.
 foldZipWith
   :: (Monoid m, Foldable f, Foldable t)
@@ -421,7 +421,7 @@ foldZipWith f fa tb =
 -- |
 -- \( \mathcal{O} \left( \mathrm{min} (n_1, n_2, n_3) \right) \)
 --
--- Perform a simulatanous zipWith3 and fold where the zip function takes values
+-- Perform a simultaneous zipWith3 and fold where the zip function takes values
 -- in some monoid.
 foldZipWith3
   :: (Monoid m, Foldable f1, Foldable f2, Foldable f3)

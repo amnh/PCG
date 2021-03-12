@@ -238,7 +238,7 @@ candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
 
 
  -- Gets all pairs of distinct edges from the edge set that can be
- -- compatably added to the network.
+ -- compatibly added to the network.
     candidateEdgesList :: [((Int, Int), (Int, Int))]
     candidateEdgesList =
         do

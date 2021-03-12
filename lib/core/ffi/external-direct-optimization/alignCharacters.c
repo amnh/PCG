@@ -27,9 +27,9 @@
 
                                                   /**************** IMPORTANT!!! ****************/
 
-/**************** Note that all included 3d funtions are beta and unused. Instead UkkCommon code, due to Powell, is used. ****************/
+/**************** Note that all included 3d functions are beta and unused. Instead UkkCommon code, due to Powell, is used. ****************/
 
-/** Fill a row in a two dimentional alignment
+/** Fill a row in a two dimensional alignment
  *
  *  When pairwise alignment is performed, two dynamic characters are compared over a
  *  transformation cost matrix. Let's call them characters x and y, written over
@@ -4314,7 +4314,7 @@ algn_print_dynmtrx_2d ( const dyn_character_t      *char1
     // We do this because only the last two "rows" are ever used and constantly
     // overwritten as the algorithm moves from the first "row" to the last row.
     // This means that only the last two "rows" are preserved in memory.
-    // We place this loop here to pad out the unkown values.
+    // We place this loop here to pad out the unknown values.
     //
     // Also, the algorithm works on the transpose of the standard needleman-wunsh
     // matrix, so we actually access the "rows" as columns in the traditional
@@ -4322,7 +4322,7 @@ algn_print_dynmtrx_2d ( const dyn_character_t      *char1
     // on the left.
     //
     // The result of these design choices is that we can only see the last two
-    // columns in the "propper" cost matrix. Hurray! /s
+    // columns in the "proper" cost matrix. Hurray! /s
     for (j = 0; j < longerCharLen - 2; j++) {
       // if (j == 0 && i == 0) {
       //     printf("%7d ", 0);

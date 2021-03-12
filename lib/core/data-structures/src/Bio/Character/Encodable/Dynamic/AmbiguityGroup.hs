@@ -111,7 +111,7 @@ instance EncodableStreamElement AmbiguityGroup where
         aLen   = toEnum $ length alphabet
         cLen   = symbolCount character
         errMsg = fold
-          [ "The alpabet size ("
+          [ "The alphabet size ("
           , show aLen
           , ") does not match the character size ("
           , show cLen

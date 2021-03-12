@@ -137,7 +137,7 @@ additionProperties = testGroup "Properties of addition"
             $ testProperty "addition is commutative"   additiveCommutivity
         ]
     , testGroup "other properties"
-        [ testProperty "addition on maxBound is indempotent" additiveUpperBound
+        [ testProperty "addition on maxBound is idempotent" additiveUpperBound
         , testProperty "addition of finite values never exceeds maxBound" additiveCeiling
         ]
     ]
@@ -161,8 +161,8 @@ additionProperties = testGroup "Properties of addition"
 subtractionProperties :: TestTree
 subtractionProperties = testGroup "Properties of subtraction"
     [ testProperty "subtraction is the additive inverse" subtractionIsInverse
-    , testProperty "subtracting additive identity is indempotent" subtractionIdentity
-    , testProperty "subtraction on minBound is indempotent" subtractionLowerBound
+    , testProperty "subtracting additive identity is idempotent" subtractionIdentity
+    , testProperty "subtraction on minBound is idempotent" subtractionLowerBound
     , testProperty "subtraction of finite values never exceeds maxBound" subtractionFloor
     ]
   where
@@ -219,7 +219,7 @@ multiplicationProperties = testGroup "Properties of multiplication"
         $ testProperty "multiplication is left-distibutive"  multiplicativeLeftDistributivity
     , localOption (QuickCheckTests 10000)
         $ testProperty "multiplication is right-distibutive" multiplicativeRightDistributivity
-    , testProperty "multiplication on maxBound is indempotent (except 0 & infinity)" multiplicativeUpperBound
+    , testProperty "multiplication on maxBound is idempotent (except 0 & infinity)" multiplicativeUpperBound
     , testProperty "multiplication of finite values never exceeds maxBound" multiplicativeCeiling
     ]
   where

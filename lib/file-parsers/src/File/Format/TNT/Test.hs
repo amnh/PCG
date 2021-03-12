@@ -81,7 +81,7 @@ internalCombinators = testGroup "General combinators used amongst TNT commands" 
             f :: Int -> Bool
             f x = (x > 0) == isRight (parseInternal (flexiblePositiveInt "") $ show (fromIntegral x :: Double))
 
-    keyword' = testGroup "Kewords parsed flexibly" [prefixesMatching]
+    keyword' = testGroup "Keywords parsed flexibly" [prefixesMatching]
       where
         prefixesMatching = testProperty "Parses all prefixes after requisite characters" f
           where

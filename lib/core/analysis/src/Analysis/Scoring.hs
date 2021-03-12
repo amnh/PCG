@@ -329,7 +329,7 @@ performPostorderDecoration x = (context, postorderResult)
     g' postFn = \case
       LeafContext optD ->
         case optD of
-          Nothing -> error "unitialized leaf node in PostorderBinaryContext!"
+          Nothing -> error "uninitialized leaf node in PostorderBinaryContext!"
           Just d  -> postFn $ LeafContext d
 
       PostNetworkContext _ ->

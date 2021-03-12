@@ -374,7 +374,7 @@ fromSymbolsWithStateNames inputSymbols = Alphabet False symbols names
 -- columns as the 'Alphabet' is reordered. Deletes TCM rows and columns where
 -- 'Alphabet' symbols are eliminated.
 --
--- If the alphabet has been permuted the corresponding TCM needs to be permuted in the same mannor.
+-- If the alphabet has been permuted the corresponding TCM needs to be permuted in the same manner.
 --
 -- /O(n*log(n) + n^2)/
 {-# SPECIALISE fromSymbolsWithTCM :: FoldableWithKey t => t String    -> Matrix b -> (Alphabet String   , Matrix b) #-}
@@ -409,7 +409,7 @@ fromSymbolsWithTCM symbols originalTcm = (alphabet, permutedTcm)
 -- columns as the 'Alphabet' is reordered. Deletes TCM rows and columns where
 -- 'Alphabet' symbols are eliminated.
 --
--- If the alphabet has been permuted the corresponding TCM needs to be permuted in the same mannor.
+-- If the alphabet has been permuted the corresponding TCM needs to be permuted in the same manner.
 --
 -- /O(n*log(n) + n^2)/
 {-# SPECIALISE fromSymbolsWithStateNamesAndTCM :: FoldableWithKey t => t (   String,    String)  -> Matrix b -> (Alphabet String   , Matrix b) #-}

@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Analysis.Parsimony.Dynmaic.DirectOptimization.Pairwise.Test
+-- Module      :  Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
 -- Copyright   :  (c) 2015-2015 Ward Wheeler
 -- License     :  BSD-style
 --
@@ -499,7 +499,7 @@ overlapTest = testGroup "Overlap test cases"
     , unionTestWithGeneral
     ]
   where
-    -- Withour loss of generality, next two use only General CostStructure
+    -- Without loss of generality, next two use only General CostStructure
     singleIntersectionTest = testCase "Given characters with single intersection, gives expected results"
         $ assertEqual "" expectedResult result
       where

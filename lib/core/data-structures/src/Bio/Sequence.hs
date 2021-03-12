@@ -110,7 +110,7 @@ hexZip = hexZipWith (,) (,) (,) (,) (,) (,)
 --
 -- Assumes that the 'CharacterSequence' values have the same number of character
 -- blocks and the same number of each character type in the corresponding block
--- of each block. If this assumtion is violated, the result will be truncated.
+-- of each block. If this assumption is violated, the result will be truncated.
 hexZipWith
   :: (u -> u' -> u'')
   -> (v -> v' -> v'')
@@ -130,7 +130,7 @@ hexZipWith f1 f2 f3 f4 f5 f6 lhs =
 --
 -- Assumes that the 'CharacterSequence' and 'MetadataSequence' have the same
 -- number of character blocks and the same number of each character type in
--- the corresponding block of each block. If this assumtion is violated, the
+-- the corresponding block of each block. If this assumption is violated, the
 -- result will be truncated.
 hexZipMeta
   :: (ContinuousCharacterMetadataDec                      -> u -> u')

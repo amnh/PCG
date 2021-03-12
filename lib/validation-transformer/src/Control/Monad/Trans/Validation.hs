@@ -11,7 +11,7 @@
 -- The 'Validation' type's monad transformer definition.
 --
 -- The transformer will collect failure up until the first monadic bind,
--- after which the precence of errors on the left hand side of the bind
+-- after which the presence of errors on the left hand side of the bind
 -- will cause the computation to short-circuit.
 --
 -----------------------------------------------------------------------------

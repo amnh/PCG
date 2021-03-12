@@ -16,7 +16,7 @@ module Data.Alphabet.Special
   , dnaAlphabet
   , rnaAlphabet
   , discreteAlphabet
-    -- * Special Alphabet Querries
+    -- * Special Alphabet Queries
   , isAlphabetAminoAcid
   , isAlphabetDna
   , isAlphabetRna
