@@ -692,7 +692,7 @@ deserializeStateProtein = buildFromBimap f iupacToDna
           'W' -> 18
           'Y' -> 19
           '-' -> 20
-          _   -> error "Fatal construction error in TNT parser's IUPAC deserializer"
+          _   -> error "Fatal construction error in TNT parser's protein IUPAC deserializer"
 
 
 buildFromBimap
@@ -708,16 +708,6 @@ buildFromBimap f = casei . M.fromDistinctAscList . fmap convert . BM.toAscList
         key = head $ NE.head x
         val = foldl (\b -> (b .|.) . bit . f . head) zeroBits y
 
-{-
-deserializeStateProtein = insert '?' allBits . casei $ core `union` multi
-  where
-    core    = M.fromList $ zip "ACDEFGHIKLMNPQRSTVWY-" (bit <$> [0..])
-    multi   = M.fromList [('B', ref 'D' .|. ref 'N')'Z', ref 'E' .|. ref 'Q'), ('X', allBits `clearBit` gapBit )]
-    ref     = (core !)
-    allBits = foldl (.|.) zeroBits core
-    gapBit  = findFirstSet $ core ! '-'
--}
-
 
 -- |
 -- Add case insensitive keys to map with the corresponding keys.
@@ -728,7 +718,7 @@ casei x = foldl f x $ assocs x
       | isLower k = insertWith g (toUpper k) v m
       | isUpper k = insertWith g (toLower k) v m
       | otherwise = m
-    g _ o = o -- Don't overwrite old, opisite case values in the map.
+    g _ o = o -- Don't overwrite old, opposite case values in the map.
 
 
 -- |
