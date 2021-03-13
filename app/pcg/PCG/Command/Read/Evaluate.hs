@@ -34,8 +34,8 @@ evaluate (ReadCommand fileSpecs) = do
                       ParseError {} ->  Parsing
                       UnifyError {} -> Unifying
         in  failWithPhase phase pErr
-      Success pRes ->
-        case decoration . unifyPartialInputs $ transformation <$> fold1 pRes of
+      Success result ->
+        case decoration . unifyPartialInputs $ transformation <$> fold1 result of
           Failure uErr -> failWithPhase Unifying uErr   -- Report structural errors here.
           -- TODO: rectify against 'old' SearchState, don't just blindly merge or ignore old state
           Success g    -> pure g

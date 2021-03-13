@@ -8,14 +8,20 @@ module Test.Custom.Parse
   , parserSatisfies
   ) where
 
-import Data.Either
-import Data.Void
-import Test.Tasty.HUnit
-import Text.Megaparsec       (Parsec, parse)
-import Text.Megaparsec.Error (errorBundlePretty)
+import           Data.Either
+import qualified Data.Text             as T
+import qualified Data.Text.Lazy        as LT
+import           Data.Void
+import           Test.Tasty.HUnit
+import           Text.Megaparsec       (Parsec, TraversableStream, VisualStream, parse)
+import           Text.Megaparsec.Error (errorBundlePretty)
 
 
-parseEquals :: (Eq a, Show a) => Parsec Void String a -> String -> a -> Assertion
+{-# INLINEABLE parseEquals #-}
+{-# SPECIALISE parseEquals :: (Eq a, Show a) => Parsec Void  T.Text a ->  T.Text -> a -> Assertion #-}
+{-# SPECIALISE parseEquals :: (Eq a, Show a) => Parsec Void LT.Text a -> LT.Text -> a -> Assertion #-}
+{-# SPECIALISE parseEquals :: (Eq a, Show a) => Parsec Void  String a ->  String -> a -> Assertion #-}
+parseEquals :: (Eq a, Show a, Show s, TraversableStream s, VisualStream s) => Parsec Void s a -> s -> a -> Assertion
 parseEquals parser input expected =
   case result of
     Left  x -> assertFailure $ errorBundlePretty x
@@ -24,14 +30,22 @@ parseEquals parser input expected =
     result = parse parser "" input
 
 
-parseFailure :: Parsec Void String a -> String -> Assertion
+{-# INLINEABLE parseFailure #-}
+{-# SPECIALISE parseFailure :: Parsec Void  T.Text a ->  T.Text -> Assertion #-}
+{-# SPECIALISE parseFailure :: Parsec Void LT.Text a -> LT.Text -> Assertion #-}
+{-# SPECIALISE parseFailure :: Parsec Void  String a ->  String -> Assertion #-}
+parseFailure :: Show s => Parsec Void s a -> s -> Assertion
 parseFailure parser input =
     assertBool ("Should have failed to parse input: " <> show input) $ isLeft result
   where
     result = parse parser "" input
 
 
-parseSuccess :: Parsec Void String a -> String -> Assertion
+{-# INLINEABLE parseSuccess #-}
+{-# SPECIALISE parseSuccess :: Parsec Void  T.Text a ->  T.Text -> Assertion #-}
+{-# SPECIALISE parseSuccess :: Parsec Void LT.Text a -> LT.Text -> Assertion #-}
+{-# SPECIALISE parseSuccess :: Parsec Void  String a ->  String -> Assertion #-}
+parseSuccess :: (TraversableStream s, VisualStream s) => Parsec Void s a -> s -> Assertion
 parseSuccess parser input =
   case result of
     Left  x -> assertFailure $ errorBundlePretty x
@@ -40,7 +54,8 @@ parseSuccess parser input =
     result = parse parser "" input
 
 
-parserSatisfies :: Parsec Void String a -> String -> (a -> Bool) -> Bool
+{-# INLINEABLE parserSatisfies #-}
+parserSatisfies :: Parsec Void s a -> s -> (a -> Bool) -> Bool
 parserSatisfies parser input property =
   case parse parser "" input of
     Left  _ -> False
@@ -48,7 +63,7 @@ parserSatisfies parser input property =
 
 
 {-
-parserFalsifies :: Parsec Void String a -> String -> (a -> Bool) -> Bool
+parserFalsifies :: (TraversableStream s, VisualStream s) => Parsec Void s a -> s -> (a -> Bool) -> Bool
 parserFalsifies parser input property =
   case parse parser "" input of
     Left  _ -> True

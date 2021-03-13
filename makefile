@@ -1,292 +1,255 @@
 SHELL=/bin/bash
+CHECKMARK    := "\033[0;32m\xE2\x9C\x94\xE2\x83\x9E\033[0m"
 
-#Flags for GHC
-linking       = --make
-warnings      = -w -W -Wall -Werror
-sanity        = -fwarn-duplicate-exports -fwarn-incomplete-patterns -fwarn-missing-signatures -fwarn-overlapping-patterns -fwarn-tabs -fwarn-unused-binds -fwarn-unused-imports -fwarn-unused-matches -fwarn-unused-do-bind
-stacktracing  = -prof -fprof-auto -fprof-cafs
+bin-dir      := ./bin
+hie-dir      := ./.hie
+formatter    := $(bin-dir)/stylish-haskell
 
-#Flags for `stack`
-haddock       = --haddock --haddock-deps
-              # For later:
-              # --haddock-arguments --mathjax=https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML
-profiling     = --executable-profiling --library-profiling
-
-code-dirs     = app bench test $(shell find lib -maxdepth 1 -type d -name "*" | tail -n +2 | tr '\n' ' ') 
-
-sub-libs      = pcg-file-parsers pcg-language pcg-utility
-
-# file paths
-
-cabal-pcg-path = dist-newstyle/build/x86_64-linux/ghc-8.10.1/phylogenetic-component-graph-0.1.0.1/x/pcg/build/pcg/pcg
+code-dirs  = app bench test $(shell find lib -maxdepth 1 -type d -name "*" | tail -n +2 | tr '\n' ' ')
+code-files = $(shell find $(code-dirs) -type f -name "*.hs" | tr '\n' ' ')         
 
 
-# Target aliases for easy CLI use
+################################################################################
+###   Target aliases for easy CLI use
 ################################################################################
 
-# Default build target
-all: cabal-standard-build
-#all: stack-build-profiling
+# Clean up and build everything; default build target
+all: cabal-clean cabal-setup cabal-deploy
+
+build: prof
+
+clean: cabal-clean clean-up-latex cleanup-log-files cleanup-junk-file
 
 # Rebuilds with profiling
-prof: cabal-build-profiling
+prof: cabal-quick-prof
 
-# Builds fast as possible
-quick: cabal-build-quick
-
-# Rebuilds as fast as possible
-rebuild: quick
-
-# Clean then rebuild
-rebuild-full: clean rebuild
-
-# Clean then rebuild outputting core
-core: clean cabal-build-core
-
-# Clean then build with the llvm backend
-llvm: clean cabal-build-llvm
-
-# Rebuilds with optimizations and runs tests
-test: cabal-test
-
-# Re-builds project then runs only integration tests
-test-integration: cabal-build-test-integration
-
-# Re-builds project then runs only unit tests
-test-unit: cabal-build-test-unit
-
-test-failures: cabal-build-test-failures
-
-test-new: cabal-build-test-new
-
-test-golden-new: cabal-build-test-golden-new
-
-# Runs linter
-
-lint: run-linter
-
-# Makes hoogle server
-
-hoogle: cabal-hoogle-server
-
-
-# Target Definitions
-################################################################################
+lint: format-code spelling-check hlint-check documentation-check static-analysis-check dead-code-check
 
 
 ################################################################################
-##############################  Stack Definitions ##############################
+###   Reusable cabal build definitions
 ################################################################################
 
-# Builds with useful features for a standard user of the package
-stack-standard-build: install-stack stack-setup
-	stack install $(haddock)
+with-compiler-flags =
+ifdef ghc
+	with-compiler-flags := --with-compiler=ghc-$(ghc) --with-hc-pkg=ghc-pkg-$(ghc)
+else
+	with-compiler-flags := --with-compiler=ghc
+endif
 
-# Builds with all useful options for package power users
-stack-full-build: install-stack clean stack-setup stack-build-prof
+cabal-fast-prof     = --ghc-options="-O0" --enable-profiling --profiling-detail=all-functions --ghc-options="-O0 -fprof-cafs -rtsopts=all"
+cabal-haddock-flags = --enable-documentation --haddock-all --haddock-hyperlink-source --haddock-internal
+cabal-install-flags = --installdir=$(bin-dir) --overwrite-policy=always
+cabal-total-targets = --enable-benchmarks --enable-tests
+cabal-suffix        = 2>&1 | grep -v -f .ignored-warnings
 
-# Upgrade stack if installed or install stack if not installed
-install-stack:
-	which stack || (cabal update && cabal install stack)
+# Actions to perform before building dependencies and project
+# Seperating the "pre-deploy" from "deploy" allows for CI caching the results
+# of the pre-deployment configuration.
+cabal-setup:
+	cabal update
+	cabal clean
+	cabal configure $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) $(cabal-suffix)
+	cabal freeze    $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) $(cabal-suffix)
 
-stack-setup: phylogenetic-component-graph.cabal stack.yaml
-	stack setup
+# Actions for building all binaries, benchmarks, and test-suites
+cabal-build:
+	cabal build     $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) --only-dependencies $(cabal-suffix)
+	cabal build     $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) $(cabal-suffix)
+
+# Actions for building all binaries, benchmarks, and test-suites
+cabal-deploy: cabal-build
+	cabal install   $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-install-flags) $(cabal-suffix)
+
+cabal-clean: cleanup-cabal-default cleanup-cabal-build-artifacts cleanup-HIE-files
 
 # Builds with no extra generated features and no optimizations
-stack-build-quick: phylogenetic-component-graph.cabal stack.yaml
-	stack build --fast
-
-# Builds with profiling enabled using a different work directory to cache
-# built dependencies.
-stack-build-profiling: phylogenetic-component-graph.cabal stack.yaml
-#	stack install $(profiling) --flag phylogenetic-component-graph:build-cpp-files
-	stack install $(profiling) --work-dir=".stack-work-profile" --fast --ghc-options="-fprof-cafs -rtsopts=all -O0"
-
-
-# Builds outputting simplified core files (without newtype coercions)
-stack-build-core: phylogenetic-component-graph.cabal stack.yaml
-	stack build --ghc-options="-ddump-simpl -dsupress-coercions"
-
-# Builds with the llvm backend
-stack-build-llvm: phylogenetic-component-graph.cabal stack.yaml
-	stack build --ghc-options="-fllvm"
-
-# Builds tests and updates log of tests that have been run
-stack-build-test: phylogenetic-component-graph.cabal stack.yaml
-	stack build --test --ta "--rerun-update"
-
-# Builds and runs integration tests after a standard build.
-stack-build-test-integration: phylogenetic-component-graph.cabal stack.yaml stack-standard-build
-	stack build phylogenetic-component-graph:test:integration-tests
-
-# Builds and runs unit tests after a standard build.
-stack-build-test-unit: phylogenetic-component-graph.cabal stack.yaml stack-standard-build
-	stack build phylogenetic-component-graph:test:unit-tests
-
-# Builds tests and re-runs those that failed
-stack-build-test-failures: phylogenetic-component-graph.cabal stack.yaml
-	stack build --test --ta "--rerun-filter=failures"
-
-# Builds tests and runs those that are not in the log
-stack-build-test-new: phylogenetic-component-graph.cabal stack.yaml
-	stack build --test --ta "--rerun-filter=new"
-
-# Builds only integration tests and generates new golden files
-stack-build-test-golden-new: phylogenetic-component-graph.cabal stack.yaml
-	stack build phylogenetic-component-graph:test:integration-tests --ta "--accept"
-
-
-# Builds haddock documentation searchable by locally hosted hoogle
-stack-hoogle-server:  phylogenetic-component-graph.cabal stack.yaml
-	stack hoogle --server
+cabal-quick-prof: phylogenetic-component-graph.cabal cabal.project
+	cabal build   $(cabal-fast-prof) $(cabal-total-targets) --only-dependencies $(cabal-suffix)
+	cabal build   $(cabal-fast-prof) $(cabal-total-targets) $(cabal-suffix)
+	cabal install $(cabal-fast-prof) $(cabal-install-flags) $(cabal-suffix)
 
 
 ################################################################################
-##############################  Cabal Definitions ##############################
+###   CI definitions
 ################################################################################
 
-# Builds with useful features for a standard user of the package
-cabal-standard-build: cabal-setup
-	cabal new-build
-	$(copy-executable)
+# Check that the project builds with the specified lower bounds
+lower-bounds-check: lower-bounds.project lower-bounds-check-setuplower-bounds-check-deploy
 
-cabal-refresh:
-	   rm -rf dist-newstyle && cabal new-clean  && cabal new-configur && cabal new-build
+lower-bounds-check-setup:  cabal-haddock-flags += --project-file=lower-bounds.project
+lower-bounds-check-setup:  lower-bounds.project cabal-setup
 
-# Builds with all useful options for package power users
-cabal-full-build: clean cabal-setup cabal-build-prof
-
-# TO DO: fix this command to upgrade to at least cabal 2.4 if the user has not
-install-cabal:
-	(cabal new-update && cabal new-install cabal-install)
+lower-bounds-check-deploy: cabal-haddock-flags += --project-file=lower-bounds.project
+lower-bounds-check-deploy: lower-bounds.project cabal-deploy
 
 
-cabal-setup: phylogenetic-component-graph.cabal cabal.project
-	cabal new-configure --project-file=cabal.project --enable-library-profiling --enable-executable-profiling --enable-tests --with-compiler=ghc-8.10.1 --allow-newer
+# Check that all unit tests pass
+run-unit-tests: unit-tests-setup unit-tests-verification
 
-# Builds with no extra generated features and no optimizations
-cabal-build-quick: phylogenetic-component-graph.cabal cabal.project
-	cabal new-build --ghc-options="-O0"
+unit-tests-setup: cabal.project cabal-setup
 
-# Builds with profiling enabled
-cabal-build-profiling: phylogenetic-component-graph.cabal cabal.project
-	cabal new-build --enable-profiling --profiling-detail=all-functions --ghc-options="-O0 -fprof-cafs -rtsopts=all"
-	$(copy-executable)
-
-# Builds outputting simplified core files (without newtype coercions)
-cabal-build-core: phylogenetic-component-graph.cabal cabal.project
-	cabal new-build --ghc-options="-ddump-simpl -dsupress-coercions"
-
-# Builds with the llvm backend
-cabal-build-llvm: phylogenetic-component-graph.cabal cabal.project
-	cabal new-build --ghc-options="-fllvm"
-
-# Note: --test-option will be reimplemented in cabal new in cabal 3.0
-# and so we can replace these solutions for how to pass test-flags
-# when we upgrade to the next cabal.
-
-# Builds tests and updates log of tests that have been run
-cabal-test: phylogenetic-component-graph.cabal cabal.project cabal-test-unit cabal-test-integration
-	cabal new-run test:unit-tests                  --enable-tests -- "--rerun-update"
-	cabal new-run test:pcg-utility-test-suite      --enable-tests -- "--rerun-update"
-	cabal new-run test:pcg-file-parsers-unit-tests --enable-tests -- "--rerun-update"
-	cabal new-run test:alphabet-test-suite         --enable-tests -- "--rerun-update"
-	cabal new-run test:evaluation-test-suite       --enable-tests -- "--rerun-update"
-	cabal new-run test:tcm-test-suite              --enable-tests -- "--rerun-update"
-	cabal new-run test:integration-tests           --enable-tests -- "--rerun-update"
-
-# Builds and runs integration tests after a standard build.
-cabal-test-integration: phylogenetic-component-graph.cabal cabal.project
-	cabal new-run test:integration-tests -- "--rerun-update"
-
-# Builds and runs unit tests after a standard build.
-cabal-test-unit: phylogenetic-component-graph.cabal cabal.project
-	cabal new-run test:unit-tests -- "--rerun-update"
-#	cabal new-run test:unit-tests --enable-profiling --enable-executable-profiling --ghc-options="-O0 -fprof-cafs -rtsopts=all" "+RTS -xc -RTS"
-
-# Builds tests and re-runs those that failed
-cabal-test-failures: phylogenetic-component-graph.cabal cabal.project
-	cabal new-run test:unit-tests -- "--rerun-filter=failures"
-	cabal new-run test:integration-tests -- "--rerun-filter=failures"
+unit-tests-verification: cabal.project
+	cabal build --enable-tests $(with-compiler-flags)
+	cabal test
 
 
-# Builds tests and runs those that are not in the log
-cabal-test-new: phylogenetic-component-graph.cabal cabal.project
-	cabal new-run test:unit-tests -- "--rerun-filter=new"
-	cabal new-run test:integration-tests -- "--rerun-filter=new"
+# Check that all example input files parse
+run-file-tests: file-tests-setup file-tests-verification
+
+file-tests-setup: cabal.project cabal-setup
+
+file-tests-verification:
+	cabal run file-tests
 
 
-# Builds only integration tests and generates new golden files
-cabal-test-golden-new: phylogenetic-component-graph cabal.project
-	cabal new-run test:integration-tests -- "--accept"
+# Check that all example input files parse
+run-integration-tests: integration-tests-setup integration-tests-verification
+
+integration-tests-setup: cabal.project cabal-setup
+
+integration-tests-verification:
+	cabal install exe:pcg --overwrite-policy=always --installdir=./bin
+	cabal run integration-tests
 
 
-# Builds haddock documentation searchable by locally hosted hoogle
-cabal-hoogle-server:  phylogenetic-component-graph.cabal cabal.project
-	hoogle server --local
+# Check that the project builds with the specified lower bounds
+compilation-check: compilation-check-setup compilation-check-deploy
 
-cabal-build-hoogle: phylogenetic-component-graph.cabal cabal.project install-hoogle
-	cabal new-haddock --haddock-hoogle
-	hoogle generate --local="."
-	hoogle server --local
+compilation-check-setup:  cabal-haddock-flags += $(with-compiler-flags)
+compilation-check-setup:  cabal.project cabal-setup
 
-install-hoogle:
-	which hoogle || (cabal v2-install hoogle)
+compilation-check-deploy: cabal-haddock-flags += $(with-compiler-flags)
+compilation-check-deploy: cabal.project cabal-deploy
 
 
-### The code cleanliness section
-### Installs hlint, stylish-haskell, and weeder
-### Formats code, then reports and cleanliness issues
-### NOTE: Should be run before merging into master!!!
+################################################################################
+###   Code hygeine
+################################################################################
 
-# install hlint if not installed
-install-hlint:
-	which hlint           || (stack install hlint           --resolver=lts)
+dead-code-check: dead-code-check-setup dead-code-check-deploy
 
-# install stylish haskell if not installed
-install-stylish-haskell:
-	which stylish-haskell || (stack install stylish-haskell --resolver=lts)
+dead-code-check-setup:
+	@echo "Downloading weeder..."
+	cabal update
+	cabal install weeder $(with-compiler-flags) $(cabal-install-flags)
+	$(bin-dir)/weeder --version
+	@$(MAKE) --no-print-directory hie-setup
 
-# install weeder if not installed
-install-weeder:
-	which weeder          || (stack install weeder          --resolver=lts)
+dead-code-check-deploy: hie-deploy
+	cat weeder.dhall
+	$(bin-dir)/weeder --config ./weeder.dhall --hie-directory $(hie-dir)
+
+hlint-check:
+	@curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s $(code-dirs) -j
 
 format-code: install-stylish-haskell
-	@echo -n "[?] Formatting code..."
+	@echo -n " ☐  Formatting code..."
 	@find $(code-dirs) -type f -name "*.hs" | while read fname; do \
-	  stylish-haskell -i "$$fname"; \
+	  $(bin-dir)/stylish-haskell -i "$$fname"; \
 	done
-	@echo -n -e "\33[2K\r"
-	@echo "[✓] Formatting complete!"
+	@echo -e "\r\033[K" $(CHECKMARK) " Formatting code complete!"
 
-run-linter: install-hlint install-weeder format-code run-hlint
-#	weeder . --build
-
-run-hlint: 
-	hlint --no-exit-code $(code-dirs)
-
-# Copies documentation director to local scope
-copy-haddock: set-dir-variables
-	rm -rf doc/haddock/*
-	rm -f  doc/haddock.html
-	mkdir doc/haddock/phylogenetic-component-graph && cp -r .stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/phylogenetic-component-graph doc/haddock/phylogenetic-component-graph
-	for lib in $(sub-libs); do \
-	  mkdir doc/haddock/$$lib && cp -r lib/$$lib/.stack-work/dist/$(DIR_ONE)/$(DIR_TWO)/doc/html/$$lib doc/haddock/$$lib; \
+formatting-check: install-stylish-haskell
+	@echo "Checking code for required formatting"
+	@$(eval diff-log := .diffs.log)
+	@rm -f $(diff-log)
+	@touch $(diff-log)
+	@find $(code-dirs) -type f -name "*.hs" | while read fname; do \
+	  $(bin-dir)/stylish-haskell "$$fname" > styled.temp; \
+	  diff "$$fname" styled.temp >> $(diff-log); \
 	done
-	ln -s haddock/phylogenetic-component-graph/phylogenetic-component-graph/index.html doc/haddock.html
+	@rm -f styled.temp
+	@find . -empty -name $(diff-log) | grep "^" &> /dev/null || ( \
+	  echo -e "Formatting required!\nFix by running the following:\n\n> make format-code\n" && \
+	  rm -f $(diff-log) && \
+	  sleep 1 && \
+	  exit 1 )
 
-# Sets up variables of path names that are subject to change.
-# Finds the most recently modified file in the directory
-set-dir-variables:
-	$(eval DIR_ONE = $(shell ls -t .stack-work/dist/            | head -n 1))
-	$(eval DIR_TWO = $(shell ls -t .stack-work/dist/$(DIR_ONE)/ | head -n 1))
-	@true
+spelling-check: install-codespell
+	@$(eval spell-check-flags := -I .ignored-words -x .excluded-lines)
+ifdef fix-spelling
+	@$(eval spell-check-flags += --write-changes)
+endif
+	@echo "Checking code for misspellings"
+	@codespell $(spell-check-flags) $(code-files)
 
-# Cleans up artefact files after a build
-clean: phylogenetic-component-graph.cabal stack.yaml
-	stack clean
-	cabal new-clean
-	@echo -n "[X] Cleaning directories of junk files..."
+static-analysis-check: static-analysis-check-setup static-analysis-check-deploy
+
+static-analysis-check-setup:
+	@echo "Downloading stan..."
+	cabal update
+	cabal install stan $(with-compiler-flags) $(cabal-install-flags)
+	$(bin-dir)/stan --version
+	@$(MAKE) --no-print-directory hie-setup
+
+static-analysis-check-deploy: hie-deploy
+	@$(eval stan-log := .stan.log)
+	@$(eval observations := .stan.observations.log)
+	$(bin-dir)/stan | tee $(stan-log)
+	@grep ' ID:            ' $(stan-log) > $(observations)
+	@rm -f $(stan-log)
+	@$(eval count := $(shell wc -l $(observations) | cut -d " " -f1))
+	@find . -empty -name $(observations) | grep "^" &> /dev/null || ( \
+	  echo -e "\nAnti-pattern observations found!\nCorrect the following" $(count) "observations:\n" && \
+	  echo -n " ┏" && \
+	  printf '━%.0s' {1..52} && \
+	  echo "━" && \
+	  cat $(observations) && \
+	  rm -f $(observations) && \
+	  sleep 1 && \
+	  exit 1 \
+	)
+
+documentation-check: documentation-check-setup documentation-check-deploy
+
+documentation-check-setup: cabal-setup
+
+documentation-check-deploy:
+	@$(eval docs-log := .haddock.log)
+	@$(eval missing-docs := .missing.docs.log)
+	@rm -f $(docs-log)
+	@rm -f $(missing-docs)
+	cabal build   $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) --only-dependencies $(cabal-suffix)
+	cabal haddock $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) $(cabal-suffix) | tee $(docs-log)
+	@grep '^  [[:digit:]][[:digit:]]% (' $(docs-log) > $(missing-docs)
+	@rm -f $(docs-log)
+	@$(eval count := $(shell wc -l $(missing-docs) | cut -d " " -f1))
+	@find . -empty -name $(missing-docs) | grep "^" &> /dev/null || ( \
+	  echo -e "\nMissing documetation!\nThe following" $(count) "files have incomplete documetation coverage:\n" && \
+	  cat $(missing-docs) && \
+	  rm -f $(missing-docs) && \
+	  sleep 1 && \
+	  exit 1 \
+	)
+
+hie-setup: compilation-check-setup cleanup-HIE-files
+
+hie-deploy: compilation-check-deploy
+	ls -ahlr $(hie-dir)
+
+################################################################################
+###   Cleaning
+################################################################################
+
+cleanup-cabal-default:
+	@echo -n " ☐  Cleaning Cabal..."
+	@cabal clean
+	@echo -e "\r\033[K" $(CHECKMARK) " Cleaned Cabal defaults"
+
+cleanup-cabal-build-artifacts:
+	@echo -n " ☐  Cleaning extra Cabal build artifacts..."
+	@rm -f lower-bounds.project?*
+	@rm -f cabal.project?*
+	@echo -e "\r\033[K" $(CHECKMARK) " Cleaned Cabal extras"
+
+cleanup-HIE-files:
+	@echo -n " ☐ Cleaning HIE files..."
+	@rm -fR $(hie-dir)
+	@echo -e "\r\033[K" $(CHECKMARK) " Cleaned HIE files"
+
+cleanup-junk-file:
+	@echo -n " ☐  Cleaning code directories of temporary files..."
 	@for dir in $(code-dirs); do \
 	  find $$dir -type f -name '*.o'           -delete; \
 	  find $$dir -type f -name '*.hi'          -delete; \
@@ -297,21 +260,43 @@ clean: phylogenetic-component-graph.cabal stack.yaml
 	  find $$dir -type f -name 'log.out'       -delete; \
 	  find $$dir -type f -name '*dump\-hi*'    -delete; \
 	  find $$dir -type f -name '*dump\-simpl*' -delete; \
-	  find $$dir -type d -name '.stack-work*'  -print0 | xargs -0 rm -rf; \
+	  find $$dir -type f -name '*.data.?*'     -delete; \
+	  find $$dir -type f -name '*.dot.?*'      -delete; \
+	  find $$dir -type f -name '*.xml.?*'      -delete; \
 	done
-	@echo -n -e "\33[2K\r"
-	@echo "[✓] Cleaning complete!"
+	@echo -e "\r\033[K" $(CHECKMARK) " Cleaned temporary files"
+
+cleanup-log-files:
+	@echo -n " ☐ Cleaning log files..."
+	@rm -fR .*.log*
+	@echo -e "\r\033[K" $(CHECKMARK) " Cleaned log files"
+
+clean-up-latex:
+	@echo -n " ☐  Cleaning documentation directory of LaTeX artifacts..."
+	@rm -f *.bbl
+	@rm -f *.blg
+	@rm -f *.synctex.gz
+	@rm -f *.toc
+	@echo -e "\r\033[K" $(CHECKMARK) " Cleaned LaTeX artifacts"
+
+################################################################################
+###   Miscellaneous
+################################################################################
 
 code-lines:
-	loc --exclude 'css|html|js|makefile|md|tex|sh|yaml' --sort lines
+	loc --exclude 'css|html|js|makefile|md|tex|sh|yaml' --sort lines $(code-dirs)
 
-# Legacy cabal build option
-cabal-build: phylogenetic-component-graph.cabal
-	cabal install --dependencies-only && cabal configure --enable-tests --enable-profiling && cabal build && cabal haddock --executables --html --hyperlink-source && cabal test
+install-codespell:
+	@which codespell &> /dev/null || (\
+	  echo "Downloading codespell" && \
+	  pip3 install codespell \
+	)
 
-# Legacy cabal build option
-cabal-sandbox: phylogenetic-component-graph.cabal
-	cabal update && cabal sandbox delete && cabal sandbox init && cabal install --dependencies-only
+install-stylish-haskell:
+	@ls $(formatter) &> /dev/null || (\
+	  echo "Downloading stylish-haskell" && \
+	  cabal update && \
+	  cabal install stylish-haskell $(with-compiler-flags) $(cabal-install-flags) \
+	)
 
-# command to copy executable created by cabal-new
-copy-executable = mkdir -p "bin" && cp  $(cabal-pcg-path) ./bin
+.PHONY: all build clean lint prof test

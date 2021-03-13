@@ -1,8 +1,5 @@
-
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE TypeFamilies      #-}
---{-# LANGUAGE OverloadedLists   #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Newick.Test
   ( testSuite
@@ -69,7 +66,7 @@ quotedLabel' = testGroup "quotedLabel" [validSpecialChars,validEscaping,validEnd
   where
     validSpecialChars   = testGroup "Valid enquoted strings with special chars"         $ success <$> validSpecialLabels
     validEscaping       = testGroup "Valid enquoted strings with escaping"              $ success <$> validEscapedLabels
-    validEndingEscaping = testGroup "Valid enquoted string with escaped last character" [ success ("prime'","'prime'''") ]
+    validEndingEscaping = testGroup "Valid enquoted string with escaped last character" [ success (fromString "prime'", "'prime'''") ]
     success (res,str)   = testCase (show str) $ parseEquals  (quotedLabel <* eof) str res
 
     validSpecialLabels :: [(ShortText, String)]
@@ -190,8 +187,7 @@ newickForestDefinition' = testGroup "newickForestDefinition" [valid,invalid]
     invalid        = testGroup "Invalid Newick trees" $ failure <$> invalidForests
     success str    = testCase (show str) $ parseSuccess (newickForestDefinition <* eof) str
     failure str    = testCase (show str) $ parseFailure (newickForestDefinition <* eof) str
-    validForests   = fromString <$> [fold ["<", fold validStandardTrees, fold validExtendedTrees, ">"]]
-
+    validForests   = [fold ["<", fold validStandardTrees, fold validExtendedTrees, ">"]]
     invalidForests =
         [ "(((1,2),X),((3,4)X,5));" -- no angle braces
         ]

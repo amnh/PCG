@@ -103,9 +103,9 @@ instance CoArbitrary StaticCharacter
 instance DecodableStream StaticCharacterBlock where
 
     decodeStream alphabet char
-      | isAlphabetDna alphabet  = (dnaIUPAC B.!) <$> rawResult
-      | isAlphabetRna alphabet  = (rnaIUPAC B.!) <$> rawResult
-      | otherwise               = rawResult
+      | isAlphabetDna alphabet = (dnaIUPAC B.!) <$> rawResult
+      | isAlphabetRna alphabet = (rnaIUPAC B.!) <$> rawResult
+      | otherwise              = rawResult
       where
         rawResult    = NE.fromList . ofoldMap (pure . decodeElement alphabet) . otoList $ char
         dnaIUPAC     = convertBimap iupacToDna

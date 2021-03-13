@@ -37,8 +37,8 @@ data  EdgeInfo
 data  VertexEdgeRoot
     = VER
     { vertices :: Set VertexLabel
-    , edges     :: Set EdgeInfo
-    , roots     :: Set VertexLabel
+    , edges    :: Set EdgeInfo
+    , roots    :: Set VertexLabel
     } deriving (Generic, NFData, Show)
 
 

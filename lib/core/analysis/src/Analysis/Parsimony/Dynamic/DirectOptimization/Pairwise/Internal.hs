@@ -566,18 +566,18 @@ traceback overlapFunction alignMatrix longerChar lesserChar = (finalCost, alignm
         (row', col', localContext) =
             case directionArrow of
               LeftArrow -> let j' = j-1
-                               te = getMedian $ longerChar `indexStream` j'
-                               e  = deleteElement (f gap te) te
+                               y  = getMedian $ longerChar `indexStream` j'
+                               e  = deleteElement (f gap y) y
                            in (i , j', e)
               UpArrow   -> let i' = i-1
-                               le = getMedian $ lesserChar `indexStream` i'
-                               e  = insertElement (f le gap) le
+                               x  = getMedian $ lesserChar `indexStream` i'
+                               e  = insertElement (f x gap) x
                            in (i', j , e)
               DiagArrow -> let i' = i-1
                                j' = j-1
-                               te = getMedian $ longerChar `indexStream` j'
-                               le = getMedian $ lesserChar `indexStream` i'
-                               e  = alignElement (f le te) le te
+                               x  = getMedian $ lesserChar `indexStream` i'
+                               y  = getMedian $ longerChar `indexStream` j'
+                               e  = alignElement (f x y) x y
                            in (i', j', e)
 
 

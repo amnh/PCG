@@ -52,12 +52,12 @@ class HasNodeData s t a b | s -> a, t -> b, s b -> t, t a -> s where
 class HasNodeContext s t a b | s -> a, t -> b, s b -> t, t a -> s where
   _nodeContext :: Lens s t a b
 
-instance HasNodeData (IndexData nc nd) (IndexData nc nd') nd nd' where
-  _nodeData = lens nodeData (\ind nd -> ind {nodeData = nd})
+instance HasNodeData (IndexData c d) (IndexData c d') d d' where
+  _nodeData = lens nodeData (\ind datum -> ind { nodeData = datum })
 
 
-instance HasNodeContext (IndexData nc nd) (IndexData nc' nd) nc nc'  where
-  _nodeContext = lens nodeContext (\ind nc -> ind {nodeContext = nc})
+instance HasNodeContext (IndexData c d) (IndexData c' d) c c'  where
+  _nodeContext = lens nodeContext (\ind context -> ind { nodeContext = context })
 
 
 --      ┌──────────────────────────────┐

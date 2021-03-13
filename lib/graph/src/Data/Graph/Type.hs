@@ -293,7 +293,7 @@ unfoldToRoseForest unfoldFn seed = unfoldFromRoots roots
     -- To do: use hashmaps instead of set
     addRoot :: a -> State (Set t) (Maybe a)
     addRoot start = do
-      let (pars, val, childs) = unfoldFn start
+      let (pars, val, children) = unfoldFn start
       seenNodes <- get
       put (val `S.insert` seenNodes)
       pure $ if   val `S.member` seenNodes
@@ -302,8 +302,8 @@ unfoldToRoseForest unfoldFn seed = unfoldFromRoots roots
 
     findRootsFrom :: a -> State (Set t) [a]
     findRootsFrom start = do
-      let (pars, val, childs) = unfoldFn start
-      let otherNodes = fst <$> pars <> childs
+      let (pars, val, children) = unfoldFn start
+      let otherNodes = fst <$> pars <> children
       startRoot <- addRoot start
       let
         otherRootNodes :: State (Set t) [a]
@@ -320,8 +320,8 @@ unfoldToRoseForest unfoldFn seed = unfoldFromRoots roots
     unfoldFromRoot :: a -> RoseTree e t
     unfoldFromRoot root =
       let
-        (pars, val, childs) = unfoldFn root
-        subtrees = first unfoldFromRoot <$> childs
+        (pars, val, children) = unfoldFn root
+        subtrees = first unfoldFromRoot <$> children
         parVals  = first (view _2 . unfoldFn) <$> pars
       in
         RoseTree

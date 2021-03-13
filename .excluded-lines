@@ -1,0 +1,1 @@
+            , ("tre", (makeParser newickStreamParser, ["tree","new","newick","enew","enewick"]))

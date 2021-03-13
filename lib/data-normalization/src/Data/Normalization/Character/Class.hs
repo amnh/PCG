@@ -38,6 +38,7 @@ import qualified Data.Map                              as M
 import           Data.Maybe
 import           Data.Normalization.Character.Internal
 import           Data.Semigroup.Foldable               ()
+import           Data.Sequence                         (ViewL(..), viewl)
 import           Data.String                           (IsString(fromString))
 import           Data.Text.Short                       (ShortText)
 import           Data.Vector                           (Vector)
@@ -198,9 +199,9 @@ buildMapFromSeqs = M.fromList . filterNothings . fmap (fromString *** tntToTheSu
 -- Coalesce the 'TaxonSequence' to the larger type 'NormalizedCharacterCollection'.
 tntToTheSuperSequence :: TaxonSequence -> Maybe NormalizedCharacterCollection
 tntToTheSuperSequence ts =
-    case ts of
-      []   -> Nothing
-      x:xs -> Just . VNE.fromNonEmpty $ f <$> x:|xs
+    case viewl ts of
+      EmptyL -> Nothing
+      x:<xs  -> Just . VNE.fromNonEmpty $ f <$> x :| toList xs
   where
     f (TNT.Continuous c) = NormalizedContinuousCharacter c
     f discreteCharacter  = NormalizedDiscreteCharacter

@@ -293,8 +293,8 @@ computeOnApplicableResolution f1 f2 f3 f4 f5 f6 meta preContextOptions =
                │
                │       ┌───┤ Value
                │       │  -}
-             (tag, childRes) = toTaggedRep childResCacheContext
-             childBlock      = selectChildBlockByTopology key topology childRes
+             (tag, childResolution) = toTaggedRep childResCacheContext
+             childBlock = selectChildBlockByTopology key topology childResolution
            -- re-tagging function
              dir = fromTaggedRep tag
            -- Tag each character block with the correct context
@@ -463,7 +463,8 @@ preorderFromRooting transformation edgeCostMapping nodeDatumContext minTopologyC
                     , show i
                     , " when given "
                     , show e
-                    , "\nIn the IntMap: "
+                    , "\n"
+                    , "In the IntMap: "
                     , show $ IM.keysSet <$> dynCharVec
                     , "\n\n"
                     , generateDotFile pdag2

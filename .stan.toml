@@ -1,0 +1,76 @@
+[[check]]
+  filter = "all"
+  scope  = "all"
+  type   = "Exclude"
+
+[[check]]
+  id = "STAN-0001"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0002"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0003"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0004"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0005"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0008"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0201"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0203"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0206"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0209"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0211"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0215"
+  scope = "all"
+  type = "Include"
+
+[[check]]
+  id = "STAN-0301"
+  scope = "all"
+  type = "Include"
+
+[[remove]]
+directory = "lib/utility/test/"
+
+[[remove]]
+directory = "lib/validation-transformer/test"
+

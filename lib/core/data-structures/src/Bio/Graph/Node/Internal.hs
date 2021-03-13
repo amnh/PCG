@@ -81,7 +81,7 @@ data  PhylogeneticFreeNode n s
 
 
 -- |
--- This serves as a computation /dependant/ node decoration designed to hold node
+-- This serves as a computation /dependent/ node decoration designed to hold node
 -- information for a phylogenetic network (or tree).
 data  PhylogeneticNode s n
     = PNode2

@@ -15,12 +15,14 @@
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE DeriveFoldable             #-}
 {-# LANGUAGE DeriveFunctor              #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StrictData                 #-}
 {-# LANGUAGE TypeFamilies               #-}
 
 module File.Format.TNT.Internal
@@ -75,6 +77,7 @@ module File.Format.TNT.Internal
   , whitespaceInline
   ) where
 
+import           Control.DeepSeq            (NFData, force)
 import           Control.Monad              ((<=<))
 import           Data.Alphabet.IUPAC
 import           Data.Bimap                 (Bimap)
@@ -93,10 +96,12 @@ import qualified Data.Map                   as M
 import           Data.Matrix.NotStupid      (Matrix)
 import           Data.Proxy
 import           Data.Scientific            (floatingOrInteger)
+import           Data.Sequence              (Seq)
 import           Data.Tuple                 (swap)
 import           Data.Vector                (Vector)
 import qualified Data.Vector                as V (fromList)
 import           Data.Word                  (Word32, Word64, Word8)
+import           GHC.Generics               (Generic)
 import           Prelude                    hiding (lookup)
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
@@ -292,7 +297,7 @@ type  TaxonName = String
 
 -- |
 -- The naive sequence of a taxon in a TNT files' XREAD command.
-type  TaxonSequence = [TntCharacter]
+type  TaxonSequence = Seq TntCharacter
 
 
 -- |
@@ -322,7 +327,8 @@ type  TntContinuousCharacter = Maybe Double
 -- Each value corresponds to it's respective bit in the 'Word64'. Ambiguity groups
 -- are represented by 'Word64' values with multiple set bits.
 newtype TntDiscreteCharacter = TntDis Word64
-    deriving newtype (Bits, Eq, Ord, FiniteBits)
+    deriving newtype (Bits, Eq, FiniteBits, NFData, Ord)
+    deriving stock   (Generic)
 
 
 -- |
@@ -334,7 +340,8 @@ newtype TntDiscreteCharacter = TntDis Word64
 -- Gap represents an ambiguity group of all possible proteins unless gaps are
 -- treated as a fifth state. Missing represents the empty ambiguity group.
 newtype TntDnaCharacter = TntDna Word8
-    deriving newtype (Bits, Eq, FiniteBits, Ord)
+    deriving newtype (Bits, Eq, FiniteBits, NFData, Ord)
+    deriving stock   (Generic)
 
 
 -- |
@@ -343,7 +350,8 @@ newtype TntDnaCharacter = TntDna Word8
 -- along with \'-\' & \'?\' characters representing gap or missing data respecitively.
 -- Missing represents the empty ambiguity group.
 newtype TntProteinCharacter = TntPro Word32
-    deriving newtype (Bits, Eq, FiniteBits, Ord)
+    deriving newtype (Bits, Eq, FiniteBits, NFData, Ord)
+    deriving stock   (Generic)
 
 
 instance Show TntCharacter where
@@ -631,7 +639,7 @@ serializeStateDiscrete = swapMap deserializeStateDiscrete
 -- |
 -- A map for deserializing discrete state chatracters.
 deserializeStateDiscrete :: Map Char TntDiscreteCharacter
-deserializeStateDiscrete = insert '?' allBits core
+deserializeStateDiscrete = force $ insert '?' allBits core
   where
     allBits = foldl (.|.) zeroBits core
     core    = M.fromList $ zip (toList discreteStateValues) (bit <$> [0..])
@@ -646,7 +654,7 @@ serializeStateDna = swapMap deserializeStateDna
 -- |
 -- A map for deserializing dna state chatracters.
 deserializeStateDna :: Map Char TntDnaCharacter
-deserializeStateDna =  buildFromBimap f $ BM.filter g iupacToDna
+deserializeStateDna = force . buildFromBimap f $ BM.filter g iupacToDna
   where
     f = \case
           'A' -> 0
@@ -668,7 +676,7 @@ serializeStateProtein = swapMap deserializeStateProtein
 -- |
 -- A map for deserializing protein state chatracters.
 deserializeStateProtein :: Map Char TntProteinCharacter
-deserializeStateProtein = buildFromBimap f iupacToDna
+deserializeStateProtein = force $ buildFromBimap f iupacToDna
   where
     f = \case
           'A' ->  0

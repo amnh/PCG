@@ -29,8 +29,11 @@ import qualified Data.List.NonEmpty             as NE (fromList)
 import qualified Data.Map                       as M (fromList, lookup)
 import           Data.Matrix.NotStupid          (Matrix)
 import           Data.Maybe                     (fromMaybe)
+import qualified Data.Text                      as T
+import qualified Data.Text.Lazy                 as LT
 import           Data.Vector                    (Vector, generate, (!), (//))
 import qualified Data.Vector                    as V (fromList)
+import           Data.Void
 import           File.Format.TNT.Command.CNames
 import           File.Format.TNT.Internal
 import           File.Format.TNT.Partitioning
@@ -47,6 +50,9 @@ import           Text.Megaparsec.Custom
 --
 -- * A collection of taxa sequences with coresponsing metadata and possibly
 --   corresponding forest of trees whose leaf sets are equal to the taxa set.
+{-# SPECIALISE tntStreamParser :: Parsec Void  T.Text TntResult #-}
+{-# SPECIALISE tntStreamParser :: Parsec Void LT.Text TntResult #-}
+{-# SPECIALISE tntStreamParser :: Parsec Void  String TntResult #-}
 tntStreamParser :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m TntResult
 tntStreamParser = (colateResult <=< collapseStructures) =<< (whitespace *> gatherCommands)
   where

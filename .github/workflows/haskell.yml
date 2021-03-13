@@ -1,3 +1,5 @@
+name: Continuous Integratio
+
 on:
   # Build every pull request, to check for regressions.
   pull_request:
@@ -10,17 +12,79 @@ on:
   schedule:
     - cron: '0 0 1 * *'
 
-name: build
-
 env:
-      THISPACKAGE: phylogenetic-component-graph
-      CONFIG: --enable-benchmarks --enable-documentation --enable-tests --haddock-all --haddock-hyperlink-source --haddock-internal
+      STAN_USE_DEFAULT_CONFIG: True
 
 defaults:
   run:
     shell: bash
 
 jobs:
+
+# For some reason, this works locally but doesn't work on the GitHub Actions CI.
+# We have left this here for reference, perhaps ths disparity can be corrrected.
+#
+#  # Check that the project does not have detectable dead code
+#  weeder:
+#    name: Dead Code Check
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v2.3.4
+#      - uses: haskell/actions/setup@v1.1.5
+#        name: Setup Haskell
+#        with:
+#          cabal-version: latest
+#          ghc-version:   8.10.4
+#
+#      - run: make dead-code-check-setup
+#      
+#      - uses: actions/cache@v2
+#        name: caching dead code check
+#        with:
+#          path: |
+#            ~/.cabal/store
+#            dist-newstyle
+#          key: ${{ runner.os }}-dead-code-${{ hashFiles('cabal.project.freeze') }}
+#
+#      - run: make dead-code-check-deploy
+
+
+  # Check that the project has complete documetation coverage
+  haddock:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: haskell/actions/setup@v1.1.5
+        name: Setup Haskell
+        with:
+          cabal-version: latest
+          ghc-version:   latest
+                  
+      - run: make documentation-check-setup
+
+      - uses: actions/cache@v2
+        name: caching documetation check
+        with:
+          path: |
+            ~/.cabal/store
+            dist-newstyle
+          key: ${{ runner.os }}-documetation-${{ hashFiles('cabal.project.freeze') }}
+
+      - run: make documentation-check-deploy
+
+
+  # Run Stylish Haskell to check for errant code formatting
+  formatter:
+    name: Formatting Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2.3.4
+    - uses: haskell/actions/setup@v1.1.5
+    - run: make formatting-check
+
 
   # Run HLint to check for code improvements
   hlint:
@@ -29,14 +93,11 @@ jobs:
     steps:
     - uses: actions/checkout@v2.3.4
     - uses: haskell/actions/setup@v1.1.5
-    - run: |
-        curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s app bench lib test -j
+    - run: make hlint-check
 
 
   # Check that the project builds with the specified lower bounds.
   lower-bounds:
-    env:
-      CONSTRAINTS: --project-file=lower-bounds.project
     name: Lower Bounds Check
     runs-on: ubuntu-latest
 
@@ -48,10 +109,8 @@ jobs:
           cabal-version: latest
           ghc-version:   8.8.4
 
-      - run: cabal update
-      - run: cabal clean
-      - run: cabal configure $CONFIG $CONSTRAINTS
-      - run: cabal freeze    $CONFIG $CONSTRAINTS
+      - run: make lower-bounds-check-setup
+
       - uses: actions/cache@v2
         name: caching lower bounds check
         with:
@@ -60,13 +119,22 @@ jobs:
             dist-newstyle
           key: ${{ runner.os }}-lower-bounds-${{ hashFiles('cabal.project.freeze') }}
 
-      - run: cabal build     $CONFIG $CONSTRAINTS --only-dependencies
-      - run: cabal build     $CONFIG $CONSTRAINTS
+      - run: make lower-bounds-check-deploy
 
 
-  # Check that the project builds with the specified lower bounds.
-  unit-tests:
-    name: Unit Tests
+  # Run Stylish Haskell to check for errant code formatting
+  misspellings:
+    name: Spelling Check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2.3.4
+    - uses: haskell/actions/setup@v1.1.5
+    - run: make spelling-check
+
+
+  # Check that the project has no anti-patterns
+  stan:
+    name: Static Analysis Check
     runs-on: ubuntu-latest
 
     steps:
@@ -75,21 +143,19 @@ jobs:
         name: Setup Haskell
         with:
           cabal-version: latest
-          ghc-version:   latest
+          ghc-version:   8.10.4
+                  
+      - run: make static-analysis-check-setup
 
-      - run: cabal update
-      - run: cabal clean
-      - run: cabal configure --enable-tests --with-compiler=ghc
-      - run: cabal freeze    --enable-tests
       - uses: actions/cache@v2
-        name: caching lower bounds check
+        name: caching static analysis check
         with:
           path: |
             ~/.cabal/store
             dist-newstyle
-          key: ${{ runner.os }}-tests-${{ hashFiles('cabal.project.freeze') }}
+          key: ${{ runner.os }}-static-analysis-${{ hashFiles('cabal.project.freeze') }}
 
-      - run: cabal test
+      - run: make static-analysis-check-deploy
 
 
   # Check that the project builds with the specified lower bounds.
@@ -105,19 +171,17 @@ jobs:
           cabal-version: latest
           ghc-version:   latest
 
-      - run: cabal update
-      - run: cabal clean
-      - run: cabal configure --enable-tests --with-compiler=ghc
-      - run: cabal freeze    --enable-tests
+      - run: make file-tests-setup
+
       - uses: actions/cache@v2
-        name: caching lower bounds check
+        name: caching file tests
         with:
           path: |
             ~/.cabal/store
             dist-newstyle
-          key: ${{ runner.os }}-file-parsers-${{ hashFiles('cabal.project.freeze') }}
+          key: ${{ runner.os }}-file-parser-tests-${{ hashFiles('cabal.project.freeze') }}
 
-      - run: cabal run file-tests
+      - run: make file-tests-verification
 
 
   # Check that the project builds with the specified lower bounds.
@@ -143,22 +207,48 @@ jobs:
           path: |
             ~/.cabal/store
             dist-newstyle
-          key: ${{ runner.os }}-integration-${{ hashFiles('cabal.project.freeze') }}
+          key: ${{ runner.os }}-integration-tests-${{ hashFiles('cabal.project.freeze') }}
 
       - run: cabal clean
       - run: cabal install exe:pcg --overwrite-policy=always --installdir=./bin
       - run: cabal run integration-tests
 
 
+  # Check that the project builds with the specified lower bounds.
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: haskell/actions/setup@v1.1.5
+        name: Setup Haskell
+        with:
+          cabal-version: latest
+          ghc-version:   latest
+
+      - run: make unit-tests-setup
+
+      - uses: actions/cache@v2
+        name: caching unit tests
+        with:
+          path: |
+            ~/.cabal/store
+            dist-newstyle
+          key: ${{ runner.os }}-unit-tests-${{ hashFiles('cabal.project.freeze') }}
+
+      - run: make unit-tests-verification
+
+
   # Cabal build matrix
   cabal-build-matrix:
-    name: GHC-${{ matrix.ghc }}, cabal${{matrix.cabal}}, ${{matrix.os}}
+    name: GHC-${{ matrix.ghc }} Cabal-${{matrix.cabal}} ${{matrix.os}}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         ghc:   [ '8.8.4', '8.10.4', '9.0.1' ]
-        cabal: [ '3.2.0.0', '3.4.0.0' ]
+        cabal: [ '3.2', '3.4' ]
         os:    [ ubuntu-latest ] # , macOS-latest ]
         include:
           - ghc:   latest
@@ -173,13 +263,13 @@ jobs:
         with:
           ghc-version:   ${{ matrix.ghc   }}
           cabal-version: ${{ matrix.cabal }}
+
       - run: gcc    --version
       - run: g++    --version
       - run: ghc    --version
-      - run: cabal update
-      - run: cabal clean
-      - run: cabal configure $CONFIG --with-compiler=ghc
-      - run: cabal freeze    $CONFIG
+
+      - run: make compilation-check-setup
+
       - uses: actions/cache@v2
         name: windows caching
         with:
@@ -202,5 +292,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.ghc }}-
         if:  matrix.os != 'windows-latest'
-      - run: cabal build --only-dependencies
-      - run: cabal build $CONFIG
+
+      - run: make compilation-check-deploy

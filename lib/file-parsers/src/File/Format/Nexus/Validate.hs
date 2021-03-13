@@ -46,7 +46,7 @@ import           Text.Megaparsec.Custom
 
 
 -- Because some errors are dependent on passing some other validation, they've been split into
--- dependant and independent errors. Errors are enumerated below, along with their dependencies.
+-- dependent and independent errors. Errors are enumerated below, along with their dependencies.
 -- Comments are included in the code that explain which of the below errors are caught at various points.
 -- Note that nos. 4--6, below, are only dependent on 3, so are simply done as nested ifs. This may
 -- or may not be best practice.                                                             coded as

@@ -30,17 +30,20 @@ import           Data.Bifunctor           (second)
 import           Data.Bits
 import           Data.CaseInsensitive     (FoldCase)
 import           Data.Char                (isSpace)
-import           Data.DList               (DList, append)
-import qualified Data.DList               as DL (concat, fromList)
-import           Data.Foldable            (toList)
+import           Data.Foldable
 import           Data.Functor             (($>))
 import           Data.Key                 ((!))
 import           Data.List.NonEmpty       (NonEmpty)
 import qualified Data.List.NonEmpty       as NE (filter, fromList, length)
 import           Data.List.Utility
-import           Data.Map                 (assocs, insertWith, lookup)
+import           Data.Map                 (Map, assocs, insertWith, lookup)
 import           Data.Maybe               (catMaybes, mapMaybe)
+import           Data.Sequence            (Seq)
+import qualified Data.Sequence            as Seq
+import qualified Data.Text                as T
+import qualified Data.Text.Lazy           as LT
 import           Data.Traversable
+import           Data.Void
 import           File.Format.TNT.Internal
 import           Prelude                  hiding (lookup)
 import           Text.Megaparsec
@@ -51,6 +54,10 @@ import           Text.Megaparsec.Custom
 -- |
 -- Parses an XREAD command. Correctly validates for taxa count and character
 -- sequence length. Produces one or more taxa sequences.
+{-# INLINEABLE xreadCommand #-}
+{-# SPECIALISE xreadCommand :: Parsec Void  T.Text XRead #-}
+{-# SPECIALISE xreadCommand :: Parsec Void LT.Text XRead #-}
+{-# SPECIALISE xreadCommand :: Parsec Void  String XRead #-}
 xreadCommand :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m XRead
 xreadCommand = xreadValidation =<< xreadDefinition
   where
@@ -142,8 +149,9 @@ xreadCharCount = symbol $ flexibleNonNegativeInt "character count"
 xreadSequences :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
 xreadSequences = NE.fromList . deinterleaveTaxa <$> taxonSequence
   where
-    deinterleaveTaxa = assocs . fmap toList . foldr f mempty
-    f (taxaName, taxonSeq) = insertWith append taxaName (DL.fromList taxonSeq)
+    deinterleaveTaxa = assocs . foldr f mempty
+    f :: (TaxonName, Seq a) -> Map TaxonName (Seq a) -> Map TaxonName (Seq a)
+    f (taxaName, taxonSeq) = insertWith (<>) taxaName taxonSeq
 
 
 -- |
@@ -152,7 +160,7 @@ xreadSequences = NE.fromList . deinterleaveTaxa <$> taxonSequence
 -- also the Chars @\'-\'@ & @\'?\'@.
 -- Taxon name cannot contain spaces or the @\';\'@ character.
 taxonSequence :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (NonEmpty TaxonInfo)
-taxonSequence = NE.fromList . toList . DL.concat <$> some taxonSequenceSegment
+taxonSequence = NE.fromList . toList . fold <$> some taxonSequenceSegment
 
 
 -- |
@@ -172,7 +180,7 @@ taxonName = notFollowedBy openingSequence *> some validNameChar
 -- Represents a partial taxon sequence. The sequence segment can either have it's
 -- character type specified explicitly by a tag or the sequence segment will be
 -- interpreted as the default discrete character type.
-taxonSequenceSegment :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+taxonSequenceSegment :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Seq TaxonInfo)
 taxonSequenceSegment = choice
     [ try taggedInterleaveBlock
     ,    defaultInterleaveBlock
@@ -181,7 +189,7 @@ taxonSequenceSegment = choice
 
 -- |
 -- The default sequence segment type is of discrete characters.
-defaultInterleaveBlock :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+defaultInterleaveBlock :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Seq TaxonInfo)
 defaultInterleaveBlock = discreteSegments
 
 
@@ -192,8 +200,8 @@ defaultInterleaveBlock = discreteSegments
 -- |
 -- A sequence segment consisting of real valued literals or \'?\' characters to
 -- represent a missing value.
-continuousSequence :: (MonadParsec e s m, Token s ~ Char) => m [TntContinuousCharacter]
-continuousSequence = many (missingValue <|> presentValue)
+continuousSequence :: (MonadParsec e s m, Token s ~ Char) => m (Seq TntContinuousCharacter)
+continuousSequence = Seq.fromList <$> many (missingValue <|> presentValue)
   where
     presentValue = Just       <$> double   <* whitespaceInline
     missingValue = Nothing    <$  char '?' <* whitespaceInline
@@ -202,8 +210,8 @@ continuousSequence = many (missingValue <|> presentValue)
 -- |
 -- Parses a collection of discrete characters.
 -- Intended to be reused as a primitive for other XREAD combinators.
-coreDiscreteSequenceThatGetsReused :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
-coreDiscreteSequenceThatGetsReused = many discreteCharacter
+coreDiscreteSequenceThatGetsReused :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Seq TntDiscreteCharacter)
+coreDiscreteSequenceThatGetsReused = Seq.fromList <$> many discreteCharacter
   where
     discreteCharacter  = (ambiguityCharacter <|> singletonCharacter) <* whitespaceInline
     singletonCharacter = bitPack . pure <$> stateToken
@@ -233,7 +241,7 @@ coreDiscreteSequenceThatGetsReused = many discreteCharacter
 -- Remember that you can never have the character literal \'-\' mean gap. It means
 -- missing. Why not use \'?\' and just say what you mean? We'll never know.
 -- So we substitute gaps for missing in discrete characters.
-discreteSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntDiscreteCharacter]
+discreteSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Seq TntDiscreteCharacter)
 discreteSequence = substituteGapForMissingBecauseOfReasonsIllNeverUnderstand coreDiscreteSequenceThatGetsReused
   where
     gapOnlyChar = deserializeStateDiscrete ! '-'
@@ -251,7 +259,7 @@ discreteSequence = substituteGapForMissingBecauseOfReasonsIllNeverUnderstand cor
 -- explicit ambiguity group notation with braces. Ambiguity groups are
 -- bitpacked into 8 bit structures with the bit ordering specified by
 -- 'TntDnaCharacter'.
-dnaSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntDnaCharacter]
+dnaSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Seq TntDnaCharacter)
 dnaSequence = mapM discreteToDna =<< coreDiscreteSequenceThatGetsReused
 
 
@@ -260,7 +268,7 @@ dnaSequence = mapM discreteToDna =<< coreDiscreteSequenceThatGetsReused
 -- can contain IUPAC codes which will be converted to ambiguity groups, or
 -- explicit ambiguity group notation with braces. Ambiguity groups are bitpacked
 -- into 8 bit structures with the bit ordering specified by 'TntProteinCharacter'.
-proteinSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m [TntProteinCharacter]
+proteinSequence :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Seq TntProteinCharacter)
 proteinSequence = mapM discreteToProtein =<< coreDiscreteSequenceThatGetsReused
 
 
@@ -354,7 +362,7 @@ data XReadInterpretation
 -- segment based on the contextual information derived from the sequence segment
 -- tag. Applies any transformations to the sequence segment that were specified
 -- by the sequence segment tag context.
-taggedInterleaveBlock :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+taggedInterleaveBlock :: (FoldCase (Tokens s), MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Seq TaxonInfo)
 taggedInterleaveBlock = nightmare =<< xreadTags
 
 
@@ -365,7 +373,7 @@ taggedInterleaveBlock = nightmare =<< xreadTags
 --    the abyss gazes also into you.”
 --
 -- In all seriousness, interpreting the tags correctly is messy.
-nightmare :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => XReadInterpretation -> m (DList TaxonInfo)
+nightmare :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => XReadInterpretation -> m (Seq TaxonInfo)
 nightmare interpretation = transformation <$> segment
   where
     applyGapsToMissings = if not $ parseGaps     interpretation then gapsToMissings else id
@@ -379,7 +387,7 @@ nightmare interpretation = transformation <$> segment
                 ParseProtein    -> proteinSegments
 
 
-continuousSegments, dnaSegments, discreteSegments, proteinSegments :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (DList TaxonInfo)
+continuousSegments, dnaSegments, discreteSegments, proteinSegments :: (MonadFail m, MonadParsec e s m, Token s ~ Char) => m (Seq TaxonInfo)
 
 
 -- |
@@ -405,8 +413,8 @@ proteinSegments    = segmentsOf (fmap Protein    <$> proteinSequence)
 -- |
 -- Parses one or more of the parameter sequence segment combinator.
 -- Combinators are separated by "segmentTerminal."
-segmentsOf :: (MonadParsec e s m, Token s ~ Char) => m [TntCharacter] -> m (DList TaxonInfo)
-segmentsOf seqDef = DL.fromList <$> symbol (segment `sepEndBy1` segmentTerminal)
+segmentsOf :: (MonadParsec e s m, Token s ~ Char) => m (Seq TntCharacter) -> m (Seq TaxonInfo)
+segmentsOf seqDef = Seq.fromList <$> symbol (segment `sepEndBy1` segmentTerminal)
   where
     segment = (,) <$> (taxonName <* whitespaceInline) <*> seqDef
 
@@ -414,7 +422,7 @@ segmentsOf seqDef = DL.fromList <$> symbol (segment `sepEndBy1` segmentTerminal)
 -- |
 -- Replaces gap characters with missing characters. Correctly handles ambiguity
 -- groups.
-gapsToMissings :: DList TaxonInfo -> DList TaxonInfo
+gapsToMissings :: Seq TaxonInfo -> Seq TaxonInfo
 gapsToMissings = fmap (second (fmap gapToMissing))
   where
     gapToMissing e@(Continuous _ ) = e
@@ -440,22 +448,22 @@ gapsToMissings = fmap (second (fmap gapToMissing))
 
 -- |
 -- Truncate gap values from the front of the sequence segment.
-trimHead :: DList TaxonInfo -> DList TaxonInfo
+trimHead :: Seq TaxonInfo -> Seq TaxonInfo
 trimHead = fmap (second f)
   where
     f xs = (toMissing <$> gaps) <> chars
       where
-        (gaps,chars) = span isGap xs
+        (gaps,chars) = Seq.spanl isGap xs
 
 
 -- |
 -- Truncate gap values from the end of the sequence segment.
-trimTail :: DList TaxonInfo -> DList TaxonInfo
+trimTail :: Seq TaxonInfo -> Seq TaxonInfo
 trimTail = fmap (second f)
   where
-    f xs = reverse $ (toMissing <$> gaps) <> chars
+    f xs = (toMissing <$> gaps) <> chars
       where
-        (gaps,chars) = span isGap $ reverse xs
+        (gaps,chars) = Seq.spanr isGap xs
 
 
 -- |

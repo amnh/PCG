@@ -28,7 +28,7 @@ import PCG.Syntax.Combinators
 
 newtype VersionCommand =
         VersionCommand
-        { fullVersion :: Bool
+        { fullVersion   ::   Bool
         } deriving stock (Show)
 
 

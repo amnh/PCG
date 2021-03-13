@@ -1,5 +1,4 @@
 {-# LANGUAGE FlexibleContexts #-}
--- {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies     #-}
 
 module File.Format.Fasta.Test
@@ -75,6 +74,7 @@ commentBody' = testGroup "commentBody"
     generalComment :: TestTree
     generalComment = testProperty "General comment structure" f
       where
+        f :: String -> Bool
         f x = hasLeadingDollarSign
            || null res
            || parserSatisfies commentBody x (== res)
@@ -157,7 +157,7 @@ validSequences = fromPairs
     ]
 
 
-fromPairs :: [(String, a)] -> [(Vector Char, a)]
+fromPairs :: [(String, String)] -> [(Vector Char, String)]
 fromPairs = fmap (first fromList)
 
 

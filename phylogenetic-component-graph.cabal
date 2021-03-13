@@ -1421,6 +1421,7 @@ executable file-tests
     megaparsec               >= 9.0       && < 10.0,
     tasty                    >= 1.2       && < 2.0,
     tasty-hunit              >= 0.10      && < 1.0,
+    text                     >= 1.2.4     && < 2.0,
 
   other-modules:
     Test.Custom.Parse
