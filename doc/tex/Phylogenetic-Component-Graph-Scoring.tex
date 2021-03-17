@@ -1,11 +1,13 @@
 \documentclass[11pt]{article}
 \usepackage[export]{adjustbox}
 \usepackage{algorithm}
+\usepackage{afterpage}
 \usepackage[noend]{algpseudocode}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{bm}  % Define \bm{} to use bold math fonts
+\usepackage{changepage}
 \usepackage{csvsimple}
 \usepackage{dcolumn}
 \usepackage{flafter}  % Don't place floats before their definition
@@ -149,6 +151,9 @@ Second,  the parents of a network vertex must, at least potentially, be contempo
 A less restrictive form of network (``reconstructable'') is defined by \cite{moretetal2004} with vertices (indegree, outdegree): 
 (0, $\ge 1$) the unique root, (1, 0) leaves, and (1, $\ge$1) ``internal'' vertices, and networks adding ($\ge 2$, 1) vertices as ``network'' vertices.  For purposes of searching, outdegree of internal nodes is restricted to at most 2. Since edges may have zero length, networks may be output with vertices of outdegree $> 2$.
 
+\afterpage{
+\newgeometry{margin=0.5in}
+
 \begin{algorithm}
 	\caption{Post-order preliminary scoring and assignment pass.}
 	\label{Alg:post-order}
@@ -181,10 +186,21 @@ A less restrictive form of network (``reconstructable'') is defined by \cite{mor
 		\EndCase
 		\EndSwitch
 		\EndFunction
-		
+	\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+	\caption{Conveniently get the resolutions from an internal node or leaf node.}
+	\label{Alg:get-resolutions}
+	\begin{algorithmic}[1]
+				
 		\Function{GetResolutions}{$\textit{node}$}
 		\If    {\Call{IsLeaf}{$\textit{node}$}}
-		\State \Return \Call{SingletonResolution}{$\textit{node.characterSequence}$}
+		\State $\textit{i} \gets \Call{IndexOf}{\textit{node}}$ \Comment{$\mathcal{O}(1) \text{ access to } \textit{i} \in [0,\, m-1]$} 
+		\State $\textit{r.leafBitVector} \gets \Call{SetBit}{\vec{0}, \textit{i}\,}$
+		\State $\textit{r.characterSequence} \gets \textit{node.characterSequence}$
+		\State \Return $\textit{r}$
 		\Else
 		\State \Return $\textit{node.resolutions}$
 		\EndIf
@@ -193,30 +209,47 @@ A less restrictive form of network (``reconstructable'') is defined by \cite{mor
 	\end{algorithmic}
 \end{algorithm}
 
+
 \begin{algorithm}
 	\caption{Generate all valid resolutions given the two collection of child resolutions}
 	\label{Alg:generate-resolutions}
 	\begin{algorithmic}[1]
 		\Function{GenerateResolutions}{$\textit{lhsNode}, \textit{rhsNode}$}
-		\State $\textit{pairedResolutions} \gets ?$
-		\State $\textit{lhsNetResolutions} \gets ?$
-		\State $\textit{rhsNetResolutions} \gets ?$		\Switch{$($\Call{IsNetworkNode}{$\textit{leftChild}$}, \Call{IsNetworkNode}{$\textit{rightChild}$}$)$}
+		\State $\textit{pairedResolutions} \gets \emptyset$
+
+		\ForAll{$\textit{lhs} \in$ \Call{GetResolutions}{$\textit{lhsNode}$}}
+		  \ForAll{$\textit{rhs} \in$ \Call{GetResolutions}{$\textit{rhsNode}$}}
+		    \State $\textit{leavesInSubtree} \gets \textit{lhs.leafBitVector} \land \textit{rhs.leafBitVector}$
+		    \If    {$\textit{leavesInSubtree} = \vec{0} $}
+		      \State $\textit{r.leafBitVector} \gets \textit{leavesInSubtree}$
+		      \State $\textit{r.lhsCharacterSequence} \gets \textit{lhs.characterSequence}$
+		      \State $\textit{r.rhsCharacterSequence} \gets \textit{rhs.characterSequence}$
+		      \State $\textit{pairedResolutions} \gets \textit{pairedResolutions} \cup \{r\}$
+		    \EndIf    
+		  \EndFor
+		\EndFor
+		
+		\Switch{$($\Call{IsNetworkNode}{$\textit{leftChild}$}, \Call{IsNetworkNode}{$\textit{rightChild}$}$)$}
 		\Case{$(\texttt{False}, \texttt{False})$}
 		 \State \Return $\textit{pairedResolutions}$
 		\EndCase
 		\Case{$(\texttt{False}, \texttt{True})$}
-		  \State \Return $\textit{pairedResolutions} \cup \textit{lhsNetResolutions}$
+		  \State \Return $\textit{pairedResolutions} \hspace{0.5em} \cup$ \Call{GetResolutions}{$\textit{lhsNode}$}
 		\EndCase
 		\Case{$(\texttt{True}, \texttt{False})$}
-		  \State \Return $\textit{pairedResolutions} \cup \textit{rhsNetResolutions}$
+		  \State \Return $\textit{pairedResolutions} \hspace{0.5em} \cup$ \Call{GetResolutions}{$\textit{hsNode}$}
 		\EndCase
 		\Case{$(\texttt{True}, \texttt{True})$}
-		  \State \Return $\textit{pairedResolutions} \cup \textit{lhsNetResolutions} \cup \textit{rhsNetResolutions}$
+		  \State \Return $\textit{pairedResolutions}\cup\Call{GetResolutions}{\textit{lhsNode}} \cup \Call{GetResolutions}{\textit{rhsNode}}$
 		\EndCase
 		\EndSwitch
 		\EndFunction
 	\end{algorithmic}
 \end{algorithm}
+\clearpage
+\restoregeometry
+}
+
 
 \section{Optimization of a single graph}\label{Optimization of a single graph}
 
