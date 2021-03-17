@@ -1,4 +1,25 @@
 \documentclass[11pt]{article}
+\usepackage[export]{adjustbox}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{bm}  % Define \bm{} to use bold math fonts
+\usepackage{csvsimple}
+\usepackage{dcolumn}
+\usepackage{flafter}  % Don't place floats before their definition
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage[utf8]{inputenc} %unicode support
+\usepackage{lscape}
+\usepackage{mathtools}
+\usepackage{MnSymbol}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{subfigure}
+\usepackage{tabularx}
+\usepackage{url}
 \usepackage{setspace}
 \usepackage{graphicx}
 \graphicspath{{../diagrams/networks/}{../diagrams/display-trees/}}
@@ -22,13 +43,26 @@
 \citestyle{aa}
 %\usepackage{algorithmic}
 %\usepackage[vlined,algochapter,ruled]{algorithm2e}
-\usepackage[vlined,ruled]{algorithm2e}
+%\usepackage[vlined,ruled]{algorithm2e}
 \usepackage{listings}% http://ctan.org/pkg/listings
 \lstset{
   basicstyle=\ttfamily,
   mathescape
 }
-\SetKwComment{Comment}{$\triangleright\ $}{}
+%\SetKwComment{Comment}{$\triangleright\ $}{}
+
+\algnewcommand\algorithmicforeach{\textbf{for each}}
+\algdef{S}[FOR]{ForEach}[1]{\algorithmicforeach\ #1\ \algorithmicdo}
+\algnewcommand\algorithmicswitch{\textbf{switch}}
+\algnewcommand\algorithmiccase{\textbf{case}}
+\algnewcommand\algorithmicdefault{\textbf{default}}
+\algdef{SE}[SWITCH]{Switch}{EndSwitch}[1]{\algorithmicswitch\ #1\ \algorithmicdo}{\algorithmicend\ \algorithmicswitch}%
+\algdef{SE}[CASE]{Case}{EndCase}[1]{\algorithmiccase\ #1}{\algorithmicend\ \algorithmiccase}%
+\algdef{SE}[DEFAULT]{Default}{EndDefault}[1]{\algorithmicdefault\ #1}{\algorithmicend\ \algorithmicdefault}%
+\algtext*{EndSwitch}%
+\algtext*{EndCase}%
+\algtext*{EndDefault}%
+\renewcommand{\algorithmicensure}{\textbf{Result:}}
 
 %ROOT PRIORS?
 %Add Giribet and Wheeler arth, ratchet cite, Arango sea spiders
@@ -114,15 +148,61 @@ Second,  the parents of a network vertex must, at least potentially, be contempo
  
 A less restrictive form of network (``reconstructable'') is defined by \cite{moretetal2004} with vertices (indegree, outdegree): 
 (0, $\ge 1$) the unique root, (1, 0) leaves, and (1, $\ge$1) ``internal'' vertices, and networks adding ($\ge 2$, 1) vertices as ``network'' vertices.  For purposes of searching, outdegree of internal nodes is restricted to at most 2. Since edges may have zero length, networks may be output with vertices of outdegree $> 2$.
- 
-\subsection{Postorder scoring characters}
 
-All characters are scored an have their preliminary assignments derived from a post-order traversal over the graph components.
- 
-\subsection{Rerooting non-exact characters}
+\begin{algorithm}
+	\caption{Post-order preliminary scoring and assignment pass.}
+	\label{Alg:post-order}
+	\begin{algorithmic}[1]
+		\Require{A phylogenetic graph component $\mathcal{T}$ with $n$ nodes. }
+		\Require{Each leaf node $l \in \mathcal{T}$ decorated with a character sequence $C$ of length $m$. }
+		\Require{A vector $\oplus$ of length $m$, where $\oplus_i : C_i \times C_i \to D_i$}
+		\Ensure{Each internal node $v \in \mathcal{T}$ decorated with a post-order context containing possible character sequences of length $m$. }
+		\Function{Post-Order}{$\textit{node}$}
+		\If    {\Call{IsLeaf}{$\textit{node}$}}
+		\State \Return
+		\EndIf
+		
+		\Switch{\Call{GetChildren}{$\textit{node}$}}
+		\Case{$\left( \textit{onlyChild} \right)$}
+		\State $\textit{node}.\textit{resolutions} \gets$ \Call{GetResolutions}{$\textit{onlyChild}$}
+		\EndCase
+		\Case{$\left( \textit{leftChild}, \textit{rightChild} \right)$}
+		\State $\textit{lhs} \gets$ \Call{GetResolutions}{$\textit{leftChild}$}
+		\State $\textit{rhs} \gets$ \Call{GetResolutions}{$\textit{rightChild}$}
+		\State $\textit{res} \gets$ \Call{GenerateResolutions}{$\textit{lhs, rhs}$}
+		\EndCase
+		\EndSwitch
+		\ForAll{$r \in \textit{res}$}
+		  \State $x \gets r.leftCharacterSequence$ 
+		  \State $y \gets r.rightCharacterSequence$ 
+		  \State $z \gets \emptyset$
+		  \ForAll{$i \in [0, \; m-1]$}
+		    \State $z_i \gets \oplus_i (x_i, y_i)$
+		  \EndFor
+		  $r.characterSequence \gets z$
+		\EndFor
+		\EndFunction
+		
+		\Function{GetResolutions}{$\textit{node}$}
+		\If    {\Call{IsLeaf}{$\textit{node}$}}
+		\State \Return \Call{SingletonResolution}{$\textit{node.characterSequence}$}
+		\Else
+		\State \Return $\textit{node.resolutions}$
+		\EndIf
+		\EndFunction
+		
+	\end{algorithmic}
+\end{algorithm}
 
-Rerooting is the method of considering every edge in a rooted tree to be the potential root, determining the cost and character states for the tree if that edge was selected as the root. A precondition is that a postorder scoring of the tree has already occurred with an arbitrary edge in the unrooted tree selected as the root.
- 
+\begin{algorithm}
+	\caption{Generate all valid resolutions given the two collection of child resolutions}
+	\label{Alg:generate-resolutions}
+	\begin{algorithmic}[1]
+		\Function{GenerateResolutions}{$\textit{lhs}, \textit{rhs}$}
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
+
 \section{Optimization of a single graph}\label{Optimization of a single graph}
 
 Optimization is a function that takes a graph ($G$), here a forest $F$, and data ($D$) as inputs and returns a numerical value.  
