@@ -167,20 +167,19 @@ A less restrictive form of network (``reconstructable'') is defined by \cite{mor
 		\State $\textit{node}.\textit{resolutions} \gets$ \Call{GetResolutions}{$\textit{onlyChild}$}
 		\EndCase
 		\Case{$\left( \textit{leftChild}, \textit{rightChild} \right)$}
-		\State $\textit{lhs} \gets$ \Call{GetResolutions}{$\textit{leftChild}$}
-		\State $\textit{rhs} \gets$ \Call{GetResolutions}{$\textit{rightChild}$}
-		\State $\textit{res} \gets$ \Call{GenerateResolutions}{$\textit{lhs, rhs}$}
-		\EndCase
-		\EndSwitch
-		\ForAll{$r \in \textit{res}$}
-		  \State $x \gets r.leftCharacterSequence$ 
-		  \State $y \gets r.rightCharacterSequence$ 
+		\State $\textit{res} \gets$ \Call{GenerateResolutions}{$\textit{leftChild}, \textit{rightChild}$}
+		\ForAll{$\textit{r} \in \textit{res}$}
+		  \State $x \gets \textit{r.leftCharacterSequence}$ 
+		  \State $y \gets \textit{r.rightCharacterSequence}$
 		  \State $z \gets \emptyset$
 		  \ForAll{$i \in [0, \; m-1]$}
 		    \State $z_i \gets \oplus_i (x_i, y_i)$
 		  \EndFor
-		  $r.characterSequence \gets z$
+		  $\textit{r.characterSequence} \gets z$
 		\EndFor
+		$\textit{node.resolutions} \gets \textit{res}$
+		\EndCase
+		\EndSwitch
 		\EndFunction
 		
 		\Function{GetResolutions}{$\textit{node}$}
@@ -198,7 +197,23 @@ A less restrictive form of network (``reconstructable'') is defined by \cite{mor
 	\caption{Generate all valid resolutions given the two collection of child resolutions}
 	\label{Alg:generate-resolutions}
 	\begin{algorithmic}[1]
-		\Function{GenerateResolutions}{$\textit{lhs}, \textit{rhs}$}
+		\Function{GenerateResolutions}{$\textit{lhsNode}, \textit{rhsNode}$}
+		\State $\textit{pairedResolutions} \gets ?$
+		\State $\textit{lhsNetResolutions} \gets ?$
+		\State $\textit{rhsNetResolutions} \gets ?$		\Switch{$($\Call{IsNetworkNode}{$\textit{leftChild}$}, \Call{IsNetworkNode}{$\textit{rightChild}$}$)$}
+		\Case{$(\texttt{False}, \texttt{False})$}
+		 \State \Return $\textit{pairedResolutions}$
+		\EndCase
+		\Case{$(\texttt{False}, \texttt{True})$}
+		  \State \Return $\textit{pairedResolutions} \cup \textit{lhsNetResolutions}$
+		\EndCase
+		\Case{$(\texttt{True}, \texttt{False})$}
+		  \State \Return $\textit{pairedResolutions} \cup \textit{rhsNetResolutions}$
+		\EndCase
+		\Case{$(\texttt{True}, \texttt{True})$}
+		  \State \Return $\textit{pairedResolutions} \cup \textit{lhsNetResolutions} \cup \textit{rhsNetResolutions}$
+		\EndCase
+		\EndSwitch
 		\EndFunction
 	\end{algorithmic}
 \end{algorithm}
