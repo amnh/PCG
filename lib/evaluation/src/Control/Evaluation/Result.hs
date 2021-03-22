@@ -36,6 +36,7 @@ import Data.Functor.Classes      (Eq1, Ord1(..), Show1)
 import Data.Semigroup            (Semigroup(..))
 import Data.Text.Lazy            (Text, pack)
 import GHC.Generics
+import System.ErrorPhase
 import Test.QuickCheck
 import Test.QuickCheck.Instances ()
 import TextShow
@@ -62,19 +63,6 @@ newtype EvaluationResult a = EU { runEvaluationResult :: Either (ErrorPhase, Tex
    deriving newtype  (Applicative, Apply, Eq1, Functor, MonadFix, Show1)
 
 
--- |
--- Keep track of which phase of the evaluation th error occurred in.
---
--- This allows use to use custom exit codes.
-data  ErrorPhase
-    = Inputing
-    | Parsing
-    | Unifying
-    | Computing
-    | Outputting
-    deriving stock (Data, Eq, Generic, Ord, Read, Show)
-
-
 instance Alt EvaluationResult where
 
     {-# INLINEABLE (<!>) #-}
@@ -83,13 +71,6 @@ instance Alt EvaluationResult where
         case runEvaluationResult lhs of
           Right _ -> lhs
           _       -> rhs
-
-
-instance Arbitrary ErrorPhase where
-
-    {-# INLINE arbitrary #-}
-
-    arbitrary = elements [ Inputing, Parsing, Unifying, Computing, Outputting ]
 
 
 instance Arbitrary a => Arbitrary (EvaluationResult a) where
@@ -114,13 +95,6 @@ instance Arbitrary1 EvaluationResult where
 
 
 instance CoArbitrary a => CoArbitrary (EvaluationResult a) where
-
-    {-# INLINE coarbitrary #-}
-
-    coarbitrary = genericCoarbitrary
-
-
-instance CoArbitrary ErrorPhase where
 
     {-# INLINE coarbitrary #-}
 
@@ -180,13 +154,6 @@ instance MonadZip EvaluationResult where
         case runEvaluationResult x of
           Left  s     -> (EU $ Left s, EU $ Left s)
           Right (a,b) -> (pure a, pure b)
-
-
-instance NFData ErrorPhase where
-
-    {-# INLINE rnf #-}
-
-    rnf x = x `seq` ()
 
 
 instance Ord a => Ord (EvaluationResult a) where

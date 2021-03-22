@@ -77,6 +77,7 @@ constraints:
   any.th-lift-instances ==0.1.*,
   any.time ==1.9.3,
   any.transformers ==0.5.6.*,
+  any.unix ==2.7.2.*,
   any.unordered-containers ==0.2.10.*,
   any.validation ==1.1.*,
   any.vector ==0.12.0.3,

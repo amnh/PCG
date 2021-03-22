@@ -1,3 +1,21 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Computation.Internal
+-- Copyright   :  (c) 2015-2018 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Defined how to evaluate a sequence of 'Command's.
+--
+-- Includes smart handling of certain signals with a "clean-up" routine which
+-- writes out the current working state before exiting.
+--
+-----------------------------------------------------------------------------
+
+{-# LANGUAGE ApplicativeDo     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE LambdaCase        #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -10,22 +28,32 @@ module PCG.Computation.Internal
   ) where
 
 import           Bio.Graph
+import           Control.Concurrent
+import           Control.DeepSeq
 import           Control.Evaluation
+import           Control.Monad.IO.Class
 import           Data.Bits
 import           Data.Char                    (isSpace)
+import           Data.FileSource
 import           Data.Foldable
 import           Data.List.NonEmpty           (NonEmpty(..))
 import           Data.Text.Lazy               (Text)
 import qualified Data.Text.Lazy               as T
+import qualified Data.Text.Lazy.IO            as T
+import qualified Data.Text.Short              as ST
+import           GHC.IO.Handle
 import qualified PCG.Command.Build.Evaluate   as Build
 import qualified PCG.Command.Echo.Evaluate    as Echo
 import qualified PCG.Command.Load.Evaluate    as Load
 import qualified PCG.Command.Read.Evaluate    as Read
 import qualified PCG.Command.Report.Evaluate  as Report
+import           PCG.Command.Save
 import qualified PCG.Command.Save.Evaluate    as Save
 import qualified PCG.Command.Version.Evaluate as Version
 import           PCG.Syntax
 import           System.Exit
+import           System.IO
+import           System.Posix.Signals
 
 
 optimizeComputation :: Computation -> Computation
@@ -43,7 +71,7 @@ collapseReadCommands p@(x:|xs) =
 
 
 evaluate :: Computation -> SearchState
-evaluate (Computation (x:|xs)) = foldl' f z xs
+evaluate (Computation (x:|xs)) = liftIO myThreadId >>= \t -> foldl' (f t) z xs
   where
     z = case x of
           READ c -> Read.evaluate c
@@ -53,15 +81,45 @@ evaluate (Computation (x:|xs)) = foldl' f z xs
                       , "expecting a LOAD or READ command."
                       ]
 
-    f :: SearchState -> Command -> SearchState
-    f s = \case
-             BUILD   c -> s >>=   Build.evaluate c
-             ECHO    c -> s >>=    Echo.evaluate c
-             LOAD    c -> s *>     Load.evaluate c
-             READ    c -> s *>     Read.evaluate c
-             REPORT  c -> s >>=  Report.evaluate c
-             SAVE    c -> s >>=    Save.evaluate c
-             VERSION c -> s >>= Version.evaluate c
+    f :: ThreadId -> SearchState -> Command -> SearchState
+    f t s =
+        let g op a = cleanUpHandler t a *> op a
+        in  \case
+              BUILD   c -> s >>= g (      Build.evaluate c)
+              ECHO    c -> s >>= g (       Echo.evaluate c)
+              LOAD    c -> s >>= g (const (Load.evaluate c))
+              READ    c -> s >>= g (const (Read.evaluate c))
+              REPORT  c -> s >>= g (     Report.evaluate c)
+              SAVE    c -> s >>= g (       Save.evaluate c)
+              VERSION c -> s >>= g (    Version.evaluate c)
+
+
+cleanUpHandler :: ThreadId -> GraphState -> EvaluationT GlobalSettings IO ()
+cleanUpHandler tID lastState = liftIO $ traverse_ buildHandler [sigINT, sigQUIT, sigTERM]
+  where
+    buildHandler s =
+      let err p t  = (Just t, errorPhaseToCode p)
+          val      = const (Nothing, ExitSuccess)
+          success  = putStrLn $ "Work state saved to: " <> ST.toString (toShortText defaultSaveFilePath)
+          saveData = SaveCommand defaultSaveFilePath Binary
+          handler  = CatchOnce . liftIO $ do
+            hSetEncoding stdout utf8
+            hSetEncoding stderr utf8
+            hSetBuffering stdout NoBuffering
+            hSetBuffering stderr NoBuffering
+            putStr "\r\027[K"
+            putStr "Saving current work state..."
+            (msg,res) <- fmap force . runEvaluationT () . Save.evaluate saveData $ force lastState
+            let (txt,code) = evaluateResult err val res
+            putStr "\r\027[K"
+            traverse_ (T.putStrLn . renderNotification) msg
+            maybe success T.putStrLn txt
+            hClose stdout
+            hClose stderr
+            liftIO $ throwTo tID code
+            exitWith code
+      in  installHandler s handler Nothing
+
 
 renderSearchState :: EvaluationResult a -> (ExitCode, Text)
 renderSearchState = fmap (<>"\n") . either id val . renderError

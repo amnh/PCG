@@ -195,7 +195,7 @@ jobs:
         name: Setup Haskell
         with:
           cabal-version: latest
-          ghc-version:   latest
+          ghc-version:   8.10.4
 
       - run: cabal update
       - run: cabal clean

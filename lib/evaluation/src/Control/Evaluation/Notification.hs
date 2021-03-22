@@ -20,6 +20,7 @@
 
 module Control.Evaluation.Notification
   ( Notification(..)
+  , renderNotification
   ) where
 
 import Control.DeepSeq
@@ -52,3 +53,8 @@ instance CoArbitrary Notification where
     {-# INLINE coarbitrary #-}
 
     coarbitrary = genericCoarbitrary
+
+
+renderNotification :: Notification -> Text
+renderNotification (Warning     x) = x
+renderNotification (Information x) = x

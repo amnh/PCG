@@ -27,6 +27,7 @@ module Control.Evaluation
   , evaluateEither
   , failWithPhase
   -- * Rendering
+  , renderNotification
   , showRun
   ) where
 
@@ -34,6 +35,7 @@ import Control.Evaluation.Notification
 import Control.Evaluation.Result
 import Control.Evaluation.Trans
 import Data.Text.Lazy
+import System.ErrorPhase
 
 
 -- |

@@ -56,6 +56,7 @@ import           Data.Sequence                   (Seq, fromList)
 import           Data.String
 import           Data.Tuple                      (swap)
 import           GHC.Generics
+import           System.ErrorPhase
 import           Test.QuickCheck
 import           TextShow                        (TextShow)
 

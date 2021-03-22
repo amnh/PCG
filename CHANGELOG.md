@@ -12,6 +12,7 @@ Releases are available [on GitHub][2].
 * Updated file parser test suite
 * Updated TNT parser to use IUPAC codes from `Data.Alphabet.IUPAC`
 * Added GitHub Actions workflows for CI
+* Added signal handling which saves the current work state
 * Corrected build error in benchmarking suite
 * Corrected defect in string alignment commutativity
 * Corrected defect in unboxed Ukkonen string alignment
