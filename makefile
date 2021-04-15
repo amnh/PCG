@@ -187,7 +187,7 @@ static-analysis-check-deploy: hie-deploy
 	@$(eval stan-log := .stan.log)
 	@$(eval observations := .stan.observations.log)
 	$(bin-dir)/stan | tee $(stan-log)
-	@grep ' ID:            ' $(stan-log) > $(observations)
+	@grep ' ID:            ' $(stan-log) || true > $(observations)
 	@rm -f $(stan-log)
 	@$(eval count := $(shell wc -l $(observations) | cut -d " " -f1))
 	@find . -empty -name $(observations) | grep "^" &> /dev/null || ( \
