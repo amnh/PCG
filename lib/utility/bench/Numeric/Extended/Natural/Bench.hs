@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Numeric.Extended.Natural.Bench
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts #-}
 
 module Numeric.Extended.Natural.Bench (benchmarks) where
@@ -7,6 +19,8 @@ import Criterion.Main
 import Numeric.Extended.Natural
 
 
+-- |
+-- Complete benchamrks of 'ExtendedNatural'.
 benchmarks :: Benchmark
 benchmarks = bgroup "ExtendedNatural" $
     [ fromProjectionBench

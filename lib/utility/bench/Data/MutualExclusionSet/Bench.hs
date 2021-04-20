@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.MutualExclusionSet.Bench
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE BangPatterns #-}
 
 module Data.MutualExclusionSet.Bench (benchmarks) where
@@ -8,6 +20,8 @@ import Data.Bits
 import Data.MutualExclusionSet
 
 
+-- |
+-- Com plet set of benchmarks for 'MutualExclusionSet'.
 benchmarks :: Benchmark
 benchmarks = bgroup "MutualExclusionSet"
     [ singletonBench
@@ -25,22 +39,32 @@ benchmarks = bgroup "MutualExclusionSet"
     ]
 
 
+-- |
+-- Benchmarks the construction of a singleton 'MutualExclusionSet'.
 singletonBench :: Benchmark
 singletonBench = bench "MutualExclusionSet singleton is constant-time construction" . nf (singleton 42) $ (1 :: Int)
 
 
+-- |
+-- Benchmarks the 'invert' transformation of a 'MutualExclusionSet'.
 invertBench :: Benchmark
 invertBench = bench "MutualExclusionSet invert is constant-time" . whnf invert $ force (ofSize 50)
 
 
+-- |
+-- Benchmarks the 'isCoherent' check of a 'MutualExclusionSet'.
 isCoherentBench :: Benchmark
 isCoherentBench = bench "MutualExclusionSet isCoherent is constant-time" . whnf isCoherent $ force (ofSize 50)
 
 
+-- |
+-- Benchmarks the 'isPermissible' check of a 'MutualExclusionSet'.
 isPermissibleBench :: Benchmark
 isPermissibleBench = linearBenchmark "MutualExclusionSet isPermissible log-access" (force . ofSize) (const isPermissible)
 
 
+-- |
+-- Benchmarks the 'isExcluded' query of a 'MutualExclusionSet'.
 isExcludedBench :: Benchmark
 isExcludedBench = logBenchmark "MutualExclusionSet isExcluded log-access" ofSize f
   where
@@ -48,6 +72,8 @@ isExcludedBench = logBenchmark "MutualExclusionSet isExcluded log-access" ofSize
     f i xs = (i `isExcluded` xs) `seq` negate i `isExcluded` xs
 
 
+-- |
+-- Benchmarks the 'isIncluded' query of a 'MutualExclusionSet'.
 isIncludedBench :: Benchmark
 isIncludedBench = logBenchmark "MutualExclusionSet isIncluded log-access" ofSize f
   where

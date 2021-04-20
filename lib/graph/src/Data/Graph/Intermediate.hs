@@ -1,9 +1,23 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Graph.Intermediate
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE LambdaCase          #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeOperators       #-}
 
-module Data.Graph.Intermediate where
+module Data.Graph.Intermediate
+  ( showGraphAsRoseForest
+  ) where
 
 import           Control.Comonad
 import           Control.Lens
@@ -13,7 +27,7 @@ import qualified Data.Foldable              as F
 import           Data.Graph.Indices
 import           Data.Graph.NodeContext
 import           Data.Graph.Type
-import           Data.Map
+--import           Data.Map
 import           Data.Maybe
 import           Data.Pair.Strict
 import           Data.Set                   (Set)
@@ -21,7 +35,31 @@ import qualified Data.Set                   as S
 import           Data.Tree                  (Forest, Tree(..), drawForest, unfoldForestM)
 
 
+{-
+-- |
+-- A intermediate binary tree representation for a graph.
+--
+-- Useful for rendering, or examining a display tree of a block within a network.
+data  BinaryTree l i n
+    = LeafBT l
+    | NetworkBT i n !Size
+    | BranchBT !Size i (BinaryTree l i n) (BinaryTree l i n)
+
+
+data ReferenceNode l n ref = LeafRN l ref | NetworkRN !Size n ref | BranchRN !Size ref ref
+
+
+data ReferenceMap l n ref = ReferenceMap
+  { _rootRefs    :: [ref]
+  , _networkRefs :: [ref]
+  , _refMap      :: Map ref (ReferenceNode l n ref)
+  }
+
+
+-- |
+-- The size of the subtree.
 type Size = Int
+-}
 
 
 data RenderNodeLabel a netRef =
@@ -36,6 +74,21 @@ data RenderNodeLabel a netRef =
 type RoseForest a netRef = [Tree (a, Focus, Maybe netRef)]
 
 
+-- |
+-- Render a graph as a forset of rose trees.
+--
+-- Note that shared subtrees will be repeated in the rendering.
+showGraphAsRoseForest
+  :: (Show t, Show (f n))
+  => Graph f c e n t
+  -> String
+showGraphAsRoseForest = renderGraphAsRoseForest show show id renderNodeLabel
+  where
+    renderNodeLabel :: RenderNodeLabel String NetworkInd -> String
+    renderNodeLabel RenderNodeLabel{..} = _name
+
+
+{-
 leafR :: a -> Tree (a, Maybe netRef)
 leafR name = Node (name, Nothing) []
 
@@ -46,21 +99,7 @@ branchR name lTree rTree = Node (name, Nothing) [lTree, rTree]
 
 networkR :: a -> netRef -> Tree (a, Maybe netRef) -> Tree (a, Maybe netRef)
 networkR name netRef subTree = Node (name, Just netRef) [subTree]
-
-
-data ReferenceNode l n ref = LeafRN l ref | NetworkRN !Size n ref | BranchRN !Size ref ref
-
-data ReferenceMap l n ref = ReferenceMap
-  { _rootRefs    :: [ref]
-  , _networkRefs :: [ref]
-  , _refMap      :: Map ref (ReferenceNode l n ref)
-  }
-
-
-data  BinaryTree l i n
-    = LeafBT l
-    | NetworkBT i n !Size
-    | BranchBT !Size i (BinaryTree l i n) (BinaryTree l i n)
+-}
 
 
 toRoseForest
@@ -189,13 +228,3 @@ renderGraphAsRoseForest leafFn intFn netFn renderFn =
   . reorderForest
   . makeSizeLabelledForest
   . toRoseForest leafFn intFn netFn
-
-
-showGraphAsRoseForest
-  :: (Show t, Show (f n))
-  => Graph f c e n t
-  -> String
-showGraphAsRoseForest = renderGraphAsRoseForest show show id renderNodeLabel
-  where
-    renderNodeLabel :: RenderNodeLabel String NetworkInd -> String
-    renderNodeLabel RenderNodeLabel{..} = _name

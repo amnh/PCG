@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Sequence.Block.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -33,19 +33,20 @@ module Bio.Sequence.Block.Internal
   ) where
 
 import           Control.DeepSeq
-import           Control.Lens
+import           Control.Lens.Combinators (lens)
+import           Control.Lens.Type        (Lens, Lens')
 import           Data.Bifunctor
 import           Data.Binary
 import           Data.Foldable
 import           Data.Semigroup
 import           Data.Semigroup.Foldable
-import qualified Data.Text               as T (Text, lines, unlines)
-import           Data.Vector             (Vector, fromListN)
-import           Data.Vector.Binary      ()
-import           Data.Vector.Instances   ()
+import qualified Data.Text                as T (Text, lines, unlines)
+import           Data.Vector              (Vector, fromListN)
+import           Data.Vector.Binary       ()
+import           Data.Vector.Instances    ()
 import           GHC.Generics
 import           Text.XML
-import           TextShow                (TextShow(showb, showt), fromText)
+import           TextShow                 (TextShow(showb, showt), fromText)
 
 
 -- |

@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Benchmark.TCM.Files
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 module Benchmark.TCM.Files
   ( tcmFiles
   , tcmFilePath
@@ -6,10 +18,14 @@ module Benchmark.TCM.Files
 import System.FilePath.Posix
 
 
+-- |
+-- List of all benchmarking input files for the tcm file parser.
 tcmFiles :: [FilePath]
 tcmFiles = (\file -> tcmFilePath </> file <.> "tcm") <$> fileNames
 
 
+-- |
+-- File path where benchmarking input files are located for the TCM file parser.
 tcmFilePath :: FilePath
 tcmFilePath =  "bench" </> "data-sets" </> "tcm"
 

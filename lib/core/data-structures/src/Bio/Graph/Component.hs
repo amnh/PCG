@@ -1,7 +1,7 @@
------------------------------------------------------------------------------
+----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.Component
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -110,7 +110,7 @@ class PhylogeneticNetwork t i e n | t -> i, t -> n, t -> e where
     -- Performs a soft-wired resolution of all /network/ nodes into a collection
     -- of all resulting trees. The resulting size of the collection is equal
     -- to /2^n/ where /n/ is the number of network nodes in the
-    -- 'PhylogenetiNetwork'.
+    -- 'PhylogeneticNetwork'.
     treeResolutions :: t -> NonEmpty t
 
 

@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Benchmark.FASTA.Time
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 
@@ -16,6 +28,8 @@ import           File.Format.Fasta
 import           Text.Megaparsec
 
 
+-- |
+-- Perform the run time benchmarking of the FASTA file parser.
 benchTime :: [Benchmark]
 benchTime = fold
     [ parserBenchmark ("lazy-text", TL.readFile) <$> fastaInlineSequenceFiles

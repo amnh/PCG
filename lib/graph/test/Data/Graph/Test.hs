@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Graph.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 module Data.Graph.Test
   ( testSuite
   ) where
@@ -12,7 +24,9 @@ import Test.Tasty
 
 -- type TestGraph = Graph Identity () () Int Int
 
-
+-- |
+-- Test-suite including specific unit and property-based tests for the
+-- 'Data.Graph.Graph' data-type.
 testSuite :: TestTree
 testSuite = testGroup "Graph Tests"
     [ testPropertyCases

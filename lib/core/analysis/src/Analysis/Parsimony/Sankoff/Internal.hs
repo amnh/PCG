@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Parsimony.Sankoff.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -60,7 +60,6 @@ sankoffPostorder meta
 -- |
 -- Used on the pre-order (i.e. second) traversal.
 --
--- Either calls `initializeDirVector` on root or `updateDirectionalMins`.
 -- Needs to determine which child it’s updating, then sends the appropriate
 -- minlist to `updateDirectionalMins`.
 sankoffPreorder

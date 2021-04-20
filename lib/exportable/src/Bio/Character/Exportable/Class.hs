@@ -1,7 +1,7 @@
  -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Exportable.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -37,6 +37,10 @@ import Data.MonoTraversable
 import Foreign.C.Types
 
 
+-- |
+-- The most primitive atom of a dynamic character.
+-- This is a "state" in an alignment context of type 'Element DynamicCharacter'.
+-- The "state" can represent either a median value, or an aligned value.
 type family Subcomponent median
 
 

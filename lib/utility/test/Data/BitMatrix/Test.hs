@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.BitMatrix.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances  #-}
 
@@ -52,6 +64,8 @@ instance Arbitrary FactoredBitVector where
         pure $ FactoredBitVector (toEnum rowCount, toEnum colCount, bitVector)
 
 
+-- |
+-- The test-suite for 'BitMatrix'.
 testSuite :: TestTree
 testSuite = testGroup "BitMatrix tests"
     [ monoFoldableProperties

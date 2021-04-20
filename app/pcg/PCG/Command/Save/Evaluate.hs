@@ -1,4 +1,17 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Command.Save.Evaluate
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE ScopedTypeVariables #-}
+
 module PCG.Command.Save.Evaluate
   ( evaluate
   ) where
@@ -14,6 +27,8 @@ import Data.Validation
 import PCG.Command.Save
 
 
+-- |
+-- Evaluate the 'SaveCommand' by writing out the working graph state in a reloadable format.
 evaluate :: SaveCommand -> GraphState -> SearchState
 evaluate (SaveCommand fileSource serial) g =
     case serial of

@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Clustering.Hierarchical
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -16,7 +16,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
-module Analysis.Clustering.Hierarchical where
+module Analysis.Clustering.Hierarchical
+  ( clusterIntoCuts
+  , clusterIntoGroups
+  , dendroToVectorClusters
+  ) where
 
 import           AI.Clustering.Hierarchical
 import           Analysis.Distance
@@ -33,14 +37,16 @@ import qualified VectorBuilder.Builder      as VB
 import           VectorBuilder.Vector       (build)
 
 
-
+-- |
+-- Produce a dendrogram of the supplied leaf set, using the metadata and linkage
+-- parameters to determine the measure.
+{-# INLINE clusterLeaves #-}
 clusterLeaves
   :: forall f m . (Applicative f, Foldable f)
   => MetadataSequence m
   -> LeafSet (DecoratedCharacterNode f)
   -> Linkage
   -> Dendrogram (DecoratedCharacterNode f)
-{-# INLINE clusterLeaves #-}
 clusterLeaves meta leaves opt = dendro
   where
     leafSetVector :: Vector (DecoratedCharacterNode f)
@@ -58,6 +64,9 @@ clusterLeaves meta leaves opt = dendro
     dendro = hclust opt leafSetVector distance
 
 
+-- |
+-- Produce a group clustering vector of the supplied leaf set, using the metadata
+-- and linkage parameters to determine the measure of the groups.
 clusterIntoGroups
   :: (Applicative f, Foldable f)
   => MetadataSequence m
@@ -70,6 +79,10 @@ clusterIntoGroups meta leaves link =
   where
     dendro = clusterLeaves meta leaves link
 
+
+-- |
+-- Produce a cut clustering vector of the supplied leaf set, using the metadata
+-- and linkage parameters to determine the measure of the cuts.
 clusterIntoCuts
   :: (Applicative f, Foldable f)
   => MetadataSequence m
@@ -103,11 +116,13 @@ dendroToNonEmptyVector =
   . dendroToVector
 
 
+-- |
+-- Convert a dedrogram to a vector of the specified number of clusters.
+{-# INLINE dendroToVectorClusters #-}
 dendroToVectorClusters
   :: Dendrogram a
   -> Int
   -> NE.Vector (NE.Vector a)
-{-# INLINE dendroToVectorClusters #-}
 dendroToVectorClusters numberOfClusters i =
       NE.unsafeFromVector
     . build

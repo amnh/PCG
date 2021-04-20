@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  System.ErrorPhase.Test
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -29,7 +29,7 @@ import Test.Tasty.QuickCheck hiding ((=/=))
 
 
 -- |
--- Test suite for the 'EvaluationT' data-type.
+-- Test-suite for the 'ErrorPhase' data-type.
 testSuite :: TestTree
 testSuite = testGroup "ErrorPhase type"
     [ equalityLaws       @ErrorPhase

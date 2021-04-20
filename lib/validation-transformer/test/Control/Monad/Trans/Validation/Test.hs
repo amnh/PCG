@@ -1,10 +1,24 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Control.Monad.Trans.Validation.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-- Defines and exports the test suite for
+-- 'Control.Monad.Trans.Validation.ValidationT'.
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE ExplicitForAll      #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE ViewPatterns        #-}
-
 
 module Control.Monad.Trans.Validation.Test
   ( testSuite
@@ -30,6 +44,7 @@ import Test.QuickCheck.Function
 import Test.Tasty                     (TestTree, testGroup)
 import Test.Tasty.QuickCheck          hiding ((=/=))
 
+
 -- |
 -- This alias exists for brevity in type signature
 type W = Word
@@ -37,6 +52,9 @@ type M = Maybe
 type S = String
 
 
+-- |
+-- Property-based test suite for 'Control.Monad.Trans.Validation.ValidationT'.
+-- Covers all applicable type-class laws.
 testSuite :: TestTree
 testSuite = testGroup "Validation Monad Transformer"
     [ evaluationTLaws

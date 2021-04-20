@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Metric.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -21,7 +21,7 @@ module Bio.Metadata.Metric.Class
   , GetSparseTransitionCostMatrix(..)
   ) where
 
-import Control.Lens
+import Control.Lens.Type (Getter)
 
 
 -- |
@@ -41,7 +41,7 @@ class GetPairwiseTransitionCostMatrix s c w where
 
 
 -- |
--- A 'Getter' for the 'denseTransitionCostMatrix' field
+-- A 'Getter' for the 'sparseTransitionCostMatrix' field
 class GetSparseTransitionCostMatrix s a | s -> a where
 
     {-# MINIMAL sparseTransitionCostMatrix #-}

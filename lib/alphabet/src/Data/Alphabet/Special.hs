@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Alphabet.Special
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -58,7 +58,7 @@ rnaAlphabet = fromBimap iupacToRna
 --
 -- The discrete alphabet includes the following 63 values:
 --
--- @ ['0'..'9'] <> ['A'..'Z'] <> ['a'..'z'] <> "-" @
+-- @ [\'0\'..\'9\'] <> [\'A\'..\'Z\'] <> [\'a\'..\'z\'] <> "-" @
 discreteAlphabet :: (IsString s, Ord s) => Alphabet s
 discreteAlphabet = fromSymbols $ fromString . pure <$> fold [['0'..'9'], ['A'..'Z'], ['a'..'z'], "-"]
 

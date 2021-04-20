@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Sequence.Block
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -23,18 +23,17 @@ module Bio.Sequence.Block.Builder
   , dynamicSingleton
   ) where
 
-
 import           Data.TCM
 import           Data.Vector.Instances ()
 import           VectorBuilder.Builder (Builder)
 import qualified VectorBuilder.Builder as VB
 
 
-
 -- |
--- Represents a block of characters which are optimized atomically together across
--- networks. The 'CharacterBlock' is polymorphic over static and dynamic character
--- definitions.
+-- Represents an incomplete construction of a 'Bio.Sequence.Block.Character.CharacterBlock'.
+--
+-- Is designed to be an asymptotically efficnet way to incrementally construct a
+-- character block before the block is finalized for efficient random access.
 --
 -- Use '(<>)' to construct larger blocks.
 data  PartialCharacterBlock u v w x y z

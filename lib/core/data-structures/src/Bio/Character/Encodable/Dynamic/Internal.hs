@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Encodable.Dynamic.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -404,6 +404,9 @@ instance ToXML DynamicCharacter where
 --selectDC = coerce select
 
 
+-- |
+-- Produce a 'DynamicCharacter' generator where the elements of the character
+-- have the specified width.
 arbitraryDynamicCharacterOfWidth :: Word -> Gen DynamicCharacter
 arbitraryDynamicCharacterOfWidth alphabetLen = do
     characterLen <- arbitrary `suchThat` (> 0) :: Gen Int
@@ -412,6 +415,12 @@ arbitraryDynamicCharacterOfWidth alphabetLen = do
     pure . DC . force . V.fromNonEmpty . NE.fromList . force $ splitElement <$> bitRows
 
 
+-- |
+-- Produce a rendering of the 'DynamicCharacter'.
+--
+-- Try to be intelligent about the rendering to improve user/debugging experience.
+-- Render different alphabets in the most appealing manner, such as using IUPAC
+-- codes for DNA/RNA.
 renderDynamicCharacter
   :: Alphabet String
   -> (AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup)

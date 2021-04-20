@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.LeafSet
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -22,18 +22,17 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 
-
 module Bio.Graph.LeafSet
   ( LeafSet(..)
   , HasLeafSet (..)
   , fromLeafSet
   ) where
 
-
-import Control.Lens
+import Control.Lens.Type
 import Data.Coerce
 import Data.Vector
-import Text.XML.Custom ()
+import Text.XML.Custom   ()
+
 
 -- |
 -- Set of unique leaf labels.
@@ -42,7 +41,7 @@ newtype LeafSet n = LeafSet (Vector n)
 
 
 -- |
--- A 'Lens' for 'LeafSet'
+-- A 'Lens' for 'LeafSet'.
 class HasLeafSet s a | s -> a where
 
     {-# MINIMAL leafSet #-}
@@ -54,5 +53,9 @@ instance Eq n => Semigroup (LeafSet n) where
     (<>) (LeafSet lhs) (LeafSet rhs) = LeafSet $ (<>) lhs rhs
 
 
+-- |
+-- /O(1)/
+--
+-- Construct a 'Vector' from a 'LeafSet'.
 fromLeafSet :: forall n .  LeafSet n -> Vector n
 fromLeafSet = coerce

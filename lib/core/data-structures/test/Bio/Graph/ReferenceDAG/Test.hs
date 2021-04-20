@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Bio.Graph.ReferenceDAG.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 module Bio.Graph.ReferenceDAG.Test
   ( testSuite
   ) where
@@ -7,6 +19,9 @@ import           Bio.Graph.ReferenceDAG.Test.NetworkUnitTests     as NUT
 import           Test.Tasty
 
 
+-- |
+-- Test-suite including specific unit and property-based tests for the
+-- 'Bio.Graph.ReferenceDAG.ReferenceDAG' data-type.
 testSuite :: TestTree
 testSuite = testGroup "ReferenceDAG Tests"
     [ testExampleCases

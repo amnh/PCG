@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.ReferenceDAG.Network
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -41,6 +41,8 @@ import           Data.Vector.Memo                 as Memo
 import           GHC.Generics
 
 
+-- |
+-- Information describing the context of a given node in a network context.
 data  NetworkContext
     = NetworkContext
     { netNode    :: Int
@@ -49,6 +51,11 @@ data  NetworkContext
     }
     deriving stock    (Eq, Ord, Generic, Show)
     deriving anyclass (NFData)
+
+
+-- |
+-- Describes the root's relation to the rest of the graph
+data RootStatus = IncludeRoot | ExcludeRoot
 
 
 -- |
@@ -212,9 +219,6 @@ tabulateNetworkInformation dag =
     generateMemo lengthRefs dVectorNetInfo
   where
     lengthRefs = length $ dag ^. _references
-
-
-data RootStatus = IncludeRoot | ExcludeRoot
 
 
 -- |
@@ -390,6 +394,8 @@ candidateNetworkEdges' rootStatus dag = S.fromList candidateEdgesList
               | otherwise       = mempty
 
 
+-- |
+-- Find all candidate network edges in a DAG.
 candidateNetworkEdges :: ReferenceDAG d e n -> Set ((Int, Int), (Int,Int))
 candidateNetworkEdges = candidateNetworkEdges' ExcludeRoot
 
@@ -425,6 +431,8 @@ getNetworkEdges dag = fold descendantNetworkEdges
     numberOfNodes          = length $ dag ^. _references
 
 
+-- |
+-- Collect the set of all edges within a 'ReferenceDAG'.
 getEdgeSet :: ReferenceDAG d e n -> Set (Int, Int)
 getEdgeSet dag =  fold descendantEdges
   where

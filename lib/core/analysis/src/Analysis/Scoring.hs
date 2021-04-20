@@ -179,6 +179,9 @@ performDecoration x = finalResult
     finalResult = performFinalizationDecoration postorderState preorderDAG
 
 
+-- |
+-- Update all edges in the graph after decorations are finalized,
+-- assigning final edge decorations.
 performFinalizationDecoration
   :: PostorderScoringState
        (ResolutionCache
@@ -274,6 +277,8 @@ performFinalizationDecoration postorderState preorderDAG =
       in  directOptimizationPostorderPairwise pairwiseAlignmentFunction
 
 
+-- |
+-- Perform the "post-order" pass assigning preliminary decoration assignments.
 performPostorderDecoration
   :: forall u v w x y z m .
      ( DiscreteCharacterDecoration v StaticCharacter
@@ -343,6 +348,8 @@ performPostorderDecoration x = (context, postorderResult)
         pairwiseAlignmentFunction = selectDynamicMetric meta
 
 
+-- |
+-- Perform the "pre-order" pass finalizing character decorations.
 performPreorderDecoration
   :: PostorderScoringState
          (ResolutionCache

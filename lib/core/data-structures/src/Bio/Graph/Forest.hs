@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.Forest
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -9,8 +9,6 @@
 -- Portability :  portable
 --
 -- The Phylogentic Graph types.
---
---
 --
 -----------------------------------------------------------------------------
 
@@ -34,18 +32,20 @@ module Bio.Graph.Forest
 
 import Bio.Graph.LeafSet
 import Control.DeepSeq
-import Control.Lens            as Lens hiding (Indexable)
+import Control.Lens.Combinators (Traversable1(..), lens, to)
+import Control.Lens.Operators   ((^.))
+import Control.Lens.Type        (Lens)
 import Data.Binary
 import Data.Foldable
 import Data.GraphViz.Printing
 import Data.Key
-import Data.List.NonEmpty      (NonEmpty(..))
+import Data.List.NonEmpty       (NonEmpty(..))
 import Data.Maybe
 import Data.Semigroup
 import Data.Semigroup.Foldable
-import Data.Text               (intercalate)
-import GHC.Generics
-import Prelude                 hiding (lookup, zip, zipWith)
+import Data.Text                (intercalate)
+import GHC.Generics             hiding (to)
+import Prelude                  hiding (lookup, zip, zipWith)
 import Text.Newick.Class
 import Text.XML.Custom
 
@@ -63,7 +63,7 @@ type instance Key PhylogeneticForest = Int
 
 
 -- |
--- A 'Lens' for the 'phylogeneticComponents' field.
+-- A 'Lens' for the phylogenetic components field.
 {-# SPECIALISE _phylogeneticComponents :: Lens (PhylogeneticForest a) (PhylogeneticForest a') (NonEmpty a) (NonEmpty a') #-}
 class HasPhylogeneticComponents s t a b | s -> a, t -> b,  s b -> t, t a -> s where
 
@@ -102,7 +102,7 @@ instance FoldableWithKey1 PhylogeneticForest where
 
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticForest a) b where
 
-    leafSet = Lens.to getter
+    leafSet = to getter
       where
         getter = foldMap1 (^. leafSet) . unwrap
 

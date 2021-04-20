@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Normalization.Metadata.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -105,6 +105,8 @@ makeOneInfo alpha =
     (sortedAlphabet, _, _, _) = getMetadataFromInputSymbolsAndTCM alpha (undefined :: Matrix Word)
 
 
+-- |
+-- Produce metadata from a list of alphabet symbol and a TCM 'Matrix'.
 getMetadataFromInputSymbolsAndTCM :: (IsString a, FoldableWithKey t, Ord a, Real b) => t a -> Matrix b -> (Alphabet a, Double, TCM, TCMStructure)
 getMetadataFromInputSymbolsAndTCM symbols mat = (alphabet', fromRational rationalWeight * fromIntegral coefficient, resultTCM, structure)
   where
@@ -117,6 +119,8 @@ getMetadataFromInputSymbolsAndTCM symbols mat = (alphabet', fromRational rationa
             else (c, snd . TCM.fromList $ toList permMat, t)
 
 
+-- |
+-- Produce metadata from a list of alphabet symbol /with state names/ and a TCM 'Matrix'.
 getMetadataFromInputSymbolsStatesAndTCM :: (IsString a, FoldableWithKey t, Ord a, Real b) => t (a, a) -> Matrix b -> (Alphabet a, Double, TCM, TCMStructure)
 getMetadataFromInputSymbolsStatesAndTCM symbols mat = (alphabet', fromRational rationalWeight * fromIntegral coefficient, resultTCM, structure)
   where

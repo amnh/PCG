@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Dynamic.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -129,6 +129,8 @@ overlap' sigma xs = go size maxBound zero
 -}
 
 
+-- |
+-- Calculate the median between /two/ states.
 {-# INLINE overlap2 #-}
 {-# SPECIALISE overlap2 :: (Word -> Word -> Word) -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 overlap2
@@ -140,6 +142,8 @@ overlap2
 overlap2 sigma char1 char2 = overlap sigma $ char1 :| [char2]
 
 
+-- |
+-- Calculate the median between /three/ states.
 {-# INLINE overlap3 #-}
 {-# SPECIALISE overlap3 :: (Word -> Word -> Word) -> AmbiguityGroup -> AmbiguityGroup -> AmbiguityGroup -> (AmbiguityGroup, Word) #-}
 overlap3

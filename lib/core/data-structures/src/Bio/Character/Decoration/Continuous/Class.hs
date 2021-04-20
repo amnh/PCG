@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Decoration.Continuous.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -25,12 +25,12 @@ module Bio.Character.Decoration.Continuous.Class
 
 import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
-import Control.Lens
+import Control.Lens.Type                 (Lens')
 
 
 -- |
 -- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
+-- appropriate 'Control.Lens.Type.Lens' and character class constraints.
 class ( -- ContinuousCharacter c
         HasContinuousCharacter s c
       ) => ContinuousDecoration s c | s -> c where
@@ -46,7 +46,7 @@ class Ord c => ContinuousCharacter c where
 
 
 -- |
--- A 'Lens' for the 'continuousCharacter' field
+-- A 'Control.Lens.Type.Lens' for the 'continuousCharacter' field
 class HasContinuousCharacter s a | s -> a where
 
     continuousCharacter :: Lens' s a
@@ -60,7 +60,7 @@ class ContinuousDecoration s a => ContinuousCharacterDecoration s a | s -> a whe
 
 
 -- |
--- A decoration containing a character that has been scored using the algorithm for 'Continuous' characters.
+-- A decoration containing a character that has been scored using the algorithm for continuous characters.
 class ( HasChildPrelimIntervals s ((Double, Double), (Double, Double))
       , HasIsLeaf s Bool
       , HasCharacterCost s Double
@@ -71,7 +71,7 @@ class ( HasChildPrelimIntervals s ((Double, Double), (Double, Double))
 -- |
 -- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
 -- extending the decoration to contain the requisite fields for performing
--- the algorithm for 'Continuous' characters.
+-- the algorithm for continuous characters.
 class ( ContinuousAdditiveHybridDecoration s c
       ) => DiscreteExtensionContinuousDecoration s c | s -> c where
 
@@ -84,7 +84,7 @@ class ( ContinuousAdditiveHybridDecoration s c
                              -> s
 
 -- |
--- A 'Lens' for the 'additiveChildPrelimIntervals' field.
+-- A 'Control.Lens.Type.Lens' for the 'childPrelimIntervals' field.
 class HasChildPrelimIntervals s a | s -> a where
 
     childPrelimIntervals :: Lens' s a
@@ -92,7 +92,7 @@ class HasChildPrelimIntervals s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'additivePreliminaryInterval' field.
+-- A 'Control.Lens.Type.Lens' for the 'preliminaryInterval' field.
 class HasPreliminaryInterval s a | s -> a where
 
     preliminaryInterval :: Lens' s a

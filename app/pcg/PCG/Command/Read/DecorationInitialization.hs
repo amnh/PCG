@@ -21,6 +21,8 @@ import Bio.Graph
 import Bio.Graph.PhylogeneticDAG (pruneEdgeSet)
 
 
+-- |
+-- Construct an initial DAG for the process from the input results.
 initializeDecorations2 :: CharacterResult -> PhylogeneticSolution FinalDecorationDAG
 initializeDecorations2 (PhylogeneticSolution forests) =
     PhylogeneticSolution $ fmap decorateAndPruneEdges <$> forests

@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.NeedlemanWunsch
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -69,7 +69,7 @@ naiveDOMemo tcm char1 char2 = directOptimization tcm char1 char2 createNeedleman
 -- cost function. Also, returns the aligned parent characters, with appropriate
 -- ambiguities, as the third of each tuple in the matrix.
 --
--- Takes in two 'EncodableDynamicCharacter's and a 'CostStructure'. The first
+-- Takes in two 'EncodableDynamicCharacter's and a 'OverlapFunction'. The first
 -- character must be the longer of the two and is the top labeling of the matrix.
 -- Returns a 'NeedlemanWunchMatrix'.
 {-# INLINE createNeedlemanWunchMatrix #-}

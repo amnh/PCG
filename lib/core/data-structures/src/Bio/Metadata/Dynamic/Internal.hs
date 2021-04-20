@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Dynamic.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -35,6 +35,7 @@ module Bio.Metadata.Dynamic.Internal
   , HasCharacterWeight(..)
   , MemoizedCostMatrix()
   , TraversalFoci
+  , TraversalFocus
   , TraversalFocusEdge
   , TraversalTopology
   , dynamicMetadata
@@ -52,7 +53,8 @@ import           Bio.Metadata.Dynamic.Class   hiding (DenseTransitionCostMatrix)
 import           Bio.Metadata.Overlap
 import           Control.Arrow                ((&&&))
 import           Control.DeepSeq
-import           Control.Lens                 hiding (Fold)
+import           Control.Lens.Combinators     (bimap, lens, to)
+import           Control.Lens.Operators       ((&), (.~), (^.))
 import           Data.Alphabet
 import           Data.Binary
 import           Data.Bits
@@ -85,6 +87,9 @@ type TraversalTopology  = TopologyRepresentation TraversalFocusEdge
 type TraversalFocusEdge = (Int, Int)
 
 
+-- |
+-- The edge for a traversal along with the topological representation the
+-- traversal takes place over.
 type TraversalFocus     = (TraversalFocusEdge, TraversalTopology)
 
 
@@ -115,7 +120,7 @@ data  DynamicCharacterMetadataDec c
 
 -- |
 -- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
+-- appropriate 'Control.Lens.Type.Lens' and character class constraints.
 class ( DiscreteWithTcmCharacterMetadata s c
       , GetDenseTransitionCostMatrix     s (Maybe DenseTransitionCostMatrix)
       , GetSparseTransitionCostMatrix    s (Maybe MemoizedCostMatrix)

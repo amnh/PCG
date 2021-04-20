@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Sequence.Block
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -164,8 +164,11 @@ staticCost mBlock cBlock = nestedSum $
         cost   = c ^. characterCost
         weight = m ^. characterWeight
 
-hexFold :: Monoid m => CharacterBlock m m m m m m -> m
+
+-- |
+-- Folds a 6-parameter 'Foldable' 'Functor'.
 {-# INLINE hexFold #-}
+hexFold :: Monoid m => CharacterBlock m m m m m m -> m
 hexFold cBlock =
   fold
     ([ fold $ (^.  continuousBin) cBlock

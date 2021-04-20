@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Numeric.Extended.Natural
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -213,9 +213,13 @@ instance Show ExtendedNatural where
       | otherwise         = show input
 
 
+-- |
+-- Wrapping type for 'U.Unboxed' and /mutable/ vector representation.
 newtype instance U.MVector s ExtendedNatural = MV_ExtendedNatural (P.MVector s Word)
 
 
+-- |
+-- Wrapping type for 'U.Unboxed' vector representation.
 newtype instance U.Vector ExtendedNatural    = V_ExtendedNatural  (P.Vector    Word)
 
 

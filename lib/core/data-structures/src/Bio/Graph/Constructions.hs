@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.Constructions
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -148,6 +148,9 @@ type GraphState = Either TopologicalResult DecoratedCharacterResult
 type TopologicalResult = PhylogeneticSolution (ReferenceDAG () EdgeLength (Maybe NodeLabel))
 
 
+-- |
+-- A DAG which has no decoration performed on it.
+-- This is the graph state after reading in data.
 type UndecoratedReferenceDAG = ReferenceDAG () EdgeLength (Maybe NodeLabel)
 
 
@@ -308,6 +311,8 @@ type UnReifiedCharacterDAG =
          UnifiedDynamicCharacter
 
 
+-- |
+-- An annotation for an edge memoizing certain data from finalized node decorations.
 type EdgeAnnotation =
     ( EdgeLength
     , CharacterSequence

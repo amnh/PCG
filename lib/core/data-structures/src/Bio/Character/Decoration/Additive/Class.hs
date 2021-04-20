@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Decoration.Additive.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -20,7 +20,7 @@ module Bio.Character.Decoration.Additive.Class where
 
 
 import Bio.Character.Decoration.Shared
-import Control.Lens
+import Control.Lens.Type               (Lens')
 import Data.Range
 import Numeric.Extended
 
@@ -74,7 +74,7 @@ class ( RangedDecorationOptimization s c
 
 
 -- |
--- A 'Lens' for the 'additiveChildPrelimIntervals' field.
+-- A 'Control.Lens.Type.Lens' for the 'childPrelimIntervals' field.
 class HasChildPrelimIntervals s a | s -> a where
 
     {-# MINIMAL childPrelimIntervals #-}
@@ -82,7 +82,7 @@ class HasChildPrelimIntervals s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'additivePreliminaryInterval' field.
+-- A 'Control.Lens.Type.Lens' for the 'preliminaryInterval' field.
 class HasPreliminaryInterval s a | s -> a where
 
     {-# MINIMAL preliminaryInterval #-}
@@ -90,7 +90,7 @@ class HasPreliminaryInterval s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'additiveFinalInterval' field.
+-- A 'Control.Lens.Type.Lens' for the 'finalInterval' field.
 class HasFinalInterval s a | s -> a where
 
     {-# MINIMAL finalInterval #-}

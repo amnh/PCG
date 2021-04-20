@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Encodable.Stream
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -97,6 +97,8 @@ class ( MonoFoldable s
 --    gapOfStream = getGapElement . headEx
 
 
+-- |
+-- The dual of 'EncodableStreamElement'.
 class ( MonoFoldable s
       , MonoFunctor  s
       ) => DecodableStream s where

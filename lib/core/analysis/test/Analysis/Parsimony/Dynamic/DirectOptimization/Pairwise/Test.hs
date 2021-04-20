@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -19,7 +19,6 @@ module Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
   ( testSuite
   ) where
 
-
 import           Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise
 import           Bio.Character.Encodable
 import           Data.Alphabet
@@ -34,9 +33,9 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck
 import qualified Test.Tasty.SmallCheck                                  as SC
 
--- import Debug.Trace
 
-
+-- |
+-- The test-suite for pairwise string alignment algorithms.
 testSuite :: TestTree
 testSuite = testGroup "Pairwise alignment tests"
     [ testSuiteNaiveDO

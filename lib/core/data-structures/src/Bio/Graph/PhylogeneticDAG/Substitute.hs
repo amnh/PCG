@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.PhylogeneticDAG.Substitute
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -12,7 +12,13 @@
 
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Bio.Graph.PhylogeneticDAG.Substitute where
+module Bio.Graph.PhylogeneticDAG.Substitute
+  ( CharacterIndexData
+  , PhylogeneticRefDAG
+  , getNamedContext
+  , substituteDAGs
+  ) where
+
 import           Bio.Graph.Node
 import           Bio.Graph.PhylogeneticDAG.Internal
 import           Bio.Graph.ReferenceDAG
@@ -34,17 +40,23 @@ import qualified Data.Vector                        as V
 import           Prelude                            hiding (length)
 
 
-
-
+-- |
+-- Type synonym for the datum of a vector entry in a 'ReferenceDAG'.
 type CharacterIndexData e n u v w x y z
   = (IndexData e (PhylogeneticNode (CharacterSequence u v w x y z) n))
 
+
+-- |
+-- Type synonym for a 'ReferenceDAG' representing the post-order context of a graph.
 type PhylogeneticRefDAG e n u v w x y z =
   ReferenceDAG
     (PostorderContextualData (CharacterSequence u v w x y z))
     e
     (PhylogeneticNode (CharacterSequence u v w x y z) n)
 
+
+-- |
+-- Construct a 'M.Map' of names to their indices within the graph's internal structure.
 getNamedContext
   :: forall m e n u v w x y z . (Ord n) => PhylogeneticDAG m e n u v w x y z -> [n] -> M.Map n Int
 getNamedContext dag = foldMap f
@@ -53,6 +65,7 @@ getNamedContext dag = foldMap f
     f n = case dag `getIndexFromName` n of
           Nothing  -> mempty
           Just ind -> M.singleton n ind
+
 
 getIndexFromName :: forall m e n u v w x y z . (Eq n)
   =>  PhylogeneticDAG m e n u v w x y z -> n -> Maybe Int
@@ -166,12 +179,17 @@ substituteSingle nodeName subGraph totalGraph = do
               pure $ totalGraph & _phylogeneticForest .~ newReferenceDAG
 
 
+-- |
+-- Take a 'M.Map' of leaf labels to graphs, and a graph with leaf labels, produce
+-- a new graph substituting each leaf with it's corresponding sub-graph.
 substituteDAGs
   ::
   ( Ord n
   , Monoid n
   )
-  => M.Map n (PhylogeneticDAG m e n u v w x y z) -> PhylogeneticDAG m e n u v w x y z -> State (M.Map n Int) (PhylogeneticDAG m e n u v w x y z)
+  => M.Map n (PhylogeneticDAG m e n u v w x y z)
+  -> PhylogeneticDAG m e n u v w x y z
+  -> State (M.Map n Int) (PhylogeneticDAG m e n u v w x y z)
 substituteDAGs namedSubGraphs totalGraph =
   foldrWithKeyM substituteSingle totalGraph namedSubGraphs
 

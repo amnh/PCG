@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  TestSuite.GoldenTests
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict            #-}
 
@@ -18,6 +30,10 @@ import TestSuite.SubProcess
 type Extension = String
 
 
+-- |
+-- The test-suite for all 'Golden Tests'.
+--
+-- Compares the process's output with a "golden file," the two shpuld be identical.
 testSuite :: IO TestTree
 testSuite = do
     pcgFiles <- getPCGFiles goldenDir

@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Benchmark.FASTA.Files
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 module Benchmark.FASTA.Files
   ( fastaFilePath
   , fastaInlineSequenceFiles
@@ -7,6 +19,8 @@ import Data.Foldable
 import System.FilePath.Posix
 
 
+-- |
+-- List of all benchmarking input files for the FASTA file parser.
 fastaInlineSequenceFiles :: [FilePath]
 fastaInlineSequenceFiles = do
     taxaCount      <- taxaCounts
@@ -15,6 +29,8 @@ fastaInlineSequenceFiles = do
     pure $ fastaFilePath </> fileName
 
 
+-- |
+-- File path where benchmarking input files are located for the FASTA file parser.
 fastaFilePath :: FilePath
 fastaFilePath =  "bench" </> "data-sets" </>"fasta"
 

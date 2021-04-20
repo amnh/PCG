@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Discrete.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -22,19 +22,20 @@ module Bio.Metadata.Discrete.Class
   ) where
 
 import Bio.Metadata.Continuous
-import Control.Lens
+import Control.Lens.Combinators (lens)
+import Control.Lens.Type        (Lens')
 import Data.FileSource
 
 
 -- |
--- A 'Lens' for the 'alphabet' field
+-- A 'Control.Lens.Type.Lens' for the 'characterAlphabet' field.
 class HasCharacterAlphabet s a | s -> a where
 
     {-# MINIMAL characterAlphabet #-}
     characterAlphabet :: Lens' s a
 
 -- |
--- A 'Lens' for the 'tcmSourceFile' field
+-- A 'Control.Lens.Type.Lens' for the @tcmSourceFile@ field.
 class HasTcmSourceFile s a | s -> a where
 
     {-# MINIMAL _tcmSourceFile #-}

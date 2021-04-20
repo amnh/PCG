@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Decoration.Discrete
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -20,22 +20,26 @@ module Bio.Character.Decoration.Discrete.Class
   ) where
 
 import Bio.Character.Encodable
-import Control.Lens
+import Control.Lens.Type       (Lens')
 
 
 -- |
--- A 'Lens' for the 'discreteCharacter' field
+-- A 'Control.Lens.Type.Lens' for the 'discreteCharacter' field.
 class HasDiscreteCharacter s a | s -> a where
 
     discreteCharacter :: Lens' s a
     {-# MINIMAL discreteCharacter #-}
 
 
+-- |
+-- Constraint for a the class of discrete character decorations.
 class ( HasDiscreteCharacter s a
       , EncodableStaticCharacter a
       ) => DiscreteCharacterDecoration s a | s -> a where
 
 
+-- |
+-- Constructor class for producing a discrete character decoration.
 class DiscreteCharacterDecoration s a => SimpleDiscreteCharacterDecoration s a | s -> a where
 
     toDiscreteCharacterDecoration :: (x -> a) -> x -> s

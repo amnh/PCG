@@ -1,6 +1,26 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  NetworkEdges
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE LambdaCase #-}
 
-module NetworkEdges where
+module NetworkEdges
+  ( Edge
+  , EdgeLabel(..)
+  , Network
+  , Node
+  , NodeLabel(..)
+  , makeDotFile
+  , networks
+  ) where
 
 import           Data.Foldable
 import qualified Data.GraphViz                     as G
@@ -10,6 +30,8 @@ import qualified Data.Text.Lazy.IO                 as TL
 import           System.FilePath.Posix             ((<.>))
 
 
+-- |
+-- Write a DOT file rending of the supplied 'Network' out to the specified path.
 makeDotFile :: (Network, FilePath) -> IO ()
 makeDotFile ((nodes, edges), filename) = do
     let
@@ -18,48 +40,72 @@ makeDotFile ((nodes, edges), filename) = do
     TL.writeFile (filename <.> "dot") dotText
 
 
-data EdgeLabel =
-    ExistingEdgeLabel
-  | NetEdgeLabel
-  | NewNetEdgeLabel
-  | NewEdgeLabel
-  | CandNetEdgeLabel
+-- |
+-- Describes the type of edge.
+data  EdgeLabel
+    = ExistingEdgeLabel
+    | NetEdgeLabel
+    | NewNetEdgeLabel
+    | NewEdgeLabel
+    | CandNetEdgeLabel
 
 
-data NodeLabel =
-    ExistingNodeLabel
-  | ContextualNodeLabel
-  | NewNodeLabel
+-- |
+-- Describes the context of the node.
+data  NodeLabel
+    = ExistingNodeLabel
+    | ContextualNodeLabel
+    | NewNodeLabel
 
+
+-- |
+-- A 'Node' consists of a 'String' label and a 'NodeLabel' tag describing
+-- the context of the label.
 type Node = (String, NodeLabel)
+
+
+-- |
+-- A 'Edge' consists of a 'String' label and a 'EdgeLabel' tag describing
+-- the context of the label.
 type Edge = (String, String, EdgeLabel)
+
 
 existingE :: (String, String) -> (String, String, EdgeLabel)
 existingE (s,t)  = (s, t, ExistingEdgeLabel)
 
+
 newE :: (String, String) -> (String, String, EdgeLabel)
 newE (s,t)  = (s, t, NewEdgeLabel)
+
 
 newNetE :: (String, String) -> (String, String, EdgeLabel)
 newNetE (s,t)  = (s, t, NewNetEdgeLabel)
 
+
 candidateE :: (String, String) -> (String, String, EdgeLabel)
 candidateE (s,t) = (s, t, CandNetEdgeLabel)
+
 
 netE :: (String, String) -> (String, String, EdgeLabel)
 netE (s,t) = (s, t, NetEdgeLabel)
 
+
 existingN :: String -> (String, NodeLabel)
 existingN n = (n, ExistingNodeLabel)
 
+
 contextualN :: String -> (String, NodeLabel)
 contextualN n = (n, ContextualNodeLabel)
+
 
 newN :: String -> (String, NodeLabel)
 newN n = (n, NewNodeLabel)
 
 
+-- |
+-- A collection of nodes and edges. The traditional definition of a graph.
 type Network = ([Node], [Edge])
+
 
 networkGraphParameters
  :: G.GraphvizParams
@@ -98,6 +144,8 @@ networkGraphParameters = G.defaultParams {
 --            Examples              --
 --------------------------------------
 
+-- |
+-- A list of example networks and the filepaths to which they should be rendered.
 networks :: [(Network, FilePath)]
 networks = [ ( baseNetwork
              , "base-network"

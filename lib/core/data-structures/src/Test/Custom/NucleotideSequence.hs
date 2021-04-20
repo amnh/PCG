@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Test.Custom.NucleotideSequence
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -53,6 +53,8 @@ newtype NucleotideBase = NB DynamicCharacterElement
     deriving newtype (Eq, Ord)
 
 
+-- |
+-- A pair of 'NucleotideBase' values.
 newtype NucleotideBasePair = NBP (NucleotideBase, NucleotideBase)
     deriving newtype (Eq, Ord)
 

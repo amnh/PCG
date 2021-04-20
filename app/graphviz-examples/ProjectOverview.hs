@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  ProjectOverview
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 module ProjectOverview where
 
 import qualified Data.GraphViz                     as G
@@ -17,17 +29,32 @@ makeDotFile ((nodes, edges), filename) = do
     TL.writeFile (filename <.> "dot") dotText
 
 
+-- |
+-- Node in a graph.
 type Node = (String, ())
 
+
+-- |
+-- Edge in a graph.
 type Edge = (String, String, ())
 
+
+-- |
+-- Construct an empty node.
 node :: String -> Node
 node s = (s, ())
 
+
+-- |
+-- Construct an empty edge.
 edge :: (String, String) -> Edge
 edge (s,t) = (s,t, ())
 
+
+-- |
+-- A collection of nnodes and edges.
 type Network = ([Node], [Edge])
+
 
 -- |
 -- Parameters for how to render a display tree for a network.

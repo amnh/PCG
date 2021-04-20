@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.Test
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -31,6 +31,8 @@ import           Test.Tasty
 import           Test.Tasty.QuickCheck
 
 
+-- |
+-- The test-suite for the clustering build algorithm.
 testSuite :: TestTree
 testSuite = testGroup "Clustering Tests"
     [ hierarchicalClusteringProperties

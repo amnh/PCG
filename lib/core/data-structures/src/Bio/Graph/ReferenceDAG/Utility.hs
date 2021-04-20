@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.ReferenceDAG.Utility
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -35,6 +35,8 @@ import           Data.Vector                     (Vector)
 import           Test.QuickCheck
 
 
+-- |
+-- Collection of network information of a graph output from mnetwork operations.
 data NetworkInformation
   = NetworkInformation
   { _candidateNetworkEdges :: Set ((Int, Int), (Int, Int))
@@ -107,12 +109,16 @@ makeBranchedNetworkWithInfo n0 n1 = (ReferenceDAG{..}, networkInfoN0, networkInf
     networkInfoN1' = incrementNetworkInformation (length references0) networkInfoN1
 
 
+-- |
+-- Join two 'ReferenceDAG' at their (first) root nodes into a combined graph with
+-- a new root node.
 makeBranchedNetwork
   :: (Monoid d, Monoid n)
   => ReferenceDAG d () n   -- ^ n0
   -> ReferenceDAG d () n   -- ^ n1
   -> ReferenceDAG d () n
 makeBranchedNetwork n0 n1 = (^. _1) $ makeBranchedNetworkWithInfo n0 n1
+
 
 -- |
 -- This function takes valid networks n0, n1 and n2 and forms the network:

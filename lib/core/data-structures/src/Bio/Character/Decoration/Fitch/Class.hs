@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Decoration.Fitch.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -21,7 +21,7 @@ import Bio.Character.Decoration.Discrete
 import Bio.Character.Decoration.Shared
 --import Bio.Character.Encodable
 --import Bio.Metadata.Discrete
-import Control.Lens
+import Control.Lens.Type                 (Lens')
 --import Data.Word
 
 
@@ -58,8 +58,9 @@ class ( FitchDecoration s c
                           -> Bool
                           -> s
 
+
 -- |
--- A 'Lens' for the 'fitchChildMedians' field.
+-- A 'Control.Lens.Type.Lens' for the 'childMedians' field.
 class HasChildMedians s a | s -> a where
 
     {-# MINIMAL childMedians #-}
@@ -68,7 +69,7 @@ class HasChildMedians s a | s -> a where
 
 {-
 -- |
--- A 'Lens' for the 'fitchMinCost' field.
+-- A 'Control.Lens.Type.Lens' for the 'fitchMinCost' field.
 class HasMinCost s a | s -> a where
 
     minCost :: Lens' s a
@@ -77,7 +78,7 @@ class HasMinCost s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'fitchPreliminaryMedian' field.
+-- A 'Control.Lens.Type.Lens' for the 'preliminaryMedian' field.
 class HasPreliminaryMedian s a | s -> a where
 
     {-# MINIMAL preliminaryMedian #-}
@@ -85,7 +86,7 @@ class HasPreliminaryMedian s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'finalMedian' field.
+-- A 'Control.Lens.Type.Lens' for the 'finalMedian' field.
 class HasFinalMedian s a | s -> a where
 
     {-# MINIMAL finalMedian #-}

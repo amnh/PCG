@@ -1,13 +1,7 @@
-{-# LANGUAGE LambdaCase       #-}
-{-# LANGUAGE OverloadedLists  #-}
-{-# LANGUAGE RecordWildCards  #-}
-{-# LANGUAGE TypeApplications #-}
-
-
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.ReferenceDAG.Test.NetworkUnitTests
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -15,6 +9,11 @@
 -- Portability :  portable
 --
 -----------------------------------------------------------------------------
+
+{-# LANGUAGE LambdaCase       #-}
+{-# LANGUAGE OverloadedLists  #-}
+{-# LANGUAGE RecordWildCards  #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Bio.Graph.ReferenceDAG.Test.NetworkUnitTests
   ( candidateNetworkEdgesCases
@@ -29,6 +28,8 @@ import           Test.Tasty
 import           Test.Tasty.HUnit                as HU
 
 
+-- |
+-- Test-suite of property-based tests for the 'ReferenceDAG' data-type.
 candidateNetworkEdgesCases :: TestTree
 candidateNetworkEdgesCases = testGroup "Cases of candidateNetworkEdges function"
     [ HU.testCase

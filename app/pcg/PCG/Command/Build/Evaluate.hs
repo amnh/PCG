@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Command.Build.Evaluate
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE BangPatterns        #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
@@ -78,6 +90,9 @@ type ParallelBuildType m
   -> NE.NonEmpty FinalDecorationDAG
 
 
+-- |
+-- Evaluates a 'BuildCommand' by taking an existing 'GraphState' and constructing
+-- a new 'GraphState' based on the supplied 'PCG.Syntax.Parser.Command' parameters.
 evaluate
   :: BuildCommand
   -> GraphState

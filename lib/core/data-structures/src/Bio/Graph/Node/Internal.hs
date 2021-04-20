@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.Node.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -51,7 +51,9 @@ module Bio.Graph.Node.Internal
 
 
 import Control.DeepSeq
-import Control.Lens                hiding (_head)
+import Control.Lens.Combinators    (Bifunctor(..), lens)
+import Control.Lens.Operators      ((%~), (&), (^.))
+import Control.Lens.Type           (Lens, Lens')
 import Data.Binary
 import Data.EdgeSet
 import Data.Foldable
@@ -93,7 +95,7 @@ data  PhylogeneticNode s n
 
 
 -- |
--- A 'Lens' for the 'resoluions' field.
+-- A 'Lens' for the 'resolutions' field.
 {-# SPECIALISE _resolutions :: Lens (PhylogeneticNode s n) (PhylogeneticNode s' n) (ResolutionCache s) (ResolutionCache s') #-}
 class HasResolutions s t a b | s -> a, b s -> t where
 
@@ -205,7 +207,7 @@ instance HasTotalSubtreeCost (ResolutionInformation s) Double where
 
 
 -- |
--- A 'Lens' for the 'localSequencecost' field in 'ResolutionMetadata'
+-- A 'Lens' for the 'localSequenceCost' field in 'ResolutionMetadata'
 {-# SPECIALISE _localSequenceCost :: Lens' ResolutionMetadata Double #-}
 {-# SPECIALISE _localSequenceCost :: Lens' (ResolutionInformation s) Double #-}
 class HasLocalSequenceCost s a | s -> a where
@@ -226,7 +228,7 @@ instance HasLocalSequenceCost (ResolutionInformation s) Double where
 
 
 -- |
--- A 'Lens' for the 'LeafSetRepresentation' field in 'ResolutionMetadata'
+-- A 'Lens' for the 'leafSetRepresentation' field in 'ResolutionMetadata'
 {-# SPECIALISE _leafSetRepresentation :: Lens' ResolutionMetadata UnionSet #-}
 {-# SPECIALISE _leafSetRepresentation :: Lens' (ResolutionInformation s) UnionSet #-}
 class HasLeafSetRepresentation s a | s -> a where

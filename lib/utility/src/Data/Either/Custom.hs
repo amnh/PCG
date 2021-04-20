@@ -1,15 +1,15 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.Either.Custom
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
 -- Stability   :  provisional
 -- Portability :  portable
 --
--- Functions for collecting 'Left' values of 'Either' forming a 'Validation'
--- similar context.
+-- Functions for collecting 'Left' values of 'Either' forming a
+-- 'Data.Validation.Validation' similar context.
 --
 -----------------------------------------------------------------------------
 

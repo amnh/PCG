@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Software.Credits
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 module PCG.Software.Credits
   ( authorsList
   , fundingList
@@ -18,6 +30,8 @@ import           Text.MMark.Extension
 import qualified Text.URI                   as URI
 
 
+-- |
+-- List of authors who have contributed to PCG.
 authorsList :: ExpQ
 authorsList = lift =<< getAuthorFileData
   where
@@ -27,6 +41,8 @@ authorsList = lift =<< getAuthorFileData
     getAuthorLines = fmap fst . fromMarkdown processMarkdown
 
 
+-- |
+-- List of funding sources which have contributed to PCG.
 fundingList :: ExpQ
 fundingList = lift =<< getFundingFileData
   where

@@ -501,7 +501,8 @@ extractFromAlign_io elemWidth ptr = do
 
 
 -- |
--- Converts the data behind an 'Align_io' pointer to an 'Exportable' type.
+-- Converts the data behind an 'Align_io' pointer to an
+-- 'Bio.Character.Exportable.Exportable' type.
 extractFromElems_io :: Ptr Align_io -> IO [CUInt]
 extractFromElems_io ptr = do
     Align_io bufferPtr charLenC bufferLenC <- peek ptr

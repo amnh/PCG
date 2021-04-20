@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.ReferenceDAG.Traversal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -65,7 +65,7 @@ dVectorPostorderWithContext indexFn dag = Memo.DVector f
 -- |
 -- A function that recursively builds (in a postorder fashion) a generating function
 -- to be consumed as reference data. The function returned uses open recursion
--- (for memoization purposes), in the form of a 'Memoector'.
+-- (for memoization purposes), in the form of a 'Memo.MemoVector'.
 dVectorPostorder
   :: forall a d e n
    . (  ChildContext a       --  Child values

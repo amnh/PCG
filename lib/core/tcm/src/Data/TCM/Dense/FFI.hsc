@@ -69,7 +69,7 @@ data  AlignmentStrategy = Linear | Affine | Other
 -- Holds single cost matrix, which contains costs and medians for all possible
 -- character elements. It is completely filled using a TCM.
 --
--- See note below at 'setupCostMatrixFn_c'.
+-- See note below at @setupCostMatrixFn_c@.
 data  CostMatrix2d
     = CostMatrix2d
     { alphSize            :: CInt      -- alphabet size including gap, and including ambiguities if
@@ -339,7 +339,8 @@ foreign import ccall unsafe "c_code_alloc_setup.h setUp3dCostMtx"
 -- /O(a^5)/ where /a/ is the size of the character alphabet
 --
 -- Generate the 2D and 3D dense TCM matricies used for FFI calls to
--- 'foreignPairwiseDO' and 'foreignThreeWayDO'.
+-- 'Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.foreignPairwiseDO' and
+-- 'Analysis.Parsimony.Dynamic.DirectOptimization.Pairwise.foreignThreeWayDO'.
 --
 -- Lookup pairwise and threeway medians and cost with calls to
 -- 'lookupPairwise' and 'lookupThreeway'.

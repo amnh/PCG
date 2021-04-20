@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Decoration.Dynamic.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -45,7 +45,7 @@ import Bio.Character.Decoration.Shared
 import Bio.Character.Encodable
 import Bio.Character.Exportable
 import Control.DeepSeq
-import Control.Lens
+import Control.Lens.Type               (Lens')
 import Data.Binary
 import Data.MonoTraversable            (Element)
 import GHC.Generics
@@ -68,7 +68,7 @@ instance Show AverageLength where
 
 -- |
 -- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
+-- appropriate 'Control.Lens.Type.Lens' and character class constraints.
 class ( HasAverageLength           s AverageLength
       , HasEncoded                 s a
       , EncodableDynamicCharacter  a
@@ -111,7 +111,7 @@ class ( HasImpliedAlignment           s a
 
 -- |
 -- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
+-- appropriate 'Control.Lens.Type.Lens' & character class constraints.
 class ( SimpleDynamicDecoration s a
       ) => DynamicCharacterDecoration s a | s -> a where
 
@@ -120,9 +120,9 @@ class ( SimpleDynamicDecoration s a
 
 
 -- |
--- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
+-- A decoration that can be constructed from a 'SimpleDynamicDecoration' by
 -- extending the decoration to contain the requisite fields for performing
--- Sankoff's algorithm.
+-- direct optimization algorithm.
 class ( SimpleDynamicDecoration s c
       , DirectOptimizationPostorderDecoration s c
       ) => SimpleDynamicExtensionPostorderDecoration s c | s -> c where
@@ -137,9 +137,9 @@ class ( SimpleDynamicDecoration s c
 
 
 -- |
--- A decoration that can be constructed from a 'DiscreteCharacterDecoration' by
+-- A decoration that can be constructed from a 'SimpleDynamicDecoration' by
 -- extending the decoration to contain the requisite fields for performing
--- Sankoff's algorithm.
+-- direct optimization.
 class ( DirectOptimizationPostorderDecoration s c
       , DirectOptimizationDecoration s c
       ) => PostorderExtensionDirectOptimizationDecoration s c | s -> c where
@@ -152,7 +152,7 @@ class ( DirectOptimizationPostorderDecoration s c
 
 
 -- |
--- A 'Lens' for the 'characterLocalCost' field
+-- A 'Control.Lens.Type.Lens' for the 'characterLocalCost' field.
 class HasCharacterLocalCost s a | s -> a where
 
     characterLocalCost :: Lens' s a
@@ -160,7 +160,7 @@ class HasCharacterLocalCost s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'encoded' field
+-- A 'Control.Lens.Type.Lens' for the 'encoded' field.
 class HasEncoded s a | s -> a where
 
     encoded :: Lens' s a
@@ -168,7 +168,7 @@ class HasEncoded s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'singleDisambiguation' field
+-- A 'Control.Lens.Type.Lens' for the 'singleDisambiguation' field.
 class HasSingleDisambiguation s a | s -> a where
 
     singleDisambiguation :: Lens' s a
@@ -176,7 +176,7 @@ class HasSingleDisambiguation s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'rightAlignment' field
+-- A 'Control.Lens.Type.Lens' for the 'alignmentContext' field.
 class HasAlignmentContext s a | s -> a where
 
     alignmentContext :: Lens' s a
@@ -184,7 +184,7 @@ class HasAlignmentContext s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'impliedAlignment' field
+-- A 'Control.Lens.Type.Lens' for the 'impliedAlignment' field.
 class HasImpliedAlignment s a | s -> a where
 
     impliedAlignment :: Lens' s a
@@ -192,7 +192,7 @@ class HasImpliedAlignment s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'averageLength' field
+-- A 'Control.Lens.Type.Lens' for the 'averageLength' field.
 class HasAverageLength s a | s -> a where
 
     averageLength :: Lens' s a

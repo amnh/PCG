@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Graph.Internal
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE KindSignatures        #-}
@@ -7,7 +19,6 @@
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeOperators         #-}
 
-
 module Data.Graph.Internal where
 
 import           Control.Lens           hiding (index)
@@ -16,6 +27,7 @@ import           Data.Graph.Indices
 import           Data.Graph.Memo
 import           Data.Graph.NodeContext
 import           Data.Graph.Type
+import           Data.Monoid            (Endo(..))
 import           Data.Pair.Strict
 import           Data.Vector            (Vector, (//))
 import qualified Data.Vector            as V
@@ -25,6 +37,7 @@ import qualified Data.Vector.Mutable    as MV
 
 import           Control.Monad.ST
 --import Debug.Trace
+
 
 -- |
 -- This is a postorder fold function that collects together values in a monoid.
@@ -88,6 +101,9 @@ postorderFold _leafFn _internalFn _graph = undefined -- foldMap (view _rootRefer
 -}
 
 
+-- |
+-- Perform a post-order traversal, applying the first transformation to leaf
+-- nodes and the second transformation to internal nodes.
 postorder
   :: forall g f e c n1 n2 t . (Applicative g)
   => (t -> n2)
@@ -110,6 +126,12 @@ postorder leafFn treeFn graph =
     generateMemoGraph cacheInfo numberL numberI numberN numberR memoGen
 
 
+-- |
+-- Perform a post-order traversal /update/, applying the /mono-morphic/
+-- transformations to the specified node index and then to all ancestoral nodes.
+--
+-- This will be perform better than 'post-order', for updating single node and
+-- it's transitive data dependencies in the graph.
 incrementalPostorder
   :: forall f e c n . Applicative f
   => Int
@@ -178,7 +200,7 @@ incrementalPostorder startInd thresholdFn updateFn treeFn graph = f graph
 -- This function takes a graph of graphs, the index of one of those
 -- graphs and the indices of an internal edge and returns a graph of graph
 -- with the subgraph removed and added along a new node on the graph.
-
+--
 -- Note: this function currently assumes the parent of the leaf is a tree node
 -- and the edge we are attaching to is a tree edge (an edge between two
 -- tree nodes).
@@ -279,5 +301,9 @@ breakEdgeAndReattachG graph (leafParInd, leafInd) (srcInd, dir) =
     graph & _treeReferences %~ (// updateTreeNodeContext)
 
 
+-- |
+-- Break the graph at the specified node index and perform breadth first search
+-- to recursively divide the graph into two disjoint, individually connected
+-- components.
 breadthFirstBreakAndAttach :: Int
 breadthFirstBreakAndAttach = undefined

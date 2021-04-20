@@ -1,3 +1,16 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Graph.Build
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
+{-
 {-# LANGUAGE AllowAmbiguousTypes    #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -6,10 +19,13 @@
 {-# LANGUAGE TypeApplications       #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeOperators          #-}
+-}
 
+module Data.Graph.Build
+  (
+  ) where
 
-module Data.Graph.Build where
-
+{-
 import           Control.Lens
 import           Control.Monad
 import           Data.Foldable
@@ -22,6 +38,19 @@ import qualified Data.List.NonEmpty        as NE
 import           Data.Pair.Strict
 import           Data.Semigroup.Foldable
 import           Data.Vector               (Vector, fromList)
+
+
+type  FinalDecorationGraphM m c e n t
+    = Graph
+        m
+        (FinalDecoration c)
+        (FinalDecoration e)
+        (FinalDecoration n)
+        (FinalDecoration t)
+
+
+type  FinalDecorationGraph c e n t
+    = FinalDecorationGraphM Identity c e n t
 
 
 class HasScore g c where
@@ -42,18 +71,6 @@ class HasTreeDecoration n n' | n' -> n where
 class HasFinalCacheDecoration c c' | c' -> c where
 
     _hasFinalCacheDecoration :: Lens' c c'
-
-
-type FinalDecorationGraphM m c e n t =
-  Graph
-    m
-    (FinalDecoration c)
-    (FinalDecoration e)
-    (FinalDecoration n)
-    (FinalDecoration t)
-
-
-type FinalDecorationGraph c e n t = FinalDecorationGraphM Identity c e n t
 
 
 class (HasCharacterSequence t (CharacterSequence t)) => HasGraphDecoration c e n t where
@@ -189,7 +206,7 @@ iterativeBuild _currentGraph _tree = undefined
       in
         undefined
 -}
-
+-}
 
 {-
     edgeCosts :: TreeIndexData (Identity (FinalDecoration n)) (FinalDecoration e) -> ChildIndex :!: Double

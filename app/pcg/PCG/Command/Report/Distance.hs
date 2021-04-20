@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Command.Types.Report.Metadata
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -50,7 +50,9 @@ import qualified Data.Vector                         as Vector
 import           TextShow
 
 
-
+-- |
+-- Transform a 'DecoratedCharacterResult' into the textual stream for a distance
+-- matrix format file.
 outputDistanceMatrix :: DecoratedCharacterResult -> Text
 outputDistanceMatrix solution = distanceMatrixCSV leaves meta
   where

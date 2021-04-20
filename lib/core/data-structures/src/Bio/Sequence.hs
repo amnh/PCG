@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Sequence
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -176,6 +176,8 @@ sequenceRootCost rootCount meta char = sum'
 
 
 
+-- |
+-- Zips a 6-parameter 'Foldable' 'Functor' with a metadata sequence.
 foldZipWithMeta
   :: (Monoid a)
   => (MetadataBlock m -> CharacterBlock u v w x y z -> CharacterBlock u v w x y z -> a)

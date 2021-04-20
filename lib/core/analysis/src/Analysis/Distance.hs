@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Distance
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -17,7 +17,6 @@
 {-# LANGUAGE TypeApplications    #-}
 
 {-# LANGUAGE NoMonoLocalBinds    #-}
-
 
 module Analysis.Distance
   ( characterSequenceDistance
@@ -46,6 +45,8 @@ import           Data.Vector                                   hiding (foldMap, 
 import           Numeric.Extended.Real
 
 
+-- |
+-- Calculate the distance metric between two character sequences.
 characterSequenceDistance
   :: forall f u v w x y z m.
   ( Applicative f
@@ -64,6 +65,10 @@ characterSequenceDistance
 characterSequenceDistance = foldZipWithMeta blockDistance
 
 
+-- |
+-- Construct a distance matrix between all character sequences.
+--
+-- The result is a symmetric, reflexive matrix with zeros along the diagonal.
 characterDistanceMatrix
   :: forall f u v w x y z m .
   ( (HasIntervalCharacter u ContinuousCharacter )

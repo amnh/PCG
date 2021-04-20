@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.General.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -22,11 +22,11 @@ module Bio.Metadata.General.Class
   ) where
 
 
-import Control.Lens
+import Control.Lens.Type (Lens')
 
 
 -- |
--- A 'Lens' for the 'characterName' field
+-- A 'Control.Lens.Type.Lens' for the 'characterName' field.
 class HasCharacterName s a | s -> a where
 
     {-# MINIMAL characterName #-}
@@ -34,7 +34,7 @@ class HasCharacterName s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'characterWeight' field
+-- A 'Control.Lens.Type.Lens' for the 'characterWeight' field.
 class HasCharacterWeight s a | s -> a where
 
     {-# MINIMAL characterWeight #-}

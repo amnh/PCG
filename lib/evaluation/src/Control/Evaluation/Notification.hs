@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Control.Evaluation.Notification
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -55,6 +55,8 @@ instance CoArbitrary Notification where
     coarbitrary = genericCoarbitrary
 
 
+-- |
+-- Extract the textual portion of a 'Notification'.
 renderNotification :: Notification -> Text
 renderNotification (Warning     x) = x
 renderNotification (Information x) = x

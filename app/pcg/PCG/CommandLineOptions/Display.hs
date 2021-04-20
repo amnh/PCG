@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.CommandLineOptions.Display
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell   #-}
@@ -23,6 +35,11 @@ import System.Exit
 import TextShow
 
 
+-- |
+-- Gather the command line options and perform any actions required by said
+-- arguments which need to be performed before the process begins.
+--
+-- A Nothing value represents no actions to be performed.
 gatherDisplayInformation :: CommandLineOptions -> Maybe (IO ())
 gatherDisplayInformation cmdOpts =
     case printingActions of

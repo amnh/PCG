@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Main
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 module Main
   ( main
   , testSuite
@@ -16,6 +28,8 @@ import           Test.Tasty.Ingredients.Rerun          (rerunningTests)
 import qualified Text.Megaparsec.Custom.Test           as Megaparsec
 
 
+-- |
+-- Entry point for file parser test-suite.
 main :: IO ()
 main =
   defaultMainWithIngredients
@@ -23,6 +37,8 @@ main =
   testSuite
 
 
+-- |
+-- Test-suite including specific unit and property-based tests for /all/ file parsers.
 testSuite :: TestTree
 testSuite = testGroup "Library Test Suite"
     [ Megaparsec.testSuite

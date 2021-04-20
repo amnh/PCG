@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.TCM.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
@@ -15,17 +27,21 @@ import Test.Tasty.HUnit      as HU
 import Test.Tasty.QuickCheck as QC hiding (generate)
 
 
+-- |
+-- Test-suite of specific unit and property-based tests for the 'TCM' data type.
 testSuite :: TestTree
 testSuite = testGroup "TCM Tests"
     [ testExampleCases
     , testPropertyCases
     ]
 
+
 testPropertyCases :: TestTree
 testPropertyCases = testGroup "Invariant Properties"
     [ diagnoseTcmCases
     , factoringDiagnosisCases
     ]
+
 
 testExampleCases :: TestTree
 testExampleCases = testGroup "Example Cases for Data.TCM"

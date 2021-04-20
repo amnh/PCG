@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Encodable.Dynamic.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -215,6 +215,8 @@ instance TextShow DynamicCharacterElement where
                    (True , True ) -> "A"
 
 
+-- |
+-- Produce a 'DynamicCharacterElement' generator which has the specified alphabet size.
 arbitraryOfSize :: Word -> Gen DynamicCharacterElement
 arbitraryOfSize alphabetLen = do
     tag <- choose (0, 9) :: Gen Word
@@ -249,11 +251,15 @@ isRightEmpty :: DynamicCharacterElement -> Bool
 isRightEmpty (DCE (_,_,r)) = isZeroVector r
 
 
+-- |
+-- Get the "left" element of the 'DynamicCharacterElement'.
 {-# INLINE getLeft #-}
 getLeft  :: DynamicCharacterElement -> AmbiguityGroup
 getLeft  (DCE (_,l,_)) = AG l
 
 
+-- |
+-- Get the "right" element of the 'DynamicCharacterElement'.
 {-# INLINE getRight #-}
 getRight :: DynamicCharacterElement -> AmbiguityGroup
 getRight (DCE (_,_,r)) = AG r

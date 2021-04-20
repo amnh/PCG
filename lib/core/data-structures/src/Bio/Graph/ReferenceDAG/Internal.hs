@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.DAG.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -35,9 +35,10 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.Node.Context
 import           Control.Arrow                 ((***))
 import           Control.DeepSeq
-import           Control.Lens                  as Lens (Lens, Lens', lens, to)
+import           Control.Lens                  as Lens (lens, to)
 import           Control.Lens.Fold             (Fold, folding)
 import           Control.Lens.Operators        ((%~), (.~), (^.))
+import           Control.Lens.Type             (Lens, Lens')
 import           Control.Monad.State.Lazy
 import           Data.Bifunctor
 import           Data.Binary                   (Binary)
@@ -234,7 +235,7 @@ class HasRootingCost s a | s -> a where
 
 
 -- |
--- A 'Lens' for 'totalBlockClost' field.
+-- A 'Lens' for 'totalBlockCost' field.
 {-# SPECIALISE _totalBlockCost :: Lens' (GraphData d) Double #-}
 class HasTotalBlockCost s a | s -> a where
 
@@ -1280,16 +1281,22 @@ leafIndices dag = foldMapWithKey leafTest $ dag ^. _references
         else  mempty
 
 
-getChildContext :: forall e n . Vector (IndexData e n) -> Int -> ChildContext Int
+-- |
+-- Get the child context of a node at the given index.
 {-# INLINE getChildContext #-}
+getChildContext :: forall e n . Vector (IndexData e n) -> Int -> ChildContext Int
 getChildContext refs ind = otoChildContext . IM.keysSet $ (refs ! ind) ^. _childRefs
 
 
-getParentContext :: forall e n . Vector (IndexData e n) -> Int -> ParentContext Int
+-- |
+-- Get the parent context of a node at the given index.
 {-# INLINE getParentContext #-}
+getParentContext :: forall e n . Vector (IndexData e n) -> Int -> ParentContext Int
 getParentContext refs ind = otoParentContext $ (refs ! ind) ^. _parentRefs
 
 
+-- |
+-- Create a DAG with one root node connected to one leaf node.
 trivialRefDAG :: IndexData e n ->  IndexData e n -> ReferenceDAG () e n
 {-# INLINE trivialRefDAG #-}
 trivialRefDAG root node =

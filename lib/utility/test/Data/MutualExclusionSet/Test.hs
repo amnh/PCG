@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.MutualExclusionSet.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances  #-}
 
@@ -34,6 +46,9 @@ instance (Arbitrary a, Ord a) => Arbitrary (ProbablyIncluded a) where
         pure $ PI (mes, inc)
 
 
+-- |
+-- Test-suite including specific unit and property-based tests for the
+-- 'MutualExclusionSet' data-type.
 testSuite :: TestTree
 testSuite = testGroup "MutualExclusionSet semigroup tests"
     [ constructionCases

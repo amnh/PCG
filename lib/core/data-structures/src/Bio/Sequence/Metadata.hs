@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Sequence.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -153,6 +153,8 @@ fromBlocks :: Vector (MetadataBlock m) -> MetadataSequence m
 fromBlocks = MetaSeq
 
 
+-- |
+--- FoldMap over a 6-parameter 'Foldable' 'Functor'.
 hexFoldMap
   ::   forall m meta . (Monoid m)
   => (ContinuousCharacterMetadataDec                      -> m)

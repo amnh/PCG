@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Numeric.NonNegativeAverage.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleInstances #-}
 
 module Numeric.NonNegativeAverage.Test
@@ -11,6 +23,8 @@ import Test.Tasty
 import Test.Tasty.QuickCheck
 
 
+-- |
+-- Test-suite with property-based tests for the 'NonNegativeAverage' data-type.
 testSuite :: TestTree
 testSuite = testGroup "NonNegativeAverage tests"
     [ testInvariantProperties

@@ -1,3 +1,4 @@
+
 SHELL=/bin/bash
 CHECKMARK    := "\033[0;32m\xE2\x9C\x94\xE2\x83\x9E\033[0m"
 
@@ -186,17 +187,18 @@ static-analysis-check-setup:
 static-analysis-check-deploy: hie-deploy
 	@$(eval stan-log := .stan.log)
 	@$(eval observations := .stan.observations.log)
-	$(bin-dir)/stan | tee $(stan-log)
-	@grep ' ID:            ' $(stan-log) || true > $(observations)
 	@rm -f $(stan-log)
-	@$(eval count := $(shell wc -l $(observations) | cut -d " " -f1))
+	@rm -f $(observations)
+	@touch $(stan-log)
+	$(bin-dir)/stan | tee $(stan-log)
+	@grep ' ID:            ' $(stan-log) > $(observations) || true
+	@rm -f $(stan-log)
 	@find . -empty -name $(observations) | grep "^" &> /dev/null || ( \
-	  echo -e "\nAnti-pattern observations found!\nCorrect the following" $(count) "observations:\n" && \
-	  echo -n " ┏" && \
-	  printf '━%.0s' {1..52} && \
-	  echo "━" && \
+	  echo -e "\nAnti-pattern observations found!\nCorrect the following $$(wc -l $(observations) | cut -d " " -f1) observations:\n" && \
+	  echo -n " ┏" && printf '━%.0s' {1..52} && echo "━" && \
 	  cat $(observations) && \
 	  rm -f $(observations) && \
+	  echo -n " ┗" && printf '━%.0s' {1..52} && echo "━\n" && \
 	  sleep 1 && \
 	  exit 1 \
 	)
@@ -212,13 +214,13 @@ documentation-check-deploy:
 	@rm -f $(missing-docs)
 	cabal build   $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) --only-dependencies $(cabal-suffix)
 	cabal haddock $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) $(cabal-suffix) | tee $(docs-log)
-	@grep '^  [[:digit:]][[:digit:]]% (' $(docs-log) > $(missing-docs)
+	@grep '^[[:space:]]*[[:digit:] ][[:digit:]]% (' $(docs-log) > $(missing-docs) || true
 	@rm -f $(docs-log)
-	@$(eval count := $(shell wc -l $(missing-docs) | cut -d " " -f1))
-	@find . -empty -name $(missing-docs) | grep "^" &> /dev/null || ( \
-	  echo -e "\nMissing documetation!\nThe following" $(count) "files have incomplete documetation coverage:\n" && \
+	@(find . -empty -name $(missing-docs) | grep "^" &> /dev/null) || ( \
+	  echo $(count) && \
+	  echo -e "\nMissing documetation!\nThe following $$(wc -l $(missing-docs) | cut -d ' ' -f1) files have incomplete documetation coverage:\n" && \
 	  cat $(missing-docs) && \
-	  rm -f $(missing-docs) && \
+	  echo "" && \
 	  sleep 1 && \
 	  exit 1 \
 	)
@@ -241,6 +243,7 @@ cleanup-cabal-build-artifacts:
 	@echo -n " ☐  Cleaning extra Cabal build artifacts..."
 	@rm -f lower-bounds.project?*
 	@rm -f cabal.project?*
+	@rm -f cabal.project.local~?*
 	@echo -e "\r\033[K" $(CHECKMARK) " Cleaned Cabal extras"
 
 cleanup-HIE-files:

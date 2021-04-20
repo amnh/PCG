@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Parsimony.Dynamic.DirectOptimization.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -86,8 +86,10 @@ selectDynamicMetric meta =
 -- |
 -- The post-order scoring logic for dynamic characters.
 --
--- Parameterized over a 'PairwiseAlignment' function to allow for different
--- atomic alignments depending on the character's metadata.
+-- Parameterized over a
+-- 'Analysis.Parsimony.Dynamic.DirectOptimization.Internal.PairwiseAlignment'
+-- function to allow for different atomic alignments depending on the character's
+-- metadata.
 directOptimizationPostorder
   :: ( SimpleDynamicDecoration d c
      , SimpleDynamicExtensionPostorderDecoration s c
@@ -141,8 +143,8 @@ directOptimizationPostorderPairwise pairwiseAlignment (lChild , rChild) = result
 -- |
 -- The pre-order scoring logic for dynamic characters.
 --
--- Parameterized over a 'PairwiseAlignment' function to allow for different
--- atomic alignments depending on the character's metadata.
+-- Parameterized over a 'Analysis.Parsimony.Dynamic.DirectOptimization.Internal.PairwiseAlignment'
+-- function to allow for different atomic alignments depending on the character's metadata.
 directOptimizationPreorder
   :: ( DirectOptimizationPostorderDecoration d c
      , EncodableStreamElement (Subcomponent (Element c))

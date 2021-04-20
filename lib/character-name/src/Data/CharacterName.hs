@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------------
 -- |
 -- Module      :  Data.CharacterName
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -16,14 +16,14 @@
 -- input files to be uniquely referenced. The file from which a 'CharacterName'
 -- was originally parsed can be queried by the function 'sourceFile'.
 --
--- A 'CharcterName' can be a either a user specified textual identifier or a
+-- A 'CharacterName' can be a either a user specified textual identifier or a
 -- default generated value. Whether a given 'CharacterName' is user specified or
 -- defaulted may be queried by the function 'isUserDefined'.
 --
 -- A 'CharacterName' is only constructable by calling 'assignCharacterNames' or
 -- makeCharacterNames.
 -- Calls to either function should supply all possible character information
--- available at parse time to ensure that the resulting 'CharacterNames' are
+-- available at parse time to ensure that the resulting 'CharacterName's are
 -- uniquely idenitfible.
 --
 -- A 'CharacterName' has an ordering defined as follows:
@@ -43,7 +43,6 @@
 {-# LANGUAGE StrictData         #-}
 {-# LANGUAGE TypeFamilies       #-}
 {-# LANGUAGE UnboxedSums        #-}
-
 
 module Data.CharacterName
   ( CharacterName()

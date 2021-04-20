@@ -1,8 +1,7 @@
-
 ------------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.PhylogeneticDAG.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -29,7 +28,6 @@
 {-# LANGUAGE OverloadedStrings      #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 
-
 module Bio.Graph.PhylogeneticDAG.Internal
   ( EdgeReference
   , PhylogeneticFreeDAG(..)
@@ -49,7 +47,6 @@ module Bio.Graph.PhylogeneticDAG.Internal
   , pruneEdgeSet
   ) where
 
-
 import           Bio.Character.Decoration.Shared
 import           Bio.Character.Encodable
 import           Bio.Graph.LeafSet
@@ -63,7 +60,9 @@ import           Bio.Metadata.Dynamic
 import           Bio.Sequence
 import           Control.Arrow                             ((***))
 import           Control.DeepSeq
-import           Control.Lens                              as Lens hiding ((<.>))
+import           Control.Lens.Combinators                  (lens, to)
+import           Control.Lens.Operators                    ((%~), (&), (.~), (^.))
+import           Control.Lens.Type                         (Lens, Lens')
 import           Data.Binary
 import           Data.Binary.Instances.UnorderedContainers ()
 import           Data.Bits
@@ -86,7 +85,7 @@ import           Data.String
 import qualified Data.Text                                 as T (Text, filter, length, unlines)
 import           Data.TopologyRepresentation
 import           Data.Vector                               (Vector)
-import           GHC.Generics
+import           GHC.Generics                              hiding (to)
 import           Prelude                                   hiding (zip)
 import           Text.Newick.Class
 import           Text.XML
@@ -101,7 +100,7 @@ import           Type.Reflection                           (Typeable)
 --
 -- * e = 'Data.EdgeLength'
 -- * n = node labels: 'Maybe'('String')
--- * u = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Continuous' specified as 'ContinuousChar'  or 'Bio.Metadata.General'
+-- * u = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Continuous' specified as 'ContinuousCharacter' or 'Bio.Metadata.General'
 -- * v = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Fitch'      specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * w = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Additive'   specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
@@ -122,7 +121,7 @@ data  PhylogeneticFreeDAG m e n u v w x y z
 --
 -- * e = edge info, as yet undetermined
 -- * n = node labels: 'Maybe'('String')
--- * u = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Continuous' specified as 'ContinuousChar'  or 'Bio.Metadata.General'
+-- * u = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Continuous' specified as 'ContinuousCharacter'  or 'Bio.Metadata.General'
 -- * v = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Fitch'      specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * w = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Additive'   specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
 -- * x = various (initial, post-order, pre-order) 'Bio.Character.Decoration.Sankoff'    specified as 'StaticCharacter' or 'Bio.Metadata.Discrete'
@@ -178,7 +177,7 @@ class HasMinimalNetworkContext s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'phyogeneticForest' field in 'PhylogeneticDAG'
+-- A 'Lens' for the 'phylogeneticForest' field in 'PhylogeneticDAG'
 class HasPhylogeneticForest s t a b | s -> a, t -> b, s b -> t, t a -> s where
 
     _phylogeneticForest :: Lens s t a b
@@ -232,7 +231,7 @@ instance HasColumnMetadata
 
 instance HasLeafSet (PhylogeneticDAG m e n u v w x y z) (LeafSet (PhylogeneticNode (CharacterSequence u v w x y z) n)) where
 
-    leafSet = Lens.to getter
+    leafSet = to getter
         where
             getter ::
               PhylogeneticDAG m e n u v w x y z

@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Graph.Type
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE DerivingStrategies     #-}
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances      #-}
@@ -11,6 +23,7 @@
 
 module Data.Graph.Type
   ( Graph(..)
+  , GraphBuilder(..)
   , HasTreeReferences(..)
   , HasNetworkReferences(..)
   , HasRootReferences(..)
@@ -27,10 +40,12 @@ module Data.Graph.Type
   , unsafeRootInd
   , unsafeTreeInd
   , unsafeNetworkInd
-  )where
+  ) where
 
 --import           Control.Arrow              (first)
-import Control.Lens              hiding (index)
+import Control.Lens.Combinators  (Bifunctor(..), Identity, ix, lens, singular, view)
+import Control.Lens.Operators    ((^.))
+import Control.Lens.Type         (Lens, Lens')
 --import           Control.Monad.State.Strict
 import Data.Graph.Indices
 import Data.Graph.NodeContext
@@ -61,6 +76,17 @@ data GraphShape i n r t
 -}
 
 
+-- |
+-- A specialized representation of a Directed, Acyclic Graph (DAG) which has
+-- the following constraints on the construction of nodes:
+--
+--  - In-degree ≤ 2
+--  - Out-degree ≤ 2
+--  - Degree ≤ 3
+--  - Out-degree = 0 ⇒ in-degree = 1
+--  - In-degree  = 0 ⇒  Out-degree ∈ {1,2}
+--  - In-degree  = 2 ⇒  Out-degree 1
+--
 data  Graph
         (f :: Type -> Type)
         (c :: Type)
@@ -77,6 +103,9 @@ data  Graph
    deriving stock Show
 
 
+-- |
+-- Builder type designed to improve the asymptotics of incrementally building a
+-- complete graph object.
 data  GraphBuilder
         (f :: Type -> Type)
         (e :: Type)
@@ -90,42 +119,61 @@ data  GraphBuilder
    }
 
 
-buildGraph :: GraphBuilder f e n t -> c -> Graph f c e n t
-buildGraph GraphBuilder{..} cachedData =
-    let
-      leafReferences    = build leafReferencesBuilder
-      treeReferences    = build treeReferencesBuilder
-      networkReferences = build networkReferencesBuilder
-      rootReferences    = build rootReferencesBuilder
-    in
-      Graph{..}
-
-
+-- |
+-- A reference to a node index which is considered the traversal focus (root),
+-- in a re-rooting traversal.
 type  Focus = Pair IndexType UntaggedIndex
-type  RootFocusGraph f c e n t = Pair Focus (Graph f c e n t)
+
 
 -- |
--- This makes a list of graphs along with the roots to focus upon.
-makeRootFocusGraphs :: Graph f c e n t -> [RootFocusGraph f c e n t]
-makeRootFocusGraphs graph =
-  let
-    rootLength = length (view _rootReferences graph)
-    rootNames :: [Focus]
-    rootNames  =
-      let
-        rootInds = case rootLength of
-            0 -> []
-            1 -> [0]
-            n -> [0..(n - 1)]
-      in
-        fmap (Pair RootTag) rootInds
-  in
-    fmap (:!: graph) rootNames
+-- The result of a re-rooting traversal, noting the node index which was
+-- considered the traversal focus (root), and the resulting rerooted 'Graph'.
+type  RootFocusGraph f c e n t = Pair Focus (Graph f c e n t)
+
+
+-- |
+-- A 'Lens' for the 'cachedData' field.
+class HasCachedData s t a b | s -> a, t -> b, s b -> t, t a -> b where
+
+    _cachedData :: Lens s t a b
+
+
+-- |
+-- A 'Lens' for the 'leafReferences' field.
+class HasLeafReferences s t a b | s -> a, t -> b, s b -> t, t a -> s where
+
+    _leafReferences :: Lens s t a b
+
+
+-- |
+-- A 'Lens' for the 'networkReferences' field.
+class HasNetworkReferences s a | s -> a where
+
+    _networkReferences :: Lens' s a
+
+
+-- |
+-- A 'Lens' for the 'rootReferences' field.
+class HasRootReferences s a | s -> a where
+
+    _rootReferences :: Lens' s a
+
+
+-- |
+-- A 'Lens' for the 'treeReferences' field.
+class HasTreeReferences s a | s -> a where
+
+    _treeReferences :: Lens' s a
 
 
 --      ┌─────────────────┐
 --      │    Instances    │
 --      └─────────────────┘
+
+instance Arbitrary (Graph f c e n t) where
+
+    arbitrary = pure undefined
+
 
 instance Functor f => Bifunctor (Graph f c e) where
 
@@ -137,24 +185,13 @@ instance Functor f => Bifunctor (Graph f c e) where
         }
 
 
-instance Arbitrary (Graph f c e n t) where
+instance HasCachedData
+           (Graph f c1 e n t)
+           (Graph f c2 e n t)
+           c1
+           c2 where
 
-    arbitrary = pure undefined
-
-
-instance TextShow (Graph f c e n t) where
-
-    showb = undefined
-
-
---instance Show (Graph f c e n t) where
---  show = toString . showb
-
-
-
-class HasLeafReferences s t a b | s -> a, t -> b, s b -> t, t a -> s where
-
-    _leafReferences :: Lens s t a b
+    _cachedData = lens cachedData (\g c2 -> g {cachedData = c2})
 
 
 instance HasLeafReferences
@@ -166,33 +203,11 @@ instance HasLeafReferences
     _leafReferences = lens leafReferences (\g l -> g { leafReferences = l})
 
 
-class HasTreeReferences s a | s -> a where
-
-    _treeReferences :: Lens' s a
-
-
-instance HasTreeReferences
-           (Graph f c e n t)
-           (Vector (IndexData (TreeContext e)  (f n))) where
-
-    _treeReferences = lens treeReferences (\g fn -> g {treeReferences = fn})
-
-
-class HasNetworkReferences s a | s -> a where
-
-    _networkReferences :: Lens' s a
-
-
 instance HasNetworkReferences
            (Graph f c e n t)
            (Vector (IndexData (NetworkContext e) (f n))) where
 
     _networkReferences = lens networkReferences (\g fn -> g {networkReferences = fn})
-
-
-class HasRootReferences s a | s -> a where
-
-    _rootReferences :: Lens' s a
 
 
 instance HasRootReferences
@@ -202,51 +217,88 @@ instance HasRootReferences
     _rootReferences = lens rootReferences (\g fn -> g {rootReferences = fn})
 
 
-class HasCachedData s t a b | s -> a, t -> b, s b -> t, t a -> b where
+instance HasTreeReferences
+           (Graph f c e n t)
+           (Vector (IndexData (TreeContext e)  (f n))) where
 
-    _cachedData :: Lens s t a b
+    _treeReferences = lens treeReferences (\g fn -> g {treeReferences = fn})
 
 
-instance HasCachedData
-           (Graph f c1 e n t)
-           (Graph f c2 e n t)
-           c1
-           c2 where
+--instance Show (Graph f c e n t) where
+--  show = toString . showb
 
-    _cachedData = lens cachedData (\g c2 -> g {cachedData = c2})
+
+instance TextShow (Graph f c e n t) where
+
+    showb = undefined
+
+
+-- |
+-- Finalize a 'GraphBuilder' into a 'Graph'.
+--
+-- The 'GraphBuilder' has better asymptotics for combining graphs, but poor
+-- performance for 'Graph' manipulation and queries. The 'Graph' type supports
+-- efficient queries and graph manipulation, but is not efficient at combining.
+buildGraph :: GraphBuilder f e n t -> c -> Graph f c e n t
+buildGraph GraphBuilder{..} cachedData =
+    let
+      leafReferences    = build leafReferencesBuilder
+      treeReferences    = build treeReferencesBuilder
+      networkReferences = build networkReferencesBuilder
+      rootReferences    = build rootReferencesBuilder
+    in
+      Graph{..}
+
+
+-- |
+-- This makes a list of graphs along with the roots to focus upon.
+makeRootFocusGraphs :: Graph f c e n t -> [RootFocusGraph f c e n t]
+makeRootFocusGraphs graph =
+    let rootLength = length (view _rootReferences graph)
+        rootNames :: [Focus]
+        rootNames  =
+            let rootInds = case rootLength of
+                             0 -> []
+                             1 -> [0]
+                             n -> [0..(n - 1)]
+            in  Pair RootTag <$> rootInds
+    in  (:!: graph) <$> rootNames
 
 
 --      ┌───────────────┐
 --      │    Utility    │
 --      └───────────────┘
 
+
+-- |
+-- Index the graph, retrieving the node data at the specified index.
 index :: Tagged taggedInd => Graph f c e n t -> taggedInd -> NodeIndexData (f n) e t
 index graph taggedIndex =
-  let
-    ind = getIndex taggedIndex
-  in
-  case getTag taggedIndex of
-    LeafTag    -> LeafNodeIndexData $
-                     graph ^.
-                      _leafReferences
-                    . singular (ix ind)
+  let ind = getIndex taggedIndex
+  in  case getTag taggedIndex of
+        LeafTag    -> LeafNodeIndexData $
+                         graph ^.
+                          _leafReferences
+                        . singular (ix ind)
 
-    TreeTag -> TreeNodeIndexData $
-                     graph ^.
-                       _treeReferences
-                     . singular (ix ind)
+        TreeTag -> TreeNodeIndexData $
+                         graph ^.
+                           _treeReferences
+                         . singular (ix ind)
 
-    NetworkTag  -> NetworkNodeIndexData $
-                    graph ^.
-                       _networkReferences
-                     . singular (ix ind)
+        NetworkTag  -> NetworkNodeIndexData $
+                        graph ^.
+                           _networkReferences
+                         . singular (ix ind)
 
-    RootTag     -> RootNodeIndexData $
-                    graph ^.
-                       _rootReferences
-                     . singular (ix ind)
+        RootTag     -> RootNodeIndexData $
+                        graph ^.
+                           _rootReferences
+                         . singular (ix ind)
 
 
+-- |
+-- Get the indices of all root nodes within the graph.
 getRootInds :: Graph f c e n t -> Vector TaggedIndex
 getRootInds graph =
   let
@@ -364,30 +416,37 @@ unfoldGraph _unfoldFn _seed = undefined
 -}
 
 
-
-
-
-
 --      ┌───────────────────────┐
 --      │    Unsafe Indexing    │
 --      └───────────────────────┘
 
+
+-- |
+-- Perform an unsafe indexing into the /leaf/ node vector.
 {-# INLINE unsafeLeafInd #-}
 unsafeLeafInd    :: Graph f c e n t -> LeafInd -> LeafIndexData t
 unsafeLeafInd graph (LeafInd i) = graph ^. _leafReferences . singular (ix i)
 
-{-# INLINE unsafeTreeInd #-}
-unsafeTreeInd    :: Graph f c e n t -> TreeInd -> TreeIndexData (f n) e
-unsafeTreeInd graph (TreeInd i) = graph ^. _treeReferences . singular (ix i)
 
+-- |
+-- Perform an unsafe indexing into the /root/ node vector.
 {-# INLINE unsafeRootInd #-}
 unsafeRootInd    :: Graph f c e n t -> RootInd -> RootIndexData (f n) e
 unsafeRootInd graph (RootInd i) = graph ^. _rootReferences . singular (ix i)
 
+
+-- |
+-- Perform an unsafe indexing into the /network/ node vector.
 {-# INLINE unsafeNetworkInd #-}
 unsafeNetworkInd :: Graph f c e n t -> NetworkInd -> NetworkIndexData (f n) e
 unsafeNetworkInd graph (NetworkInd i) = graph ^. _networkReferences . singular (ix i)
 
+
+-- |
+-- Perform an unsafe indexing into the /tree/ node vector.
+{-# INLINE unsafeTreeInd #-}
+unsafeTreeInd    :: Graph f c e n t -> TreeInd -> TreeIndexData (f n) e
+unsafeTreeInd graph (TreeInd i) = graph ^. _treeReferences . singular (ix i)
 
 
 --      ┌─────────────────┐

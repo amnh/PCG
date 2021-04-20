@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Test.Custom.Parse
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts #-}
 
 module Test.Custom.Parse
@@ -17,6 +29,9 @@ import           Text.Megaparsec       (Parsec, TraversableStream, VisualStream,
 import           Text.Megaparsec.Error (errorBundlePretty)
 
 
+-- |
+-- Determines if the supplied parser produces the expected result when run on the
+-- supplied input.
 {-# INLINEABLE parseEquals #-}
 {-# SPECIALISE parseEquals :: (Eq a, Show a) => Parsec Void  T.Text a ->  T.Text -> a -> Assertion #-}
 {-# SPECIALISE parseEquals :: (Eq a, Show a) => Parsec Void LT.Text a -> LT.Text -> a -> Assertion #-}
@@ -30,6 +45,8 @@ parseEquals parser input expected =
     result = parse parser "" input
 
 
+-- |
+-- Defines an 'Assertion' that the supplied parser fails to parse the supplied input.
 {-# INLINEABLE parseFailure #-}
 {-# SPECIALISE parseFailure :: Parsec Void  T.Text a ->  T.Text -> Assertion #-}
 {-# SPECIALISE parseFailure :: Parsec Void LT.Text a -> LT.Text -> Assertion #-}
@@ -41,6 +58,8 @@ parseFailure parser input =
     result = parse parser "" input
 
 
+-- |
+-- Defines an 'Assertion' that the supplied parser successfully parses the supplied input.
 {-# INLINEABLE parseSuccess #-}
 {-# SPECIALISE parseSuccess :: Parsec Void  T.Text a ->  T.Text -> Assertion #-}
 {-# SPECIALISE parseSuccess :: Parsec Void LT.Text a -> LT.Text -> Assertion #-}
@@ -54,6 +73,8 @@ parseSuccess parser input =
     result = parse parser "" input
 
 
+-- |
+-- Determines if the supplied parser produces a result which satisfies a property.
 {-# INLINEABLE parserSatisfies #-}
 parserSatisfies :: Parsec Void s a -> s -> (a -> Bool) -> Bool
 parserSatisfies parser input property =

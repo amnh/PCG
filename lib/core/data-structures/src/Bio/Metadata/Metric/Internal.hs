@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Metric.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -26,6 +26,8 @@ import Control.Lens
 import Data.Monoid
 
 
+-- |
+-- Get the transition cost function between two symbols
 getPairwiseTransitionCost
   :: forall s c n . GetPairwiseTransitionCostMatrix s c n
   => s -> (c -> c -> n)
@@ -33,6 +35,8 @@ getPairwiseTransitionCost s c1 c2 =
   snd $ (s ^. pairwiseTransitionCostMatrix) c1 c2
 
 
+-- |
+-- Get the transition cost function between two symbols, applying the character weight,
 getPairwiseWeightedTransitionCost
   :: forall m c n n'.
      ( Real n

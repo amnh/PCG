@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Command.Report.Evaluate
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -5,7 +17,6 @@
 module PCG.Command.Report.Evaluate
   ( evaluate
   ) where
-
 
 import Bio.Graph
 import Control.Arrow                       ((***))
@@ -37,6 +48,9 @@ data FileStreamContext
    | MultiStream  (NonEmpty (FileSource, FileStream))
 
 
+-- |
+-- Evalaute a 'ReportCommand' by writing out the specified output to the
+-- specified location(s).
 evaluate :: ReportCommand -> GraphState -> SearchState
 evaluate (ReportCommand format target) stateValue = reportStreams $> stateValue
   where

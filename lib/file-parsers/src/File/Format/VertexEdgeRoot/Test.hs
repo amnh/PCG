@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.VertexEdgeRoot.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 
@@ -14,6 +26,8 @@ import Test.Tasty.HUnit
 import Text.Megaparsec                   (eof)
 
 
+-- |
+-- Test-suite including specific unit and property-based tests for the VER file parser.
 testSuite :: TestTree
 testSuite = testGroup "VER Format"
     [ testGroup "VER Combinators"

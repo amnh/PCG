@@ -1,3 +1,14 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  DisplayTree
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
 {-# LANGUAGE LambdaCase #-}
 
 module DisplayTree where
@@ -23,7 +34,7 @@ makeDotFile ((nodes, edges), filename) = do
 -- |
 -- Labels we use for types of edges in a display tree diagram.
 data DisplayEdge =
-    Edge
+    RegularEdge
   | NetEdge
   | KeptEdge
   | DeletedEdge
@@ -50,7 +61,7 @@ type Network = ([Node], [Edge])
 -- |
 -- Smart constructor for edge.
 edgeE :: (String, String) -> (String, String, DisplayEdge)
-edgeE (s,t)  = (s, t, Edge)
+edgeE (s,t)  = (s, t, RegularEdge)
 
 -- |
 -- Smart constructor for edge.
@@ -101,7 +112,7 @@ networkGraphParameters = G.defaultParams {
         (_, BadNode       ) -> colorAttribute  red   <> point
     ,
     G.fmtEdge = \case
-        (_, _, Edge       ) -> colorAttribute black
+        (_, _, RegularEdge) -> colorAttribute black
         (_, _, KeptEdge   ) -> colorAttribute green
         (_, _, DeletedEdge) -> noArrow <> dotted <> colorAttribute blue
         (_, _, NetEdge    ) -> colorAttribute black <> dotted <> noArrow

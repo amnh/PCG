@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.Solution
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -38,7 +38,9 @@ import           Bio.Graph.LeafSet
 import           Bio.Graph.PhylogeneticDAG
 import           Bio.Sequence
 import           Control.DeepSeq
-import           Control.Lens              as Lens hiding (Indexable)
+import           Control.Lens.Getter       (to, (^.))
+import           Control.Lens.Lens         (lens)
+import           Control.Lens.Type         (Lens)
 import           Data.Binary
 import           Data.Foldable
 import           Data.GraphViz.Printing    hiding (indent)
@@ -51,7 +53,7 @@ import qualified Data.List.NonEmpty        as NE
 import           Data.Semigroup.Foldable
 import qualified Data.Text                 as T
 import qualified Data.Text.Lazy            as TL
-import           GHC.Generics
+import           GHC.Generics              hiding (to)
 import           Text.Newick.Class
 import           Text.XML
 import           TextShow                  (TextShow(showb, showtl), fromLazyText)
@@ -107,7 +109,7 @@ instance HasPhylogeneticForests (PhylogeneticSolution a) (PhylogeneticSolution a
 
 instance (HasLeafSet a b, Semigroup b) => HasLeafSet (PhylogeneticSolution a) b where
 
-    leafSet = Lens.to getter
+    leafSet = to getter
       where
         getter = foldMap1 (^. leafSet) . phylogeneticForests
 

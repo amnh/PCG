@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Numeric.Cost.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleInstances #-}
 
 module Numeric.Cost.Test
@@ -11,6 +23,8 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
 
 
+-- |
+-- Test-suite including specific unit and property-based tests for the 'Cost' data-type.
 testSuite :: TestTree
 testSuite = testGroup "Cost tests"
     [ testInvariantCases

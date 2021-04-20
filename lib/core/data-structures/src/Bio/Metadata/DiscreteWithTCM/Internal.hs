@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.DiscreteWithTCM.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -37,7 +37,8 @@ import Bio.Metadata.DiscreteWithTCM.Class
 import Bio.Metadata.Overlap
 import Control.Applicative
 import Control.DeepSeq
-import Control.Lens
+import Control.Lens.Combinators           (lens, to)
+import Control.Lens.Operators             ((&), (.~), (^.))
 import Data.Alphabet
 import Data.Binary
 import Data.Bits
@@ -113,7 +114,6 @@ rebuildMetricRepresentation metricRep =
                                  )
 
 
--- | (✔)
 instance DiscreteCharacterMetadata (DiscreteWithTCMCharacterMetadataDec c) where
 
     {-# INLINE extractDiscreteCharacterMetadata #-}
@@ -155,22 +155,16 @@ instance HasTcmSourceFile (DiscreteWithTCMCharacterMetadataDec c) FileSource whe
                    $ \d s -> d { discreteData = discreteData d & _tcmSourceFile .~ s }
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
 instance GetSparseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) (Maybe MemoizedCostMatrix) where
 
     sparseTransitionCostMatrix = to foreignPointerData
 
 
--- |
--- A 'Lens' for the 'symbolicTCMGenerator' field
 instance GetSymbolChangeMatrix (DiscreteWithTCMCharacterMetadataDec c) (Word -> Word -> Word) where
 
     symbolChangeMatrix = to (retreiveSCM . metricRepresentation)
 
 
--- |
--- A 'Lens' for the 'pairwiseTransitionCostMatrix' field
 instance (Bits c, Bound c ~ Word, Ranged c)
 --instance (Bits c, Bound c ~ Word, ExportableBuffer c, Ranged c)
     => GetPairwiseTransitionCostMatrix (DiscreteWithTCMCharacterMetadataDec c) c Word where

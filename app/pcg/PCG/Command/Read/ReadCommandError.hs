@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Command.Read.ReadCommandError
--- Copyright   :  (c) 2015-2018 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -40,12 +40,13 @@ import TextShow
 
 
 -- |
--- The various ways in which a 'Read' 'Command' from a POY script can fail.
--- A single 'Read' 'Command' can fail in multiple ways simultaneously.
--- To account for this the 'ReadCommandError' type is a composable 'Semigroup' to
--- allow for the collection of possible sub errors to be coalesced into a single
--- 'ReadCommandError' value. The `show` definition will render the 'ReadCommandError'
--- as a human legible collection of errors that occurred within the 'Read' 'Command'.
+-- The various ways in which a 'Read' 'PCG.Syntax.Parser.Command' from a POY
+-- script can fail. A single 'Read' 'PCG.Syntax.Parser.Command' can fail in
+-- multiple ways simultaneously. To account for this the 'ReadCommandError' type
+-- is a composable 'Semigroup' to allow for the collection of possible sub errors
+-- to be coalesced into a single 'ReadCommandError' value. The `show` definition
+-- will render the 'ReadCommandError' as a human legible collection of errors
+-- that occurred within the 'Read' 'PCG.Syntax.Parser.Command'.
 --
 -- Errors related to reading input streams from the @Real World@ are bundled
 -- together as are errors from parsing input streams and errors from unifying the

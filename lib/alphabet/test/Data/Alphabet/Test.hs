@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Alphabet.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 module Data.Alphabet.Test
   ( testSuite
   ) where
@@ -11,6 +23,8 @@ import           Test.Tasty.HUnit       as HU
 import           Test.Tasty.QuickCheck  as QC
 
 
+-- |
+-- The test-suite for the 'Alphabet' data type.
 testSuite :: TestTree
 testSuite = testGroup "Alphabet Tests"
     [ testPropertyCases

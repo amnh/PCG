@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  TestSuite.SubProcess
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict            #-}
@@ -33,21 +45,37 @@ data  ScriptContext
     }
 
 
+-- |
+-- Default directory in which to find the executable for the processes.
 binaryDirectory :: FilePath
 binaryDirectory = "./bin/pcg"
 
+
+-- |
+-- Default directory in which to find integration tests.
 testDirectory :: FilePath
 testDirectory = "test" </> "data-sets"
 
 
+-- |
+-- Default STDOUT file name.
+--
+-- A process created by this module will not produce any terminal output.
+-- All output will be redirdected to 'outLogFileName' and 'errLogFileName'.
 outLogFileName :: FilePath
 outLogFileName = "log" <.> "out"
 
 
+-- |
+-- Default STDERR file name.
+--
+-- All output will be redirdected to 'outLogFileName' and 'errLogFileName'.
 errLogFileName :: FilePath
 errLogFileName = "log" <.> "err"
 
 
+-- |
+-- Given a list of 'FilePath's, return a list of the file's contents.
 collectFileContents :: Traversable t => t FilePath -> IO (t ByteString)
 collectFileContents = traverse nicelyReadFile . fmap (testDirectory </>)
   where
@@ -63,6 +91,12 @@ collectFileContents = traverse nicelyReadFile . fmap (testDirectory </>)
                 ]
 
 
+-- |
+-- Takes a 'FilePath' to a PCG script and executes an instance of PCG using the
+-- script as the process's input.
+--
+-- Call 'destructProcess' on the supplied 'ScriptContext' afterwards to clean up
+-- artifacts of the process.
 constructProcess
   :: FilePath -- ^ Relative path to the PCG script
   -> IO ScriptContext
@@ -122,6 +156,8 @@ constructProcess scriptStr = do
         when fileExists $ removeFile p
 
 
+-- |
+-- Clean up after a call to 'constructProcess'.
 destructProcess :: ScriptContext -> IO ()
 destructProcess ctx = mapM_ cleanUpHandle $
     [ std_out . process &&& outPath

@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.List.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 module Data.List.Test
   ( testSuite
   ) where
@@ -9,11 +21,14 @@ import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck as QC
 
 
+-- |
+-- The test-suite for custom "list-like" utilities.
 testSuite :: TestTree
 testSuite = testGroup "List Tests"
     [ testExampleCases
     , testInvariantProperties
     ]
+
 
 testExampleCases :: TestTree
 testExampleCases = testGroup "Example cases from documentation"

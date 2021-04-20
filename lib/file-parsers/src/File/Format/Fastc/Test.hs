@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.Fastc.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
@@ -19,6 +31,8 @@ import           Test.Tasty               (TestTree, testGroup)
 import           Test.Tasty.HUnit
 
 
+-- |
+-- Test-suite including specific unit and property-based tests for the FASTC file parser.
 testSuite :: TestTree
 testSuite = testGroup "Fastc Format"
     [ testGroup "Fastc Parser"

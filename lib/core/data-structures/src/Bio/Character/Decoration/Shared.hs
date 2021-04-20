@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Decoration.Shared
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -17,7 +17,7 @@
 module Bio.Character.Decoration.Shared where
 
 
-import Control.Lens
+import Control.Lens.Type
 import Data.Range
 import Numeric.Extended
 

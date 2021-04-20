@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Command.Version
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -26,12 +26,17 @@ import Data.Functor           (($>))
 import PCG.Syntax.Combinators
 
 
+-- |
+-- Command specifying whether to display the full version or the shortened
+-- version number of the software.
 newtype VersionCommand =
         VersionCommand
-        { fullVersion   ::   Bool
+        { fullVersion :: Bool
         } deriving stock (Show)
 
 
+-- |
+-- Specification for the VERSION command.
 versionCommandSpecification :: CommandSpecification VersionCommand
 versionCommandSpecification = command "version" . argList $ version
   where

@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.Fasta.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 
@@ -21,6 +33,8 @@ import Test.Tasty.QuickCheck
 import Text.Megaparsec            (eof)
 
 
+-- |
+-- Test-suite including specific unit and property-based tests for the FASTA file parser.
 testSuite :: TestTree
 testSuite = testGroup "Fasta Format"
     [ testGroup "Fasta Generalized Combinators"
@@ -168,8 +182,12 @@ fastaTaxonSequenceDefinition' = testGroup "fastaTaxonSequenceDefinition" [valid]
     success (res, str) = testCase (show str) $ parseEquals fastaTaxonSequenceDefinition str res
 
 
-validTaxonLines     :: [(Identifier, String)]
-validTaxonLines     = validTaxonCommentLines <> validTaxonCommentlessLines
+-- |
+-- Collection of taxon specifications which should be successfully parsed.
+validTaxonLines :: [(Identifier, String)]
+validTaxonLines = validTaxonCommentLines <> validTaxonCommentlessLines
+
+
 validTaxonSequences :: [(FastaSequence, String)]
 validTaxonSequences = zipWith f validTaxonLines validSequences
   where

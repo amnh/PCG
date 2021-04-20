@@ -1,6 +1,21 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Main
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE DerivingStrategies         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-module Main where
+
+module Main
+  ( main
+  ) where
 
 import Data.Functor.Const
 import Data.Graph.Indices
@@ -14,9 +29,10 @@ import Data.Vector
 --import Test.Tasty.Ingredients.Rerun (rerunningTests)
 
 
+-- |
+-- Entry point for constructing and pretty-printing the example graphs.
 main :: IO ()
-main =
-  do
+main = do
     putStrLn ""
     putStrLn (showGraphAsRoseForest exampleGraph1)
     putStrLn ""
@@ -193,6 +209,6 @@ intBinTree2 = postorder id f intBinTree
 
 
 
+newtype Id a = Id a
+    deriving newtype (Show)
 
-newtype Id a = Id {runId :: a}
-  deriving newtype (Show)

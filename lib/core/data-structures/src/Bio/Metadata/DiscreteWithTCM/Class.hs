@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.DiscreteWithTCM.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -31,8 +31,8 @@ import Bio.Metadata.Metric
 
 
 -- |
--- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
+-- A decoration of the encoding of the metadata for a metric or dynamic character
+-- which has the appropriate 'Control.Lens.Type.Lens' and class constraints.
 class ( DiscreteCharacterMetadata     s
       , EncodableStreamElement        c
       , GetSymbolChangeMatrix         s (Word -> Word -> Word)

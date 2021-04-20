@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Command.Types.Report.Metadata
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -57,7 +57,7 @@ data  CharacterType
 
 
 -- |
--- Wrapper function to output a metadata csv as a 'ByteString'
+-- Wrapper function to output a metadata csv as a 'Text'.
 outputMetadata :: DecoratedCharacterResult -> Text
 outputMetadata = toLazyText . unlinesB . fmap (intercalateB ",") . (headerRow:) . fmap toFields . characterMetadataOutput
   where

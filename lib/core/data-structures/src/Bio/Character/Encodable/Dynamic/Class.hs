@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Encodable.Dynamic.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -77,6 +77,8 @@ class ( Bits (Subcomponent (Element s))
     insertGaps :: IntMap Word -> IntMap Word -> s -> s
 
 
+-- |
+-- An element of a dynamic character which represents an alignment context.
 class EncodableDynamicCharacterElement e where
 
     isGap, isInsert, isDelete, isAlign :: e -> Bool

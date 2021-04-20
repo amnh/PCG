@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Computation.Internal
--- Copyright   :  (c) 2015-2018 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -56,10 +56,19 @@ import           System.IO
 import           System.Posix.Signals
 
 
+-- |
+-- Transforms a 'Computation' to re order commands into a more optimal sequence
+-- to improve execution time. Multiple sequntial commands of the same type can be
+-- collapsed into a single, more complex but more efficnent invocation of the
+-- command.
 optimizeComputation :: Computation -> Computation
 optimizeComputation (Computation commands) = Computation $ collapseReadCommands commands
 
 
+-- |
+-- One optimization of a 'Computation.
+--
+-- By collapsing multiple READ commands into a single, more complex READ command.
 collapseReadCommands :: NonEmpty Command -> NonEmpty Command
 collapseReadCommands p@(x:|xs) =
     case xs of
@@ -70,6 +79,12 @@ collapseReadCommands p@(x:|xs) =
          _                    -> (x :|) . toList . collapseReadCommands $ y:|ys
 
 
+-- |
+-- Take a specified 'Computation' and evaluate each 'Command' in sequential order,
+-- mutatating an implicit working state of a graph.
+--
+-- The first 'Command' of a 'Computation' must be a command which produces a graph.
+-- Currently, this means that the first 'Command' must be either a READ or a LOAD.
 evaluate :: Computation -> SearchState
 evaluate (Computation (x:|xs)) = liftIO myThreadId >>= \t -> foldl' (f t) z xs
   where
@@ -94,6 +109,9 @@ evaluate (Computation (x:|xs)) = liftIO myThreadId >>= \t -> foldl' (f t) z xs
               VERSION c -> s >>= g (    Version.evaluate c)
 
 
+-- |
+-- Write out a binary representation of the working state on a "terminal" signal
+-- being sent to the process.
 cleanUpHandler :: ThreadId -> GraphState -> EvaluationT GlobalSettings IO ()
 cleanUpHandler tID lastState = liftIO $ traverse_ buildHandler [sigINT, sigQUIT, sigTERM]
   where
@@ -121,6 +139,9 @@ cleanUpHandler tID lastState = liftIO $ traverse_ buildHandler [sigINT, sigQUIT,
       in  installHandler s handler Nothing
 
 
+-- |
+-- Get the correct 'ExitCode' and output message for a completed evaluation of a
+-- 'Computation'.
 renderSearchState :: EvaluationResult a -> (ExitCode, Text)
 renderSearchState = fmap (<>"\n") . either id val . renderError
   where
@@ -168,5 +189,7 @@ errorPhaseToCode = ExitFailure .
       Outputting -> bit 5
 
 
+-- |
+-- Extract the 'GlobalSettings' during the evaluation via the 'IO' monad.
 getGlobalSettings :: IO GlobalSettings
 getGlobalSettings = pure ()

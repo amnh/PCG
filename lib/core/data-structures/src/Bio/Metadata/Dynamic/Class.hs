@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Dynamic.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -31,7 +31,7 @@ module Bio.Metadata.Dynamic.Class
 
 import Bio.Metadata.Discrete
 import Bio.Metadata.DiscreteWithTCM
-import Control.Lens
+import Control.Lens.Type            (Getter, Lens')
 import Data.TCM.Dense               (DenseTransitionCostMatrix)
 import Data.TCM.Memoized
 
@@ -53,7 +53,7 @@ class GetThreewayTransitionCostMatrix s a | s -> a where
 
 
 -- |
--- A 'yLens' for the 'traversalFoci' field
+-- A 'Control.Lens.Type.Lens' for the 'traversalFoci' field
 class HasTraversalFoci s a | s -> a where
 
     {-# MINIMAL traversalFoci #-}

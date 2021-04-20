@@ -1,8 +1,7 @@
-{-# LANGUAGE PatternSynonyms #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Analysis.Clustering.Hierarchical
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -10,6 +9,8 @@
 -- Portability :  portable
 --
 -----------------------------------------------------------------------------
+
+{-# LANGUAGE PatternSynonyms #-}
 
 module Analysis.Clustering
   ( ClusterOptions(..)
@@ -33,53 +34,85 @@ import           Bio.Sequence
 import qualified Data.Vector.NonEmpty             as NE
 
 
-data ClusterCut
-  = ClusterGroup Int
-  | ClusterSplit Double
-
-data ClusterOptions
-  = Hierarchical H.Linkage ClusterCut
-  | Median
-  | None
+-- |
+-- Determine how to split nodes into clustering groups.
+data  ClusterCut
+    = ClusterGroup Int
+    | ClusterSplit Double
 
 
+-- |
+-- Determine how to measure distances between clusters.
+data  ClusterOptions
+    = Hierarchical H.Linkage ClusterCut
+    | Median
+    | None
+
+
+-- |
+-- View pattern for the unweighted pair group method with arithmetic mean (UPGMA)
+-- clustering option.
 pattern UPGMA :: ClusterCut -> ClusterOptions
 pattern UPGMA s <- Hierarchical H.Average s
   where
     UPGMA s = Hierarchical H.Average s
 
+
+-- |
+-- View pattern for the single linkage clustering option.
 pattern SingleLinkage :: ClusterCut ->  ClusterOptions
 pattern SingleLinkage s <- Hierarchical H.Single s
   where
     SingleLinkage s = Hierarchical H.Single s
 
+
+-- |
+-- View pattern for the complete linkage clustering option.
 pattern CompleteLinkage :: ClusterCut -> ClusterOptions
 pattern CompleteLinkage s <- Hierarchical H.Complete s
   where
     CompleteLinkage s = Hierarchical H.Complete s
 
+
+-- |
+-- View pattern for the UPGMA-informed linkage clustering option.
 pattern UPGMALinkage :: ClusterCut ->  ClusterOptions
 pattern UPGMALinkage s <- Hierarchical H.Average s
   where
     UPGMALinkage s = Hierarchical H.Average s
 
+
+-- |
+-- View pattern for the linkage with weighting clustering option.
 pattern WeightedLinkage :: ClusterCut -> ClusterOptions
 pattern WeightedLinkage s <- Hierarchical H.Weighted s
   where
     WeightedLinkage s = Hierarchical H.Weighted s
 
+
+-- |
+-- View pattern for the linkage defined by Ward Wheeler clustering option.
 pattern WardLinkage :: ClusterCut -> ClusterOptions
 pattern WardLinkage s <- Hierarchical H.Ward s
   where
     WardLinkage s = Hierarchical H.Ward s
 
+
+-- |
+-- View pattern for the K-Medians linkage clustering option.
 pattern KMedians :: ClusterOptions
 pattern KMedians = Median
 
+
+-- |
+-- View pattern for the "no clustering," clustering option.
 pattern NoCluster :: ClusterOptions
 pattern NoCluster = None
 
 
+-- |
+-- Partition a leaf set into clusters based on the specified clustering options
+-- and the metrics defined in the metadata sequence.
 clusterIntoGroups
   :: (Applicative f, Foldable f)
   => MetadataSequence m

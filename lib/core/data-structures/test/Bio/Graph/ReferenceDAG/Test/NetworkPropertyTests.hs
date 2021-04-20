@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Graph.ReferenceDAG.Test.NetworkPropertyTests
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -27,7 +27,8 @@ import           Test.Tasty
 import qualified Test.Tasty.QuickCheck           as QC
 
 
-
+-- |
+-- Test-suite of property-based tests for the 'ReferenceDAG' data-type.
 candidateNetworkProperties :: TestTree
 candidateNetworkProperties = testGroup "Properties of candidateNetworkEdges function"
     [ QC.testProperty

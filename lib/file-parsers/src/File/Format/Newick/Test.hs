@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.Newick.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeFamilies     #-}
 
@@ -18,6 +30,9 @@ import Test.Tasty.QuickCheck
 import Text.Megaparsec             hiding (failure)
 
 
+-- |
+-- Test-suite including specific unit and property-based tests for the eNewick
+-- file parser.
 testSuite :: TestTree
 testSuite = testGroup "Newick Format"
     [ testGroup "Newick Combinators"

@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Character.Decoration.Metric.Class
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -58,7 +58,7 @@ class ( SankoffDecoration s c
 
 
 -- |
--- A 'Lens' for the 'beta' field.
+-- A 'Control.Lens.Type.Lens' for the 'beta' field.
 class HasBeta s a | s -> a where
 
     {-# MINIMAL beta #-}
@@ -66,7 +66,7 @@ class HasBeta s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'characterCostVector' field.
+-- A 'Control.Lens.Type.Lens' for the 'characterCostVector' field.
 class HasCharacterCostVector s a | s -> a where
 
     {-# MINIMAL characterCostVector #-}
@@ -74,7 +74,7 @@ class HasCharacterCostVector s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'finalExtraCost' field.
+-- A 'Control.Lens.Type.Lens' for the 'finalExtraCost' field.
 class HasFinalExtraCost s a | s -> a where
 
     {-# MINIMAL finalExtraCost #-}
@@ -82,7 +82,7 @@ class HasFinalExtraCost s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'preliminaryExtraCost' field.
+-- A 'Control.Lens.Type.Lens' for the 'preliminaryExtraCost' field.
 class HasPreliminaryExtraCost s a | s -> a where
 
     {-# MINIMAL preliminaryExtraCost #-}
@@ -90,7 +90,7 @@ class HasPreliminaryExtraCost s a | s -> a where
 
 
 -- |
--- A 'Lens' for the 'minStateTuple' field.
+-- A 'Control.Lens.Type.Lens' for the 'minStateTuple' field.
 class HasStateMinTuple s a | s -> a where
 
     {-# MINIMAL minStateTuple #-}

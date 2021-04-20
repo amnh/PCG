@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  Benchmark.Internal
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE TypeFamilies #-}
 
 module Benchmark.Internal
@@ -14,6 +26,9 @@ import Text.Megaparsec
 import Weigh
 
 
+-- |
+-- Abstract utility function for measuring the allocated space of the supplied
+-- file parser on the specified input file.
 measureParserSpace
   :: ( NFData a
      , TraversableStream s
@@ -28,6 +43,9 @@ measureParserSpace prefix filePath streamReader streamParser =
     io (prefix </> filePath) (\fp -> forceParser streamParser fp <$> streamReader fp) filePath
 
 
+-- |
+-- Abstract utility function for measuring the run time of the supplied
+-- file parser on the specified input file.
 measureParserTime
   :: ( NFData a
      , NFData s

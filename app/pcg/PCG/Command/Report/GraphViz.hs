@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  PCG.Command.Report.Graphviz
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -24,6 +24,8 @@ import           Data.GraphViz.Printing
 import qualified Data.Text.Lazy         as L
 
 
+-- |
+-- Transform a 'GraphState' to the textual payload for a DOT file.
 generateDotFile :: GraphState -> L.Text
 generateDotFile = (<> "\n") . renderDot . getDotGraph
 

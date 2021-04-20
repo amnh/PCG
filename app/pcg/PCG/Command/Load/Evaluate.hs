@@ -1,4 +1,17 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  PCG.Command.Load.Evaluate
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE ScopedTypeVariables #-}
+
 module PCG.Command.Load.Evaluate
   ( evaluate
   ) where
@@ -12,6 +25,9 @@ import Data.Validation
 import PCG.Command.Load
 
 
+-- |
+-- Evaluates a 'LoadCommand' by reading in a graph state from disk and setting
+-- it as the current working state of the process.
 evaluate :: LoadCommand -> SearchState
 evaluate (LoadCommand filePath) = do
     result <- liftIO . runValidationT $ deserializeBinary filePath

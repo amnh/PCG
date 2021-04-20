@@ -1,3 +1,15 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      :  File.Format.TNT.Test
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
+-- License     :  BSD-style
+--
+-- Maintainer  :  wheeler@amnh.org
+-- Stability   :  provisional
+-- Portability :  portable
+--
+-----------------------------------------------------------------------------
+
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts   #-}
 {-# LANGUAGE TypeFamilies       #-}
@@ -44,15 +56,18 @@ instance Show WordToken where
     show (WordToken s) = s
 
 
+-- |
+-- Test-suite including specific unit and property-based tests for the TNT file parser.
 testSuite :: TestTree
 testSuite = testGroup "TNT Format"
-  [ testGroup "TNT Combinators" [ internalCombinators
-                                , testCommandCCode
-                                , testCommandCNames
-                                , testCommandProcedure
-                                , testCommandTRead
-                                , testCommandXRead
-                                ]
+  [ testGroup "TNT Combinators"
+      [ internalCombinators
+      , testCommandCCode
+      , testCommandCNames
+      , testCommandProcedure
+      , testCommandTRead
+      , testCommandXRead
+      ]
   ]
 
 

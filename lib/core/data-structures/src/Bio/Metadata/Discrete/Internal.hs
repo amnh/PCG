@@ -1,7 +1,7 @@
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Bio.Metadata.Discrete.Internal
--- Copyright   :  (c) 2015-2015 Ward Wheeler
+-- Copyright   :  (c) 2015-2021 Ward Wheeler
 -- License     :  BSD-style
 --
 -- Maintainer  :  wheeler@amnh.org
@@ -32,7 +32,8 @@ import Bio.Metadata.Discrete.Class
 import Bio.Metadata.General
 import Bio.Metadata.Metric
 import Control.DeepSeq
-import Control.Lens
+import Control.Lens.Combinators    (lens, to)
+import Control.Lens.Operators      ((&), (.~), (^.))
 import Data.Alphabet
 import Data.Binary
 import Data.Bits
@@ -59,7 +60,7 @@ data  DiscreteCharacterMetadataDec
 
 -- |
 -- A decoration of an initial encoding of a dynamic character which has the
--- appropriate 'Lens' & character class constraints.
+-- appropriate 'Control.Lens.Type.Lens' and character class constraints.
 class ( GeneralCharacterMetadata s
       , HasCharacterAlphabet     s (Alphabet String)
       ) => DiscreteCharacterMetadata s where
