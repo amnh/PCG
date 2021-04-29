@@ -7,7 +7,7 @@ version:            0.3.0
 author:             Ward Wheeler
 maintainer:         wheeler@amnh.org
 license:            BSD-3-Clause
-license-file:       LICENSE
+license-file:       doc/LICENSE
 
 synopsis:           Program and library for general phylogenetic graph search
 
@@ -23,9 +23,9 @@ tested-with:
     GHC == 9.0.1
 
 extra-source-files:
-    AUTHORS.md
-    CHANGELOG.md
-    FUNDING.md
+    doc/AUTHORS.md
+    doc/CHANGELOG.md
+    doc/FUNDING.md
     README.md
     -- Specify the header files as required source files here.
     -- Do not specify them in the c-sources or cxx-sources stanzas.

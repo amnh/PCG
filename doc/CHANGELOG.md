@@ -19,6 +19,7 @@ Releases are available [on GitHub][2].
 * Corrected defect in string alignment commutativity
 * Corrected defect in unboxed Ukkonen string alignment
 * Corrected defect in FASTA & FASTC taxon empty comment parsing
+* Removed Travis CI build from project
 
 
 ## [0.3.0][6] - 2020-06-30

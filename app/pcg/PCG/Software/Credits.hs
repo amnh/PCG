@@ -35,7 +35,7 @@ import qualified Text.URI                   as URI
 authorsList :: ExpQ
 authorsList = lift =<< getAuthorFileData
   where
-    getAuthorFileData = runIO $ getAuthorLines <$> readFile "AUTHORS.md"
+    getAuthorFileData = runIO $ getAuthorLines <$> readFile "doc/AUTHORS.md"
 
     getAuthorLines :: Text -> [Text]
     getAuthorLines = fmap fst . fromMarkdown processMarkdown
@@ -46,7 +46,7 @@ authorsList = lift =<< getAuthorFileData
 fundingList :: ExpQ
 fundingList = lift =<< getFundingFileData
   where
-    getFundingFileData = runIO $ getFundingLines <$> readFile "FUNDING.md"
+    getFundingFileData = runIO $ getFundingLines <$> readFile "doc/FUNDING.md"
 
     getFundingLines :: Text -> [(Text, Maybe Text)]
     getFundingLines = fromMarkdown processMarkdown
