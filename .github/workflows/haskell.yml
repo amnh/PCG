@@ -21,33 +21,30 @@ defaults:
 
 jobs:
 
-# For some reason, this works locally but doesn't work on the GitHub Actions CI.
-# We have left this here for reference, perhaps ths disparity can be corrrected.
-#
-#  # Check that the project does not have detectable dead code
-#  weeder:
-#    name: Dead Code Check
-#    runs-on: ubuntu-latest
-#
-#    steps:
-#      - uses: actions/checkout@v2.3.4
-#      - uses: haskell/actions/setup@v1.1.5
-#        name: Setup Haskell
-#        with:
-#          cabal-version: latest
-#          ghc-version:   8.10.4
-#
-#      - run: make dead-code-check-setup
-#      
-#      - uses: actions/cache@v2
-#        name: caching dead code check
-#        with:
-#          path: |
-#            ~/.cabal/store
-#            dist-newstyle
-#          key: ${{ runner.os }}-dead-code-${{ hashFiles('cabal.project.freeze') }}
-#
-#      - run: make dead-code-check-deploy
+  # Check that the project does not have detectable dead code
+  weeder:
+    name: Dead Code Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2.3.4
+      - uses: haskell/actions/setup@v1.1.5
+        name: Setup Haskell
+        with:
+          cabal-version: latest
+          ghc-version:   8.10.4
+
+      - run: make dead-code-check-setup
+      
+      - uses: actions/cache@v2
+        name: caching dead code check
+        with:
+          path: |
+            ~/.cabal/store
+            dist-newstyle
+          key: ${{ runner.os }}-dead-code-${{ hashFiles('cabal.project.freeze') }}
+
+      - run: make dead-code-check-deploy
 
 
   # Check that the project has complete documetation coverage

@@ -1,13 +1,25 @@
-
 SHELL=/bin/bash
-CHECKMARK    := "\033[0;32m\xE2\x9C\x94\xE2\x83\x9E\033[0m"
+CHECKMARK        := "\033[0;32m\xE2\x9C\x94\xE2\x83\x9E\033[0m"
+package-name     := phylogenetic-component-graph
+cabal-depends    := $(package-name).cabal cabal.project
 
-bin-dir      := ./bin
-hie-dir      := ./.hie
-formatter    := $(bin-dir)/stylish-haskell
+bin-dir          := ./bin
+cfg-dir          := ./config
+hie-dir          := ./.hie
+tmp-dir          := ./.temp
 
-code-dirs  = app bench test $(shell find lib -maxdepth 1 -type d -name "*" | tail -n +2 | tr '\n' ' ')
-code-files = $(shell find $(code-dirs) -type f -name "*.hs" | tr '\n' ' ')         
+diff-log         := $(tmp-dir)/diffs.log
+formatter        := $(bin-dir)/stylish-haskell
+formatter-flags  := --config $(cfg-dir)/.stylish-haskell.yaml
+linter-flags     := --hint=$(cfg-dir)/.hlint.yaml
+lower-bound-file := $(cfg-dir)/lower-bounds.project
+stan-exe         := $(bin-dir)/stan
+stan-flags       := --config-file=$(cfg-dir)/.stan.toml --hiedir=$(hie-dir)
+weeder-exe       := $(bin-dir)/weeder
+weeder-flags     := --config $(cfg-dir)/weeder.dhall --hie-directory $(hie-dir)
+
+code-dirs  := app bench test $(shell find lib -maxdepth 1 -type d -name "*" | tail -n +2 | tr '\n' ' ')
+code-files := $(shell find $(code-dirs) -type f -name "*.hs" | tr '\n' ' ')
 
 
 ################################################################################
@@ -42,30 +54,30 @@ cabal-fast-prof     = --ghc-options="-O0" --enable-profiling --profiling-detail=
 cabal-haddock-flags = --enable-documentation --haddock-all --haddock-hyperlink-source --haddock-internal
 cabal-install-flags = --installdir=$(bin-dir) --overwrite-policy=always
 cabal-total-targets = --enable-benchmarks --enable-tests
-cabal-suffix        = 2>&1 | grep -v -f .ignored-warnings
+cabal-suffix        = 2>&1 | grep -v -f $(cfg-dir)/.ignored-warnings
 
 # Actions to perform before building dependencies and project
 # Seperating the "pre-deploy" from "deploy" allows for CI caching the results
 # of the pre-deployment configuration.
-cabal-setup:
+cabal-setup: $(cabal-depends)
 	cabal update
 	cabal clean
 	cabal configure $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) $(cabal-suffix)
 	cabal freeze    $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) $(cabal-suffix)
 
 # Actions for building all binaries, benchmarks, and test-suites
-cabal-build:
+cabal-build: $(cabal-depends)
 	cabal build     $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) --only-dependencies $(cabal-suffix)
 	cabal build     $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) $(cabal-suffix)
 
 # Actions for building all binaries, benchmarks, and test-suites
-cabal-deploy: cabal-build
+cabal-deploy: cabal-build make-bin-dir
 	cabal install   $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-install-flags) $(cabal-suffix)
 
 cabal-clean: cleanup-cabal-default cleanup-cabal-build-artifacts cleanup-HIE-files
 
 # Builds with no extra generated features and no optimizations
-cabal-quick-prof: phylogenetic-component-graph.cabal cabal.project
+cabal-quick-prof: make-bin-dir $(cabal-depends)
 	cabal build   $(cabal-fast-prof) $(cabal-total-targets) --only-dependencies $(cabal-suffix)
 	cabal build   $(cabal-fast-prof) $(cabal-total-targets) $(cabal-suffix)
 	cabal install $(cabal-fast-prof) $(cabal-install-flags) $(cabal-suffix)
@@ -76,13 +88,13 @@ cabal-quick-prof: phylogenetic-component-graph.cabal cabal.project
 ################################################################################
 
 # Check that the project builds with the specified lower bounds
-lower-bounds-check: lower-bounds.project lower-bounds-check-setuplower-bounds-check-deploy
+lower-bounds-check: $(lower-bound-file) lower-bounds-check-setup lower-bounds-check-deploy
 
-lower-bounds-check-setup:  cabal-haddock-flags += --project-file=lower-bounds.project
-lower-bounds-check-setup:  lower-bounds.project cabal-setup
+lower-bounds-check-setup:  cabal-haddock-flags += --project-file=$(lower-bound-file)
+lower-bounds-check-setup:  $(lower-bound-file) cabal-setup
 
-lower-bounds-check-deploy: cabal-haddock-flags += --project-file=lower-bounds.project
-lower-bounds-check-deploy: lower-bounds.project cabal-deploy
+lower-bounds-check-deploy: cabal-haddock-flags += --project-file=$(lower-bound-file)
+lower-bounds-check-deploy: $(lower-bound-file) cabal-deploy
 
 
 # Check that all unit tests pass
@@ -130,45 +142,49 @@ compilation-check-deploy: cabal.project cabal-deploy
 
 dead-code-check: dead-code-check-setup dead-code-check-deploy
 
-dead-code-check-setup:
-	@echo "Downloading weeder..."
-	cabal update
-	cabal install weeder $(with-compiler-flags) $(cabal-install-flags)
-	$(bin-dir)/weeder --version
+dead-code-check-setup: install-weeder
+	$(weeder-exe) --version
 	@$(MAKE) --no-print-directory hie-setup
 
 dead-code-check-deploy: hie-deploy
-	cat weeder.dhall
-	$(bin-dir)/weeder --config ./weeder.dhall --hie-directory $(hie-dir)
+	$(weeder-exe) $(weeder-flags)
 
 hlint-check:
-	@curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s $(code-dirs) -j
+	@curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s $(code-dirs) -j $(linter-flags)
 
-format-code: install-stylish-haskell
+format-code:
 	@echo -n " ☐  Formatting code..."
-	@find $(code-dirs) -type f -name "*.hs" | while read fname; do \
-	  $(bin-dir)/stylish-haskell -i "$$fname"; \
-	done
+	@$(MAKE) --no-print-directory run-stylish-haskell in-place=true
 	@echo -e "\r\033[K" $(CHECKMARK) " Formatting code complete!"
 
-formatting-check: install-stylish-haskell
-	@echo "Checking code for required formatting"
-	@$(eval diff-log := .diffs.log)
+formatting-check: 
+	@echo -n "Checking code for required formatting"
+	@$(MAKE) --no-print-directory run-stylish-haskell
+	@if find . -empty -wholename $(diff-log) | grep "^" &> /dev/null; \
+	then \
+	  echo -e "\r\033[KCode is properly formatted!"; \
+	else \
+	  echo -e "\nFormatting required!\nFix by running the following:\n\n> make format-code\n" \
+	  rm -f $(diff-log) \
+	  sleep 1 \
+	  exit 1; \
+	fi
+
+run-stylish-haskell: install-stylish-haskell make-tmp-dir
+ifdef in-place
+	@$(eval formatter-flags += -i)
+endif
+	@$(eval temp-file := $(tmp-dir)/styled.temp)
 	@rm -f $(diff-log)
 	@touch $(diff-log)
-	@find $(code-dirs) -type f -name "*.hs" | while read fname; do \
-	  $(bin-dir)/stylish-haskell "$$fname" > styled.temp; \
-	  diff "$$fname" styled.temp >> $(diff-log); \
+	@echo $(code-files) | tr ' ' '\n' | while read fname; do \
+	  $(formatter) $(formatter-flags) "$$fname" > $(temp-file); \
+	  diff "$$fname" $(temp-file) >> $(diff-log) || true; \
 	done
-	@rm -f styled.temp
-	@find . -empty -name $(diff-log) | grep "^" &> /dev/null || ( \
-	  echo -e "Formatting required!\nFix by running the following:\n\n> make format-code\n" && \
-	  rm -f $(diff-log) && \
-	  sleep 1 && \
-	  exit 1 )
+	@rm -f $(temp-file) || true
 
 spelling-check: install-codespell
-	@$(eval spell-check-flags := -I .ignored-words -x .excluded-lines)
+	@$(eval spell-check-flags := -I $(cfg-dir)/.ignored-words -x $(cfg-dir)/.excluded-lines)
 ifdef fix-spelling
 	@$(eval spell-check-flags += --write-changes)
 endif
@@ -177,28 +193,25 @@ endif
 
 static-analysis-check: static-analysis-check-setup static-analysis-check-deploy
 
-static-analysis-check-setup:
-	@echo "Downloading stan..."
-	cabal update
-	cabal install stan $(with-compiler-flags) $(cabal-install-flags)
-	$(bin-dir)/stan --version
+static-analysis-check-setup: install-stan
+	$(stan-exe) --version
 	@$(MAKE) --no-print-directory hie-setup
 
-static-analysis-check-deploy: hie-deploy
-	@$(eval stan-log := .stan.log)
-	@$(eval observations := .stan.observations.log)
+static-analysis-check-deploy: hie-deploy make-tmp-dir
+	@$(eval stan-log := $(tmp-dir)/.stan.log)
+	@$(eval observations := $(tmp-dir)/.stan.observations.log)
 	@rm -f $(stan-log)
 	@rm -f $(observations)
 	@touch $(stan-log)
-	$(bin-dir)/stan | tee $(stan-log)
+	$(stan-exe) $(stan-flags) | tee $(stan-log)
 	@grep ' ID:            ' $(stan-log) > $(observations) || true
 	@rm -f $(stan-log)
-	@find . -empty -name $(observations) | grep "^" &> /dev/null || ( \
+	@find . -empty -wholename $(observations) | grep "^" &> /dev/null || ( \
 	  echo -e "\nAnti-pattern observations found!\nCorrect the following $$(wc -l $(observations) | cut -d " " -f1) observations:\n" && \
 	  echo -n " ┏" && printf '━%.0s' {1..52} && echo "━" && \
 	  cat $(observations) && \
 	  rm -f $(observations) && \
-	  echo -n " ┗" && printf '━%.0s' {1..52} && echo "━\n" && \
+	  echo -en " ┗" && printf '━%.0s' {1..52} && echo "━\n" && \
 	  sleep 1 && \
 	  exit 1 \
 	)
@@ -207,16 +220,16 @@ documentation-check: documentation-check-setup documentation-check-deploy
 
 documentation-check-setup: cabal-setup
 
-documentation-check-deploy:
-	@$(eval docs-log := .haddock.log)
-	@$(eval missing-docs := .missing.docs.log)
+documentation-check-deploy: make-tmp-dir
+	@$(eval docs-log := $(tmp-dir)/.haddock.log)
+	@$(eval missing-docs := $(tmp-dir)/.missing.docs.log)
 	@rm -f $(docs-log)
 	@rm -f $(missing-docs)
 	cabal build   $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) --only-dependencies $(cabal-suffix)
 	cabal haddock $(with-compiler-flags) $(cabal-haddock-flags) $(cabal-total-targets) $(cabal-suffix) | tee $(docs-log)
 	@grep '^[[:space:]]*[[:digit:] ][[:digit:]]% (' $(docs-log) > $(missing-docs) || true
 	@rm -f $(docs-log)
-	@(find . -empty -name $(missing-docs) | grep "^" &> /dev/null) || ( \
+	@(find . -empty -wholename $(missing-docs) | grep "^" &> /dev/null) || ( \
 	  echo $(count) && \
 	  echo -e "\nMissing documetation!\nThe following $$(wc -l $(missing-docs) | cut -d ' ' -f1) files have incomplete documetation coverage:\n" && \
 	  cat $(missing-docs) && \
@@ -271,6 +284,7 @@ cleanup-junk-file:
 
 cleanup-log-files:
 	@echo -n " ☐ Cleaning log files..."
+	@rm -fR $(tmp-dir)
 	@rm -fR .*.log*
 	@echo -e "\r\033[K" $(CHECKMARK) " Cleaned log files"
 
@@ -295,11 +309,31 @@ install-codespell:
 	  pip3 install codespell \
 	)
 
-install-stylish-haskell:
+install-stan: make-bin-dir
+	@ls $(formatter) &> /dev/null || (\
+	  echo "Downloading stan..." && \
+	  cabal update && \
+	  cabal install stan $(with-compiler-flags) $(cabal-install-flags) \
+	)
+
+install-stylish-haskell: make-bin-dir
 	@ls $(formatter) &> /dev/null || (\
 	  echo "Downloading stylish-haskell" && \
 	  cabal update && \
 	  cabal install stylish-haskell $(with-compiler-flags) $(cabal-install-flags) \
 	)
+
+install-weeder: make-bin-dir
+	@ls $(weeder-exe) &> /dev/null || (\
+	  echo "Downloading weeder..." && \
+	  cabal update && \
+	  cabal install weeder $(with-compiler-flags) $(cabal-install-flags) \
+	)
+
+make-bin-dir:
+	@ls | grep $(bin-dir) || mkdir -p $(bin-dir)
+
+make-tmp-dir:
+	@ls | grep $(tmp-dir) || mkdir -p $(tmp-dir)
 
 .PHONY: all build clean lint prof test
