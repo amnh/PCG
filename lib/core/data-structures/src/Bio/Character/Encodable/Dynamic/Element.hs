@@ -135,9 +135,9 @@ instance EncodableDynamicCharacterElement DynamicCharacterElement where
     gapElement w            = let !z = fromNumber w (0 :: Word)
                               in  DCE (bit . fromEnum $ w - 1, z, z)
 
-    deleteElement (AG m)        (AG y) = DCE (m, zeroVectorOf y, y)
+    insertElement (AG m) (AG x)        = DCE (m, zeroVectorOf x, x)
 
-    insertElement (AG m) (AG x)        = DCE (m, x, zeroVectorOf x)
+    deleteElement (AG m)        (AG y) = DCE (m, y, zeroVectorOf y)
 
     alignElement  (AG m) (AG x) (AG y) = DCE (m, x, y)
 
