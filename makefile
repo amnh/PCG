@@ -328,6 +328,7 @@ install-weeder: make-bin-dir
 	  echo "Downloading weeder..." && \
 	  cabal update && \
 	  cabal install weeder $(with-compiler-flags) $(cabal-install-flags) \
+	  --allow-newer --constraints="weeder >= 2.0" \
 	)
 
 make-bin-dir:
