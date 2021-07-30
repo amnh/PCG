@@ -253,6 +253,98 @@ A less restrictive form of network (``reconstructable'') is defined by \cite{mor
 	\end{algorithmic}
 \end{algorithm}
 \clearpage
+
+\begin{algorithm}
+	\caption{Determine the optimal rooting edge for each non-exact character}
+	\label{Alg:generate-resolutions}
+	\begin{algorithmic}[1]
+		\Require{A phylogenetic graph component $\mathcal{T}$ with $n$ nodes. }
+		\Require{Each node $v \in \mathcal{T}$ decorated with a post-order context for each $k$ non-exact characters.}
+		\Require{A vector $\oplus$ of length $k$, where $\oplus_i : C_i \times C_i \to D_i$}
+		\Ensure{Each edge $e \in \mathcal{T}$ decorated with a post-order context for each $k$ non-exact characters.}
+		\Function{NonExactCharacterRerooting}{$\mathcal{T}$}
+		
+		\State $R \gets \Call{rootNodes}{\mathcal{T}}$
+		\State $\textit{rootEdges} \gets \bigcup\limits_{r\; \in\; R} \Call{incedentEdges}{r}$
+		\State $\textit{unrootedEdges} \gets \Call{edgeSet}{\mathcal{T}} \backslash \textit{rootEdges}$
+		\ForAll{$\textit{edge} \in \textit{unrootedEdges}$}
+		  \State $(\textit{nodeL}, \textit{nodeR}) \gets \Call{ConnectedNodes}{\textit{edge}}$
+		  \State $\textit{lhs} \gets \Call{memoSubtreeQuery}{\textit{edge}, \textit{nodeL}}$
+		  \State $\textit{rhs} \gets \Call{memoSubtreeQuery}{\textit{edge}, \textit{nodeR}}$
+		  \State $\textit{edge.resolutions} \gets \Call{GenerateResolutions}{\textit{lhs}, \textit{rhs}}$
+		\EndFor
+		
+		\State $\textit{optimalTopologies} \gets \emptyset$
+		\State $\textit{optimalRootings}   \gets \emptyset$
+		\ForAll{$i \in [0, \; b-1]$}
+		    \State $\textit{bestCost} \gets \infty$
+		    \State $\textit{bestFoci} \gets \texttt{NULL}$
+		    \State $\textit{bestTree} \gets \texttt{NULL}$
+		    
+			\ForAll{$topology \in \textit{displayTrees}$}
+			  \State $\textit{topologyCost}   \gets 0$
+			  \State $\textit{characterEdges} \gets \emptyset$			  
+			  
+			  \ForAll{$j \in [0, \; k-1]$}
+			    \If    {$C_j \not\in B_i$} \Comment{Skip characters not in this block}
+			    \State $\texttt{Break}$
+			    \EndIf
+		        \State $\textit{bestEdges} \gets \emptyset$
+		        \State $\textit{edgeCost} \gets \infty$
+			    \ForAll{$edge \in \textit{topology}$}
+			      \State $resolution \gets edge.resolutions_{topology}$
+			      \State $cost \gets \Call{SubtreeCost}{resolution}$
+			      \If {$cost < \textit{edgeCost}$}
+			        \State $\textit{bestEdges} \gets \left\{ edge \right\}$
+			        \State $\textit{edgeCost} \gets cost$
+			      \ElsIf{$cost = \textit{edgeCost}$}
+				      \State $bestEdges \gets bestEdges \cup \left\{ edge \right\}$
+			      \EndIf
+			    \EndFor
+			 	\State $topologyCost \gets topologyCost + edgeCost$
+			 	\State $characterEdges_j \gets bestEdges$
+			 	
+              \EndFor
+			    \If {$topologyCost < bestCost$}
+                  \State $bestCost \gets bestTree$
+                  \State $bestFoci \gets characterEdges$
+                  \State $bestTree \gets topology$
+				\EndIf
+
+			\EndFor
+			\State $optimalTopologies_b \gets bestTree$
+			\ForAll{$j \in [0, \; k-1]$}
+			  \If{$optimalRootings_j \ne \emptyset$}
+			    \State $optimalRootings_j \gets bestFoci_j$
+			  \EndIf
+			\EndFor
+
+		\EndFor		
+		
+		\State \Return $(optimalTopologies, optimalRootings)$
+
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+	\caption{Determine the optimal rooting edge for each non-exact character}
+	\label{Alg:generate-resolutions}
+	\begin{algorithmic}[1]
+		\Function{memoSubtreeQuery}{$\textit{edge}, \textit{node}$}
+		\If    {$\textit{edge} \in \Call{ParentalEdges}{\textit{node}}$}
+		  \State \Return $\Call{GetResolutions}{\textit{node}}$
+		\EndIf
+		\State $\left\{ \textit{edgeA}, \textit{edgeB} \right\} \gets \Call{incedentEdges}{\textit{node}} \backslash \left\{ \textit{edge} \right\}$
+		\State $\textit{nodeL} \gets \Call{getOppositeNode}{ \textit{edgeL}, \textit{node} }$
+		\State $\textit{nodeR} \gets \Call{getOppositeNode}{ \textit{edgeR}, \textit{node} }$
+		\State $\textit{lhs} \gets \Call{memoSubtreeQuery}{\textit{edgeR},\textit{nodeL}}$
+		\State $\textit{rhs} \gets \Call{memoSubtreeQuery}{\textit{edgeL},\textit{nodeR}}$
+		\State \Return $\Call{GenerateResolutions}{\textit{lhs}, \textit{rhs}}$
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
 \restoregeometry
 }
 
