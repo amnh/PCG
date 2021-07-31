@@ -345,6 +345,55 @@ A less restrictive form of network (``reconstructable'') is defined by \cite{mor
 		\EndFunction
 	\end{algorithmic}
 \end{algorithm}
+
+
+\begin{algorithm}
+	\caption{Determine the additional cost of network edges}
+	\label{Alg:network-edge-cost}
+	\begin{algorithmic}[1]
+		\Function{networkEdgeCost}{$\mathcal{T}, \textsc{topologyRerootings}$}
+		
+		\State $topologyCosts \gets \emptyset$
+		\ForAll{$t \in \Call{DisplayTrees}{\mathcal{T}}$}
+		  \State $topologyCosts_{t} \gets \mathcal{T}.root.resolutions_{t} + topologyRerootings_t$
+		\EndFor
+		
+		\State $parsimoniousTopology \gets \min\limits_{t\; \in\; \Call{DisplayTrees}{\mathcal{T}}}$ $topologyCosts_{t}$
+		
+		\State $blockTopologies \gets \emptyset$
+		\State $blockCosts      \gets \emptyset$
+		\ForAll{$b \in B$}
+		  \State $minT \gets \min\limits_{t\; \in\; \Call{DisplayTrees}{\mathcal{T}}} \mathcal{T}.root.resolutions_{t}.blocks_{b} + topologyRerootings_{t}.blocks_{b}$
+          \State $blockTopologies_{b} \gets minT$
+          \State $blockCosts_{b}      \gets \mathcal{T}.root.resolutions_{minT}.blocks_{b} + topologyRerootings_{minT}.blocks_{b}$
+		\EndFor
+		
+		\State $requisiteEdges \gets \bigcup\limits_{t \in blockTopologies} \Call{EdgeSet}{t}$
+		
+		\If    {$\Call{NetworkEdgeSet}{\mathcal{T}} \backslash requisiteEdges$}
+		   \State \Return $\infty$
+		\EndIf
+		
+		\State $networkEdgeCost \gets 0$
+		\State $pEdges \gets \Call{NetworkEdgeSet}{parsimoniousTopology}$
+		\State $edgeCount \gets |\Call{EdgeSet}{\mathcal{T}}|$
+		\ForAll{$b \in B$}
+		  \State $bEdges \gets \Call{NetworkEdgeSet}{blockTopologies_b}$
+		  \State $extraEdges \gets |pEdges \backslash bEdges |$
+		  \State $networkEdgeCost \gets networkEdgeCost + \frac{extraEdges \;*\; blockCosts_b}{edgeCount}$
+		\EndFor
+		
+		\State $characterCost \gets \sum\limits_{b\; \in\; B} blockCosts_{b}$
+		
+		\State $rootingCost \gets \sum\limits_{r\; \in\; \Call{RootSet}{\mathcal{T}}} \Call{RootingCost}{r}$
+		
+		\State $graphCost \gets rootingCost + networkEdgeCost + characterCost$
+
+		\State \Return $(graphCost, blockTopologies)$
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
+
 \restoregeometry
 }
 
