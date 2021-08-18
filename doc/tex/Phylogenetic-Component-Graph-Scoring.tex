@@ -157,6 +157,17 @@ Second,  the parents of a network vertex must, at least potentially, be contempo
 A less restrictive form of network (``reconstructable'') is defined by \cite{moretetal2004} with vertices (indegree, outdegree): 
 (0, $\ge 1$) the unique root, (1, 0) leaves, and (1, $\ge$1) ``internal'' vertices, and networks adding ($\ge 2$, 1) vertices as ``network'' vertices.  For purposes of searching, outdegree of internal nodes is restricted to at most 2. Since edges may have zero length, networks may be output with vertices of outdegree $> 2$.
 
+
+\section{Optimization of a single graph}\label{Optimization of a single graph}
+
+Optimization is a function that takes a graph ($G$), here a forest $F$, and data ($D$) as inputs and returns a numerical value.  
+This value can be referred to as its score ($S$)
+\begin{eqnarray*}
+	f & : &  \{\mathcal{F}, D\} \rightarrow \mathbb{R}\\
+	g & : & \{  \mathbb{R},  \mathbb{R} \} \rightarrow \mathbb{R}
+\end{eqnarray*}
+
+
 \afterpage{
 \newgeometry{margin=0.5in}
 
@@ -394,19 +405,29 @@ A less restrictive form of network (``reconstructable'') is defined by \cite{mor
 	\end{algorithmic}
 \end{algorithm}
 
+
+\begin{algorithm}
+	\caption{Determine the optimal rooting edge for each non-exact character}
+	\label{Alg:generate-resolutions}
+	\begin{algorithmic}[1]
+		\Function{PreOrder}{$\textit{edge}, \textit{node}$}
+		\If    {$\textit{edge} \in \Call{ParentalEdges}{\textit{node}}$}
+		\State \Return $\Call{GetResolutions}{\textit{node}}$
+		\EndIf
+		\State $\left\{ \textit{edgeA}, \textit{edgeB} \right\} \gets \Call{incedentEdges}{\textit{node}} \backslash \left\{ \textit{edge} \right\}$
+		\State $\textit{nodeL} \gets \Call{getOppositeNode}{ \textit{edgeL}, \textit{node} }$
+		\State $\textit{nodeR} \gets \Call{getOppositeNode}{ \textit{edgeR}, \textit{node} }$
+		\State $\textit{lhs} \gets \Call{memoSubtreeQuery}{\textit{edgeR},\textit{nodeL}}$
+		\State $\textit{rhs} \gets \Call{memoSubtreeQuery}{\textit{edgeL},\textit{nodeR}}$
+		\State \Return $\Call{GenerateResolutions}{\textit{lhs}, \textit{rhs}}$
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
+
+
 \restoregeometry
 }
 
-
-\section{Optimization of a single graph}\label{Optimization of a single graph}
-
-Optimization is a function that takes a graph ($G$), here a forest $F$, and data ($D$) as inputs and returns a numerical value.  
-This value can be referred to as its score ($S$)
- 	\begin{eqnarray*}
- 		f & : &  \{\mathcal{F}, D\} \rightarrow \mathbb{R}\\
-		g & : & \{  \mathbb{R},  \mathbb{R} \} \rightarrow \mathbb{R}
-	 \end{eqnarray*}
- 
 
 \section*{Acknowledgments}
 The author would like to thank DARPA SIMPLEX N66001-15-C-4039, and Robert J. Kleberg Jr. and Helen C. Kleberg foundation grant ``Mechanistic Analyses of Pancreatic Cancer Evolution'' and the American Museum of Natural History for financial support. 
