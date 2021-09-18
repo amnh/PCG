@@ -407,23 +407,71 @@ This value can be referred to as its score ($S$)
 
 
 \begin{algorithm}
-	\caption{Determine the optimal rooting edge for each non-exact character}
-	\label{Alg:generate-resolutions}
+	\caption{Assign final states to the soft-wire graph}
+	\label{Alg:pre-order-traversal}
 	\begin{algorithmic}[1]
-		\Function{PreOrder}{$\textit{edge}, \textit{node}$}
-		\If    {$\textit{edge} \in \Call{ParentalEdges}{\textit{node}}$}
-		\State \Return $\Call{GetResolutions}{\textit{node}}$
-		\EndIf
-		\State $\left\{ \textit{edgeA}, \textit{edgeB} \right\} \gets \Call{incedentEdges}{\textit{node}} \backslash \left\{ \textit{edge} \right\}$
-		\State $\textit{nodeL} \gets \Call{getOppositeNode}{ \textit{edgeL}, \textit{node} }$
-		\State $\textit{nodeR} \gets \Call{getOppositeNode}{ \textit{edgeR}, \textit{node} }$
-		\State $\textit{lhs} \gets \Call{memoSubtreeQuery}{\textit{edgeR},\textit{nodeL}}$
-		\State $\textit{rhs} \gets \Call{memoSubtreeQuery}{\textit{edgeL},\textit{nodeR}}$
-		\State \Return $\Call{GenerateResolutions}{\textit{lhs}, \textit{rhs}}$
+		\Function{PreOrder}{$\mathcal{T}, \textit{blockTopologies}, optimalRootings$}
+		
+		\ForAll{$b \in B$}
+		  \State $t \gets blockTopologies_{b}$
+		  \State $blockRoot \gets t.root$
+		  \State $exactCharacters \gets \emptyset$
+		  \State $nonExactCharacters \gets \emptyset$
+		  \ForAll{$character \in b$}
+		    \If{$\Call{IsExact}{character}$}
+		      \State $exactCharacters \gets character$
+		    \Else
+		      \State $nonExactCharacters \gets character$
+		    \EndIf
+		  \EndFor
+		  \State $\Call{InitializeRootExactCharacters}{blockRoot, exactCharacters}$
+		  \ForAll{$child \in \Call{GetChildren}{blockRoot}$}
+		    \State $\Call{PreOrderExact}{exactCharacters, blockRoot, child}$
+		  \EndFor
+		  \ForAll{$character \in nonExactCharacters$}
+		    \State $(charRootDatum, charRootingEdge) \gets optimalRootings_{character}$
+		    \State $(lhs, rhs) \gets \Call{GetIncidentNodes}{charRootingEdge}$
+		    \State $charRootFinal \gets \Call{InitializeRootNonExactCharacter}{charRootDatum}$
+		    \State $\Call{PreOrderNonExact}{character, charRootFinal, lhs}$
+		    \State $\Call{PreOrderNonExact}{character, charRootFinal, rhs}$
+		  \EndFor
+
+		\EndFor
 		\EndFunction
 	\end{algorithmic}
 \end{algorithm}
 
+
+\begin{algorithm}
+	\caption{Assign final states to the soft-wire graph}
+	\label{Alg:pre-order-traversal}
+	\begin{algorithmic}[1]
+		\Require{A vector $\otimes$ of length $k$, where $\otimes_i : D_i \times C_i \to D_i$}
+		\Function{PreOrderExact}{$\textit{characters}, \textit{parent}, \textit{node}$}
+		  \ForAll{$c \in characters$}
+		    \State $node.final_c \gets parent.final_c \;\;\otimes_c\;\; node.preliminary_c$
+		  \EndFor
+		  \ForAll{$child \in \Call{GetChildren}{node}$}
+		    \State $\Call{PreOrderExact}{characters, node, child}$
+		  \EndFor
+		\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+	\caption{Assign final states to the soft-wire graph}
+	\label{Alg:pre-order-traversal}
+	\begin{algorithmic}[1]
+		\Require{A vector $\otimes$ of length $k$, where $\otimes_i : D_i \times C_i \to D_i$}
+		\Function{PreOrderNonExact}{$\textit{c}, \textit{parent}, \textit{node}$}
+		\State $node.final_c \gets parent.final_c \;\;\otimes_c\;\; node.preliminary_c$
+		\ForAll{$child \in \Call{GetChildren}{node}$}
+		  \State $\Call{PreOrderNonExact}{c, node, child}$
+		\EndFor
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
 
 \restoregeometry
 }
