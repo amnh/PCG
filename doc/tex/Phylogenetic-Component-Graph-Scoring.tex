@@ -191,8 +191,8 @@ This value can be referred to as its score ($S$)
 		\Case{$\left( \textit{leftChild}, \textit{rightChild} \right)$}
 		\State $\textit{res} \gets$ \Call{GenerateResolutions}{$\textit{leftChild}, \textit{rightChild}$}
 		\ForAll{$\textit{r} \in \textit{res}$}
-		  \State $x \gets \textit{r.leftCharacterSequence}$ 
-		  \State $y \gets \textit{r.rightCharacterSequence}$
+		  \State $x \gets \textit{r.lhsCharacterSequence}$ 
+		  \State $y \gets \textit{r.rhsCharacterSequence}$
 		  \State $z \gets \emptyset$
 		  \ForAll{$i \in [0, \; m-1]$}
 		    \State $z_i \gets \oplus_i (x_i, y_i)$
@@ -217,7 +217,7 @@ This value can be referred to as its score ($S$)
 		\State $\textit{i} \gets \Call{IndexOf}{\textit{node}}$ \Comment{$\mathcal{O}(1) \text{ access to } \textit{i} \in [0,\, m-1]$} 
 		\State $\textit{r.leafBitVector} \gets \Call{SetBit}{\vec{0}, \textit{i}\,}$
 		\State $\textit{r.characterSequence} \gets \textit{node.characterSequence}$
-		\State \Return $\textit{r}$
+		\State \Return $\left\{ r \right\}$ \Comment{Singleton resolution set}
 		\Else
 		\State \Return $\textit{node.resolutions}$
 		\EndIf
@@ -236,9 +236,9 @@ This value can be referred to as its score ($S$)
 
 		\ForAll{$\textit{lhs} \in$ \Call{GetResolutions}{$\textit{lhsNode}$}}
 		  \ForAll{$\textit{rhs} \in$ \Call{GetResolutions}{$\textit{rhsNode}$}}
-		    \State $\textit{leavesInSubtree} \gets \textit{lhs.leafBitVector} \land \textit{rhs.leafBitVector}$
-		    \If    {$\textit{leavesInSubtree} = \vec{0} $}
-		      \State $\textit{r.leafBitVector} \gets \textit{leavesInSubtree}$
+		    \State $\textit{sharedLeaves} \gets \textit{lhs.leafBitVector} \land \textit{rhs.leafBitVector}$ \Comment{Check leaf set intersection}
+		    \If    {$\textit{sharedLeaves} = \vec{0} $}
+		      \State $\textit{r.leafBitVector} \gets \textit{lhs.leafBitVector} \lor \textit{rhs.leafBitVector}$ \Comment{Union the leaf sets}
 		      \State $\textit{r.lhsCharacterSequence} \gets \textit{lhs.characterSequence}$
 		      \State $\textit{r.rhsCharacterSequence} \gets \textit{rhs.characterSequence}$
 		      \State $\textit{pairedResolutions} \gets \textit{pairedResolutions} \cup \{r\}$
@@ -254,7 +254,7 @@ This value can be referred to as its score ($S$)
 		  \State \Return $\textit{pairedResolutions} \hspace{0.5em} \cup$ \Call{GetResolutions}{$\textit{lhsNode}$}
 		\EndCase
 		\Case{$(\texttt{True}, \texttt{False})$}
-		  \State \Return $\textit{pairedResolutions} \hspace{0.5em} \cup$ \Call{GetResolutions}{$\textit{hsNode}$}
+		  \State \Return $\textit{pairedResolutions} \hspace{0.5em} \cup$ \Call{GetResolutions}{$\textit{rhsNode}$}
 		\EndCase
 		\Case{$(\texttt{True}, \texttt{True})$}
 		  \State \Return $\textit{pairedResolutions} \hspace{0.3em} \cup \Call{GetResolutions}{\textit{lhsNode}} \cup \Call{GetResolutions}{\textit{rhsNode}}$
@@ -381,7 +381,7 @@ This value can be referred to as its score ($S$)
 		
 		\State $requisiteEdges \gets \bigcup\limits_{t \in blockTopologies} \Call{EdgeSet}{t}$
 		
-		\If    {$\Call{NetworkEdgeSet}{\mathcal{T}} \backslash requisiteEdges$}
+		\If    {$\Call{NetworkEdgeSet}{\mathcal{T}} \backslash requisiteEdges \ne \emptyset $}
 		   \State \Return $\infty$
 		\EndIf
 		
@@ -446,10 +446,10 @@ This value can be referred to as its score ($S$)
 	\caption{Assign final states to the soft-wire graph}
 	\label{Alg:pre-order-traversal}
 	\begin{algorithmic}[1]
-		\Require{A vector $\otimes$ of length $k$, where $\otimes_i : D_i \times C_i \to D_i$}
+		\Require{A vector $\otimes$ of length $k$, where $\otimes_i : F_i \times D_i \to F_i$}
 		\Function{PreOrderExact}{$\textit{characters}, \textit{parent}, \textit{node}$}
 		  \ForAll{$c \in characters$}
-		    \State $node.final_c \gets parent.final_c \;\;\otimes_c\;\; node.preliminary_c$
+		    \State $node.final_c \gets \otimes_c \left( parent.final_c,\; node.preliminary_c \right)$
 		  \EndFor
 		  \ForAll{$child \in \Call{GetChildren}{node}$}
 		    \State $\Call{PreOrderExact}{characters, node, child}$
@@ -463,9 +463,9 @@ This value can be referred to as its score ($S$)
 	\caption{Assign final states to the soft-wire graph}
 	\label{Alg:pre-order-traversal}
 	\begin{algorithmic}[1]
-		\Require{A vector $\otimes$ of length $k$, where $\otimes_i : D_i \times C_i \to D_i$}
+		\Require{A vector $\otimes$ of length $k$, where $\otimes_i : F_i \times D_i \to F_i$}
 		\Function{PreOrderNonExact}{$\textit{c}, \textit{parent}, \textit{node}$}
-		\State $node.final_c \gets parent.final_c \;\;\otimes_c\;\; node.preliminary_c$
+		\State $node.final_c \gets \otimes_c \left( parent.final_c,\; node.preliminary_c \right)$
 		\ForAll{$child \in \Call{GetChildren}{node}$}
 		  \State $\Call{PreOrderNonExact}{c, node, child}$
 		\EndFor
