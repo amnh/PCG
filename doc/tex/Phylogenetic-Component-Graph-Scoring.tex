@@ -169,39 +169,65 @@ This value can be referred to as its score ($S$)
 
 
 \afterpage{
-\newgeometry{margin=0.5in}
+\newgeometry{margin=0.5in,bottom=0in}
 
 \begin{algorithm}
 	\caption{Post-order preliminary scoring and assignment pass.}
 	\label{Alg:post-order}
 	\begin{algorithmic}[1]
 		\Require{A phylogenetic graph component $\mathcal{T}$ with $n$ nodes. }
-		\Require{Each leaf node $l \in \mathcal{T}$ decorated with a character sequence $C$ of length $m$. }
-		\Require{A vector $\oplus$ of length $m$, where $\oplus_i : C_i \times C_i \to D_i$}
+		\Require{Each leaf node $l \in \mathcal{T}$ decorated with a character vector $C$ of length $m$. }
+		\Require{A vector $\oplus$ of length $m$, where $\oplus_i : C_i \times C_i \to P_i$}
 		\Ensure{Each internal node $v \in \mathcal{T}$ decorated with a post-order context containing possible character sequences of length $m$. }
-		\Function{Post-Order}{$\textit{node}$}
-		\If    {\Call{IsLeaf}{$\textit{node}$}}
-		\State \Return
-		\EndIf
+		\Function{Post-Order}{$\mathcal{T}$}
 		
-		\Switch{\Call{GetChildren}{$\textit{node}$}}
-		\Case{$\left( \textit{onlyChild} \right)$}
-		\State $\textit{node}.\textit{resolutions} \gets$ \Call{GetResolutions}{$\textit{onlyChild}$}
-		\EndCase
-		\Case{$\left( \textit{leftChild}, \textit{rightChild} \right)$}
-		\State $\textit{res} \gets$ \Call{GenerateResolutions}{$\textit{leftChild}, \textit{rightChild}$}
-		\ForAll{$\textit{r} \in \textit{res}$}
-		  \State $x \gets \textit{r.lhsCharacterSequence}$ 
-		  \State $y \gets \textit{r.rhsCharacterSequence}$
-		  \State $z \gets \emptyset$
-		  \ForAll{$i \in [0, \; m-1]$}
-		    \State $z_i \gets \oplus_i (x_i, y_i)$
+		\ForAll{$root \in \Call{RootSet}{\mathcal{T}}$}
+		  \State \Call{Post-Order-Logic}{$root$}
+		  \State $validResolutions \gets \emptyset$
+		  \ForAll{$resolution \in root.resolutions$}
+		    \If{$resolution.leafBitVector = \vec{1}$} \Comment{Ensure all leaves are included in resolution}
+		      \State $validResolutions \cup \left\{ resolution \right\}$
+		    \EndIf
 		  \EndFor
-		  $\textit{r.characterSequence} \gets z$
+		  \State $root.resolutions \gets validResolutions$
 		\EndFor
-		$\textit{node.resolutions} \gets \textit{res}$
-		\EndCase
-		\EndSwitch
+
+		\EndFunction
+	\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+	\caption{Post-order preliminary scoring and assignment pass.}
+	\label{Alg:post-order-logic}
+	\begin{algorithmic}[1]
+		\Require{A vector $\oplus$ of length $m$, where $\oplus_i : C_i \times C_i \to P_i$}
+		\Ensure{The input $node$ and every node in it's subtree is decorated with a set of resolutions;\\each containing a preliminary character vector of length $m$ and the leaf-set of the resolution. }
+		\Function{Post-Order-Logic}{$node$}
+		  \If    {\Call{IsLeaf}{$node$}}
+		    \State \Return
+		  \EndIf
+		
+		  \Switch{\Call{GetChildren}{$node$}}
+		    \Case{$\left( onlyChild \right)$}
+		      \State $\textit{node}.\textit{resolutions} \gets$ \Call{GetResolutions}{$\textit{onlyChild}$}
+		      \State \Call{Post-Order-Logic}{$onlyChild$}
+		    \EndCase
+		    \Case{$\left( leftChild, rightChild \right)$}
+		      \State $node.resolutions \gets$ \Call{GenerateResolutions}{$leftChild, rightChild$}
+		      \ForAll{$r \in node.resolutions$}
+		        \State $x \gets r.lhsCharacterSequence$ 
+		        \State $y \gets r.rhsCharacterSequence$
+		        \State $z \gets \emptyset$
+		        \ForAll{$i \in [0, \; m-1]$}
+		          \State $z_i \gets \oplus_i (x_i, y_i)$
+		        \EndFor
+		        \State $r.characterSequence \gets z$
+		      \EndFor
+		      \State \Call{Post-Order-Logic}{$leftChild$}
+		      \State \Call{Post-Order-Logic}{$rightChild$}
+		    \EndCase
+		  \EndSwitch
 		\EndFunction
 	\end{algorithmic}
 \end{algorithm}
@@ -214,7 +240,7 @@ This value can be referred to as its score ($S$)
 				
 		\Function{GetResolutions}{$\textit{node}$}
 		\If    {\Call{IsLeaf}{$\textit{node}$}}
-		\State $\textit{i} \gets \Call{IndexOf}{\textit{node}}$ \Comment{$\mathcal{O}(1) \text{ access to } \textit{i} \in [0,\, m-1]$} 
+		\State $\textit{i} \gets \Call{IndexOf}{node}$ \Comment{$\mathcal{O}(1) \text{ access to } \textit{i} \in [0,\, m-1]$} 
 		\State $\textit{r.leafBitVector} \gets \Call{SetBit}{\vec{0}, \textit{i}\,}$
 		\State $\textit{r.characterSequence} \gets \textit{node.characterSequence}$
 		\State \Return $\left\{ r \right\}$ \Comment{Singleton resolution set}
@@ -271,7 +297,7 @@ This value can be referred to as its score ($S$)
 	\begin{algorithmic}[1]
 		\Require{A phylogenetic graph component $\mathcal{T}$ with $n$ nodes. }
 		\Require{Each node $v \in \mathcal{T}$ decorated with a post-order context for each $k$ non-exact characters.}
-		\Require{A vector $\oplus$ of length $k$, where $\oplus_i : C_i \times C_i \to D_i$}
+		\Require{A vector $\oplus$ of length $k$, where $\oplus_i : C_i \times C_i \to P_i$}
 		\Ensure{Each edge $e \in \mathcal{T}$ decorated with a post-order context for each $k$ non-exact characters.}
 		\Function{NonExactCharacterRerooting}{$\mathcal{T}$}
 		
@@ -446,7 +472,7 @@ This value can be referred to as its score ($S$)
 	\caption{Assign final states to the soft-wire graph}
 	\label{Alg:pre-order-traversal}
 	\begin{algorithmic}[1]
-		\Require{A vector $\otimes$ of length $k$, where $\otimes_i : F_i \times D_i \to F_i$}
+		\Require{A vector $\otimes$ of length $k$, where $\otimes_i : F_i \times P_i \to F_i$}
 		\Function{PreOrderExact}{$\textit{characters}, \textit{parent}, \textit{node}$}
 		  \ForAll{$c \in characters$}
 		    \State $node.final_c \gets \otimes_c \left( parent.final_c,\; node.preliminary_c \right)$
@@ -463,7 +489,7 @@ This value can be referred to as its score ($S$)
 	\caption{Assign final states to the soft-wire graph}
 	\label{Alg:pre-order-traversal}
 	\begin{algorithmic}[1]
-		\Require{A vector $\otimes$ of length $k$, where $\otimes_i : F_i \times D_i \to F_i$}
+		\Require{A vector $\otimes$ of length $k$, where $\otimes_i : F_i \times P_i \to F_i$}
 		\Function{PreOrderNonExact}{$\textit{c}, \textit{parent}, \textit{node}$}
 		\State $node.final_c \gets \otimes_c \left( parent.final_c,\; node.preliminary_c \right)$
 		\ForAll{$child \in \Call{GetChildren}{node}$}
