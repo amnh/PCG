@@ -1213,7 +1213,7 @@ executable pcg
   ghc-options:
     -threaded -rtsopts
 
-  ld-options: -static
+  ld-options:
 
   hs-source-dirs:
     app/pcg
