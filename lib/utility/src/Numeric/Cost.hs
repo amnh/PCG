@@ -153,34 +153,39 @@ renderCost (Cost num den) = renderRational num den
 
 
 renderRational :: Natural -> Natural -> String
-renderRational num den =
-    case num `quotRem` den of
-      (q,0) -> show q
-      (q,r) -> fold [ show q, ".", toList (go (if q == 0 then num else r) mempty)]
-  where
-    go  0 xs = foldMap (show . fst) xs
-    go !v xs =
-      case hasCycle xs of
-        Nothing                  -> let t@(_,r) = (v*10) `quotRem` den in go r $ xs |> t
-        Just (static, repeating) -> render static <> addOverline (render repeating)
+renderRational num den = case num `quotRem` den of
+    (q,0) -> show q
+    (q,r) ->
+        let -- Unicode literal for the "combining overline character".
+            -- Place an overline above the character /before/ itself in the string.
+            addOverline =
+                let !c = '\x0305'
+                in  (c:) . intersperse c
 
-    addOverline = (<>[c]) . intersperse c
-      where
-        -- Unicode literal for the "combining overline character".
-        -- Places an overline above the character /before/ itself in the string.
-        !c = '\x0305'
+            digitMax = length . show $ max num den
+        
+            render = foldMap (show . fst)
+        
+            go !v xs =
+              case hasCycle xs of
+                Just (static, repeating) -> render static <> addOverline (render repeating)
+                _ | v == 0 || length xs > digitMax -> render xs
+                _  -> let t@(_,r) = (v*10) `quotRem` den in go r $ xs |> t
+            
+            hasCycle x =
+                let dropEmptySeq :: Seq a -> Seq a
+                    dropEmptySeq  xs@Empty  = xs
+                    dropEmptySeq (xs :|> _) = xs
 
-    render = foldMap (show . fst)
-
-    hasCycle x = foldl' f Nothing . reverse . dropEmptySeq $ tails x
-      where
-        !n = length x
-        f a e = a <|> let !m = length e
-                          !(s,r) = splitAt (n-(2*m)) x
-                      in  if r == e <> e
-                          then Just (s, e)
-                          else Nothing
-
-    dropEmptySeq :: Seq a -> Seq a
-    dropEmptySeq  xs@Empty  = xs
-    dropEmptySeq (xs :|> _) = xs
+                    !n = length x
+                    
+                    f a e = a <|> let !m = length e
+                                      !(s,r) = splitAt (n - (2 * m)) x
+                                  in  if r == e <> e
+                                      then Just (s, e)
+                                      else Nothing
+                in  foldl' f Nothing . reverse . dropEmptySeq $ tails x
+        
+        in  fold [ show q, ".", toList (go (if q == 0 then num else r) mempty)]
+    
+ 
